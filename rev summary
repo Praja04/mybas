@@ -1,0 +1,709 @@
+[33m63a9951[m[33m ([m[1;36mHEAD -> [m[1;32mmaster[m[33m, [m[1;31morigin/master[m[33m, [m[1;31morigin/HEAD[m[33m)[m rev summary
+[33m9500e5a[m rev data upload
+[33mc17f548[m pr 3
+[33m3500476[m Master user
+[33m4c0b33c[m total karyawan
+[33m79120e4[m validasi upload
+[33m8f0d003[m update rev 1.0
+[33mcb0f1f0[m rev
+[33m6dbf2eb[m rev status karyawan
+[33m7d94755[m rev
+[33mfe3ae31[m rev shift dan status
+[33m5c05554[m header excel
+[33me70f773[m master contoh
+[33m88036f0[m contoh master template
+[33m066c7cf[m fix bugs
+[33mae252ca[m[33m ([m[1;31morigin/testing-mybas[m[33m, [m[1;32mtesting-mybas[m[33m)[m master data
+[33ma2c92b1[m edit data by id
+[33mdff4404[m masih ada revisi delete
+[33mc3e8be5[m rev tambah data master
+[33mab1dece[m tambah data master approval
+[33mff7a3d8[m add button back form tambah data
+[33m08ef875[m form tambah data
+[33mbfbe60d[m master approval
+[33m8b0439a[m rubah nik jadi nik_secure_access
+[33meac9b52[m Fixing bug
+[33m42cc4db[m Update PKWKaryawanController.php
+[33m7e1d799[m update
+[33mdccd4e3[m update db
+[33m07c122c[m update database bas
+[33m51c651f[m rekam medis
+[33m7a9ddc0[m klinik- obat sudah terbuka
+[33m8208d78[m permission, mhl_reporting, klinik bug permintaan obat, skd
+[33m2ff756f[m permission
+[33m93b34f7[m fitur upload bukti skd
+[33m2729552[m backend checkbox obat sudah terbuka
+[33m7e13780[m checkbox obat existing
+[33m10f9d31[m Alert confirm
+[33m7fb7696[m laporan pemeriksaan
+[33m5c8ad9e[m fitur upload excel, download master excel, edit, delete
+[33m3763488[m fitur master data obat, edit
+[33m21efc52[m tampilin tanggal tiket pada email, count status approver
+[33mc8c8647[m fitur edit, permission approver
+[33m9ab55d2[m display scan pending
+[33m09dc991[m fitur send email, dsiplay scan 'pending', detail per id_mhl
+[33med76875[m send to email
+[33mb00cecb[m id_mhl berbeda tiap upload
+[33m7de2f0f[m fitur approver
+[33m9d28e97[m Approver
+[33m385ec4c[m rev -> tambah kolom shift, hapus upload im
+[33m0b1dfea[m report detail
+[33m6c8355c[m waktu_scan, is_scan, backend upload
+[33m6e8c7b2[m fitur scan
+[33m84e5d04[m reporting
+[33mbc30727[m upload data karyawan, upload im
+[33m1bba988[m kerja hari libur - upload data karyawan
+[33ma3cd18f[m rev lupload excel oker
+[33mf35d456[m revisi bug
+[33mda28212[m db form input user
+[33m4723905[m loker BAS export to excel
+[33ma97a56f[m revisi loker bas double NIK, stok loker kosong, history loker
+[33ma43920e[m loker bas
+[33mca4aeba[m Fixing bug
+[33mde7d419[m Oke coba
+[33md873ad4[m Plugin for qr code
+[33m770715d[m Update base.blade.php
+[33m82e2ca8[m Menambah menu loker
+[33mc513d38[m add loker module
+[33md98cba8[m revisi shift 3 jam '00-07'
+[33mea46e21[m revisi report rekap 'pertanggal'
+[33m1e67990[m Merge branch 'master' of https://github.com/PT-PAS-Dev/mybas
+[33mbbff0e4[m revisi jam shift
+[33maf57f90[m Upload overtime
+[33mb20b873[m tampil jumlah sisa porsi pada display scan
+[33m9750fc7[m perbaikan fitur upload ->auto increment 'id_pesanan' pada saat import file excel
+[33m7cf8e10[m upload untuk 1 minggu kedepan -> import excel
+[33m1594674[m portal update produksi maksimal  H-1 pukul 17:00
+[33m7d8cdd3[m notif cookie "Data anda berhasil disimpan"
+[33ma2155fe[m fitur upload overtime
+[33m7b99c8a[m fitur upload overtime
+[33m99cafc8[m progress -> overtime shift
+[33m9ce04cc[m Reporting done
+[33m3615af2[m Report
+[33m305058f[m Merge branch 'master' of https://github.com/PT-PAS-Dev/mybas
+[33mda4c170[m Loading
+[33mc26f9e1[m report
+[33mea7ccce[m Oke siap proses scan
+[33m1ab87d5[m fitur report
+[33meba76ba[m fitur = view jumlah pesanan
+[33mf444e7c[m edit jumlah pesanan
+[33me765af7[m Fitur upload dan update pesanan catering
+[33mb9ece59[m Add 12 bulan periode
+[33m74f32c4[m Perubahan untuk bas
+[33m6104b54[m Change readmi.md to PT. BAS
+[33m910de51[m Merge pull request #1 from herilesmana/server
+[33mc861ca5[m Merge pull request #35 from zakaria-970401/master
+[33m028d6aa[m edit sweetalert IM
+[33m22689d5[m Merge pull request #34 from zakaria-970401/master
+[33m298b8a0[m add internal memo
+[33m8590064[m Merge pull request #33 from zakaria-970401/master
+[33m62b554e[m Update LoggingMachineController.php
+[33m04d5219[m add migration yang ketinggalan
+[33ma46f4d7[m Merge pull request #32 from zakaria-970401/master
+[33me963ef7[m add report sap in downtime
+[33mf643f05[m Penyempurnaan untuk compare & syncronize data w payroll
+[33med395bd[m Generate update
+[33m1c5c861[m Delete data karyawan
+[33mb9149d6[m Delete data calon karyawan
+[33mf23cf9c[m Merge pull request #31 from zakaria-970401/master
+[33m6d56f7d[m fix close downtime for operator
+[33m79a6e30[m Merge pull request #30 from zakaria-970401/master
+[33m0b65295[m push controller report and logging machine
+[33mc78be36[m Merge pull request #29 from zakaria-970401/master
+[33m685a278[m revisi report admin_prod, and flow engineering
+[33m901f8c1[m Pemisahan material berdasarkan UOM
+[33m8f8ef6c[m For archiving data
+[33m95d6e75[m Perbaikan due date
+[33mf09ce97[m Change format to csv
+[33ma429747[m Perbaikan quantity id untuk PRN2 short shift 3
+[33mad2f17a[m Merge pull request #28 from zakaria-970401/master
+[33m22efd3e[m fix final login engineering
+[33m4aa6524[m Merge pull request #27 from zakaria-970401/master
+[33m4ebeebc[m ilangin session stroge engineering
+[33m3b47dc7[m Merge pull request #26 from zakaria-970401/master
+[33m289dbed[m Update login.blade.php
+[33m026fb8d[m Merge pull request #25 from zakaria-970401/master
+[33mb077416[m cache clear sekalian apus max Y report
+[33mc8aacb5[m Merge pull request #24 from zakaria-970401/master
+[33m72fc46f[m add validiasi sampling
+[33mfe0550c[m Merge pull request #23 from zakaria-970401/master
+[33ma8199d3[m add login engineering
+[33me0e9c9e[m Merge pull request #22 from zakaria-970401/master
+[33m25e5015[m Sum CntDev Ctrpcs when input add hasil produksi
+[33me261a26[m Merge pull request #21 from zakaria-970401/master
+[33m498df43[m Add swal and move button edit mesin.
+[33m281b26e[m Merge pull request #20 from zakaria-970401/master
+[33m0b97272[m Update LoggingMachineController.php
+[33m1d5cbf7[m Merge pull request #19 from zakaria-970401/master
+[33mc325c68[m fix report list and free user input sampling if move varian
+[33mbb69f72[m Merge pull request #18 from zakaria-970401/master
+[33md29d90c[m Update input_hasil_produksi.blade.php
+[33m563448d[m Merge pull request #17 from zakaria-970401/master
+[33m58ea1bd[m fix session storage input hasil produksi
+[33m6313996[m Merge pull request #16 from zakaria-970401/master
+[33m39a46e4[m Add Validasi Input Sampling
+[33m240dee5[m Merge pull request #15 from zakaria-970401/master
+[33ma3229aa[m fix typo migrations
+[33md8da40d[m Create 2021_05_20_154153_add_pindah_varian_to_logging_machine_table.php
+[33m6913ee6[m Merge pull request #14 from zakaria-970401/master
+[33m67b4a80[m flow 4 mesin, percobaan pertama.
+[33mf519b0f[m Merge pull request #13 from zakaria-970401/master
+[33m9bbe86b[m add session storage for button back
+[33m43d73ca[m Untuk hasil shift 3
+[33mf1c97b3[m Merge pull request #12 from zakaria-970401/master
+[33m74db5fb[m fix groupby inner
+[33mfa4c1e2[m Merge pull request #11 from zakaria-970401/master
+[33m0be6da6[m fix typo migrations tabel master_range_sampling_s2
+[33mb32956a[m Merge pull request #10 from zakaria-970401/master
+[33mc5d6645[m Buat Migration master_range_sampling_s2
+[33m635c6b7[m Merge pull request #9 from zakaria-970401/master
+[33me02f089[m add fitur edit wip and fix history wip
+[33m113c97d[m Merge pull request #8 from zakaria-970401/master
+[33ma295f02[m Fix range nilai sampling
+[33m615ad00[m Tandai jika ada yang beda antara max sama min berikutnya
+[33m876edb9[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33m56d884a[m Untuk datalog 2 untuk min dan max
+[33m1102ba5[m Merge pull request #7 from zakaria-970401/master
+[33m982c25f[m Revisi Sampling to select
+[33m3716349[m Menambahkan min dan max value ke datalog
+[33m2ba5d87[m Add nullable
+[33m941d6af[m Migratioin to record min and max value
+[33m10665ad[m Merge pull request #6 from zakaria-970401/master
+[33m1af0f4d[m Add config piecectr.
+[33m20a593f[m Revert "Add Config SqlServer"
+[33m69a8689[m Add Config SqlServer
+[33m5f2bbd6[m Merge pull request #5 from zakaria-970401/master
+[33m16f2f21[m Fix Url Post And Routes
+[33mc287cfb[m Merge pull request #4 from zakaria-970401/master
+[33m6d20ee3[m Fix index and web Logging Machine
+[33m8ccc407[m Merge pull request #3 from zakaria-970401/master
+[33m600106f[m Fix Post Master Logging
+[33m4e824bb[m Change template import
+[33m0921603[m Send email after upload master material
+[33m19873f1[m Migration for Material Expired Notification System
+[33mb81c878[m Working on notif for group 3
+[33m6809e4f[m Working with group 2
+[33m09a4b2d[m Logging Machine Seassoning 2 | fix history sampling
+[33m79365d2[m Mapping email receiver berdasarkan sloc
+[33m86f8db9[m Excel attachment done
+[33mfa0ab3d[m MEN email templating
+[33m143ab15[m Refactor and delete unused comments
+[33mdf0b134[m Men master material route
+[33mc80ebfc[m Men material summary view
+[33m258270f[m Number format function
+[33mbe16f6e[m MEN material show details
+[33mf2161e8[m Fixing a little mistake
+[33mc0c3dd8[m Fixing datatamu error
+[33m0c40822[m Logging Machine Seassoning 2 Fix spv
+[33me11c3ea[m Logging Machine Seassonning 2 Fix spv_produksi
+[33mbf0fe06[m Logging Machine Seassoning 2 Fixed Upload_foto
+[33m3c52ec7[m Logging Machine Seassonning 2 fixed upload_foto
+[33mec8cff2[m For material exclude
+[33m7bbc12d[m Remove the validation
+[33m8ec8fad[m Merge pull request #2 from zakaria-970401/master
+[33m91cf48d[m Logging machine seasoning 2 Initial release-fix
+[33me3cff56[m Migration logging machine
+[33m49ca568[m Logging machine seasoning 2 Initial release-revisi
+[33m1fe7861[m Merge pull request #1 from zakaria-970401/master
+[33ma150d20[m Merge branch 'master' into master
+[33m4be8c99[m Logging machine seasoning 2 Initial release
+[33m4341142[m Persentase selisih
+[33m7d2b0eb[m Update untuk filter shift agar menggunakan tanggal kemarin
+[33m1f8ef34[m Fixing some error
+[33m740388d[m Import and show master data
+[33m8e6c9ce[m Initial setup for Material Expired Notification System
+[33m275231b[m Menu for Material Expired Notification
+[33m1b87043[m Update data karyawan on progress
+[33m8519b42[m Button for generate datalog
+[33m2fda112[m Fixing other filter
+[33mf3a4a9e[m Fixing some filter
+[33md16c53b[m Menambah steam incoming & outgoing
+[33mbae0a20[m Create update karyawan batch
+[33me7015c8[m Update karyawan init
+[33m6621771[m For steam
+[33ma0940fd[m Migration hr_karyawan
+[33macc0628[m Optimize compare function
+[33m975e9c6[m Compare and syncronize data with payroll
+[33m9a9efef[m Compare data
+[33m6bb49ae[m For show all data
+[33me413f19[m Separate menu data terkini & upadate data
+[33md08faa3[m Initial setup for data karyawan menu
+[33m3a5a749[m Install yajra datatables package
+[33m6a9701a[m Install yajra datatables package, for serever side datatables
+[33mb5ad555[m Fixing some error
+[33m0cfe927[m Finalisasi front showing data
+[33m1c7eb9d[m Timestamp UTC
+[33m1aab323[m Generate datalog 2
+[33m8d085e0[m For datalog2
+[33m9e4ffa8[m Updating generate algorithm
+[33m157ca73[m Jus fixing some bug
+[33mbeb4d59[m Add missing where date
+[33m6661c77[m Generate data by custom date
+[33mdd545bd[m Export perizinan operasional
+[33m5157d8d[m Penggabungan dept A & B. Dan perapihan
+[33m4613327[m Show datalog data. SUmmary and filter
+[33m65fbfa4[m PME data log + view detail
+[33m4198298[m Funtion get datalog power meter
+[33m854b15a[m Master power meter
+[33md4f968b[m Connection to database pme sql server
+[33mb9ce204[m Fixing some
+[33m0c23351[m Export template iris
+[33mbc8a6a2[m Add created_by column
+[33m62154bc[m Fixing public folder
+[33m03d2202[m Fixing some bugs
+[33mbee1092[m Change config to .env
+[33m1f8fc75[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33m0d809d3[m Default database setting
+[33m068967c[m[33m ([m[1;31morigin/server[m[33m)[m Merge branch 'server' of https://github.com/herilesmana/newpas into server
+[33m1d65048[m Merge branch 'master' of https://github.com/herilesmana/newpas into _server
+[33m2c17566[m Merge branch 'master' of https://github.com/herilesmana/newpas into server
+[33mcbf2171[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33m59feec6[m Fixing some error
+[33me3f1733[m Fixing some bugs
+[33m65e19ca[m Update data monthly bill
+[33m8aeebb4[m Change database connection to live server
+[33mdbcdd38[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33m62ed291[m Rapi rapi
+[33m397420b[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33m2dadd90[m Fixing some bugs
+[33md6cc101[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33m22fd82f[m Change department_name to power_meter
+[33mb98ae2f[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33mdc9a78b[m Add jenis energy to trash table to
+[33m01448ad[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33mdeb3750[m Penambahan kolom jenis energy
+[33m3fd5c87[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33m9af3e49[m Show the quantity id
+[33m9fe8df7[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33mc19a872[m Store using quantity id
+[33m1e0faa7[m Quantity id
+[33mbcbafec[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33m4751dae[m Delete data transfer energy
+[33m0972fcc[m Fitur delete monthly bill
+[33m2f89ea7[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33mc14c1d9[m Filter data transfer energy done
+[33m74a91a9[m Filter monthly bill done
+[33m85370d5[m Show data transfer energy
+[33m66e6ba0[m Show monthly bill data
+[33m6b785eb[m Store transfer energy
+[33md904d30[m Transfer energy page initial setup
+[33mad60bf9[m Validation if bill is already exist
+[33m078785b[m Store monthly bill
+[33m2033824[m PME Models
+[33m9d4e001[m Monthly bill index
+[33m6643787[m PME Mnthly bill view
+[33mc944f14[m PME Monthly bill controller
+[33m73e8b01[m PME Models
+[33mce550c4[m Master plant & sloc untuk PME
+[33maa3535e[m PME Menus
+[33m255cf0b[m Pme database connection setting
+[33m1a457c1[m PME Migration
+[33m2cff797[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33mcb8d223[m Add golongan darah
+[33ma03bae0[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33mdde4282[m Export template bank mandiri
+[33me8b9ec3[m Fixing bug
+[33m7a1488f[m Change command script from server
+[33me4c6028[m Change .env.example
+[33m0159fdb[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33mf2887c2[m Export to master all karyawan
+[33m0abbe6e[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33m07eca0d[m Backup all database
+[33m69a9290[m Showing process info
+[33mfd5373a[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33m7583073[m Clean directory before backup
+[33mdb01ee8[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33mbd80cd4[m Fixing thing
+[33m01eff02[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33mf71e839[m Trying to fix bug
+[33mab40744[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33m2d3252b[m Change backup format to .sql
+[33m33eab8a[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33m52d7604[m Backup database command
+[33mbe28580[m Auth group permission
+[33m2ec4118[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33m31ed33e[m Menghilangkan keterangan ketika gagal
+[33m36865be[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33m25496e4[m Export BPJS TK template
+[33m93877ab[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33m0ab57a9[m Keterangan ketika checkout
+[33md4128bf[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33mc0a8e46[m Fixing Nomor KTP problem on export bpjs
+[33m0ccdc1c[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33ma99ba84[m Fixing no KTP bug
+[33m54a9ac4[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33m9279f4e[m Show checkout time on manage
+[33mcc890f0[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33mf7df3fe[m Fixing some trouble
+[33maf04751[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33mc211da1[m Fixing checkout process
+[33mbc7f9bf[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33ma447e42[m Fixing some
+[33me18236a[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33m771bc88[m Fixing some
+[33mb352b39[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33m080b8fa[m Department dan keterangan
+[33m5d7d731[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33md0e7bb6[m Done
+[33mf08d97a[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33m78549f0[m Fixing some v2
+[33m7967281[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33m9d9fb5f[m Fixing some
+[33m7e2d285[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33meb81654[m Update design client
+[33m57bad4e[m Fitur pengisian kode lokasi
+[33m51bbdca[m Delete data
+[33m3c37052[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33m3f13f03[m Renew design
+[33mbaaac04[m Memperbaiki nomor nomor
+[33mf3f616f[m Menambah tanda
+[33m14dec41[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33m556bca9[m Change date format to mm/dd/yyyy
+[33mf24d325[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33m6614857[m Manual upload foto
+[33mc1de257[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33m2b334a6[m Turn off sound
+[33m513e095[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33m4558038[m Custom display untuk support old version tablet
+[33m62706ba[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33ma4bc47d[m Show error jika approval tidak ditemukan
+[33m020f3d3[m Fixing ui
+[33m3c4d20d[m Fixing some datatable error
+[33mf623d0c[m Approve 2 done
+[33m171a255[m Form pa from supervisor done
+[33m9f0226e[m Akumulasi notifikasi email
+[33mc09a8ee[m Send email to spv done
+[33m7a69816[m Send form PA to approval 1 done
+[33m1d23f1e[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33m3140754[m Split upload data & upload image
+[33me7d1e6a[m Refresh datatable setelah upload
+[33md368710[m Sebelum upload images
+[33mf586fe0[m Hide modal after upload data
+[33m55cd447[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33m2eae8f2[m Hilangkan tanda kutip
+[33m828de1d[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33mf375e24[m Fixing some
+[33m490a7d4[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33m18fbe81[m Update PKWKaryawanController.php
+[33mc95d80f[m Fix filter date
+[33m8b35a67[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33md0cd938[m Filter tanggal masuk ok
+[33m3861752[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33m0eb060a[m Update PKWKaryawanController.php
+[33ma317945[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33m0e2a28a[m Update PKWKaryawanController.php
+[33m073dc01[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33mf10a265[m Update PKWController.php
+[33mf0eb1ee[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33mfba92e8[m Update PKWController.php
+[33mcb379ab[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33m3181645[m Order by NIK
+[33m550f7d5[m Tanggal masuk menjadi start date
+[33m475d098[m Rubah ko kode bukan nama
+[33m2a0ff27[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33mde373a6[m Huruf awal besar
+[33ma1b9bca[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33m4286be5[m Update PKWKaryawanExportPayroll.php
+[33m9e96f92[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33ma4d147b[m Update PKWKaryawanExportPayroll.php
+[33m6f6583b[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33m75d6180[m Update PKWKaryawanExportPayroll.php
+[33m51508b0[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33m6ecd143[m Update PKWKaryawanExportPayroll.php
+[33ma37e522[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33m492a585[m Update PKWKaryawanExportPayroll.php
+[33m9250428[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33ma15e45b[m Nomor hp
+[33m16e7f24[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33m50b9f9f[m Penambahan pendidikan
+[33m78b7820[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33mfad770c[m Penambahan
+[33m4c03cc6[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33m2cba434[m Penambahan kolom pendidikan
+[33me441247[m Perbaikan export excel bpjs
+[33ma4f9064[m Perizinan operasional sigra
+[33m042a90a[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33m1e4d2ec[m Update OperasionalController.php
+[33mb366fff[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33m19f398c[m Fixing some
+[33m274ada6[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33mfce17ad[m Print pkwtt done
+[33m2e5dfc5[m Add level
+[33m0c43e61[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33mbaf116f[m Save keterangan pembagian dan pic di local storage supaya tidak ada perulangan input
+[33m58fe47e[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33m8c7709f[m Antisipasi yang scan 2 kali
+[33m8a9331c[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33m43aca0e[m Change image size
+[33mbb6a4ca[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33m835bd65[m Untuk yang scan 2 kali
+[33me5b6cdc[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33m0243382[m Menghilangkan fungsi tombol confirm & memberi ketarngan ambil kapan & pengambahan sound effect
+[33m13798c2[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33m2b466d3[m Tambah detail lokasi pembagian
+[33m9b878a0[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33m66bd13f[m Untuk mengisi no perjanjian
+[33m55089a1[m Perbaikan perjanjian PKWTT
+[33m398787c[m Perbaikan tanggal
+[33m82e2f47[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33m3b94681[m Upload data pembagian karyawan
+[33m99e034d[m Order by latest created
+[33mab3d9a4[m Create pembagian
+[33mf1add8f[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33m4b3284f[m Penambahan lokasi
+[33mbf6dffb[m Penambahan lokasi
+[33m834ef1b[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33m0a72ace[m Update pembagian.blade.php
+[33m402cbad[m Pembagian untuk karyawan
+[33mfd3e6c4[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33m8eaa481[m Update LegalitasController.php
+[33m05fe02d[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33md8785eb[m Update LegalitasController.php
+[33m5e9ca50[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33mcbdf53a[m Update LegalitasController.php
+[33m114c882[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33md64e0de[m Update legalitas.blade.php
+[33m8f94dd3[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33m67e0abb[m Update LegalitasController.php
+[33mc98a401[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33mf5ed7c8[m Sort expired date asc
+[33mbb620cb[m Sort asc legalitas
+[33mad8fb49[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33m9e002a8[m Update kontrak-vendor.blade.php
+[33m2f40b9e[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33m8839810[m Format tanggal indonesia di datatable
+[33m0e73e3e[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33m24cdeef[m Default sorting kontrak vendor
+[33m333b092[m Import data ( easy way ). Realy friendly
+[33md471152[m Bum
+[33md97231b[m Masuk gudang prematur
+[33m16b8195[m Submit datang ke WSP
+[33m7972044[m Submit PO
+[33ma46ca29[m Submit PR
+[33me81b536[m Format tanggal Indonesia
+[33md34b8b7[m Fungsi tanggal indonesia dengan bulan
+[33me9d9881[m Loading..
+[33me9306f0[m Order item
+[33m3831bfc[m Fixing some
+[33m156992d[m Upload foto to secure access
+[33m1ffe278[m Reload table only
+[33m2883142[m ITE Belum selesai
+[33m05a6f72[m Tombol kembalikan ke recruitment
+[33me83c9c8[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33m6c4bfe2[m Update karyawan.blade.php
+[33m66dccbb[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33m90d94bd[m Update karyawan.blade.php
+[33mef9bfe0[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33mf871f96[m Update karyawan.blade.php
+[33md058a07[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33m9ab8408[m Foto avaliability status color
+[33m45cfbff[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33m6da5681[m Pantesin dukit
+[33mdbac0f0[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33m9e79e98[m Fixing bug
+[33m6cb9ddd[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33m0a702ba[m Fixing bug
+[33ma4f76be[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33m6760be6[m Scan suhu report
+[33m8ea2801[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33mcdd0b21[m Fixing bug
+[33m1356ba0[m Update README.md
+[33m6a38aea[m Update todo list
+[33mdd864fa[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33mae385ea[m Image intervension package provider
+[33m7bd9e2d[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33m0bbff9e[m Fixing some
+[33me60be6b[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33mca62a1a[m Fixing about something
+[33mf43a70b[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33m1529d37[m Update some
+[33mbdf1d13[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33m1227d09[m Fixing some
+[33m12065e4[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33m0947bf5[m Report cek suhu
+[33m211b4ea[m Penambahan kolom view foto
+[33m9059d61[m Upload to secure access setengah
+[33mcde317b[m export to perjanjian PKWTT
+[33m8ee3e0c[m Change design
+[33ma725a5d[m Hapus menu yang tidak dibutuhkan
+[33me48e3b0[m Perapihan desain
+[33mdbf4b40[m Comment console.log
+[33m5d00337[m Export bpjs dan Ubah nama export payroll untuk penyesuaian
+[33m79d7a81[m Ubah icon
+[33me4c6a55[m Export data keryawan ke payroll
+[33m8e8b06c[m Proses pengambilan id card done
+[33mb960576[m Penyesuaian
+[33m007058b[m Tombol refresh
+[33m8c06a9e[m Menambahkan transaksi ke dalam auhorisasi
+[33m071d724[m Pengambilan kartu UI done
+[33mcfb6bbe[m Penyesuaian tampilan table
+[33m235ed1d[m Import data karyawan
+[33mfadec12[m Install intervenstion image package
+[33mb458919[m Ite orders manager
+[33m1d16a44[m New projects setengah
+[33mabb5b41[m Manage camera udah jadi setengah nya
+[33m9102b9d[m Ite merge init
+[33mee95817[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33ma1bb83e[m Fixing some
+[33mfb8267b[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33m74c135e[m Fixing some
+[33mee24207[m MD Mi Instan Done
+[33m22c251a[m SH Bahan Baku Done
+[33m8d7b6ac[m BDKT Mi Instan
+[33m5c94108[m SNI Mi Instan Done
+[33m1df0543[m Project RND
+[33m7e88b35[m Redesign login page
+[33me00c2dd[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33m0749d19[m Remove background image
+[33mcb4eb39[m Import data tool
+[33m2e9b5ad[m Optional order
+[33maf626dd[m Test upload image ke server secure access
+[33mb4b2f91[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33mf8c147d[m Fixing some
+[33me398dcf[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33mb6ce27b[m Menjadikan tanggal expired optional
+[33m97ae145[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33m24579eb[m Fixing report chart
+[33m4e66bf4[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33mad24a89[m Try 2
+[33m868bd28[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33mf2eb7e3[m Chart filter department
+[33me903108[m Fixing bug apexchart tab
+[33md08e9bb[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33m63c79d3[m Report fly catcher
+[33m8fbab28[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33m3275d9a[m Fixing some
+[33md3f5cc4[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33m72413ac[m Di merge ke kontrak vendor
+[33mc274ef7[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33m51c8b41[m Fixing some
+[33mf81166a[m Merge master vendor to kontrak vendor
+[33mc4941b1[m Fix get attachment bug
+[33mc11e295[m Menambah keterangan
+[33me9668e5[m Done menu kontrak vendor
+[33m25c9c0e[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33m765e35c[m Done master vendor
+[33m9a4f413[m Fixing some
+[33m63420c5[m Add id perusahaan
+[33m6cfb7cc[m Add status column
+[33m880713c[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33m020481f[m Not showing deleted sertifikasi
+[33m3b9a01e[m Edit and delete functionality
+[33mf1c377a[m Perizinan legalitas & sertifikasi & create
+[33m20f1b82[m Change attachment transaction type to dynamic
+[33m2321394[m Legalitas menu basic
+[33m3506824[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33m2488e8d[m Fixing some
+[33m51ec753[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33mec80237[m Change login design
+[33mcbaedf7[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33m79b9d7c[m Skip csrf token cek for some route
+[33ma4c22d4[m Little personalize
+[33mc64c127[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33m2d8883d[m Show attachment count
+[33m0de219b[m Add some
+[33mf9e0391[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33m5bf1e9d[m Fitur edit and delete sertifikasi
+[33m4a214cc[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33m0f5c059[m Implementasi select2
+[33mbc7aed0[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33m5e0e60b[m Datepicker year function of course
+[33mc02466d[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33mf725ea0[m Date function get month helper
+[33m5476225[m Master checklist schedule
+[33md35d007[m Change Name
+[33m45aad4c[m Change Name
+[33ma37eeea[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33m46b85ef[m Fixing something
+[33me49fa52[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33m283104d[m Status dan expired
+[33mcf58de7[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33mef434ef[m Download file
+[33mae7defb[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33m97ea3e5[m Persiapan fitur export excel
+[33m1527fe9[m Delete file ga jelas
+[33m6e4c201[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33m252d780[m Fitur delete
+[33m9de2158[m Fitur edit perizinan
+[33m926141c[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33m62e237d[m Full ajax
+[33m5e83568[m Show attachments
+[33m8fb91d2[m Create sertifikasi operasional
+[33m2593a15[m Auto focus di nik
+[33macf4f00[m Merge branch 'master' of https://github.com/herilesmana/newpas
+[33me9a77f6[m Commit from server
+[33m5897ca3[m Penyesuaian report
+[33mc4cc302[m Menghilangkan pengecekan ke
+[33m9a00719[m Fitur attachment di create sertifikat
+[33mbd8affd[m Fixing some
+[33m8d85f0a[m Fixing some
+[33m8d6a394[m Pekerjaan tertunda
+[33m71a2aa5[m Pengecekan suhu
+[33mde42bb0[m Fixing some
+[33md5e4b18[m Fixing some
+[33m4862c6f[m Fixing some
+[33m0383648[m Fitur aplikasi cek suhu
+[33ma193f82[m Fixing some
+[33m777feba[m Secure access
+[33m5bd412e[m Secure access
+[33m7bb5265[m Secure access
+[33m6764bfd[m Fitur fitur utama sertifikasi operasional
+[33m2eb15a1[m Sigra legalitas
+[33m411affe[m Before add to gitignore
+[33m0d82566[m Update gitignore
+[33me131d89[m Sigra app routes
+[33mf47bf93[m Sigra migration seeder
+[33me92517b[m Sigra sertifikasi operasional migration
+[33m8af19de[m Sigra models
+[33mad6f0e7[m Sigra controllers
+[33maa8a3e0[m Sigra app preparation
+[33m5a35c6e[m Service provider untuk global function
+[33m3ebcf34[m Untuk access log
+[33m2745fae[m Migration aplikasi SIGRA
+[33m5d4d54a[m Fixing some
+[33m649ec54[m Fixing some
+[33m4dbb33e[m Display data tamu
+[33m358a1c4[m Data tamu yang akan masuk
+[33mf7909fd[m Fixing some
+[33m1894da9[m Fixing some
+[33m11ddb3b[m Fixing some
+[33mcd0639d[m Fixing some
+[33m03bc660[m Fixing some
+[33mb18cbd0[m Display kbbm done
+[33m8614127[m Fixing some
+[33m1246be7[m Change font to local
+[33m48d45e6[m Untuk kebutuhan authorisasi
+[33m16b024c[m Manage Karyawan Belum Boleh Masuk
+[33ma8f32ea[m Fixing some
+[33mba1da8f[m Fixing some
+[33m91ffbfa[m All old PKW migration
+[33mf222a58[m Persiapan fitur export
+[33mfe3b3f8[m Improvment halaman karyawan
+[33m973920d[m Improve halaman calon karyawan & halaman pkwt dan pkwtt
+[33m6ebb2bc[m Improvment form data karyawan
+[33mc880f88[m Halaman form data karyawan
+[33m03b8352[m Plugin region indonesia
+[33m92bdcbc[m Email notification
+[33md2bca3b[m Manage approval master
+[33m5286141[m Some Hmmm
+[33m8f140b1[m Edit live done
+[33m52afc73[m Approve done
+[33m24cd79f[m Approve form PA page done
+[33m806a3b0[m Isi form PA done
+[33mc52201b[m Isi Form PA done
+[33me827d1c[m Done send form PKW
+[33m5305dad[m Transaksi PKWT & PKWTT
+[33ma3fca47[m Halaman manage karyawan
+[33mf8ea348[m Pemindahan karyawan ke calon karyawan
+[33mfb12d0a[m Done transaksi konfirmasi recruitment
+[33m449fa05[m Search dan filter jenis kelamin
+[33m5efa77d[m Search feature
+[33mbfd79f1[m Seeder pkw karyawan
+[33m85a6d26[m Menampilkan data karyawan
+[33mbed09c6[m Active menu
+[33m8feb66b[m Detail in home
+[33ma1ec054[m Some
+[33m9f1d186[m Authentikasi done
+[33m52b955f[m Setingan dari aplikasi lama
+[33m35d0f23[m Update README.md
+[33m414321e[m Initial commit

@@ -1,0 +1,266 @@
+[
+ {
+  "id": 1,
+  "tipe_shift_id": 1,
+  "shift_ke": 1,
+  "pengecekan_ke": 1,
+  "started_at": "07:00:00",
+  "ended_at": "08:30:00"
+ },
+ {
+  "id": 2,
+  "tipe_shift_id": 1,
+  "shift_ke": 1,
+  "pengecekan_ke": 2,
+  "started_at": "08:30:00",
+  "ended_at": "09:30:00"
+ },
+ {
+  "id": 3,
+  "tipe_shift_id": 1,
+  "shift_ke": 1,
+  "pengecekan_ke": 3,
+  "started_at": "00:09:30",
+  "ended_at": "00:10:30"
+ },
+ {
+  "id": 4,
+  "tipe_shift_id": 1,
+  "shift_ke": 1,
+  "pengecekan_ke": 4,
+  "started_at": "10:30:00",
+  "ended_at": "11:30:00"
+ },
+ {
+  "id": 5,
+  "tipe_shift_id": 1,
+  "shift_ke": 1,
+  "pengecekan_ke": 5,
+  "started_at": "11:30:00",
+  "ended_at": "13:00:00"
+ },
+ {
+  "id": 6,
+  "tipe_shift_id": 1,
+  "shift_ke": 1,
+  "pengecekan_ke": 6,
+  "started_at": "13:00:00",
+  "ended_at": "14:00:00"
+ },
+ {
+  "id": 7,
+  "tipe_shift_id": 1,
+  "shift_ke": 1,
+  "pengecekan_ke": 7,
+  "started_at": "14:00:00",
+  "ended_at": "15:00:00"
+ },
+ {
+  "id": 8,
+  "tipe_shift_id": 1,
+  "shift_ke": 2,
+  "pengecekan_ke": 1,
+  "started_at": "15:00:00",
+  "ended_at": "16:30:00"
+ },
+ {
+  "id": 9,
+  "tipe_shift_id": 1,
+  "shift_ke": 2,
+  "pengecekan_ke": 2,
+  "started_at": "16:30:00",
+  "ended_at": "17:30:00"
+ },
+ {
+  "id": 10,
+  "tipe_shift_id": 1,
+  "shift_ke": 2,
+  "pengecekan_ke": 3,
+  "started_at": "17:30:00",
+  "ended_at": "19:00:00"
+ },
+ {
+  "id": 11,
+  "tipe_shift_id": 1,
+  "shift_ke": 2,
+  "pengecekan_ke": 4,
+  "started_at": "19:00:00",
+  "ended_at": "20:00:00"
+ },
+ {
+  "id": 12,
+  "tipe_shift_id": 1,
+  "shift_ke": 2,
+  "pengecekan_ke": 5,
+  "started_at": "20:00:00",
+  "ended_at": "21:00:00"
+ },
+ {
+  "id": 13,
+  "tipe_shift_id": 1,
+  "shift_ke": 2,
+  "pengecekan_ke": 6,
+  "started_at": "21:00:00",
+  "ended_at": "22:00:00"
+ },
+ {
+  "id": 14,
+  "tipe_shift_id": 1,
+  "shift_ke": 2,
+  "pengecekan_ke": 7,
+  "started_at": "22:00:00",
+  "ended_at": "23:00:00"
+ },
+ {
+  "id": 15,
+  "tipe_shift_id": 1,
+  "shift_ke": 3,
+  "pengecekan_ke": 1,
+  "started_at": "23:00:00",
+  "ended_at": "00:30:00"
+ },
+ {
+  "id": 16,
+  "tipe_shift_id": 1,
+  "shift_ke": 3,
+  "pengecekan_ke": 2,
+  "started_at": "00:30:00",
+  "ended_at": "01:30:00"
+ },
+ {
+  "id": 17,
+  "tipe_shift_id": 1,
+  "shift_ke": 3,
+  "pengecekan_ke": 3,
+  "started_at": "01:30:00",
+  "ended_at": "02:30:00"
+ },
+ {
+  "id": 18,
+  "tipe_shift_id": 1,
+  "shift_ke": 3,
+  "pengecekan_ke": 4,
+  "started_at": "02:30:00",
+  "ended_at": "04:00:00"
+ },
+ {
+  "id": 19,
+  "tipe_shift_id": 1,
+  "shift_ke": 3,
+  "pengecekan_ke": 5,
+  "started_at": "04:00:00",
+  "ended_at": "05:00:00"
+ },
+ {
+  "id": 20,
+  "tipe_shift_id": 1,
+  "shift_ke": 3,
+  "pengecekan_ke": 6,
+  "started_at": "05:00:00",
+  "ended_at": "06:00:00"
+ },
+ {
+  "id": 21,
+  "tipe_shift_id": 1,
+  "shift_ke": 3,
+  "pengecekan_ke": 7,
+  "started_at": "06:00:00",
+  "ended_at": "07:00:00"
+ },
+ {
+  "id": 22,
+  "tipe_shift_id": 2,
+  "shift_ke": 1,
+  "pengecekan_ke": 1,
+  "started_at": "07:00:00",
+  "ended_at": "08:30:00"
+ },
+ {
+  "id": 23,
+  "tipe_shift_id": 2,
+  "shift_ke": 1,
+  "pengecekan_ke": 2,
+  "started_at": "08:30:00",
+  "ended_at": "09:30:00"
+ },
+ {
+  "id": 24,
+  "tipe_shift_id": 2,
+  "shift_ke": 1,
+  "pengecekan_ke": 3,
+  "started_at": "09:30:00",
+  "ended_at": "10:30:00"
+ },
+ {
+  "id": 25,
+  "tipe_shift_id": 2,
+  "shift_ke": 1,
+  "pengecekan_ke": 4,
+  "started_at": "10:30:00",
+  "ended_at": "12:00:00"
+ },
+ {
+  "id": 26,
+  "tipe_shift_id": 2,
+  "shift_ke": 2,
+  "pengecekan_ke": 1,
+  "started_at": "12:00:00",
+  "ended_at": "13:30:00"
+ },
+ {
+  "id": 27,
+  "tipe_shift_id": 2,
+  "shift_ke": 2,
+  "pengecekan_ke": 2,
+  "started_at": "13:30:00",
+  "ended_at": "14:30:00"
+ },
+ {
+  "id": 28,
+  "tipe_shift_id": 2,
+  "shift_ke": 2,
+  "pengecekan_ke": 3,
+  "started_at": "14:30:00",
+  "ended_at": "15:30:00"
+ },
+ {
+  "id": 29,
+  "tipe_shift_id": 2,
+  "shift_ke": 2,
+  "pengecekan_ke": 4,
+  "started_at": "15:30:00",
+  "ended_at": "17:00:00"
+ },
+ {
+  "id": 30,
+  "tipe_shift_id": 2,
+  "shift_ke": 3,
+  "pengecekan_ke": 1,
+  "started_at": "17:00:00",
+  "ended_at": "18:30:00"
+ },
+ {
+  "id": 31,
+  "tipe_shift_id": 2,
+  "shift_ke": 3,
+  "pengecekan_ke": 2,
+  "started_at": "18:30:00",
+  "ended_at": "19:30:00"
+ },
+ {
+  "id": 32,
+  "tipe_shift_id": 2,
+  "shift_ke": 3,
+  "pengecekan_ke": 3,
+  "started_at": "19:30:00",
+  "ended_at": "20:30:00"
+ },
+ {
+  "id": 33,
+  "tipe_shift_id": 2,
+  "shift_ke": 3,
+  "pengecekan_ke": 4,
+  "started_at": "20:00:00",
+  "ended_at": "22:00:00"
+ }
+]

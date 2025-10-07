@@ -1,0 +1,12 @@
+<script src="{{ asset('assets/mazer/dist/assets/static/js/initTheme.js') }}"></script>
+<script src="{{ asset('assets/mazer/dist/assets/static/js/components/dark.js') }}"></script>
+<script src="{{ asset('assets/mazer/dist/assets/extensions/perfect-scrollbar/perfect-scrollbar.min.js') }}"></script>
+<script src="{{ asset('assets/mazer/dist/assets/compiled/js/app.js') }}"></script>
+<script src="{{ asset('assets/mazer/dist/assets/extensions/apexcharts/apexcharts.min.js') }}"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.print.min.js"></script>
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
