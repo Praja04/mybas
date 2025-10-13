@@ -189,7 +189,6 @@
     @stack('styles')
 </head>
 
-
 <body id="kt_body"
     class="header-fixed header-mobile-fixed aside-enabled aside-fixed aside-minimize-hoverable page-loading aside-minimize">
     @include('sweetalert::alert')
@@ -243,15 +242,15 @@
                             </li>
                             @if (Request::is('edoc') or Request::is('edoc/*'))
                                 <li class="menu-section mt-0">
-                                    <h4 class="menu-text">E-DOC LOGG</h4>
+                                    <h4 class="menu-text">E-DOC LOG</h4>
                                     <i class="menu-icon ki ki-bold-more-hor icon-md"></i>
                                 </li>
-                                @if (in_array('edoc_security', $permissions))
+                                @if (in_array('security', $permissions))
                                     <li class="menu-item {{ request()->is('edoc') ? 'menu-item-active' : '' }}"
                                         aria-haspopup="true">
                                         <a class="menu-link" href="{{ url('edoc') }}">
                                             <i class="fas fa-home menu-icon"></i>
-                                            <span class="menu-text">Dashboard</span>
+                                            <span class="menu-text">Main Menu</span>
                                         </a>
                                     </li>
                                 @endif

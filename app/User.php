@@ -12,7 +12,13 @@ class User extends Authenticatable
     use Notifiable;
 
     protected $fillable = [
-        'name', 'position', 'status', 'username', 'password', 'dept_id'
+        'name',
+        'position',
+        'status',
+        'username',
+        'password',
+        'dept_id',
+        'email',
     ];
 
     public function group()
@@ -26,7 +32,8 @@ class User extends Authenticatable
     }
 
     protected $hidden = [
-        'password', 'remember_token',
+        'password',
+        'remember_token',
     ];
 
     protected $casts = [
