@@ -176,7 +176,6 @@
         </div>
     </div>
 
-
     <!-- Modal -->
     <div class="modal fade" id="modalkedatangan" tabindex="-1" role="dialog" aria-labelledby="modelTitleId"
         aria-hidden="true">
@@ -289,7 +288,6 @@
     </div>
 @endsection
 
-
 @push('scripts')
     <script type="text/javascript">
         function returnBarang(id_barang, dept) {
@@ -311,10 +309,11 @@
 
             $(el).tooltip({
                 trigger: trigger,
-                template: '<div class="tooltip ' + theme + ' ' + width + '" role="tooltip">\
-                                            <div class="arrow"></div>\
-                                            <div class="tooltip-inner"></div>\
-                                        </div>'
+                template: '<div class="tooltip ' + theme + ' ' + width +
+                    '" role="tooltip">\
+                                                                                                                                                    <div class="arrow"></div>\
+                                                                                                                                                    <div class="tooltip-inner"></div>\
+                                                                                                                                                </div>'
             });
         }
 
@@ -446,12 +445,20 @@
                                 <div class="bg-success"></div>
                             </div>
                             <div class="timeline-label text-primary">
-                                <span class="text-primary font-weight-bold">${response.data.data.updated_at} WIB</span>
+                                <span class="text-primary font-weight-bold">${response.data.data.updated_at ? response.data.data.updated_at + " WIB" : "Belum Diambil"} </span>
                             </div>
                             <div class="timeline-content">
-                                <b>${response.data.data.updated_by}</b> Mengambil Barang/Dokumen
-                                Bukti Foto : <hr>
-                                <img src="{{ url('e-doc/pengambilan') }}/${response.data.data.foto}" width="100px">
+                                 ${
+                                    response.data.data.updated_by
+                                    ? `<b>${response.data.data.updated_by}</b> Mengambil Barang/Dokumen
+                                    
+                                        <br>Bukti Foto:<hr>
+                                        ${response.data.data.foto 
+                                            ? `<img src="{{ url('e-doc/pengambilan') }}/${response.data.data.foto}" width="100%">`
+                                            : '<i>Tidak ada foto</i>'}`
+                                            
+                                    : '<span class="text-muted">Belum Diambil</span>'
+                                }
                             </div>
                         </div>
                     </div>

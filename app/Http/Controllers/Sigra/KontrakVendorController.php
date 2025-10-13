@@ -150,7 +150,6 @@ class KontrakVendorController extends Controller
         $kontrak->status = 'Created';
         $kontrak->transaction_id = $request->create_kontrak_transaction_id;
         $kontrak->save();
-`
         // Change attachment draft to no
         $attachment = LocalAttachment::where('transaction_id', $request->create_kontrak_transaction_id)
             ->update(['is_draft' => 'N']);
