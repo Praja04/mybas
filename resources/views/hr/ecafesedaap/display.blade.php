@@ -12,6 +12,10 @@
     <div class="container">
         <div class="card card-custom gutter-b w-100">
             <div class="card-body">
+                <h1 class="text-center"> Ecafesedaap ({{ ucfirst($kategori) }})</h1>
+
+                <input type="hidden" id="kategori" value="{{ $kategori }}">
+
                 <div class="row">
                     <div class="col-md-3">
                         <img id="image" alt="Pic" class="rounded w-100"
@@ -95,9 +99,13 @@
         }, 1000);
 
         var data = {
-            'rfid': '989989'
+            // bug selalu berkurang -1
+            'rfid': '989989',
+            'kategori': $('#kategori').val(),
         }
 
+        // console.log("inital render: ", data);
+        // count sisa porsi
         doScan(data);
 
         setTimeout(function() {
@@ -111,9 +119,11 @@
 
                 if (scanner_value != $('#temp_rfid').val()) {
                     var data = {
-                        'rfid': scanner_value
+                        'rfid': scanner_value,
+                        'kategori': $('#kategori').val(),
                     }
 
+                    // console.log("send data to controller: ", data);
                     doScan(data);
                     $('#temp_rfid').val(scanner_value);
                 }
@@ -134,7 +144,7 @@
 
         function doScan(data) {
             $('#loading').show()
-            // console.log(data);
+            // console.log( data );
 
             clearTimeout(timeOut);
             $.ajax({
@@ -165,8 +175,8 @@
                     $('#loading').hide()
                 },
                 error: function(error) {
+                    // console.error(error.responseJSON.message);
                     // warning()
-                    // console.error("response error: ", error.responseJSON.message);
                     $('#temp_rfid').val('');
                     $('#loading').hide()
                     $('.indikator-bug').show()
