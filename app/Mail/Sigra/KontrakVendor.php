@@ -30,8 +30,9 @@ class KontrakVendor extends Mailable
      */
     public function build()
     {
-        return $this->view('mail.sigra.kontrak-vendor', [
-            'kontrak_vendor' => $this->kontrak_vendor
-        ]);
+        return $this->subject('Pengingat: Kontrak Vendor Akan Segera Berakhir')
+            ->view('mail.sigra.kontrak-vendor', [
+                'kontrak_vendor' => $this->kontrak_vendor
+            ]);
     }
 }

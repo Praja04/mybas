@@ -20,7 +20,7 @@
                         </div>
                         <div class="card-toolbar">
                             <a href="javascript:" class="btn btn-primary font-weight-bolder"
-                                onClick="showModalCreateNew()"><i class="fa fa-plus-circle"></i> Buat Perizinan Baru</a>
+                                onClick="showModalCreateNew()"><i class="fa fa-plus-circle"></i> Tambah Perizinan</a>
                         </div>
                     </div>
                     <div class="card-body">
@@ -85,7 +85,7 @@
                 </div>
                 <div class="modal-body">
                     <a href="javascript:" class="btn btn-primary font-weight-bolder" onClick="openCreateSertifikat()"><i
-                            class="fa fa-plus-circle"></i> Buat Sertifikat Baru</a>
+                            class="fa fa-plus-circle"></i> Tambah Sertifikat Operasional</a>
                     <hr>
                     <div id="container-create-sertifikat" class="hide">
                         <div class="card card-custom border border-black" data-card="true">
@@ -107,13 +107,13 @@
                                     <input type="hidden" readonly id="operasional-id" name="operasional_id">
                                     <div class="form-group row">
                                         <label class="col-2 col-form-label text-right" for="tanggal-sertifikasi">Tanggal
-                                            Terbit</label>
+                                            Terbit <span class="text-danger">*</span></label>
                                         <div class="col-4">
                                             <input name="tanggal_sertifikasi" required placeholder="Tanggal Sertifikasi"
                                                 class="form-control" type="date" value="" id="tanggal-sertifikasi">
                                         </div>
                                         <label class="col-2 col-form-label text-right" for="tanggal-expired">Tanggal
-                                            Expired</label>
+                                            Expired <span class="text-danger">*</span></label>
                                         <div class="col-4">
                                             <input required name="tanggal_expired" placeholder="Tanggal Expired"
                                                 class="form-control" type="date" value="" id="tanggal-expired">
@@ -123,6 +123,7 @@
                                         <label class="col-2 col-form-label text-right" for="perizinan">Perizinan</label>
                                         <div class="col-4">
                                             <select name="perizinan" id="perizinan" class="form-control">
+                                                <option value="" selected disabled>Pilih</option>
                                                 <option value="Ada">Ada</option>
                                                 <option value="Tidak Ada">Tidak Ada</option>
                                             </select>
@@ -131,18 +132,21 @@
                                             Asli</label>
                                         <div class="col-4">
                                             <select name="dokumen_asli" id="dokumen-asli" class="form-control">
+                                                <option value="" selected disabled>Pilih</option>
                                                 <option value="Ada">Ada</option>
                                                 <option value="Tidak Ada">Tidak Ada</option>
                                             </select>
                                         </div>
                                     </div>
                                     <div class="form-group row">
-                                        <label class="col-2 col-form-label text-right" for="harga">Harga</label>
+                                        <label class="col-2 col-form-label text-right" for="harga">Harga <span
+                                                class="text-danger">*</span></label>
                                         <div class="col-4">
                                             <input required name="harga" placeholder="Harga" class="form-control"
                                                 type="number" value="" id="harga">
                                         </div>
-                                        <label class="col-2 col-form-label text-right" for="tahun">Tahun</label>
+                                        <label class="col-2 col-form-label text-right" for="tahun">Tahun <span
+                                                class="text-danger">*</span></label>
                                         <div class="col-4">
                                             <input required name="tahun" placeholder="Tahun"
                                                 class="form-control datepicker-year" type="number" value=""
@@ -276,10 +280,11 @@
                 <div class="modal-body">
                     <form id="create-perizinan-form">
                         <div class="form-group row">
-                            <label class="col-3 col-form-label text-right" for="perusahaan">Perusahaan</label>
+                            <label class="col-3 col-form-label text-right" for="perusahaan">Perusahaan <span
+                                    class="text-danger">*</span></label>
                             <div class="col-9">
                                 <select required name="perusahaan" id="perusahaan" class="form-control">
-                                    <option value=""></option>
+                                    <option value="" selected disabled>Pilih Perusahaan</option>
                                     @foreach ($perusahaan as $p)
                                         <option value="{{ $p->id }}">{{ $p->nama_perusahaan }}</option>
                                     @endforeach
@@ -287,14 +292,16 @@
                             </div>
                         </div>
                         <div class="form-group row">
-                            <label class="col-3 col-form-label text-right" for="nama-perizinan">Nama Perizinan</label>
+                            <label class="col-3 col-form-label text-right" for="nama-perizinan">Nama Perizinan <span
+                                    class="text-danger">*</span></label>
                             <div class="col-9">
                                 <input name="nama_perizinan" required placeholder="Nama Perizinan" class="form-control"
                                     type="text" value="" id="nama-perizinan">
                             </div>
                         </div>
                         <div class="form-group row">
-                            <label class="col-3 col-form-label text-right" for="nomor-perizinan">Nomor Perizinan</label>
+                            <label class="col-3 col-form-label text-right" for="nomor-perizinan">Nomor Perizinan <span
+                                    class="text-danger">*</span></label>
                             <div class="col-9">
                                 <input required name="nomor_perizinan" placeholder="Nomor Perizinan" class="form-control"
                                     type="text" value="" id="nomor-perizinan">
@@ -331,7 +338,7 @@
                             <label class="col-3 col-form-label text-right" for="edit-perusahaan">Perusahaan</label>
                             <div class="col-9">
                                 <select required name="perusahaan" id="edit-perusahaan" class="form-control">
-                                    <option value=""></option>
+                                    <option value="" selected disabled>Pilih Perusahaan</option>
                                     @foreach ($perusahaan as $p)
                                         <option value="{{ $p->id }}">{{ $p->nama_perusahaan }}</option>
                                     @endforeach
@@ -358,7 +365,7 @@
                             <div class="col-3"></div>
                             <div class="col-9">
                                 <button id="editSubmitButton" type="submit" class="btn btn-primary"><i
-                                        class="fa fa-paper-plane"></i> Submit</button>
+                                        class="fa fa-paper-plane"></i> Edit</button>
                             </div>
                         </div>
                     </form>
@@ -375,7 +382,7 @@
         var operasional_table;
 
         function openCreateSertifikat() {
-            $('.sertification-form-title').text('Create new sertification');
+            $('.sertification-form-title').text('Tambah Sertifikat Operasional');
             $('#transaction-type').val('create');
 
             // Generate new transaction_id
@@ -395,7 +402,7 @@
         }
 
         function editSertifikasi(id) {
-            $('.sertification-form-title').text('Edit ertification');
+            $('.sertification-form-title').text('Edit Sertifikat Operasional');
             $('#transaction-type').val('edit');
             closeCreateSertifikat();
             // Get current data to ajax
@@ -839,7 +846,7 @@
         getPerizinanOperasional();
 
         function showModalCreateNew() {
-            $('#modal-title').text('Buat Perizinan Baru');
+            $('#modal-title').text('Tambah Perizinan');
             $('#create-new-modal').modal('show');
         }
 

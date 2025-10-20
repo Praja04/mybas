@@ -40,8 +40,11 @@ class SigraCheckSio extends Command
         return (strtotime($expired_date) - strtotime(date('Y-m-d'))) / 86400;
     }
 
-    function sendEmail($emails, $sertifikat)
+    function sendEmail($sertifikat)
     {
+        $emails = DB::table('sigra_email_penerima')
+            ->where('jenis', 'SIO')->get();
+
         foreach ($emails as $email) {
             Mail::to($email->email_penerima)->send(new EmailSIO($sertifikat));
         }
@@ -55,9 +58,6 @@ class SigraCheckSio extends Command
     public function handle()
     {
         $certificates = [];
-        // Get emails
-        $emails = DB::table('sigra_email_penerima')
-            ->where('jenis', 'SIO')->get();
 
         $sioList = SIO::where('status', '!=', 'deleted')
             ->where('status', '!=', 'inactive')->get();
@@ -72,8 +72,8 @@ class SigraCheckSio extends Command
 
             if ($sertifikasi != null) {
                 $selisih_hari = $this->expired($sertifikasi->tanggal_habis);
-                // buat kondisi kurang dari 30 hari dan tidak melewati dari 60 hari
-                if ($selisih_hari <= 30 && $selisih_hari >= -60) {
+                // buat kondisi kurang dari 45 hari dan tidak melewati dari 60 hari
+                if ($selisih_hari <= 45 && $selisih_hari >= -60) {
                     // beresin yang mau digunakan di blade
                     $sertifikasi->perusahaan = $data->perusahaan->nama_perusahaan;
                     $sertifikasi->nama_perizinan = $data->nama_perizinan;
@@ -81,12 +81,23 @@ class SigraCheckSio extends Command
                     $sertifikasi->nik_karyawan = $data->nik_karyawan;
                     $sertifikasi->nomor_izin = $sertifikasi->nomor_izin;
                     $sertifikasi->due_date = $this->expired($sertifikasi->tanggal_habis);
-                    $this->info('sudah mau expired .. ' . $sertifikasi->tanggal_habis . ' due date ' . $sertifikasi->due_date);
+
+                    if ($selisih_hari < 0) {
+                        $this->info("[SIGRA SIO] {$sertifikasi->nama_perizinan} ({$sertifikasi->nama_karyawan}) sudah berakhir pada {$sertifikasi->tanggal_habis} (melewati " . abs($selisih_hari) . " hari)");
+                    } else {
+                        $this->info("[SIGRA SIO] {$sertifikasi->nama_perizinan} ({$sertifikasi->nama_karyawan}) akan berakhir pada {$sertifikasi->tanggal_habis} (dalam {$selisih_hari} hari)");
+                    }
+
                     $certificates[] = $sertifikasi;
                 }
             }
         }
 
-        $this->sendEmail($emails, $certificates);
+        if (!empty($certificates)) {
+            $this->sendEmail($certificates);
+            $this->info('Email notifikasi pengingat SIO telah dikirim.');
+        } else {
+            $this->info('Tidak ada SIO yang akan atau sudah expired. Tidak ada email dikirim.');
+        }
     }
 }

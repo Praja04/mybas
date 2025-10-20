@@ -887,7 +887,7 @@
                                                 </a>
                                             </li>
                                         @endif
-                                        @if (in_array('sigra_sni_mi_instan', $permissions))
+                                        {{-- @if (in_array('sigra_sni_mi_instan', $permissions))
                                             <li class="menu-item" aria-haspopup="true">
                                                 <a href="{{ url('/sigra/sni-mi-instan') }}" class="menu-link">
                                                     <i class="menu-bullet menu-bullet-line">
@@ -926,7 +926,7 @@
                                                     <span class="menu-text">SH Bahan Baku</span>
                                                 </a>
                                             </li>
-                                        @endif
+                                        @endif --}}
                                     </ul>
                                 </div>
                             </li>

@@ -30,7 +30,7 @@ class Operasional extends Mailable
      */
     public function build()
     {
-        return $this->view('mail.sigra.operasional', [
+        return $this->subject('Pengingat: Sertifikasi Operasional Akan Segera Berakhir')->view('mail.sigra.operasional', [
             'sertifikasi' => $this->sertifikasi
         ]);
     }

@@ -50,7 +50,7 @@
                         </div>
                         <div class="card-toolbar">
                             <a href="javascript:" class="btn btn-primary font-weight-bolder"
-                                onClick="showModalCreateNew()"><i class="fa fa-plus-circle"></i> Create New Vendor</a>
+                                onClick="showModalCreateNew()"><i class="fa fa-plus-circle"></i>Tambah Vendor</a>
                         </div>
                     </div>
                     <div class="p-4 export-button">
@@ -105,7 +105,7 @@
         <div class="modal-dialog modal-xl" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="exampleModalLabel">
+                    <h5 class="create-modal-title" id="exampleModalLabel">
                         <span id="kontrak-vendor-title"></span> <input id="perizinan-status" data-size="small"
                             data-switch="true" type="checkbox" checked="checked" data-on-text="Active...."
                             data-handle-width="50" data-off-text="Inactive" data-on-color="success" />
@@ -116,7 +116,7 @@
                 </div>
                 <div class="modal-body">
                     <a href="javascript:" class="btn btn-primary font-weight-bolder" onClick="openCreateKontrak()"><i
-                            class="fa fa-plus-circle"></i> Buat Kontrak Baru</a>
+                            class="fa fa-plus-circle"></i> Buat Kontrak Vendor</a>
                     <hr>
                     <div id="container-create-kontrak" class="hide">
                         <div class="card card-custom border border-black" data-card="true">
@@ -138,20 +138,21 @@
                                     <input type="hidden" readonly id="kontrak-vendor-id" name="vendor_id">
                                     <div class="form-group row">
                                         <label class="col-2 col-form-label text-right" for="tanggal-mulai">Tanggal
-                                            Mulai</label>
+                                            Mulai <span class="text-danger">*</span></label>
                                         <div class="col-4">
                                             <input name="tanggal_mulai" required placeholder="Tanggal kontrak"
                                                 class="form-control" type="date" value="" id="tanggal-mulai">
                                         </div>
                                         <label class="col-2 col-form-label text-right" for="tanggal-selesai">Tanggal
-                                            Selesai</label>
+                                            Selesai <span class="text-danger">*</span></label>
                                         <div class="col-4">
                                             <input required name="tanggal_selesai" placeholder="Tanggal Expired"
                                                 class="form-control" type="date" value="" id="tanggal-selesai">
                                         </div>
                                     </div>
                                     <div class="form-group row">
-                                        <label class="col-2 col-form-label text-right" for="value">Value</label>
+                                        <label class="col-2 col-form-label text-right" for="value">Value <span
+                                                class="text-danger">*</span></label>
                                         <div class="col-4">
                                             <input required name="value" placeholder="Value" class="form-control"
                                                 type="text" value="" id="value">
@@ -239,7 +240,7 @@
         <div class="modal-dialog" role="document">
             <div class="modal-content bg-dark border border-1">
                 <div class="modal-header">
-                    <h5 class="modal-title text-white" id="exampleModalLabel"><i class="fa fa-folder-open"></i>
+                    <h5 class="create-modal-title text-white" id="exampleModalLabel"><i class="fa fa-folder-open"></i>
                         <span>File file attachment</span>
                     </h5>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
@@ -272,7 +273,7 @@
         <div class="modal-dialog" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="ModalLabel"><span id="modal-title"></span></h5>
+                    <h5 class="create-modal-title" id="ModalLabel"><span id="create-modal-title"></span></h5>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                         <i aria-hidden="true" class="ki ki-close"></i>
                     </button>
@@ -281,27 +282,26 @@
                     <form action="" method="POST" id="create-form">
                         @csrf
                         <div class="form-group">
-                            <label for="perusahaan">Perusahaan</label>
+                            <label for="perusahaan">Perusahaan <span class="text-danger">*</span></label>
                             <div></div>
                             <select required class="form-control" name="perusahaan" id="perusahaan">
-                                <option value=""></option>
+                                <option value="" selected disabled>Pilih Perusahaan</option>
                                 @foreach ($perusahaan as $p)
                                     <option value="{{ $p->id }}">{{ $p->nama_perusahaan }}</option>
                                 @endforeach
                             </select>
                         </div>
                         <div class="form-group">
-                            <label for="nama-vendor">Nama Vendor</label>
+                            <label for="nama-vendor">Nama Vendor <span class="text-danger">*</span></label>
                             <div></div>
                             <input required id="nama-vendor" name="nama_vendor" type="text" class="form-control"
                                 placeholder="Nama Vendor">
                         </div>
                         <div class="form-group">
-                            <label for="jenis-pekerjaan">Jenis Pekerjaan</label>
+                            <label for="jenis-pekerjaan">Jenis Pekerjaan <span class="text-danger">*</span></label>
                             <div></div>
                             <select required class="form-control" name="jenis_pekerjaan" id="jenis-pekerjaan">
-                                <option value=""></option>
-                                <option value="Lainnya">Lainnya</option>
+                                <option value="" selected disabled>Pilih Jenis Pekerjaan</option>
                                 <option value="Cleaning Service">Cleaning Service</option>
                                 <option value="Security">Security</option>
                                 <option value="Bongkar Muat">Bongkar Muat</option>
@@ -309,6 +309,7 @@
                                 <option value="Klinik Internal">Klinik Internal</option>
                                 <option value="Konsumsi Karyawan">Konsumsi Karyawan</option>
                                 <option value="Lingkungan Perusahaan">Lingkungan Perusahaan</option>
+                                <option value="Lainnya">Lainnya</option>
                             </select>
                         </div>
                         <div class="form-group" id="lainnyaModal" style="display: none;">
@@ -317,14 +318,15 @@
                             <button type="button" id="tambahOpsiBtn" class="btn btn-primary mt-2">Tambah Opsi +</button>
                         </div>
                         <div class="form-group">
-                            <label for="status">Status</label>
+                            <label for="status">Status <span class="text-danger">*</span></label>
                             <div></div>
                             <select required class="form-control" name="status" id="status">
-                                <option value="active">active</option>
-                                <option value="inactive">inactive</option>
+                                <option value="" selected disabled>Pilih Status</option>
+                                <option value="active">Aktif</option>
+                                <option value="inactive">Inactive</option>
                             </select>
                         </div>
-                        <button id="submitButton" type="submit" class="btn btn-success"><i
+                        <button id="submitButton" type="submit" class="btn btn-primary"><i
                                 class="fa fa-paper-plane"></i>Submit</button>
                         <br><br>
                     </form>
@@ -338,7 +340,7 @@
         <div class="modal-dialog" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="ModalLabel"><span id="modal-title"></span></h5>
+                    <h5 class="edit-modal-title" id="ModalLabel"><span id="edit-modal-title"></span></h5>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                         <i aria-hidden="true" class="ki ki-close"></i>
                     </button>
@@ -351,7 +353,7 @@
                             <label for="perusahaan">Perusahaan</label>
                             <div></div>
                             <select required class="form-control" name="perusahaan" id="edit-perusahaan">
-                                <option value=""></option>
+                                <option value="" selected disabled>Pilih Perusahaan</option>
                                 @foreach ($perusahaan as $p)
                                     <option value="{{ $p->id }}">{{ $p->nama_perusahaan }}</option>
                                 @endforeach
@@ -367,7 +369,7 @@
                             <label for="jenis-pekerjaan">Jenis Pekerjaan</label>
                             <div></div>
                             <select required class="form-control" name="jenis_pekerjaan" id="edit-jenis-pekerjaan">
-                                <option value=""></option>
+                                <option value="" selected disabled>Pilih Jenis Pekerjaan</option>
                                 <option value="Cleaning Service">Cleaning Service</option>
                                 <option value="Security">Security</option>
                                 <option value="Bongkar Muat">Bongkar Muat</option>
@@ -375,18 +377,21 @@
                                 <option value="Klinik Internal">Klinik Internal</option>
                                 <option value="Konsumsi Karyawan">Konsumsi Karyawan</option>
                                 <option value="Lingkungan Perusahaan">Lingkungan Perusahaan</option>
+                                <option value="Lainnya">Lainnya</option>
                             </select>
                         </div>
                         <div class="form-group">
                             <label for="status">Status</label>
                             <div></div>
                             <select required class="form-control" name="status" id="edit-status">
-                                <option value="active">active</option>
-                                <option value="inactive">inactive</option>
+                                <option value="" selected disabled>Pilih Status</option>
+
+                                <option value="active">Active</option>
+                                <option value="inactive">Inactive</option>
                             </select>
                         </div>
-                        <button id="editSubmitButton" type="submit" class="btn btn-success"><i
-                                class="fa fa-paper-plane"></i>Submit</button>
+                        <button id="editSubmitButton" type="submit" class="btn btn-primary"><i
+                                class="fa fa-paper-plane"></i>Edit</button>
                         <br><br>
                     </form>
                 </div>
@@ -402,7 +407,7 @@
         var kontrak_vendor_table;
 
         function openCreateKontrak() {
-            $('.sertification-form-title').text('Create new contract');
+            $('.sertification-form-title').text('Tambah Kontrak Vendor');
             $('#transaction-type').val('create');
 
             // Generate new transaction_id
@@ -411,6 +416,7 @@
                 type: "GET",
                 dataType: "JSON",
                 success: function(response) {
+                    console.log(response.data);
                     $('#create_kontrak_transaction_id').val(response.data);
                 },
                 error: function(error) {
@@ -450,7 +456,7 @@
         });
 
         function editkontrak(id) {
-            $('.sertification-form-title').text('Edit kontrak');
+            $('.sertification-form-title').text('Edit Kontrak Vendor');
             $('#transaction-type').val('edit');
             closeCreateKontrak();
             // Get current data to ajax
@@ -751,8 +757,7 @@
             $("#kontrak-vendor-id").val(id);
 
             if (status == 'inactive') {
-                sigra / kontrak - vendor /
-                    $('#perizinan-status').bootstrapSwitch('state', false, true);
+                $('#perizinan-status').bootstrapSwitch('state', false, true);
             } else {
                 $('#perizinan-status').bootstrapSwitch('state', true, true);
             }
@@ -860,7 +865,7 @@
         getKontrakVendor();
 
         function showModalCreateNew() {
-            $('#modal-title').text('Buat Perizinan Baru');
+            $('#create-modal-title').text('Tambah Vendor');
             $('#create-new-modal').modal('show');
         }
 
@@ -881,6 +886,7 @@
                     console.log(error);
                 }
             });
+            $('#edit-modal-title').text('Edit Vendor');
             $('#edit-modal').modal('show');
         }
 

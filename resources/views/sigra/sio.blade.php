@@ -14,13 +14,14 @@
                 <div class="card card-custom">
                     <div class="card-header flex-wrap border-0 pt-6 pb-0">
                         <div class="card-title">
-                            <h3 class="card-label">SIGRA SIO
-                                <span class="d-block text-muted pt-2 font-size-sm">Manage data SIO</span>
+                            <h3 class="card-label">SIGRA SIO (Surat Izin Operator)
+                                <span class="d-block text-muted pt-2 font-size-sm">Manage data Surat Izin Operator
+                                    (SIO)</span>
                             </h3>
                         </div>
                         <div class="card-toolbar">
                             <a href="javascript:" class="btn btn-primary font-weight-bolder"
-                                onClick="showModalCreateNew()"><i class="fa fa-plus-circle"></i> Buat Perizinan Baru</a>
+                                onClick="showModalCreateNew()"><i class="fa fa-plus-circle"></i> Tambah Perizinan</a>
                         </div>
                     </div>
                     <div class="card-body">
@@ -68,7 +69,7 @@
                 </div>
                 <div class="modal-body">
                     <a href="javascript:" class="btn btn-primary font-weight-bolder" onClick="openCreateSertifikat()"><i
-                            class="fa fa-plus-circle"></i> Buat Sertifikat Baru</a>
+                            class="fa fa-plus-circle"></i> Tambah SIO</a>
                     <hr>
                     <div id="container-create-sertifikat" class="hide">
                         <div class="card card-custom border border-black" data-card="true">
@@ -90,7 +91,7 @@
                                     <input type="hidden" readonly id="sio-id" name="sio_id">
                                     <div class="form-group row">
                                         <label class="col-2 col-form-label text-right" for="tanggal-sertifikasi">Tanggal
-                                            Terbit</label>
+                                            Terbit <span class="text-danger">*</span></label>
                                         <div class="col-4">
                                             <input name="tanggal_sertifikasi" required placeholder="Tanggal Sertifikasi"
                                                 class="form-control" type="date" value="" id="tanggal-sertifikasi">
@@ -103,12 +104,14 @@
                                         </div>
                                     </div>
                                     <div class="form-group row">
-                                        <label class="col-2 col-form-label text-right" for="no-dokumen">No. Izin</label>
+                                        <label class="col-2 col-form-label text-right" for="no-dokumen">Nomor Izin <span
+                                                class="text-danger">*</span></label>
                                         <div class="col-4">
                                             <input required name="nomor_izin" placeholder="Nomor Izin"
                                                 class="form-control" type="text" value="" id="nomor-izin">
                                         </div>
-                                        <label class="col-2 col-form-label text-right" for="harga-izin">Harga</label>
+                                        <label class="col-2 col-form-label text-right" for="harga-izin">Harga <span
+                                                class="text-danger">*</span></label>
                                         <div class="col-4">
                                             <input required name="harga" placeholder="Harga" class="form-control"
                                                 type="number" value="" id="harga-perizinan">
@@ -230,7 +233,7 @@
         <div class="modal-dialog modal-lg" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="exampleModalLabel"><i class="fa fa-plus-circle"></i> Buat Perizinan Baru
+                    <h5 class="modal-title" id="exampleModalLabel"><i class="fa fa-plus-circle"></i> Tambah Perizinan
                     </h5>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                         <i aria-hidden="true" class="ki ki-close"></i>
@@ -239,10 +242,11 @@
                 <div class="modal-body">
                     <form id="create-perizinan-form">
                         <div class="form-group row">
-                            <label class="col-3 col-form-label text-right" for="perusahaan">Perusahaan</label>
+                            <label class="col-3 col-form-label text-right" for="perusahaan">Perusahaan <span
+                                    class="text-danger">*</span></label>
                             <div class="col-9">
                                 <select required name="perusahaan" id="perusahaan" class="form-control">
-                                    <option value=""></option>
+                                    <option value="" selected disabled>Pilih Perusahaan</option>
                                     @foreach ($perusahaan as $p)
                                         <option value="{{ $p->id }}">{{ $p->nama_perusahaan }}</option>
                                     @endforeach
@@ -250,23 +254,26 @@
                             </div>
                         </div>
                         <div class="form-group row">
-                            <label class="col-3 col-form-label text-right" for="nama-perizinan">Nama Perizinan</label>
+                            <label class="col-3 col-form-label text-right" for="nama-perizinan">Nama Perizinan <span
+                                    class="text-danger">*</span></label>
                             <div class="col-9">
                                 <input name="nama_perizinan" required placeholder="Nama Perizinan" class="form-control"
                                     type="text" value="" id="nama-perizinan">
                             </div>
                         </div>
                         <div class="form-group row">
-                            <label class="col-3 col-form-label text-right" for="nama-karyawan">Nama Karyawan</label>
+                            <label class="col-3 col-form-label text-right" for="nama-karyawan">Nama Karyawan <span
+                                    class="text-danger">*</span></label>
                             <div class="col-9">
                                 <input name="nama_karyawan" required placeholder="Nama Karyawan" class="form-control"
                                     type="text" value="" id="nama-karyawan">
                             </div>
                         </div>
                         <div class="form-group row">
-                            <label class="col-3 col-form-label text-right" for="nama-perizinan">Nik Karyawan</label>
+                            <label class="col-3 col-form-label text-right" for="nama-perizinan">NIK Karyawan <span
+                                    class="text-danger">*</span></label>
                             <div class="col-9">
-                                <input name="nik_karyawan" required placeholder="Nik Karyawan" class="form-control"
+                                <input name="nik_karyawan" required placeholder="NIK Karyawan" class="form-control"
                                     type="text" value="" id="nik-karyawan">
                             </div>
                         </div>
@@ -288,7 +295,8 @@
         <div class="modal-dialog modal-lg" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="editModalLabel"><i class="fa fa-tools text-dark-75"></i> Edit Perizinan
+                    <h5 class="modal-title" id="editModalLabel"><i class="fa fa-tools text-dark-75"></i> Edit Surat Izin
+                        Operator
                     </h5>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                         <i aria-hidden="true" class="ki ki-close"></i>
@@ -323,9 +331,9 @@
                             </div>
                         </div>
                         <div class="form-group row">
-                            <label class="col-3 col-form-label text-right" for="nik-karyawan">Nik Karyawan</label>
+                            <label class="col-3 col-form-label text-right" for="nik-karyawan">NIK Karyawan</label>
                             <div class="col-9">
-                                <input name="nik_karyawan" required placeholder="Nik Karyawan" class="form-control"
+                                <input name="nik_karyawan" required placeholder="NIK Karyawan" class="form-control"
                                     type="text" value="" id="edit-nik-karyawan">
                             </div>
                         </div>
@@ -333,7 +341,7 @@
                             <div class="col-3"></div>
                             <div class="col-9">
                                 <button id="editSubmitButton" type="submit" class="btn btn-primary"><i
-                                        class="fa fa-paper-plane"></i> Submit</button>
+                                        class="fa fa-paper-plane"></i> Edit</button>
                             </div>
                         </div>
                     </form>
@@ -350,7 +358,7 @@
         var sio_table;
 
         function openCreateSertifikat() {
-            $('.sertification-form-title').text('Create new certification');
+            $('.sertification-form-title').text('Tambah Surat Izin Operator (SIO)');
             $('#transaction-type').val('create');
 
             // Generate new transaction_id
@@ -370,7 +378,7 @@
         }
 
         function editSertifikasi(id) {
-            $('.sertification-form-title').text('Edit certification');
+            $('.sertification-form-title').text('Edit Surat Izin Operator');
             $('#transaction-type').val('edit');
             closeCreateSertifikat();
             // Get current data to ajax
@@ -798,7 +806,7 @@
         getPerizinansio();
 
         function showModalCreateNew() {
-            $('#modal-title').text('Buat Perizinan Baru');
+            $('#modal-title').text('Tambah SIO');
             $('#create-new-modal').modal('show');
         }
 

@@ -30,8 +30,9 @@ class SIO extends Mailable
      */
     public function build()
     {
-        return $this->view('mail.sigra.sio', [
-            'sertifikasi' => $this->sertifikasi
-        ]);
+        return $this->subject('Pengingat: SIO Akan Segera Berakhir')
+            ->view('mail.sigra.sio', [
+                'sertifikasi' => $this->sertifikasi
+            ]);
     }
 }

@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Mail;
 use App\Models\Sigra\KontrakVendor;
 use App\Models\Sigra\MasterVendor;
 use App\Mail\Sigra\KontrakVendor as EmailKontrakVendor;
+use Illuminate\Support\Facades\Log;
 
 class SigraCheckKontrakVendor extends Command
 {
@@ -42,9 +43,14 @@ class SigraCheckKontrakVendor extends Command
 
     function sendEmail($sertifikat)
     {
-        // Get an emails
         $emails = DB::table('sigra_email_penerima')
-            ->where('jenis', 'kontrak_vendor')->get();
+            ->where('jenis', 'kontrak_vendor')
+            ->get();
+
+        if ($emails->isEmpty()) {
+            Log::warning('Tidak ada penerima email untuk jenis "kontrak_vendor".');
+            return;
+        }
 
         foreach ($emails as $email) {
             Mail::to($email->email_penerima)->send(new EmailKontrakVendor($sertifikat));
@@ -69,24 +75,32 @@ class SigraCheckKontrakVendor extends Command
                 ->orderBy('tanggal_selesai', 'desc')
                 ->first();
 
-            // if($sertifikasi != null) {
-            //     if($this->expired($sertifikasi->tanggal_selesai) <= 30)
-            //     {
 
             if ($sertifikasi != null) {
                 $selisih_hari = $this->expired($sertifikasi->tanggal_selesai);
-                if ($selisih_hari <= 30 && $selisih_hari >= -60) {
-                    // Kirim email hanya jika selisih kurang dari atau sama dengan 30 hari dan belum lewat dari 60 hari
+                if ($selisih_hari <= 45 && $selisih_hari >= -60) {
+                    // Kirim email hanya jika selisih kurang dari atau sama dengan 45 hari dan expired belum lewat dari 60 hari
                     $sertifikasi->perusahaan = $data->perusahaan->nama_perusahaan;
                     $sertifikasi->nama_vendor = $data->nama_vendor;
                     $sertifikasi->jenis_pekerjaan = $data->jenis_pekerjaan;
                     $sertifikasi->due_date = $selisih_hari;
-                    $this->info('Udah mau expired nih.. ' . $sertifikasi->tanggal_selesai . ' due date ' . $sertifikasi->due_date);
+
+                    if ($selisih_hari < 0) {
+                        $this->info("[SIGRA Kontrak Vendor] {$sertifikasi->nama_vendor} ({$sertifikasi->jenis_pekerjaan}) sudah berakhir pada {$sertifikasi->tanggal_selesai} (melewati " . abs($selisih_hari) . " hari)");
+                    } else {
+                        $this->info("[SIGRA Kontrak Vendor] {$sertifikasi->nama_vendor} ({$sertifikasi->jenis_pekerjaan}) akan berakhir pada {$sertifikasi->tanggal_selesai} (dalam {$selisih_hari} hari)");
+                    }
+
                     $certificates[] = $sertifikasi;
                 }
             }
         }
 
-        $this->sendEmail($certificates);
+        if (!empty($certificates)) {
+            $this->sendEmail($certificates);
+            $this->info('Email notifikasi pengingat kontrak vendor telah dikirim.');
+        } else {
+            $this->info('Tidak ada kontrak vendor yang akan atau sudah expired. Tidak ada email dikirim.');
+        }
     }
 }
