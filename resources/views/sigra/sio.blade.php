@@ -33,6 +33,8 @@
                                     <th>NAMA PERIZINAN</th>
                                     <th>NAMA KARYAWAN</th>
                                     <th>NIK KARYAWAN</th>
+                                    <th>DEPARTEMEN</th>
+                                    <th>IKATAN DINAS</th>
                                     <th>NOMOR PERIZINAN</th>
                                     <th>STATUS</th>
                                     <th>TANGGAL TERBIT</th>
@@ -201,7 +203,7 @@
             <div class="modal-content bg-dark border border-1">
                 <div class="modal-header">
                     <h5 class="modal-title text-white" id="exampleModalLabel"><i class="fa fa-folder-open"></i>
-                        <span>File file attachment</span>
+                        <span>File attachment</span>
                     </h5>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                         <i aria-hidden="true" class="ki ki-close text-white"></i>
@@ -239,6 +241,7 @@
                         <i aria-hidden="true" class="ki ki-close"></i>
                     </button>
                 </div>
+                {{-- createmodal --}}
                 <div class="modal-body">
                     <form id="create-perizinan-form">
                         <div class="form-group row">
@@ -277,6 +280,38 @@
                                     type="text" value="" id="nik-karyawan">
                             </div>
                         </div>
+
+                        <div class="form-group row">
+                            <label class="col-3 col-form-label text-right" for="department">Departemen</label>
+                            <div class="col-9">
+                                <select name="dept_id" id="dept_id" class="form-control">
+                                    <option value="" disabled selected>-- Pilih Departemen --</option>
+                                    @foreach ($departments as $dept)
+                                        <option value="{{ $dept->id }}">{{ $dept->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group row">
+                            <label class="col-3 form-label text-right" for="tanggal-mulai-ikatan-dinas">Tanggal
+                                Mulai Ikatan Dinas</label>
+                            <div class="col-9">
+                                <input name="tanggal_mulai_ikatan_dinas" placeholder="Tanggal Mulai" class="form-control"
+                                    type="date" value="" id="tanggal-mulai-ikatan-dinas">
+                            </div>
+                        </div>
+
+                        <div class="form-group row">
+                            <label class="col-3 form-label text-right" for="tanggal-selesai-ikatan-dinas">Tanggal
+                                Selesai Ikatan Dinas</label>
+                            <div class="col-9">
+                                <input name="tanggal_selesai_ikatan_dinas" placeholder="Tanggal Selesai"
+                                    class="form-control" type="date" value=""
+                                    id="tanggal-selesai-ikatan-dinas">
+                            </div>
+                        </div>
+
                         <div class="form-group row">
                             <div class="col-3"></div>
                             <div class="col-9">
@@ -284,18 +319,20 @@
                                         class="fa fa-paper-plane"></i> Submit</button>
                             </div>
                         </div>
+
                     </form>
                 </div>
             </div>
         </div>
     </div>
 
+    {{-- updatemodal --}}
     <div class="modal fade" id="edit-modal" tabindex="-1" role="dialog" aria-labelledby="editModalSizeSm"
         aria-hidden="true">
         <div class="modal-dialog modal-lg" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="editModalLabel"><i class="fa fa-tools text-dark-75"></i> Edit Surat Izin
+                    <h5 class="modal-title" id="editModalLabel"><i class="fa fa-tools text-dark-75"></i> Edit Perizinan
                         Operator
                     </h5>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
@@ -335,6 +372,34 @@
                             <div class="col-9">
                                 <input name="nik_karyawan" required placeholder="NIK Karyawan" class="form-control"
                                     type="text" value="" id="edit-nik-karyawan">
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-3 col-form-label text-right" for="department">Departemen</label>
+                            <div class="col-9">
+                                <select name="dept_id" id="edit-dept-id" class="form-control">
+                                    <option value="" disabled selected>-- Pilih Departemen --</option>
+                                    @foreach ($departments as $dept)
+                                        <option value="{{ $dept->id }}">{{ $dept->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-3 form-label text-right" for="tanggal-mulai-ikatan-dinas">Tanggal
+                                Mulai Ikatan Dinas</label>
+                            <div class="col-9">
+                                <input name="tanggal_mulai_ikatan_dinas" placeholder="Tanggal Mulai" class="form-control"
+                                    type="date" value="" id="edit-tanggal-mulai-ikatan-dinas">
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-3 form-label text-right" for="tanggal-selesai-ikatan-dinas">Tanggal
+                                Selesai Ikatan Dinas</label>
+                            <div class="col-9">
+                                <input name="tanggal_selesai_ikatan_dinas" placeholder="Tanggal Selesai"
+                                    class="form-control" type="date" value=""
+                                    id="edit-tanggal-selesai-ikatan-dinas">
                             </div>
                         </div>
                         <div class="form-group row">
@@ -581,7 +646,6 @@
             $('#submitButton i').addClass('fa-spinner');
             $('#submitButton i').addClass('fa-spin');
 
-            // console log create-perizinan-form
             // var datas = $(this).serialize();
             // console.log(datas);
 
@@ -609,6 +673,7 @@
                     }
                 },
                 error: function(e) {
+                    // console.log(e);
                     Swal.fire('Gagal!', 'Sertifikasi gagal dibuat, coba lagi', 'error')
                         .then(function() {
                             $('#submitButton i').addClass('fa-paper-plane');
@@ -692,7 +757,7 @@
                         table.append(row);
                     }
                 },
-                errir: function(error) {
+                error: function(error) {
                     console.log(error);
                 }
             });
@@ -744,7 +809,7 @@
                             '<td>' + val.harga + '</td>' +
                             '<td>' + formatTanggalIndonesia(val.tanggal_terbit) + '</td>' +
                             '<td>' + tanggal_habis + '</td>' +
-                            '<td>' + val.keterangan + '</td>' +
+                            '<td>' + (val.keterangan ?? "-") + '</td>' +
                             // '<td>' + val.masa_berlaku + '</td>' +
                             // '<td>' + val.keterangan + '</td>' +
                             '<td>' +
@@ -822,6 +887,9 @@
                     $('#edit-nama-perizinan').val(response.data.nama_perizinan);
                     $('#edit-nama-karyawan').val(response.data.nama_karyawan);
                     $('#edit-nik-karyawan').val(response.data.nik_karyawan);
+                    $('#edit-dept-id').val(response.data.dept_id);
+                    $('#edit-tanggal-mulai-ikatan-dinas').val(response.data.tanggal_mulai_ikatan_dinas);
+                    $('#edit-tanggal-selesai-ikatan-dinas').val(response.data.tanggal_selesai_ikatan_dinas);
                     console.log('yrdy', response.data);
                 },
                 error: function(error) {
@@ -928,6 +996,106 @@
                     $('#perizinan-status').bootstrapSwitch('state', !data, true);
                 }
             });
+        });
+
+        // (create modal) validate end date
+        $('#tanggal-mulai-ikatan-dinas, #tanggal-selesai-ikatan-dinas').on('change', function() {
+            let mulai = $('#tanggal-mulai-ikatan-dinas').val();
+            let selesai = $('#tanggal-selesai-ikatan-dinas').val();
+            let errorMsg = $('#error-ikatan-dinas');
+            let submitBtn = $('#submitButton');
+
+            // hapus pesan error lama
+            errorMsg.remove();
+            $('#tanggal-selesai-ikatan-dinas').removeClass('is-invalid');
+            submitBtn.prop('disabled', false);
+
+            // aturan: kalau salah satu diisi, dua-duanya wajib
+            if (mulai && !selesai) {
+                $('#tanggal-selesai-ikatan-dinas').attr('required', true);
+            } else if (selesai && !mulai) {
+                $('#tanggal-mulai-ikatan-dinas').attr('required', true);
+            } else {
+                $('#tanggal-selesai-ikatan-dinas').removeAttr('required');
+                $('#tanggal-mulai-ikatan-dinas').removeAttr('required');
+            }
+
+            // cek urutan tanggal (kalau dua-duanya diisi)
+            if (mulai && selesai) {
+                let startDate = new Date(mulai);
+                let endDate = new Date(selesai);
+
+                if (endDate <= startDate) {
+                    $('#tanggal-selesai-ikatan-dinas')
+                        .after(
+                            '<small id="error-ikatan-dinas" class="text-danger">Tanggal selesai tidak boleh lebih awal dari tanggal mulai.</small>'
+                        );
+
+                    $('#tanggal-selesai-ikatan-dinas').addClass('is-invalid');
+
+                    // arahkan fokus ke field yang salah
+                    $('#tanggal-selesai-ikatan-dinas').focus();
+
+                    // disable submit button
+                    submitBtn.prop('disabled', true);
+                } else {
+                    // kalau tanggal valid lagi, enable tombol submit
+                    submitBtn.prop('disabled', false);
+                    $('#tanggal-selesai-ikatan-dinas').removeClass('is-invalid');
+                }
+            }
+
+
+
+        });
+
+
+        // (update modal) validate end date
+        $('#edit-tanggal-mulai-ikatan-dinas, #edit-tanggal-selesai-ikatan-dinas').on('change', function() {
+            let mulai = $('#edit-tanggal-mulai-ikatan-dinas').val();
+            let selesai = $('#edit-tanggal-selesai-ikatan-dinas').val();
+            let errorMsg = $('#edit-error-ikatan-dinas');
+            let submitBtn = $('#editSubmitButton');
+
+            // hapus pesan error lama
+            errorMsg.remove();
+            $('#edit-tanggal-selesai-ikatan-dinas').removeClass('is-invalid');
+            submitBtn.prop('disabled', false);
+
+            // aturan: kalau salah satu diisi, dua-duanya wajib
+            if (mulai && !selesai) {
+                $('#edit-tanggal-selesai-ikatan-dinas').attr('required', true);
+            } else if (selesai && !mulai) {
+                $('#edit-tanggal-mulai-ikatan-dinas').attr('required', true);
+            } else {
+                $('#edit-tanggal-selesai-ikatan-dinas').removeAttr('required');
+                $('#edit-tanggal-mulai-ikatan-dinas').removeAttr('required');
+            }
+
+            // cek urutan tanggal (kalau dua-duanya diisi)
+            if (mulai && selesai) {
+                let startDate = new Date(mulai);
+                let endDate = new Date(selesai);
+
+                if (endDate <= startDate) {
+                    $('#edit-tanggal-selesai-ikatan-dinas')
+                        .after(
+                            '<small id="error-ikatan-dinas" class="text-danger">Tanggal selesai tidak boleh lebih awal dari tanggal mulai.</small>'
+                        );
+
+                    $('#edit-tanggal-selesai-ikatan-dinas').addClass('is-invalid');
+
+                    // arahkan fokus ke field yang salah
+                    $('#edit-tanggal-selesai-ikatan-dinas').focus();
+
+                    // disable submit button
+                    submitBtn.prop('disabled', true);
+                } else {
+                    // kalau tanggal valid lagi, enable tombol submit
+                    submitBtn.prop('disabled', false);
+                    $('#edit-tanggal-selesai-ikatan-dinas').removeClass('is-invalid');
+                }
+            }
         });
     </script>
 @endpush
