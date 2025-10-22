@@ -27,6 +27,7 @@
                             class="indikator-berhasil indikator"></div>
                         <div style="border-top: 10px solid #F64E60; width: 120%; display:none"
                             class="indikator-gagal indikator"></div>
+
                         <div class="form-group">
                             <label for="nik" style="font-weight: bold; font-size: 29px">NIK</label>
                             <input id="nik" type="text" class="form-control text-white"
@@ -96,12 +97,12 @@
                 $('.indikator').removeClass('not-visible')
             }
             number = number + 1
-        }, 1000);
+        }, 1500);
 
         var data = {
-            // bug selalu berkurang -1
             'rfid': '989989',
             'kategori': $('#kategori').val(),
+            'cek': true
         }
 
         // console.log("inital render: ", data);
@@ -159,7 +160,7 @@
                         timeOut = setTimeout(function() {
                             $('.indikator-berhasil').hide()
 
-                            $('#image').attr('src', 'data:image/jpg;base64,..');
+                            $('#image').attr('src', "{{ asset('assets/media/images/no-image.jpg') }}");
                             $('#name').val('');
                             $('#nik').val('');
                             $('#department').val('');
@@ -192,7 +193,11 @@
             $('.indikator-gagal').hide()
             $('.message').html(message)
 
-            $('#image').attr('src', 'data:image/jpg;base64,' + data.image);
+            if (data.image) {
+                $('#image').attr('src', 'data:image/jpg;base64,' + data.image);
+            } else {
+                $('#image').attr('src', "{{ asset('assets/media/images/no-image.jpg') }}");
+            }
             $('#name').val(data.name);
             $('#nik').val(data.nik);
             $('#department').val(data.department);
@@ -216,7 +221,11 @@
                 return;
             }
 
-            $('#image').attr('src', 'data:image/jpg;base64,' + data.image);
+            if (data.image) {
+                $('#image').attr('src', 'data:image/jpg;base64,' + data.image);
+            } else {
+                $('#image').attr('src', "{{ asset('assets/media/images/no-image.jpg') }}");
+            }
             $('#name').val(data.name);
             $('#nik').val(data.nik);
             $('#department').val(data.department);
