@@ -45,6 +45,7 @@ class SigraCheckOperasional extends Command
     {
         $emails = DB::table('sigra_email_penerima')
             ->where('jenis', 'operasional')
+            ->where('active', 'Y')
             ->get();
 
         if ($emails->isEmpty()) {

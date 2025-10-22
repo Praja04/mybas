@@ -45,7 +45,9 @@ class SigraChecklegalitas extends Command
     {
         // Get an emails
         $emails = DB::table('sigra_email_penerima')
-            ->where('jenis', 'legalitas')->get();
+            ->where('jenis', 'legalitas')
+            ->where('active', 'Y')
+            ->get();
 
         if ($emails->isEmpty()) {
             Log::warning('Tidak ada penerima email untuk jenis "legalitas".');

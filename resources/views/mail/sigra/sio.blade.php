@@ -34,6 +34,8 @@
                     <th style="border: 1px solid #ddd; padding: 8px;">Nomor Perizinan</th>
                     <th style="border: 1px solid #ddd; padding: 8px;">Nama Karyawan</th>
                     <th style="border: 1px solid #ddd; padding: 8px;">NIK Karyawan</th>
+                    <th style="border: 1px solid #ddd; padding: 8px;">Depatemen</th>
+                    <th style="border: 1px solid #ddd; padding: 8px;">Tanggal Ikatan Dinas</th>
                     <th style="border: 1px solid #ddd; padding: 8px;">Tanggal Expired</th>
                     <th style="border: 1px solid #ddd; padding: 8px;">Sisa Waktu</th>
                     <th style="border: 1px solid #ddd; padding: 8px;">Status</th>
@@ -48,6 +50,11 @@
                         <td style="border: 1px solid #ddd; padding: 8px;">{{ $sertifikat->nomor_izin }}</td>
                         <td style="border: 1px solid #ddd; padding: 8px;">{{ $sertifikat->nama_karyawan }}</td>
                         <td style="border: 1px solid #ddd; padding: 8px;">{{ $sertifikat->nik_karyawan }}</td>
+                        <td style="border: 1px solid #ddd; padding: 8px;">{{ $sertifikat->department }}</td>
+                        <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">
+                            {{ @formatTanggalIndonesia($sertifikat->tanggal_mulai_ikatan_dinas) }} -
+                            {{ @formatTanggalIndonesia($sertifikat->tanggal_selesai_ikatan_dinas) }}
+                        </td>
                         <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">
                             {{ @formatTanggalIndonesia($sertifikat->tanggal_habis) }}
                         </td>

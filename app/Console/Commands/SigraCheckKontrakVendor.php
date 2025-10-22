@@ -45,6 +45,7 @@ class SigraCheckKontrakVendor extends Command
     {
         $emails = DB::table('sigra_email_penerima')
             ->where('jenis', 'kontrak_vendor')
+            ->where('active', 'Y')
             ->get();
 
         if ($emails->isEmpty()) {
