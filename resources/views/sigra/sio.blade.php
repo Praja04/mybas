@@ -282,9 +282,10 @@
                         </div>
 
                         <div class="form-group row">
-                            <label class="col-3 col-form-label text-right" for="department">Departemen</label>
+                            <label class="col-3 col-form-label text-right" for="department">Departemen <span
+                                    class="text-danger">*</span></label>
                             <div class="col-9">
-                                <select name="dept_id" id="dept_id" class="form-control">
+                                <select required name="dept_id" id="dept_id" class="form-control">
                                     <option value="" disabled selected>-- Pilih Departemen --</option>
                                     @foreach ($departments as $dept)
                                         <option value="{{ $dept->id }}">{{ $dept->name }}</option>
@@ -343,7 +344,8 @@
                     <form id="edit-perizinan-form">
                         <input type="hidden" name="id" id="edit-id">
                         <div class="form-group row">
-                            <label class="col-3 col-form-label text-right" for="edit-perusahaan">Perusahaan</label>
+                            <label class="col-3 col-form-label text-right" for="edit-perusahaan">Perusahaan <span
+                                    class="text-danger">*</span></label>
                             <div class="col-9">
                                 <select required name="perusahaan" id="edit-perusahaan" class="form-control">
                                     <option value=""></option>
@@ -354,30 +356,34 @@
                             </div>
                         </div>
                         <div class="form-group row">
-                            <label class="col-3 col-form-label text-right" for="nama-perizinan">Nama Perizinan</label>
+                            <label class="col-3 col-form-label text-right" for="nama-perizinan">Nama Perizinan <span
+                                    class="text-danger">*</span></label>
                             <div class="col-9">
                                 <input name="nama_perizinan" required placeholder="Nama Perizinan" class="form-control"
                                     type="text" value="" id="edit-nama-perizinan">
                             </div>
                         </div>
                         <div class="form-group row">
-                            <label class="col-3 col-form-label text-right" for="nama-karyawan">Nama Karyawan</label>
+                            <label class="col-3 col-form-label text-right" for="nama-karyawan">Nama Karyawan <span
+                                    class="text-danger">*</span></label>
                             <div class="col-9">
                                 <input name="nama_karyawan" required placeholder="Nama Karyawan" class="form-control"
                                     type="text" value="" id="edit-nama-karyawan">
                             </div>
                         </div>
                         <div class="form-group row">
-                            <label class="col-3 col-form-label text-right" for="nik-karyawan">NIK Karyawan</label>
+                            <label class="col-3 col-form-label text-right" for="nik-karyawan">NIK Karyawan <span
+                                    class="text-danger">*</span></label>
                             <div class="col-9">
                                 <input name="nik_karyawan" required placeholder="NIK Karyawan" class="form-control"
                                     type="text" value="" id="edit-nik-karyawan">
                             </div>
                         </div>
                         <div class="form-group row">
-                            <label class="col-3 col-form-label text-right" for="department">Departemen</label>
+                            <label class="col-3 col-form-label text-right" for="department">Departemen <span
+                                    class="text-danger">*</span></label>
                             <div class="col-9">
-                                <select name="dept_id" id="edit-dept-id" class="form-control">
+                                <select required name="dept_id" id="edit-dept-id" class="form-control">
                                     <option value="" disabled selected>-- Pilih Departemen --</option>
                                     @foreach ($departments as $dept)
                                         <option value="{{ $dept->id }}">{{ $dept->name }}</option>

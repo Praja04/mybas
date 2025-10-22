@@ -12,7 +12,6 @@ use App\Models\Sigra\SIOSertifikasi;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Models\LocalAttachment;
 
-
 class SioController extends Controller
 {
     public function index()
@@ -35,7 +34,7 @@ class SioController extends Controller
             'nama_karyawan' => 'required|string|max:150',
             'nik_karyawan' => 'required|string|max:150',
 
-            'dept_id' => 'nullable|integer|exists:departments,id',
+            'dept_id' => 'required|integer|exists:departments,id',
             'tanggal_mulai_ikatan_dinas' => 'nullable|date|required_with:tanggal_selesai_ikatan_dinas',
             'tanggal_selesai_ikatan_dinas' => 'nullable|date|required_with:tanggal_mulai_ikatan_dinas|after_or_equal:tanggal_mulai_ikatan_dinas',
         ]);
@@ -45,7 +44,7 @@ class SioController extends Controller
         $SIO->nama_perizinan = $request->nama_perizinan;
         $SIO->nama_karyawan = $request->nama_karyawan;
         $SIO->nik_karyawan = $request->nik_karyawan;
-        $SIO->dept_id = $request->dept_id ?? null;
+        $SIO->dept_id = $request->dept_id;
         $SIO->tanggal_mulai_ikatan_dinas = $request->tanggal_mulai_ikatan_dinas ?? null;
         $SIO->tanggal_selesai_ikatan_dinas = $request->tanggal_selesai_ikatan_dinas ?? null;
 
@@ -70,12 +69,15 @@ class SioController extends Controller
             $expired = '-';
             if ($sertifikasi) {
                 $overdue = $this->expired($sertifikasi->tanggal_habis);
-                if ($overdue >= 30) {
+
+                if (!is_numeric($overdue)) {
                     $expired = 'warning';
-                } elseif ($overdue > 0) {
-                    $expired = 'danger';
-                } else {
-                    $expired = 'success';
+                } elseif ($overdue > 45) {
+                    $expired = 'success'; // masih aman
+                } elseif ($overdue > 0 && $overdue <= 45) {
+                    $expired = 'warning'; // akan expired dalam 45 hari
+                } elseif ($overdue <= 0) {
+                    $expired = 'danger'; // sudah expired
                 }
             }
 
@@ -211,8 +213,8 @@ class SioController extends Controller
             'nama_perizinan' => 'required|string|max:150',
             'nama_karyawan' => 'required|string|max:150',
             'nik_karyawan' => 'required|string|max:150',
+            'dept_id' => 'required|integer|exists:departments,id',
 
-            'dept_id' => 'nullable|integer|exists:departments,id',
             'tanggal_mulai_ikatan_dinas' => 'nullable|date|required_with:tanggal_selesai_ikatan_dinas',
             'tanggal_selesai_ikatan_dinas' => 'nullable|date|required_with:tanggal_mulai_ikatan_dinas|after_or_equal:tanggal_mulai_ikatan_dinas',
         ]);
