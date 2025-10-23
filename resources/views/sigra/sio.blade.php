@@ -25,6 +25,27 @@
                         </div>
                     </div>
                     <div class="card-body">
+                        <div class="pb-4">
+                            <h6 class="card-label mb-2">Keterangan:</h6>
+                            <div class="d-flex flex-column gap-2">
+                                <div class="d-flex align-items-center mb-1">
+                                    <span class="label label-inline label-outline-success mr-2"
+                                        style="width: 25px; text-align:center;">-</span>
+                                    <span>= Masih berlaku (aman)</span>
+                                </div>
+                                <div class="d-flex align-items-center mb-1">
+                                    <span class="label label-inline label-outline-warning mr-2"
+                                        style="width: 25px; text-align:center;">-</span>
+                                    <span>= Akan segera habis masa berlakunya (kurang dari 45 hari)</span>
+                                </div>
+                                <div class="d-flex align-items-center mb-1">
+                                    <span class="label label-inline label-outline-danger mr-2"
+                                        style="width: 25px; text-align:center;">-</span>
+                                    <span>= Sudah tidak berlaku (expired)</span>
+                                </div>
+                            </div>
+                        </div>
+
                         <table id="sio" class="table table-hover">
                             <thead>
                                 <tr>
@@ -96,23 +117,24 @@
                                             Terbit <span class="text-danger">*</span></label>
                                         <div class="col-4">
                                             <input name="tanggal_sertifikasi" required placeholder="Tanggal Sertifikasi"
-                                                class="form-control" type="date" value="" id="tanggal-sertifikasi">
+                                                class="form-control" type="date" value=""
+                                                id="tanggal-sertifikasi">
                                         </div>
                                         <label class="col-2 col-form-label text-right" for="tanggal-expired">Tanggal
                                             Expired</label>
                                         <div class="col-4">
-                                            <input name="tanggal_expired" placeholder="Tanggal Expired" class="form-control"
-                                                type="date" value="" id="tanggal-expired">
+                                            <input name="tanggal_expired" placeholder="Tanggal Expired"
+                                                class="form-control" type="date" value="" id="tanggal-expired">
                                         </div>
                                     </div>
                                     <div class="form-group row">
-                                        <label class="col-2 col-form-label text-right" for="no-dokumen">Nomor Izin <span
-                                                class="text-danger">*</span></label>
+                                        <label class="col-2 col-form-label text-right" for="nomor-izin">Nomor Izin Surat
+                                            <span class="text-danger">*</span></label>
                                         <div class="col-4">
-                                            <input required name="nomor_izin" placeholder="Nomor Izin"
+                                            <input required name="nomor_izin" placeholder="Nomor Izin Surat"
                                                 class="form-control" type="text" value="" id="nomor-izin">
                                         </div>
-                                        <label class="col-2 col-form-label text-right" for="harga-izin">Harga <span
+                                        <label class="col-2 col-form-label text-right" for="harga-perizinan">Harga <span
                                                 class="text-danger">*</span></label>
                                         <div class="col-4">
                                             <input required name="harga" placeholder="Harga" class="form-control"
@@ -120,7 +142,8 @@
                                         </div>
                                     </div>
                                     <div class="form-group row">
-                                        <label class="col-2 col-form-label text-right" for="remarks">Keterangan</label>
+                                        <label class="col-2 col-form-label text-right" for="remarks">Keterangan
+                                            (Remarks)</label>
                                         <div class="col-4">
                                             <textarea name="remarks" id="remarks" cols="30" rows="3" class="form-control"></textarea>
                                         </div>
@@ -152,7 +175,7 @@
                                                             </div>
                                                         </div>
                                                         <div class="dropzone-toolbar">
-                                                            <span class="dropzone-delete" data-dz-remove="">
+                                                            <span class="dropzone-delete" data-dz-remove>
                                                                 <i class="flaticon2-cross"></i>
                                                             </span>
                                                         </div>
@@ -473,6 +496,7 @@
                     console.log(error);
                 }
             })
+            resetSertifikatValidation();
             $('#container-create-sertifikat').slideDown();
         }
 
@@ -508,19 +532,30 @@
             });
         }
 
-        // update close create sertifikat
         function closeCreateSertifikat() {
-            $('#id').val('');
-            $('#nomor-izin').val('');
-            $('#tanggal-sertifikasi').val('');
-            $('#tanggal-expired').val('');
-            $('#instansi').val('');
-            $('#harga-perizinan').val('');
-            $('#remarks').val('');
+            myDropzone5.removeAllFiles(true);
 
-            myDropzone5.removeAllFiles();
-
+            $('#form-create-sertifikat')[0].reset();
+            resetSertifikatValidation();
             $('#container-create-sertifikat').slideUp();
+        }
+
+        function resetSertifikatValidation() {
+            $('#error-tanggal-sertifikat').remove();
+            $('#tanggal-expired').removeClass('is-invalid');
+            $('.submit-button').prop('disabled', false);
+        }
+
+        function resetCreateIkatanDinasValidation() {
+            $('.error-ikatan-dinas').remove();
+            $('#tanggal-selesai-ikatan-dinas').removeClass('is-invalid');
+            $('#submitButton').prop('disabled', false);
+        }
+
+        function resetEditIkatanDinasValidation() {
+            $('.error-ikatan-dinas').remove();
+            $('#edit-tanggal-selesai-ikatan-dinas').removeClass('is-invalid');
+            $('#editSubmitButton').prop('disabled', false);
         }
 
         var id = '#dropzone';
@@ -541,7 +576,9 @@
             clickable: id + " .dropzone-select",
             headers: {
                 'X-CSRF-TOKEN': '{{ csrf_token() }}'
-            }
+            },
+            acceptedFiles: ".jpeg,.jpg,.png,.pdf,.doc,.docx",
+            dictInvalidFileType: "Tipe file tidak diperbolehkan. Hanya gambar dan dokumen yang bisa diunggah"
         });
 
         myDropzone5.on("sending", function(file, xhr, formData) {
@@ -878,6 +915,7 @@
 
         function showModalCreateNew() {
             $('#modal-title').text('Tambah SIO');
+            resetCreateIkatanDinasValidation();
             $('#create-new-modal').modal('show');
         }
 
@@ -903,6 +941,7 @@
                     console.log(error);
                 }
             });
+            resetEditIkatanDinasValidation();
             $('#edit-modal').modal('show');
         }
 
@@ -1008,11 +1047,9 @@
         $('#tanggal-mulai-ikatan-dinas, #tanggal-selesai-ikatan-dinas').on('change', function() {
             let mulai = $('#tanggal-mulai-ikatan-dinas').val();
             let selesai = $('#tanggal-selesai-ikatan-dinas').val();
-            let errorMsg = $('#error-ikatan-dinas');
             let submitBtn = $('#submitButton');
 
-            // hapus pesan error lama
-            errorMsg.remove();
+            $('#tanggal-selesai-ikatan-dinas').next('.error-ikatan-dinas').remove();
             $('#tanggal-selesai-ikatan-dinas').removeClass('is-invalid');
             submitBtn.prop('disabled', false);
 
@@ -1031,10 +1068,10 @@
                 let startDate = new Date(mulai);
                 let endDate = new Date(selesai);
 
-                if (endDate <= startDate) {
+                if (endDate < startDate) {
                     $('#tanggal-selesai-ikatan-dinas')
                         .after(
-                            '<small id="error-ikatan-dinas" class="text-danger">Tanggal selesai tidak boleh lebih awal dari tanggal mulai.</small>'
+                            '<small class="error-ikatan-dinas text-danger">Tanggal selesai tidak boleh lebih awal dari tanggal mulai.</small>'
                         );
 
                     $('#tanggal-selesai-ikatan-dinas').addClass('is-invalid');
@@ -1050,21 +1087,15 @@
                     $('#tanggal-selesai-ikatan-dinas').removeClass('is-invalid');
                 }
             }
-
-
-
         });
-
 
         // (update modal) validate end date
         $('#edit-tanggal-mulai-ikatan-dinas, #edit-tanggal-selesai-ikatan-dinas').on('change', function() {
             let mulai = $('#edit-tanggal-mulai-ikatan-dinas').val();
             let selesai = $('#edit-tanggal-selesai-ikatan-dinas').val();
-            let errorMsg = $('#edit-error-ikatan-dinas');
             let submitBtn = $('#editSubmitButton');
 
-            // hapus pesan error lama
-            errorMsg.remove();
+            $('#edit-tanggal-selesai-ikatan-dinas').next('.error-ikatan-dinas').remove();
             $('#edit-tanggal-selesai-ikatan-dinas').removeClass('is-invalid');
             submitBtn.prop('disabled', false);
 
@@ -1083,10 +1114,10 @@
                 let startDate = new Date(mulai);
                 let endDate = new Date(selesai);
 
-                if (endDate <= startDate) {
+                if (endDate < startDate) {
                     $('#edit-tanggal-selesai-ikatan-dinas')
                         .after(
-                            '<small id="error-ikatan-dinas" class="text-danger">Tanggal selesai tidak boleh lebih awal dari tanggal mulai.</small>'
+                            '<small class="error-ikatan-dinas text-danger" >Tanggal selesai tidak boleh lebih awal dari tanggal mulai.</small>'
                         );
 
                     $('#edit-tanggal-selesai-ikatan-dinas').addClass('is-invalid');
@@ -1102,6 +1133,49 @@
                     $('#edit-tanggal-selesai-ikatan-dinas').removeClass('is-invalid');
                 }
             }
+        });
+
+        $('#tanggal-sertifikasi, #tanggal-expired').on('change', function() {
+            let mulai = $('#tanggal-sertifikasi').val();
+            let selesai = $('#tanggal-expired').val();
+            let errorMsg = $('#error-tanggal-sertifikat');
+            let submitBtn = $('.submit-button');
+
+            errorMsg.remove();
+            $('#tanggal-expired').removeClass('is-invalid');
+            submitBtn.prop('disabled', false);
+
+            // cek urutan tanggal
+            if (mulai && selesai) {
+                let startDate = new Date(mulai);
+                let endDate = new Date(selesai);
+
+                if (endDate < startDate) {
+                    $('#tanggal-expired')
+                        .after(
+                            '<small id="error-tanggal-sertifikat" class="text-danger">Tanggal Expired tidak boleh lebih awal dari Tanggal Terbit.</small>'
+                        );
+
+                    $('#tanggal-expired').addClass('is-invalid');
+                    submitBtn.prop('disabled', true);
+                } else {
+                    // kalau valid, pastikan tombol bisa diklik lagi
+                    submitBtn.prop('disabled', false);
+                    $('#tanggal-expired').removeClass('is-invalid');
+                }
+            }
+        });
+
+        $('#create-new-modal').on('hidden.bs.modal', function() {
+            resetCreateIkatanDinasValidation();
+            $('#tanggal-mulai-ikatan-dinas').val('');
+            $('#tanggal-selesai-ikatan-dinas').val('');
+        });
+
+        $('#edit-modal').on('hidden.bs.modal', function() {
+            resetEditIkatanDinasValidation();
+            $('#tanggal-mulai-ikatan-dinas').val('');
+            $('#tanggal-selesai-ikatan-dinas').val('');
         });
     </script>
 @endpush

@@ -27,7 +27,6 @@ class SioController extends Controller
 
     public function tambahPerizinan(Request $request)
     {
-
         $request->validate([
             'perusahaan' => 'required|integer|exists:sigra_perusahaan,id',
             'nama_perizinan' => 'required|string|max:150',
@@ -124,7 +123,14 @@ class SioController extends Controller
 
     public function buatSertifikat(Request $request)
     {
-        // dd($request->all()); // Debug request data
+        $request->validate([
+            'sio_id' => 'required|integer|exists:sigra_sio,id',
+            'nomor_izin' => 'required|string|max:50',
+            'harga' => 'required|integer|min:0',
+            'tanggal_sertifikasi' => 'required|date',
+            'tanggal_expired' => 'nullable|date|after_or_equal:tanggal_terbit',
+            'remarks' => 'nullable|string',
+        ]);
 
         $sertifikasi = new SIOSertifikasi;
         $sertifikasi->id_sio = $request->sio_id;
@@ -149,15 +155,26 @@ class SioController extends Controller
 
     public function getSertifikat($id)
     {
-        $sertifikasi = SIOSertifikasi::where('id_sio', $id)->where('status', '!=', 'deleted')->orderBy('tanggal_habis', 'desc')->get();
-        foreach ($sertifikasi as $s) {
-            $s->attachments;
-        }
+        $sertifikasi = SIOSertifikasi::with('attachments') // eager load
+            ->where('id_sio', $id)
+            ->where('status', '!=', 'deleted')
+            ->orderByDesc('tanggal_habis')
+            ->get();
+
         return response()->json(['success' => 1, 'data' => $sertifikasi], 200);
     }
 
     public function ubahSertifikat(Request $request)
     {
+        $request->validate([
+            'sio_id' => 'required|integer|exists:sigra_sio,id',
+            'nomor_izin' => 'required|string|max:50',
+            'harga' => 'required|integer|min:0',
+            'tanggal_sertifikasi' => 'required|date',
+            'tanggal_expired' => 'nullable|date|after_or_equal:tanggal_terbit',
+            'remarks' => 'nullable|string',
+        ]);
+
         // dd($request->all());
         $sertifikasi = SIOSertifikasi::find($request->id);
         $sertifikasi->id_sio = $request->sio_id;
