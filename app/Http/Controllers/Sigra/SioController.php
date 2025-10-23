@@ -71,7 +71,7 @@ class SioController extends Controller
                 $overdue = $this->expired($sertifikasi->tanggal_habis);
 
                 if (!is_numeric($overdue)) {
-                    $expired = 'warning';
+                    $expired = 'secondary';
                 } elseif ($overdue > 45) {
                     $expired = 'success'; // masih aman
                 } elseif ($overdue > 0 && $overdue <= 45) {

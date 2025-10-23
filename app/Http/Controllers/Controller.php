@@ -60,7 +60,7 @@ class Controller extends BaseController
         return $date . '/' . $month . '/' . $year;
     }
 
-    function expirled($expired_date)
+    function expired($expired_date)
     {
         if (empty($expired_date) || strtotime($expired_date) === false) {
             return null;
