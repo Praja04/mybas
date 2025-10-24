@@ -710,3 +710,7 @@ require base_path('routes/halo-security.php');
 require base_path('routes/kedatangan-beras.php');
 require base_path('routes/kedatangan-lauk.php');
 require base_path('routes/pengecekan-boiler.php');
+
+Route::fallback(function () {
+    abort(404);
+});

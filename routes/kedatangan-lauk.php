@@ -27,7 +27,7 @@ Route::group(['middleware' => ['auth', 'rules', 'access_log']], function () {
     // delete pengirim catering
     Route::delete('/cateringbas/pengirim-catering/delete/{id}', 'CateringController@deletepengirimCatering')->name('cateringbas.delete.pengirim');
     // get kuesioner by id_transaksi
-    Route::get('/{id_transaksi}', 'CateringController@kuesionerPengirimBarang')->name('cateringbas.kuesioner');
+    Route::get('/cateringbas/kuesioner-kendaraan/{id_transaksi}', 'CateringController@kuesionerPengirimBarang')->name('cateringbas.kuesioner');
     // post kuesioner
     Route::post('/cateringbas/kuesioner-kendaraan/tambah', 'CateringController@storeKuesionerKendaraan')->name('cateringbas.store.kuesioner');
     // get id_transakasi cateringbas jumlahpesanan 
@@ -101,7 +101,3 @@ Route::group(['middleware' => ['auth', 'rules', 'access_log']], function () {
     Route::get('/cateringbas/delete-menu-utama/{id}', 'CateringController@deleteMenuUtama')->name('cateringbas.delete.menuutama');
     Route::get('/cateringbas/delete-menu-pendamping/{id}', 'CateringController@deleteMenuPendamping')->name('cateringbas.delete.menuPendamping');
 });
-
-
-
-
