@@ -229,12 +229,11 @@
     </div>
 @endsection
 
-
 @push('scripts')
     <script src="{{ url('/assets/plugins/custom/webcam/webcam.min.js') }}"></script>
 
     <script type="text/javascript">
-        $('#DeptPenerima').select2();
+        $('#dept-penerima').select2();
         Webcam.set({
             width: 320,
             height: 240,
@@ -254,107 +253,124 @@
                 $('.Card_' + menu).toggle('slow')
                 $('.MenuAppend').html('');
                 $('.MenuAppend').append(`
-                        <div class="card card-custom">
-                            <form action="{{ url('edoc/post_kedatangan') }}" method="POST" enctype="multipart/form-data"
-                                id="PostKedatanganForm">
-                                @csrf
-                                <div class="card-body">
-                                    <div class="form-group mb-8">
-                                        <div class="alert alert-custom alert-default" role="alert">
-                                            <div class="alert-icon"><i class="flaticon-warning text-primary"></i></div>
-                                            <div class="alert-text">
-                                                FORM KEDATANGAN BARANG
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="form-group row">
-                                        <label for="example-search-input" class="col-sm-2 col-form-label text-right">Tanggal Kedatangan
-                                        </label>
-                                        <div class="col-sm-10">
-                                            <input class="form-control" type="date" name="tanggal_kedatangan" id=""
-                                                value="{{ date('Y-m-d') }}" />
-                                        </div>
-                                    </div>
-                                    <div class="form-group row">
-                                        <label for="example-search-input" class="col-sm-2 col-form-label text-right">Department Penerima</label>
-                                        <div class="col-sm-10">
-                                            <select class="form-control" name="dept_penerima" id="DeptPenerima" style="width: 100%;" required>
-                                                <option value="" selected disabled>DEPT PENERIMA</option>
-                                                @foreach ($dept as $item)
-                                                @if ($item->status == 1)
-                                                <option value="{{ $item->name }}">{{ $item->name }}</option>
-                                                @endif
-                                                @endforeach
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="form-group row">
-                                        <label for="example-search-input" class="col-sm-2 col-form-label text-right">Nama Penerima</label>
-                                        <div class="col-sm-10">
-                                            <input class="form-control" type="text" name="nama_penerima" id="NamaPenerima"
-                                                placeholder="Contoh : Muhammad Machbub Marzuqi" />
-                                            <small class="form-text text-muted">*Opsional - Barang / dokumen untuk siapa</small>
-                                        </div>
-                                    </div>
-                                    <div class="form-group row">
-                                        <label for="example-email-input" class="col-sm-2 col-form-label text-right">Nama PT Pengirim</label>
-                                        <div class="col-sm-10">
-                                            <input class="form-control" type="text" name="nama_pt_pengirim" id="" required
-                                                placeholder="Nama PT yang mengirimkan barang atau dokumen" />
-                                            <small class="form-text text-danger">*Wajib</small>
-                                        </div>
-                                    </div>
-                                    <div class="form-group row">
-                                        <label for="example-email-input" class="col-sm-2 col-form-label text-right">No Identitas Pengantar <br />( kurir )</label>
-                                        <div class="col-sm-10">
-                                            <input class="form-control" type="text" name="no_identitas_kurir" id="" required placeholder="Nomor KTP / Nomor SIM" />
-                                            <small class="form-text text-danger">*Wajib</small>
-                                        </div>
-                                    </div>
-                                    <div class="form-group row">
-                                        <label for="example-email-input" class="col-sm-2 col-form-label text-right">Foto Kartu Identitas <br />( kurir )</label>
-                                        <div class="col-sm-10">
-                                            <div id="foto-ktp-results" ></div>
-                                            <input type="text" name="foto_kartu_identitas_kurir" class="ktpValuePicture" hidden required value="" />
-                                            <button class="btn btn-secondary btn-sm" type="button" onClick="openFotoKTPCamera()">Ambil Foto</button>
-                                        </div>
-                                    </div>
-                                    <div class="form-group row">
-                                        <label for="example-email-input" class="col-sm-2 col-form-label text-right">Nama Pengantar <br />( kurir )</label>
-                                        <div class="col-sm-10">
-                                            <input class="form-control" type="text" name="nama_kurir" id="" required placeholder="Nama orang yang mengirimkan barang atau dokumen" />
-                                            <small class="form-text text-danger">*Wajib</small>
-                                        </div>
-                                    </div>
-                                    <div class="form-group row">
-                                        <label for="example-email-input" class="col-sm-2 col-form-label text-right">No. HP Pengantar <br />( kurir )</label>
-                                        <div class="col-sm-10">
-                                            <input class="form-control" type="text" name="no_hp_kurir" id="" required placeholder="Contoh : 081238273282" />
-                                            <small class="form-text text-danger">*Wajib</small>
-                                        </div>
-                                    </div>
-                                    <div class=" form-group row">
-                                        <label for="example-email-input" class="col-sm-2 col-form-label text-right">Jenis Barang</label>
-                                        <div class="col-sm-10">
-                                            <select class="form-control" name="jenis" id="" required>
-                                                <option value="" selected disabled>JENIS BARANG</option>
-                                                <option value="Barang">Barang</option>
-                                                <option value="Dokumen">Dokumen</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="form-group">
-                                        <textarea class="form-control" name="keterangan" id="" rows="5" placeholder="Keterangan"></textarea>
-                                        <small class="form-text text-muted">*Opsional</small>
-                                    </div>
-                                    <div class="float-right mb-4">
-                                        <button type="submit" class="btn btn-info btn-lg mr-2 SaveKedatangan"
-                                            style="border-radius: 10px;">
-                                            Simpan</button>
-                                    </div>
-                                </div>
-                            </form>
-                        </div>`);
+<div class="card card-custom">
+    <form action="{{ url('edoc/post_kedatangan') }}" method="POST" enctype="multipart/form-data" id="PostKedatanganForm">
+        @csrf
+        <div class="card-body">
+            <div class="form-group mb-8">
+                <div class="alert alert-custom alert-default" role="alert">
+                    <div class="alert-icon"><i class="flaticon-warning text-primary"></i></div>
+                    <div class="alert-text">
+                        <h3>
+                            FORM KEDATANGAN BARANG
+                        </h3>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group row">
+                <label for="tanggal-kedatangan" class="col-sm-2 col-form-label text-right">Tanggal Kedatangan
+                </label>
+                <div class="col-sm-10">
+                    <input class="form-control" type="date" name="tanggal_kedatangan" id="tanggal-kedatangan"
+                        value="{{ date('Y-m-d') }}" required />
+                    <small class="form-text text-danger">*Wajib</small>
+                </div>
+            </div>
+            <div class="form-group row">
+                <label for="dept-penerima" class="col-sm-2 col-form-label text-right">Departemen Penerima</label>
+                <div class="col-sm-10">
+                    <select class="form-control" name="dept_penerima" id="dept-penerima" style="width: 100%;" required>
+                        <option value="" selected disabled>Pilih Departemen</option>
+                        @foreach ($dept as $item)
+                            @if ($item->status == 1)
+                                <option value="{{ $item->name }}">{{ $item->name }}</option>
+                            @endif
+                        @endforeach
+                    </select>
+                    <small class="form-text text-danger">*Wajib</small>
+                </div>
+            </div>
+            <div class="form-group row">
+                <label for="nama-penerima" class="col-sm-2 col-form-label text-right">Nama Penerima</label>
+                <div class="col-sm-10">
+                    <input class="form-control" type="text" name="nama_penerima" id="nama-penerima"
+                        placeholder="Contoh : Muhammad Machbub Marzuqi" required />
+                    <small class="form-text text-danger">*Wajib</small>
+                </div>
+            </div>
+            <div class="form-group row">
+                <label for="nama-pt-pengirim" class="col-sm-2 col-form-label text-right">Nama PT Pengirim</label>
+                <div class="col-sm-10">
+                    <input class="form-control" type="text" name="nama_pt_pengirim" id="nama-pt-pengirim" required
+                        placeholder="Nama PT yang mengirimkan barang atau dokumen" />
+                    <small class="form-text text-danger">*Wajib</small>
+                </div>
+            </div>
+            <div class="form-group row">
+                <label for="no-identitas-kurir" class="col-sm-2 col-form-label text-right">No Identitas Pengantar
+                    <br />( kurir )</label>
+                <div class="col-sm-10">
+                    <input class="form-control" type="text" name="no_identitas_kurir" id="no-identitas-kurir"
+                        required placeholder="Nomor KTP / Nomor SIM" />
+                    <small class="form-text text-danger">*Wajib</small>
+                </div>
+            </div>
+            <div class="form-group row">
+                <label for="foto-kartu-identitas-kurir" class="col-sm-2 col-form-label text-right">Foto Kartu Identitas
+                    <br />( kurir )</label>
+                <div class="col-sm-10">
+                    <div id="foto-ktp-results"></div>
+                    <input type="text" name="foto_kartu_identitas_kurir" class="ktpValuePicture" hidden value=""
+                        id="foto-kartu-identitas-kurir" required />
+                    <button class="btn btn-secondary btn-sm" type="button" onClick="openFotoKTPCamera()">Ambil
+                        Foto</button>
+                    <small class="form-text text-danger">*Wajib</small>
+                </div>
+            </div>
+            <div class="form-group row">
+                <label for="nama-kurir" class="col-sm-2 col-form-label text-right">Nama Pengantar <br />( kurir
+                    )</label>
+                <div class="col-sm-10">
+                    <input class="form-control" type="text" name="nama_kurir" id="nama-kurir" required
+                        placeholder="Nama orang yang mengirimkan barang atau dokumen" />
+                    <small class="form-text text-danger">*Wajib</small>
+                </div>
+            </div>
+            <div class="form-group row">
+                <label for="no-hp-kurir" class="col-sm-2 col-form-label text-right">No. HP Pengantar <br />( kurir
+                    )</label>
+                <div class="col-sm-10">
+                    <input class="form-control" type="text" name="no_hp_kurir" id="no-hp-kurir" required
+                        placeholder="Contoh : 081238273282" />
+                    <small class="form-text text-danger">*Wajib</small>
+                </div>
+            </div>
+            <div class=" form-group row">
+                <label for="jenis" class="col-sm-2 col-form-label text-right">Jenis Barang</label>
+                <div class="col-sm-10">
+                    <select class="form-control" name="jenis" id="jenis" required>
+                        <option value="" selected disabled>Pilih Jenis Barang</option>
+                        <option value="Barang">Barang</option>
+                        <option value="Dokumen">Dokumen</option>
+                    </select>
+                    <small class="form-text text-danger">*Wajib</small>
+                </div>
+            </div>
+            <div class="form-group row">
+                <label for="keterangan" class="col-sm-2 col-form-label text-right">Keterangan</label>
+                <div class="col-sm-10">
+                    <textarea class="form-control" name="keterangan" id="keterangan" rows="5" placeholder="Masukan keterangan"></textarea>
+                    <small class="form-text text-muted">*Opsional</small>
+                </div>
+            </div>
+            <div class="float-right mb-4">
+                <button type="submit" class="btn btn-info btn-lg mr-2 SaveKedatangan" style="border-radius: 10px;">
+                    Simpan</button>
+            </div>
+        </div>
+    </form>
+</div>
+`);
                 Webcam.reset();
             } else if (menu == 'Pengambilan') {
                 $('.gutter-b').toggle('slow')
@@ -519,69 +535,75 @@
                                 $('.AppendScanPengambilan').html('');
                                 $('.AppendScanPengambilan').append(
                                     '\
-                                                                                                        <h2 class="text-center">\
-                                                                                                            <span class="badge badge-info"><i class="fas fa-user text-white mr-2"><b class="NamaPIC text-white ml-3">' +
+                                                                                                                                                <h2 class="text-center">\
+                                                                                                                                                    <span class="badge badge-info"><i class="fas fa-user text-white mr-2"><b class="NamaPIC text-white ml-3">' +
                                     response.data.pic.nama +
                                     '</b></i></span>\
-                                                                                                            <span class="badge badge-info"><i class="fas fa-users mr-2 text-white"><b class="DeptPIC text-white ml-3">' +
+                                                                                                                                                    <span class="badge badge-info"><i class="fas fa-users mr-2 text-white"><b class="DeptPIC text-white ml-3">' +
                                     response.data.pic.dept +
                                     '</b></i></span>\
-                                                                                                                <input type="hidden" class="form-control DeptValue" value="' +
-                                    response.data.pic.dept + '" />\
-                                                                                                            </div>\
-                                                                                                        </h2>\
-                                                                                                        <div class="card card-custom gutter-b">\
-                                                                                                            <div class="card-header card-header-tabs-line">\
-                                                                                                                <div class="card-toolbar">\
-                                                                                                                    <ul class="nav nav-tabs nav-bold nav-tabs-line tabappend">\
-                                                                                                                    </ul>\
-                                                                                                                </div>\
-                                                                                                            </div>\
-                                                                                                            <div class="card-body">\
-                                                                                                                <div class="tab-content tabappendkonten">\
-                                                                                                            </div>')
+                                                                                                                                                        <input type="hidden" class="form-control DeptValue" value="' +
+                                    response.data.pic.dept +
+                                    '" />\
+                                                                                                                                                    </div>\
+                                                                                                                                                </h2>\
+                                                                                                                                                <div class="card card-custom gutter-b">\
+                                                                                                                                                    <div class="card-header card-header-tabs-line">\
+                                                                                                                                                        <div class="card-toolbar">\
+                                                                                                                                                            <ul class="nav nav-tabs nav-bold nav-tabs-line tabappend">\
+                                                                                                                                                            </ul>\
+                                                                                                                                                        </div>\
+                                                                                                                                                    </div>\
+                                                                                                                                                    <div class="card-body">\
+                                                                                                                                                        <div class="tab-content tabappendkonten">\
+                                                                                                                                                    </div>'
+                                )
 
                                 $.each(response.data.groupBy, function(key, value) {
                                     $('.tabappend').append(
                                         '\
-                                                                                                    <li class="nav-item">\
-                                                                                                        <a class="nav-link" onclick="ShowTable(\'' +
+                                                                                                                                            <li class="nav-item">\
+                                                                                                                                                <a class="nav-link" onclick="ShowTable(\'' +
                                         key +
                                         '\')" data-toggle="tab" href="#tab_' + key +
                                         '">\
-                                                                                                            <span class="nav-icon"><i class="fas fa-list-alt"></i></span>\
-                                                                                                            <span class="nav-text">' +
-                                        key + '</span>\
-                                                                                                        </a>\
-                                                                                                    </li>')
+                                                                                                                                                    <span class="nav-icon"><i class="fas fa-list-alt"></i></span>\
+                                                                                                                                                    <span class="nav-text">' +
+                                        key +
+                                        '</span>\
+                                                                                                                                                </a>\
+                                                                                                                                            </li>'
+                                    )
                                 });
                                 $.each(response.data.groupBy, function(key, value) {
                                     $('.tabappendkonten').append(
                                         '\
-                                                                                                        <div class="tab-pane fade show" id="tab_' +
+                                                                                                                                                <div class="tab-pane fade show" id="tab_' +
                                         key +
                                         '" role="tabpanel" aria-labelledby="tab_' + key +
                                         '">\
-                                                                                                            <div class="table-responsive">\
-                                                                                                                <table class="table table-bordered">\
-                                                                                                                    <thead>\
-                                                                                                                        <tr class="text-center">\
-                                                                                                                            <th>No.</th>\
-                                                                                                                            <th>PILIH</th>\
-                                                                                                                            <th style="background-color: #DFF2E9">#</th>\
-                                                                                                                            <th>Dept Penerima</th>\
-                                                                                                                            <th>Nama PT Pengirim</th>\
-                                                                                                                            <th>Tanggal Kedatangan</th>\
-                                                                                                                            <th>Keterangan</th>\
-                                                                                                                            <th>Petugas</th>\
-                                                                                                                            <th>Status</th>\
-                                                                                                                        </tr>\
-                                                                                                                    </thead>\
-                                                                                                                    <tbody id="table_' +
-                                        key + '">\
-                                                                                                                    </tbody>\
-                                                                                                                </table>\
-                                                                                                            </div>')
+                                                                                                                                                    <div class="table-responsive">\
+                                                                                                                                                        <table class="table table-bordered">\
+                                                                                                                                                            <thead>\
+                                                                                                                                                                <tr class="text-center">\
+                                                                                                                                                                    <th>No.</th>\
+                                                                                                                                                                    <th>PILIH</th>\
+                                                                                                                                                                    <th style="background-color: #DFF2E9">#</th>\
+                                                                                                                                                                    <th>Dept Penerima</th>\
+                                                                                                                                                                    <th>Nama PT Pengirim</th>\
+                                                                                                                                                                    <th>Tanggal Kedatangan</th>\
+                                                                                                                                                                    <th>Keterangan</th>\
+                                                                                                                                                                    <th>Petugas</th>\
+                                                                                                                                                                    <th>Status</th>\
+                                                                                                                                                                </tr>\
+                                                                                                                                                            </thead>\
+                                                                                                                                                            <tbody id="table_' +
+                                        key +
+                                        '">\
+                                                                                                                                                            </tbody>\
+                                                                                                                                                        </table>\
+                                                                                                                                                    </div>'
+                                    )
                                 });
                             }
                         },
@@ -641,15 +663,16 @@
                                             sortable: false,
                                             render: function(data, type, row) {
                                                 return '<div class="form-group">\
-                                                                                                                    <div class="checkbox-list">\
-                                                                                                                        <label class="checkbox">\
-                                                                                                                            <input type="checkbox" name="id_barang[]" value="' +
-                                                    row.id_barang + '" class="checks" />\
-                                                                                                                                <span></span>\
-                                                                                                                            Pilih\
-                                                                                                                    </label>\
-                                                                                                                </div>\
-                                                                                                            </div>'
+                                                                                                                                                            <div class="checkbox-list">\
+                                                                                                                                                                <label class="checkbox">\
+                                                                                                                                                                    <input type="checkbox" name="id_barang[]" value="' +
+                                                    row.id_barang +
+                                                    '" class="checks" />\
+                                                                                                                                                                        <span></span>\
+                                                                                                                                                                    Pilih\
+                                                                                                                                                            </label>\
+                                                                                                                                                        </div>\
+                                                                                                                                                    </div>'
                                             }
                                         },
                                         {
@@ -893,6 +916,15 @@
         $('#PostKedatanganForm').submit(function() {
             $('.SaveKedatangan').addClass('disabled', true);
             $('.SaveKedatangan').addClass('spinner spinner-left pl-15');
+        });
+
+        $(document).on('click', '.SaveKedatangan', function(e) {
+            const foto = $('.ktpValuePicture').val();
+            if (!foto || foto.trim() === '') {
+                e.preventDefault();
+                alert('Silakan ambil foto kartu identitas kurir terlebih dahulu.');
+                return false;
+            }
         });
     </script>
 @endpush
