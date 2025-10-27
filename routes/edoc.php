@@ -9,9 +9,8 @@ Route::prefix('/edoc')->group(function () {
         Route::post('/post_pengiriman', 'EDocLogController@post_pengiriman');
     });
 
-    // kalo mau update ke server tambah di middleware 'https'
-    // tambahkan https
-    Route::group(['middleware' => ['auth', 'access_log', 'rules']], function () {
+    //  !PRODUCTION WAJIB tambah middleware 'https'
+    Route::group(['middleware' => ['auth', 'access_log', 'rules', 'https']], function () {
         Route::get('/', 'EDocLogController@index');
         Route::post('/post_kedatangan', 'EDocLogController@post_kedatangan');
         Route::get('/masterpic', 'EDocLogController@masterpic');
