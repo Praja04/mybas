@@ -7,6 +7,7 @@ use App\Department;
 use App\Http\Controllers\Controller;
 use App\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class UserController extends Controller
 {
@@ -33,24 +34,24 @@ class UserController extends Controller
             'name' => 'required',
             'auth_group_id' => 'required',
             'department_id' => 'required',
-            'password' => 'required', 
+            'password' => 'required',
         ]);
-    
+
         $ifExist = User::where('username', $request->username)->first();
-    
+
         if ($ifExist) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'Username sudah ada',
             ]);
         }
-    
+
         $password = null;
-    
+
         if ($request->id == null) {
             $password = bcrypt($request->password);
         }
-    
+
         $data = User::updateOrCreate(
             ['id' => $request->id],
             [
@@ -60,15 +61,15 @@ class UserController extends Controller
                 'auth_group_id' => $request->auth_group_id,
                 'dept_id' => $request->department_id,
                 'status' => 1, // 'status' => $request->status,
-                'password' => $password, 
+                'password' => $password,
             ]
         );
-    
+
         if ($data) {
             $user = User::find($data->id);
             $user->group()->associate($request->auth_group_id);
             $user->save();
-    
+
             return response()->json([
                 'status' => 'success',
                 'message' => 'Data berhasil disimpan',
@@ -80,7 +81,7 @@ class UserController extends Controller
             ]);
         }
     }
-    
+
 
     public function update($id)
     {
@@ -160,4 +161,51 @@ class UserController extends Controller
         }
     }
 
+    // user
+    public function showProfile()
+    {
+        $user = Auth::user();
+
+        return view('auth.edit-profile', compact('user'));
+    }
+
+    public function updateProfile(Request $request)
+    {
+        $request->validate([
+            'id'    => 'required|integer|exists:users,id',
+            'name'  => 'required|string|max:150',
+            'email' => 'required|email|max:255|unique:users,email,' . $request->id,
+        ], [
+            'email.unique'    => 'Email sudah digunakan oleh pengguna lain.',
+        ]);
+
+        $user = User::find($request->id);
+
+        if (!$user) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Akun tidak ditemukan',
+            ]);
+        }
+
+        $user->name = $request->name;
+        $user->email = $request->email;
+
+        // update password jika ada
+        // if ($request->has('password') && $request->password) {
+        //     $user->password = bcrypt($request->password);
+        // }
+
+        if ($user->save()) {
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Profil berhasil diperbarui',
+            ]);
+        } else {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Profil gagal diperbarui',
+            ]);
+        }
+    }
 }
