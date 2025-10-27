@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Sigra;
 
+use App\Department;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Sigra\Perusahaan;
@@ -11,24 +12,40 @@ use App\Models\Sigra\SIOSertifikasi;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Models\LocalAttachment;
 
-
 class SioController extends Controller
 {
     public function index()
     {
-        $perisahaan = Perusahaan::all();
+        $departments = Department::where('status', '1')->get();
+
+        $perusahaan = Perusahaan::all();
         return view('sigra.sio', [
-            'perusahaan' => $perisahaan
+            'perusahaan' => $perusahaan,
+            'departments' => $departments
         ]);
     }
 
     public function tambahPerizinan(Request $request)
     {
+        $request->validate([
+            'perusahaan' => 'required|integer|exists:sigra_perusahaan,id',
+            'nama_perizinan' => 'required|string|max:150',
+            'nama_karyawan' => 'required|string|max:150',
+            'nik_karyawan' => 'required|string|max:150',
+
+            'dept_id' => 'required|integer|exists:departments,id',
+            'tanggal_mulai_ikatan_dinas' => 'nullable|date|required_with:tanggal_selesai_ikatan_dinas',
+            'tanggal_selesai_ikatan_dinas' => 'nullable|date|required_with:tanggal_mulai_ikatan_dinas|after_or_equal:tanggal_mulai_ikatan_dinas',
+        ]);
+
         $SIO = new SIO;
         $SIO->id_perusahaan = $request->perusahaan;
         $SIO->nama_perizinan = $request->nama_perizinan;
         $SIO->nama_karyawan = $request->nama_karyawan;
         $SIO->nik_karyawan = $request->nik_karyawan;
+        $SIO->dept_id = $request->dept_id;
+        $SIO->tanggal_mulai_ikatan_dinas = $request->tanggal_mulai_ikatan_dinas ?? null;
+        $SIO->tanggal_selesai_ikatan_dinas = $request->tanggal_selesai_ikatan_dinas ?? null;
 
         $SIO->save();
         return response()->json(['success' => 1, 'message' => 'Berhasil membuat perizinan operasional']);
@@ -37,7 +54,8 @@ class SioController extends Controller
     public function getAll()
     {
         $sertifikasi_sio = [];
-        $sioList = SIO::where('status', '!=', 'deleted')->get();
+        $sioList = SIO::with('department')->where('status', '!=', 'deleted')->get();
+
 
         foreach ($sioList as $key => $sio) {
             $label_status = $sio->status == 'inactive' ? 'secondary' : 'success';
@@ -50,14 +68,21 @@ class SioController extends Controller
             $expired = '-';
             if ($sertifikasi) {
                 $overdue = $this->expired($sertifikasi->tanggal_habis);
-                if ($overdue >= 30) {
-                    $expired = 'warning';
-                } elseif ($overdue > 0) {
-                    $expired = 'danger';
-                } else {
-                    $expired = 'success';
+
+                if (!is_numeric($overdue)) {
+                    $expired = 'secondary';
+                } elseif ($overdue > 45) {
+                    $expired = 'success'; // masih aman
+                } elseif ($overdue > 0 && $overdue <= 45) {
+                    $expired = 'warning'; // akan expired dalam 45 hari
+                } elseif ($overdue <= 0) {
+                    $expired = 'danger'; // sudah expired
                 }
             }
+
+            $mulai = $sio->tanggal_mulai_ikatan_dinas ? date('Y', strtotime($sio->tanggal_mulai_ikatan_dinas)) : null;
+            $selesai = $sio->tanggal_selesai_ikatan_dinas ? date('Y', strtotime($sio->tanggal_selesai_ikatan_dinas)) : null;
+            $ikatan_dinas = $mulai && $selesai ? "$mulai - $selesai" : '-';
 
             $array = [
                 $key + 1,
@@ -68,6 +93,14 @@ class SioController extends Controller
                 </a>',
                 $sio->nama_karyawan ?? '-',
                 $sio->nik_karyawan ?? '-',
+                // "<a class='text-hover-dark' href='javascript:' onClick=\"showDepartmentModal('$sio->id')\">
+                //     <i class='text-danger font-size-sm'></i>
+                //     " . ($sio->dept_id ?? 'Belum ditambahkan') . "
+                // </a>",
+
+                $sio->department->name ?? '-',
+                $ikatan_dinas ?? '-',
+
                 $sertifikasi ? $sertifikasi->nomor_izin : '-',
                 '<span class="label label-inline label-' . $label_status . '">' . $sio->status . '</span>',
                 $sertifikasi ? $this->formatTanggal($sertifikasi->tanggal_terbit) : '-',
@@ -83,14 +116,21 @@ class SioController extends Controller
         return response()->json([
             'success' => 1,
             'message' => 'Get data perizinan succeed',
-            'data' => $sertifikasi_sio
+            'data' => $sertifikasi_sio,
         ]);
     }
 
 
     public function buatSertifikat(Request $request)
     {
-        // dd($request->all()); // Debug request data
+        $request->validate([
+            'sio_id' => 'required|integer|exists:sigra_sio,id',
+            'nomor_izin' => 'required|string|max:50',
+            'harga' => 'required|integer|min:0',
+            'tanggal_sertifikasi' => 'required|date',
+            'tanggal_expired' => 'nullable|date|after_or_equal:tanggal_terbit',
+            'remarks' => 'nullable|string',
+        ]);
 
         $sertifikasi = new SIOSertifikasi;
         $sertifikasi->id_sio = $request->sio_id;
@@ -115,15 +155,26 @@ class SioController extends Controller
 
     public function getSertifikat($id)
     {
-        $sertifikasi = SIOSertifikasi::where('id_sio', $id)->where('status', '!=', 'deleted')->orderBy('tanggal_habis', 'desc')->get();
-        foreach ($sertifikasi as $s) {
-            $s->attachments;
-        }
+        $sertifikasi = SIOSertifikasi::with('attachments') // eager load
+            ->where('id_sio', $id)
+            ->where('status', '!=', 'deleted')
+            ->orderByDesc('tanggal_habis')
+            ->get();
+
         return response()->json(['success' => 1, 'data' => $sertifikasi], 200);
     }
 
     public function ubahSertifikat(Request $request)
     {
+        $request->validate([
+            'sio_id' => 'required|integer|exists:sigra_sio,id',
+            'nomor_izin' => 'required|string|max:50',
+            'harga' => 'required|integer|min:0',
+            'tanggal_sertifikasi' => 'required|date',
+            'tanggal_expired' => 'nullable|date|after_or_equal:tanggal_terbit',
+            'remarks' => 'nullable|string',
+        ]);
+
         // dd($request->all());
         $sertifikasi = SIOSertifikasi::find($request->id);
         $sertifikasi->id_sio = $request->sio_id;
@@ -173,10 +224,26 @@ class SioController extends Controller
             return response()->json(['error' => 'data gak ketemu'], 404);
         }
 
+        $request->validate([
+            'id' => 'required|exists:sigra_sio,id',
+            'perusahaan' => 'required|integer|exists:sigra_perusahaan,id',
+            'nama_perizinan' => 'required|string|max:150',
+            'nama_karyawan' => 'required|string|max:150',
+            'nik_karyawan' => 'required|string|max:150',
+            'dept_id' => 'required|integer|exists:departments,id',
+
+            'tanggal_mulai_ikatan_dinas' => 'nullable|date|required_with:tanggal_selesai_ikatan_dinas',
+            'tanggal_selesai_ikatan_dinas' => 'nullable|date|required_with:tanggal_mulai_ikatan_dinas|after_or_equal:tanggal_mulai_ikatan_dinas',
+        ]);
+
         $data->id_perusahaan = $request->perusahaan;
         $data->nama_perizinan = $request->nama_perizinan;
         $data->nama_karyawan = $request->nama_karyawan;
         $data->nik_karyawan = $request->nik_karyawan;
+        $data->dept_id = $request->dept_id;
+        $data->tanggal_mulai_ikatan_dinas = $request->tanggal_mulai_ikatan_dinas;
+        $data->tanggal_selesai_ikatan_dinas = $request->tanggal_selesai_ikatan_dinas;
+
         $data->save();
 
         return response()->json(['success' => 1, 'message' => 'Update data succeed']);

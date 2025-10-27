@@ -22,7 +22,6 @@
             border: 0.15em solid currentColor;
             border-radius: 50%;
             transform: translateY(-0.075em);
-
             display: grid;
             place-content: center;
         }
@@ -48,7 +47,6 @@
         }
 
         @media only screen and (max-width: 600px) {
-
             .kategori-c-1 {
                 padding-bottom: 70px;
             }
@@ -89,23 +87,28 @@
                                         <tr>
                                             <th>Shift</th>
                                             <td>{{ isset($data->shift) ? $data->shift : '-' }}</td>
-                                        </tr>                                        
+                                        </tr>
                                         <tr>
                                             <th>Status Cek Kendaraan</th>
                                             <td>
                                                 @if (isset($data->status_cek_kendaraan))
                                                     @if ($data->status_cek_kendaraan === 'sudah')
-                                                        <span class="badge text-bg-success" style="background-color: #00a816; color: white;">Sudah</span>
+                                                        <span class="badge text-bg-success"
+                                                            style="background-color: #00a816; color: white;">Sudah</span>
                                                     @elseif ($data->status_cek_kendaraan === 'menunggu approval')
-                                                        <span class="badge text-bg-success" style="background-color: #e5de0e; color: white;">Menunggu Approval</span>
+                                                        <span class="badge text-bg-success"
+                                                            style="background-color: #e5de0e; color: white;">Menunggu
+                                                            Approval</span>
                                                     @else
-                                                        <span class="badge text-bg-danger" style="background-color: #a80000; color: white;">Belum</span>
+                                                        <span class="badge text-bg-danger"
+                                                            style="background-color: #a80000; color: white;">Belum</span>
                                                     @endif
                                                 @else
-                                                    <span class="badge" style="background-color: grey; color: white;">-</span>
+                                                    <span class="badge"
+                                                        style="background-color: grey; color: white;">-</span>
                                                 @endif
                                             </td>
-                                        </tr>                                        
+                                        </tr>
                                         {{-- <tr>
                                             <th>Status Cek Kendaraan</th>
                                             <td>
@@ -132,7 +135,8 @@
                     <div class="col-md-9 table-responsive">
                         <form method="POST" action="{{ route('cateringbas.store.kuesioner') }}">
                             @csrf
-                            <input type="hidden" name="id_transaksi" value="{{ isset($data->id_transaksi) ? $data->id_transaksi : '' }}">
+                            <input type="hidden" name="id_transaksi"
+                                value="{{ isset($data->id_transaksi) ? $data->id_transaksi : '' }}">
                             <table class="table table-hover table-striped" id="table-group" style="width:100%">
                                 <thead>
                                     <tr style="background-color: #a80000; color: #fff">
@@ -490,23 +494,23 @@
 @endsection
 
 @push('scripts')
-<script>
-    document.addEventListener("DOMContentLoaded", function() {
-        var statusCekKendaraan = "{{ isset($data->status_cek_kendaraan) ? $data->status_cek_kendaraan : '' }}";
-        console.log(statusCekKendaraan);
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            var statusCekKendaraan = "{{ isset($data->status_cek_kendaraan) ? $data->status_cek_kendaraan : '' }}";
+            console.log(statusCekKendaraan);
 
-        if (statusCekKendaraan === 'menunggu approval') {
-            document.getElementById("submitPenilaian").style.display = "none";
-            document.getElementById("penilaianTerkirim").style.display = "inline-block";
-        } else if (statusCekKendaraan === '') {
-            console.log("Status cek kendaraan tidak tersedia.");
-            var spanElement = document.createElement("span");
-            spanElement.textContent = " - ";
-            document.body.appendChild(spanElement); 
-            document.getElementById("submitPenilaian").style.display = "none";
-        }
-    });
-</script>
+            if (statusCekKendaraan === 'menunggu approval') {
+                document.getElementById("submitPenilaian").style.display = "none";
+                document.getElementById("penilaianTerkirim").style.display = "inline-block";
+            } else if (statusCekKendaraan === '') {
+                console.log("Status cek kendaraan tidak tersedia.");
+                var spanElement = document.createElement("span");
+                spanElement.textContent = " - ";
+                document.body.appendChild(spanElement);
+                document.getElementById("submitPenilaian").style.display = "none";
+            }
+        });
+    </script>
 
     {{-- <script>
         document.addEventListener("DOMContentLoaded", function() {
@@ -516,7 +520,7 @@
             if (statusCekKendaraan === 'belum') {
                 setTimeout(function() {
                     var id_transaksi = "{{ $data->id_transaksi }}";
-                    window.location.href = "{{ url('') }}/" + id_transaksi;
+                    window.location.href = "{{ url('') }}/cateringbas/kuesioner-kendaraan" + id_transaksi;
                 }, 2000);
             }
         });

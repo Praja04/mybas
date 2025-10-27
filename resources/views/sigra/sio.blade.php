@@ -14,16 +14,38 @@
                 <div class="card card-custom">
                     <div class="card-header flex-wrap border-0 pt-6 pb-0">
                         <div class="card-title">
-                            <h3 class="card-label">SIGRA SIO
-                                <span class="d-block text-muted pt-2 font-size-sm">Manage data SIO</span>
+                            <h3 class="card-label">SIGRA SIO (Surat Izin Operator)
+                                <span class="d-block text-muted pt-2 font-size-sm">Manage data Surat Izin Operator
+                                    (SIO)</span>
                             </h3>
                         </div>
                         <div class="card-toolbar">
                             <a href="javascript:" class="btn btn-primary font-weight-bolder"
-                                onClick="showModalCreateNew()"><i class="fa fa-plus-circle"></i> Buat Perizinan Baru</a>
+                                onClick="showModalCreateNew()"><i class="fa fa-plus-circle"></i> Tambah Perizinan</a>
                         </div>
                     </div>
                     <div class="card-body">
+                        <div class="pb-4">
+                            <h6 class="card-label mb-2">Keterangan:</h6>
+                            <div class="d-flex flex-column gap-2">
+                                <div class="d-flex align-items-center mb-1">
+                                    <span class="label label-inline label-outline-success mr-2"
+                                        style="width: 25px; text-align:center;">-</span>
+                                    <span>= Masih berlaku (aman)</span>
+                                </div>
+                                <div class="d-flex align-items-center mb-1">
+                                    <span class="label label-inline label-outline-warning mr-2"
+                                        style="width: 25px; text-align:center;">-</span>
+                                    <span>= Akan segera habis masa berlakunya (kurang dari 45 hari)</span>
+                                </div>
+                                <div class="d-flex align-items-center mb-1">
+                                    <span class="label label-inline label-outline-danger mr-2"
+                                        style="width: 25px; text-align:center;">-</span>
+                                    <span>= Sudah tidak berlaku (expired)</span>
+                                </div>
+                            </div>
+                        </div>
+
                         <table id="sio" class="table table-hover">
                             <thead>
                                 <tr>
@@ -32,6 +54,8 @@
                                     <th>NAMA PERIZINAN</th>
                                     <th>NAMA KARYAWAN</th>
                                     <th>NIK KARYAWAN</th>
+                                    <th>DEPARTEMEN</th>
+                                    <th>IKATAN DINAS</th>
                                     <th>NOMOR PERIZINAN</th>
                                     <th>STATUS</th>
                                     <th>TANGGAL TERBIT</th>
@@ -68,7 +92,7 @@
                 </div>
                 <div class="modal-body">
                     <a href="javascript:" class="btn btn-primary font-weight-bolder" onClick="openCreateSertifikat()"><i
-                            class="fa fa-plus-circle"></i> Buat Sertifikat Baru</a>
+                            class="fa fa-plus-circle"></i> Tambah SIO</a>
                     <hr>
                     <div id="container-create-sertifikat" class="hide">
                         <div class="card card-custom border border-black" data-card="true">
@@ -90,32 +114,36 @@
                                     <input type="hidden" readonly id="sio-id" name="sio_id">
                                     <div class="form-group row">
                                         <label class="col-2 col-form-label text-right" for="tanggal-sertifikasi">Tanggal
-                                            Terbit</label>
+                                            Terbit <span class="text-danger">*</span></label>
                                         <div class="col-4">
                                             <input name="tanggal_sertifikasi" required placeholder="Tanggal Sertifikasi"
-                                                class="form-control" type="date" value="" id="tanggal-sertifikasi">
+                                                class="form-control" type="date" value=""
+                                                id="tanggal-sertifikasi">
                                         </div>
                                         <label class="col-2 col-form-label text-right" for="tanggal-expired">Tanggal
                                             Expired</label>
                                         <div class="col-4">
-                                            <input name="tanggal_expired" placeholder="Tanggal Expired" class="form-control"
-                                                type="date" value="" id="tanggal-expired">
+                                            <input name="tanggal_expired" placeholder="Tanggal Expired"
+                                                class="form-control" type="date" value="" id="tanggal-expired">
                                         </div>
                                     </div>
                                     <div class="form-group row">
-                                        <label class="col-2 col-form-label text-right" for="no-dokumen">No. Izin</label>
+                                        <label class="col-2 col-form-label text-right" for="nomor-izin">Nomor Izin Surat
+                                            <span class="text-danger">*</span></label>
                                         <div class="col-4">
-                                            <input required name="nomor_izin" placeholder="Nomor Izin"
+                                            <input required name="nomor_izin" placeholder="Nomor Izin Surat"
                                                 class="form-control" type="text" value="" id="nomor-izin">
                                         </div>
-                                        <label class="col-2 col-form-label text-right" for="harga-izin">Harga</label>
+                                        <label class="col-2 col-form-label text-right" for="harga-perizinan">Harga <span
+                                                class="text-danger">*</span></label>
                                         <div class="col-4">
                                             <input required name="harga" placeholder="Harga" class="form-control"
                                                 type="number" value="" id="harga-perizinan">
                                         </div>
                                     </div>
                                     <div class="form-group row">
-                                        <label class="col-2 col-form-label text-right" for="remarks">Keterangan</label>
+                                        <label class="col-2 col-form-label text-right" for="remarks">Keterangan
+                                            (Remarks)</label>
                                         <div class="col-4">
                                             <textarea name="remarks" id="remarks" cols="30" rows="3" class="form-control"></textarea>
                                         </div>
@@ -147,7 +175,7 @@
                                                             </div>
                                                         </div>
                                                         <div class="dropzone-toolbar">
-                                                            <span class="dropzone-delete" data-dz-remove="">
+                                                            <span class="dropzone-delete" data-dz-remove>
                                                                 <i class="flaticon2-cross"></i>
                                                             </span>
                                                         </div>
@@ -198,7 +226,7 @@
             <div class="modal-content bg-dark border border-1">
                 <div class="modal-header">
                     <h5 class="modal-title text-white" id="exampleModalLabel"><i class="fa fa-folder-open"></i>
-                        <span>File file attachment</span>
+                        <span>File attachment</span>
                     </h5>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                         <i aria-hidden="true" class="ki ki-close text-white"></i>
@@ -230,19 +258,21 @@
         <div class="modal-dialog modal-lg" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="exampleModalLabel"><i class="fa fa-plus-circle"></i> Buat Perizinan Baru
+                    <h5 class="modal-title" id="exampleModalLabel"><i class="fa fa-plus-circle"></i> Tambah Perizinan
                     </h5>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                         <i aria-hidden="true" class="ki ki-close"></i>
                     </button>
                 </div>
+                {{-- createmodal --}}
                 <div class="modal-body">
                     <form id="create-perizinan-form">
                         <div class="form-group row">
-                            <label class="col-3 col-form-label text-right" for="perusahaan">Perusahaan</label>
+                            <label class="col-3 col-form-label text-right" for="perusahaan">Perusahaan <span
+                                    class="text-danger">*</span></label>
                             <div class="col-9">
                                 <select required name="perusahaan" id="perusahaan" class="form-control">
-                                    <option value=""></option>
+                                    <option value="" selected disabled>Pilih Perusahaan</option>
                                     @foreach ($perusahaan as $p)
                                         <option value="{{ $p->id }}">{{ $p->nama_perusahaan }}</option>
                                     @endforeach
@@ -250,26 +280,62 @@
                             </div>
                         </div>
                         <div class="form-group row">
-                            <label class="col-3 col-form-label text-right" for="nama-perizinan">Nama Perizinan</label>
+                            <label class="col-3 col-form-label text-right" for="nama-perizinan">Nama Perizinan <span
+                                    class="text-danger">*</span></label>
                             <div class="col-9">
                                 <input name="nama_perizinan" required placeholder="Nama Perizinan" class="form-control"
                                     type="text" value="" id="nama-perizinan">
                             </div>
                         </div>
                         <div class="form-group row">
-                            <label class="col-3 col-form-label text-right" for="nama-karyawan">Nama Karyawan</label>
+                            <label class="col-3 col-form-label text-right" for="nama-karyawan">Nama Karyawan <span
+                                    class="text-danger">*</span></label>
                             <div class="col-9">
                                 <input name="nama_karyawan" required placeholder="Nama Karyawan" class="form-control"
                                     type="text" value="" id="nama-karyawan">
                             </div>
                         </div>
                         <div class="form-group row">
-                            <label class="col-3 col-form-label text-right" for="nama-perizinan">Nik Karyawan</label>
+                            <label class="col-3 col-form-label text-right" for="nama-perizinan">NIK Karyawan <span
+                                    class="text-danger">*</span></label>
                             <div class="col-9">
-                                <input name="nik_karyawan" required placeholder="Nik Karyawan" class="form-control"
+                                <input name="nik_karyawan" required placeholder="NIK Karyawan" class="form-control"
                                     type="text" value="" id="nik-karyawan">
                             </div>
                         </div>
+
+                        <div class="form-group row">
+                            <label class="col-3 col-form-label text-right" for="department">Departemen <span
+                                    class="text-danger">*</span></label>
+                            <div class="col-9">
+                                <select required name="dept_id" id="dept_id" class="form-control">
+                                    <option value="" disabled selected>-- Pilih Departemen --</option>
+                                    @foreach ($departments as $dept)
+                                        <option value="{{ $dept->id }}">{{ $dept->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group row">
+                            <label class="col-3 form-label text-right" for="tanggal-mulai-ikatan-dinas">Tanggal
+                                Mulai Ikatan Dinas</label>
+                            <div class="col-9">
+                                <input name="tanggal_mulai_ikatan_dinas" placeholder="Tanggal Mulai" class="form-control"
+                                    type="date" value="" id="tanggal-mulai-ikatan-dinas">
+                            </div>
+                        </div>
+
+                        <div class="form-group row">
+                            <label class="col-3 form-label text-right" for="tanggal-selesai-ikatan-dinas">Tanggal
+                                Selesai Ikatan Dinas</label>
+                            <div class="col-9">
+                                <input name="tanggal_selesai_ikatan_dinas" placeholder="Tanggal Selesai"
+                                    class="form-control" type="date" value=""
+                                    id="tanggal-selesai-ikatan-dinas">
+                            </div>
+                        </div>
+
                         <div class="form-group row">
                             <div class="col-3"></div>
                             <div class="col-9">
@@ -277,18 +343,21 @@
                                         class="fa fa-paper-plane"></i> Submit</button>
                             </div>
                         </div>
+
                     </form>
                 </div>
             </div>
         </div>
     </div>
 
+    {{-- updatemodal --}}
     <div class="modal fade" id="edit-modal" tabindex="-1" role="dialog" aria-labelledby="editModalSizeSm"
         aria-hidden="true">
         <div class="modal-dialog modal-lg" role="document">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="editModalLabel"><i class="fa fa-tools text-dark-75"></i> Edit Perizinan
+                        Operator
                     </h5>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                         <i aria-hidden="true" class="ki ki-close"></i>
@@ -298,7 +367,8 @@
                     <form id="edit-perizinan-form">
                         <input type="hidden" name="id" id="edit-id">
                         <div class="form-group row">
-                            <label class="col-3 col-form-label text-right" for="edit-perusahaan">Perusahaan</label>
+                            <label class="col-3 col-form-label text-right" for="edit-perusahaan">Perusahaan <span
+                                    class="text-danger">*</span></label>
                             <div class="col-9">
                                 <select required name="perusahaan" id="edit-perusahaan" class="form-control">
                                     <option value=""></option>
@@ -309,31 +379,63 @@
                             </div>
                         </div>
                         <div class="form-group row">
-                            <label class="col-3 col-form-label text-right" for="nama-perizinan">Nama Perizinan</label>
+                            <label class="col-3 col-form-label text-right" for="nama-perizinan">Nama Perizinan <span
+                                    class="text-danger">*</span></label>
                             <div class="col-9">
                                 <input name="nama_perizinan" required placeholder="Nama Perizinan" class="form-control"
                                     type="text" value="" id="edit-nama-perizinan">
                             </div>
                         </div>
                         <div class="form-group row">
-                            <label class="col-3 col-form-label text-right" for="nama-karyawan">Nama Karyawan</label>
+                            <label class="col-3 col-form-label text-right" for="nama-karyawan">Nama Karyawan <span
+                                    class="text-danger">*</span></label>
                             <div class="col-9">
                                 <input name="nama_karyawan" required placeholder="Nama Karyawan" class="form-control"
                                     type="text" value="" id="edit-nama-karyawan">
                             </div>
                         </div>
                         <div class="form-group row">
-                            <label class="col-3 col-form-label text-right" for="nik-karyawan">Nik Karyawan</label>
+                            <label class="col-3 col-form-label text-right" for="nik-karyawan">NIK Karyawan <span
+                                    class="text-danger">*</span></label>
                             <div class="col-9">
-                                <input name="nik_karyawan" required placeholder="Nik Karyawan" class="form-control"
+                                <input name="nik_karyawan" required placeholder="NIK Karyawan" class="form-control"
                                     type="text" value="" id="edit-nik-karyawan">
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-3 col-form-label text-right" for="department">Departemen <span
+                                    class="text-danger">*</span></label>
+                            <div class="col-9">
+                                <select required name="dept_id" id="edit-dept-id" class="form-control">
+                                    <option value="" disabled selected>-- Pilih Departemen --</option>
+                                    @foreach ($departments as $dept)
+                                        <option value="{{ $dept->id }}">{{ $dept->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-3 form-label text-right" for="tanggal-mulai-ikatan-dinas">Tanggal
+                                Mulai Ikatan Dinas</label>
+                            <div class="col-9">
+                                <input name="tanggal_mulai_ikatan_dinas" placeholder="Tanggal Mulai" class="form-control"
+                                    type="date" value="" id="edit-tanggal-mulai-ikatan-dinas">
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label class="col-3 form-label text-right" for="tanggal-selesai-ikatan-dinas">Tanggal
+                                Selesai Ikatan Dinas</label>
+                            <div class="col-9">
+                                <input name="tanggal_selesai_ikatan_dinas" placeholder="Tanggal Selesai"
+                                    class="form-control" type="date" value=""
+                                    id="edit-tanggal-selesai-ikatan-dinas">
                             </div>
                         </div>
                         <div class="form-group row">
                             <div class="col-3"></div>
                             <div class="col-9">
                                 <button id="editSubmitButton" type="submit" class="btn btn-primary"><i
-                                        class="fa fa-paper-plane"></i> Submit</button>
+                                        class="fa fa-paper-plane"></i> Edit</button>
                             </div>
                         </div>
                     </form>
@@ -350,7 +452,7 @@
         var sio_table;
 
         function openCreateSertifikat() {
-            $('.sertification-form-title').text('Create new certification');
+            $('.sertification-form-title').text('Tambah Surat Izin Operator (SIO)');
             $('#transaction-type').val('create');
 
             // Generate new transaction_id
@@ -370,7 +472,7 @@
         }
 
         function editSertifikasi(id) {
-            $('.sertification-form-title').text('Edit certification');
+            $('.sertification-form-title').text('Edit Surat Izin Operator');
             $('#transaction-type').val('edit');
             closeCreateSertifikat();
             // Get current data to ajax
@@ -394,6 +496,7 @@
                     console.log(error);
                 }
             })
+            resetSertifikatValidation();
             $('#container-create-sertifikat').slideDown();
         }
 
@@ -429,19 +532,30 @@
             });
         }
 
-        // update close create sertifikat
         function closeCreateSertifikat() {
-            $('#id').val('');
-            $('#nomor-izin').val('');
-            $('#tanggal-sertifikasi').val('');
-            $('#tanggal-expired').val('');
-            $('#instansi').val('');
-            $('#harga-perizinan').val('');
-            $('#remarks').val('');
+            myDropzone5.removeAllFiles(true);
 
-            myDropzone5.removeAllFiles();
-
+            $('#form-create-sertifikat')[0].reset();
+            resetSertifikatValidation();
             $('#container-create-sertifikat').slideUp();
+        }
+
+        function resetSertifikatValidation() {
+            $('#error-tanggal-sertifikat').remove();
+            $('#tanggal-expired').removeClass('is-invalid');
+            $('.submit-button').prop('disabled', false);
+        }
+
+        function resetCreateIkatanDinasValidation() {
+            $('.error-ikatan-dinas').remove();
+            $('#tanggal-selesai-ikatan-dinas').removeClass('is-invalid');
+            $('#submitButton').prop('disabled', false);
+        }
+
+        function resetEditIkatanDinasValidation() {
+            $('.error-ikatan-dinas').remove();
+            $('#edit-tanggal-selesai-ikatan-dinas').removeClass('is-invalid');
+            $('#editSubmitButton').prop('disabled', false);
         }
 
         var id = '#dropzone';
@@ -462,7 +576,9 @@
             clickable: id + " .dropzone-select",
             headers: {
                 'X-CSRF-TOKEN': '{{ csrf_token() }}'
-            }
+            },
+            acceptedFiles: ".jpeg,.jpg,.png,.pdf,.doc,.docx",
+            dictInvalidFileType: "Tipe file tidak diperbolehkan. Hanya gambar dan dokumen yang bisa diunggah"
         });
 
         myDropzone5.on("sending", function(file, xhr, formData) {
@@ -573,7 +689,6 @@
             $('#submitButton i').addClass('fa-spinner');
             $('#submitButton i').addClass('fa-spin');
 
-            // console log create-perizinan-form
             // var datas = $(this).serialize();
             // console.log(datas);
 
@@ -601,6 +716,7 @@
                     }
                 },
                 error: function(e) {
+                    // console.log(e);
                     Swal.fire('Gagal!', 'Sertifikasi gagal dibuat, coba lagi', 'error')
                         .then(function() {
                             $('#submitButton i').addClass('fa-paper-plane');
@@ -684,7 +800,7 @@
                         table.append(row);
                     }
                 },
-                errir: function(error) {
+                error: function(error) {
                     console.log(error);
                 }
             });
@@ -736,7 +852,7 @@
                             '<td>' + val.harga + '</td>' +
                             '<td>' + formatTanggalIndonesia(val.tanggal_terbit) + '</td>' +
                             '<td>' + tanggal_habis + '</td>' +
-                            '<td>' + val.keterangan + '</td>' +
+                            '<td>' + (val.keterangan ?? "-") + '</td>' +
                             // '<td>' + val.masa_berlaku + '</td>' +
                             // '<td>' + val.keterangan + '</td>' +
                             '<td>' +
@@ -798,7 +914,8 @@
         getPerizinansio();
 
         function showModalCreateNew() {
-            $('#modal-title').text('Buat Perizinan Baru');
+            $('#modal-title').text('Tambah SIO');
+            resetCreateIkatanDinasValidation();
             $('#create-new-modal').modal('show');
         }
 
@@ -814,6 +931,9 @@
                     $('#edit-nama-perizinan').val(response.data.nama_perizinan);
                     $('#edit-nama-karyawan').val(response.data.nama_karyawan);
                     $('#edit-nik-karyawan').val(response.data.nik_karyawan);
+                    $('#edit-dept-id').val(response.data.dept_id);
+                    $('#edit-tanggal-mulai-ikatan-dinas').val(response.data.tanggal_mulai_ikatan_dinas);
+                    $('#edit-tanggal-selesai-ikatan-dinas').val(response.data.tanggal_selesai_ikatan_dinas);
                     console.log('yrdy', response.data);
                 },
                 error: function(error) {
@@ -821,6 +941,7 @@
                     console.log(error);
                 }
             });
+            resetEditIkatanDinasValidation();
             $('#edit-modal').modal('show');
         }
 
@@ -920,6 +1041,141 @@
                     $('#perizinan-status').bootstrapSwitch('state', !data, true);
                 }
             });
+        });
+
+        // (create modal) validate end date
+        $('#tanggal-mulai-ikatan-dinas, #tanggal-selesai-ikatan-dinas').on('change', function() {
+            let mulai = $('#tanggal-mulai-ikatan-dinas').val();
+            let selesai = $('#tanggal-selesai-ikatan-dinas').val();
+            let submitBtn = $('#submitButton');
+
+            $('#tanggal-selesai-ikatan-dinas').next('.error-ikatan-dinas').remove();
+            $('#tanggal-selesai-ikatan-dinas').removeClass('is-invalid');
+            submitBtn.prop('disabled', false);
+
+            // aturan: kalau salah satu diisi, dua-duanya wajib
+            if (mulai && !selesai) {
+                $('#tanggal-selesai-ikatan-dinas').attr('required', true);
+            } else if (selesai && !mulai) {
+                $('#tanggal-mulai-ikatan-dinas').attr('required', true);
+            } else {
+                $('#tanggal-selesai-ikatan-dinas').removeAttr('required');
+                $('#tanggal-mulai-ikatan-dinas').removeAttr('required');
+            }
+
+            // cek urutan tanggal (kalau dua-duanya diisi)
+            if (mulai && selesai) {
+                let startDate = new Date(mulai);
+                let endDate = new Date(selesai);
+
+                if (endDate < startDate) {
+                    $('#tanggal-selesai-ikatan-dinas')
+                        .after(
+                            '<small class="error-ikatan-dinas text-danger">Tanggal selesai tidak boleh lebih awal dari tanggal mulai.</small>'
+                        );
+
+                    $('#tanggal-selesai-ikatan-dinas').addClass('is-invalid');
+
+                    // arahkan fokus ke field yang salah
+                    $('#tanggal-selesai-ikatan-dinas').focus();
+
+                    // disable submit button
+                    submitBtn.prop('disabled', true);
+                } else {
+                    // kalau tanggal valid lagi, enable tombol submit
+                    submitBtn.prop('disabled', false);
+                    $('#tanggal-selesai-ikatan-dinas').removeClass('is-invalid');
+                }
+            }
+        });
+
+        // (update modal) validate end date
+        $('#edit-tanggal-mulai-ikatan-dinas, #edit-tanggal-selesai-ikatan-dinas').on('change', function() {
+            let mulai = $('#edit-tanggal-mulai-ikatan-dinas').val();
+            let selesai = $('#edit-tanggal-selesai-ikatan-dinas').val();
+            let submitBtn = $('#editSubmitButton');
+
+            $('#edit-tanggal-selesai-ikatan-dinas').next('.error-ikatan-dinas').remove();
+            $('#edit-tanggal-selesai-ikatan-dinas').removeClass('is-invalid');
+            submitBtn.prop('disabled', false);
+
+            // aturan: kalau salah satu diisi, dua-duanya wajib
+            if (mulai && !selesai) {
+                $('#edit-tanggal-selesai-ikatan-dinas').attr('required', true);
+            } else if (selesai && !mulai) {
+                $('#edit-tanggal-mulai-ikatan-dinas').attr('required', true);
+            } else {
+                $('#edit-tanggal-selesai-ikatan-dinas').removeAttr('required');
+                $('#edit-tanggal-mulai-ikatan-dinas').removeAttr('required');
+            }
+
+            // cek urutan tanggal (kalau dua-duanya diisi)
+            if (mulai && selesai) {
+                let startDate = new Date(mulai);
+                let endDate = new Date(selesai);
+
+                if (endDate < startDate) {
+                    $('#edit-tanggal-selesai-ikatan-dinas')
+                        .after(
+                            '<small class="error-ikatan-dinas text-danger" >Tanggal selesai tidak boleh lebih awal dari tanggal mulai.</small>'
+                        );
+
+                    $('#edit-tanggal-selesai-ikatan-dinas').addClass('is-invalid');
+
+                    // arahkan fokus ke field yang salah
+                    $('#edit-tanggal-selesai-ikatan-dinas').focus();
+
+                    // disable submit button
+                    submitBtn.prop('disabled', true);
+                } else {
+                    // kalau tanggal valid lagi, enable tombol submit
+                    submitBtn.prop('disabled', false);
+                    $('#edit-tanggal-selesai-ikatan-dinas').removeClass('is-invalid');
+                }
+            }
+        });
+
+        $('#tanggal-sertifikasi, #tanggal-expired').on('change', function() {
+            let mulai = $('#tanggal-sertifikasi').val();
+            let selesai = $('#tanggal-expired').val();
+            let errorMsg = $('#error-tanggal-sertifikat');
+            let submitBtn = $('.submit-button');
+
+            errorMsg.remove();
+            $('#tanggal-expired').removeClass('is-invalid');
+            submitBtn.prop('disabled', false);
+
+            // cek urutan tanggal
+            if (mulai && selesai) {
+                let startDate = new Date(mulai);
+                let endDate = new Date(selesai);
+
+                if (endDate < startDate) {
+                    $('#tanggal-expired')
+                        .after(
+                            '<small id="error-tanggal-sertifikat" class="text-danger">Tanggal Expired tidak boleh lebih awal dari Tanggal Terbit.</small>'
+                        );
+
+                    $('#tanggal-expired').addClass('is-invalid');
+                    submitBtn.prop('disabled', true);
+                } else {
+                    // kalau valid, pastikan tombol bisa diklik lagi
+                    submitBtn.prop('disabled', false);
+                    $('#tanggal-expired').removeClass('is-invalid');
+                }
+            }
+        });
+
+        $('#create-new-modal').on('hidden.bs.modal', function() {
+            resetCreateIkatanDinasValidation();
+            $('#tanggal-mulai-ikatan-dinas').val('');
+            $('#tanggal-selesai-ikatan-dinas').val('');
+        });
+
+        $('#edit-modal').on('hidden.bs.modal', function() {
+            resetEditIkatanDinasValidation();
+            $('#tanggal-mulai-ikatan-dinas').val('');
+            $('#tanggal-selesai-ikatan-dinas').val('');
         });
     </script>
 @endpush

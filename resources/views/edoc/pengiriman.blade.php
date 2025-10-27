@@ -50,67 +50,80 @@
                                     <div class="alert alert-custom alert-default" role="alert">
                                         <div class="alert-icon"><i class="flaticon-warning text-primary"></i></div>
                                         <div class="alert-text">
-                                            FORM PENGIRIMAN BARANG
+                                            <h3> FORM PENGIRIMAN BARANG
+                                            </h3>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="form-group row">
-                                    <label for="example-search-input" class="col-sm-2 col-form-label">Dept Pengirim
+                                    <label for="dept-pengirim" class="col-sm-2 col-form-label">Departemen Pengirim
                                     </label>
                                     <div class="col-sm-10">
                                         <input class="form-control" type="text" readonly name="dept_pengirim"
-                                            id="" value="{{ $dept }}" />
-                                    </div>
-                                </div>
-                                <div class="form-group row">
-                                    <label for="example-search-input" class="col-sm-2 col-form-label">Nama Penerima
-                                    </label>
-                                    <div class="col-sm-10">
-                                        <input class="form-control" type="text" name="nama_penerima" id=""
-                                            value="" placeholder="Masukan Nama Penerima" />
-                                        <small class="form-text text-muted">*Opsional</small>
-                                    </div>
-                                </div>
-                                <div class="form-group row">
-                                    <label for="example-email-input" class="col-sm-2 col-form-label">Nama PT
-                                        Penerima</label>
-                                    <div class="col-sm-10">
-                                        <input class="form-control" type="text" name="nama_pt_penerima" id=""
-                                            required placeholder="Masukan Nama PT Pengirim" />
+                                            id="dept-pengirim" value="{{ $dept }}" required />
                                         <small class="form-text text-danger">*Wajib</small>
                                     </div>
                                 </div>
                                 <div class="form-group row">
-                                    <label for="example-search-input" class="col-sm-2 col-form-label">Tanggal Pengiriman
+                                    <label for="nama-penerima" class="col-sm-2 col-form-label">Nama Penerima
                                     </label>
                                     <div class="col-sm-10">
-                                        <input class="form-control" type="date" name="tanggal_pengiriman" id=""
-                                            value="{{ date('Y-m-d') }}" />
+                                        <input class="form-control" type="text" name="nama_penerima" id="nama-penerima"
+                                            placeholder="Masukan Nama Penerima" required />
+                                        <small class="form-text text-danger">*Wajib</small>
                                     </div>
                                 </div>
-                                <div class=" form-group row">
-                                    <select class="form-control" name="jenis" id="" required>
-                                        <option value="" selected disabled>JENIS BARANG</option>
-                                        <option value="Barang">Barang</option>
-                                        <option value="Dokumen">Dokumen</option>
-                                    </select>
+                                <div class="form-group row">
+                                    <label for="nama-pt-penerima" class="col-sm-2 col-form-label">Nama PT
+                                        Penerima</label>
+                                    <div class="col-sm-10">
+                                        <input class="form-control" type="text" name="nama_pt_penerima"
+                                            id="nama-pt-penerima" required placeholder="Masukan Nama PT Penerima" />
+                                        <small class="form-text text-danger">*Wajib</small>
+                                    </div>
                                 </div>
                                 <div class="form-group row">
-                                    <label for="">Kerangan</label>
-                                    <textarea class="form-control" name="keterangan" id="" rows="5" placeholder="Keterangan"></textarea>
-                                    <small class="form-text text-muted">*Opsional</small>
+                                    <label for="tanggal-pengiriman" class="col-sm-2 col-form-label">Tanggal Pengiriman
+                                    </label>
+                                    <div class="col-sm-10">
+                                        <input class="form-control" type="date" name="tanggal_pengiriman"
+                                            id="tanggal-pengiriman" value="{{ date('Y-m-d') }}" required />
+                                        <small class="form-text text-danger">*Wajib</small>
+                                    </div>
                                 </div>
-                                <div class=" form-group row">
-                                    <select onchange="changekurir()" class="form-control" name="kurir" id="kurir"
-                                        required>
-                                        <option value="" selected disabled>PILIH KURIR</option>
-                                        {{-- <option value="JNE">JNE</option> --}}
-                                        <option value="JNT">JNT</option>
-                                        <option value="Messanger PT. PAS">Messanger PT. PAS</option>
-                                        <option value="Messanger PT. BAS">Messanger PT. BAS</option>
-                                        <option value="Ojek Online">Ojek Online</option>
-                                        <option value="Dll">Dll</option>
-                                    </select>
+                                <div class="form-group row">
+                                    <label for="jenis" class="col-sm-2 col-form-label">Jenis Barang/Dokumen</label>
+                                    <div class="col-sm-10">
+                                        <select class="form-control" name="jenis" id="jenis" required>
+                                            <option value="" selected disabled>Pilih Jenis</option>
+                                            <option value="Barang">Barang</option>
+                                            <option value="Dokumen">Dokumen</option>
+                                        </select>
+                                        <small class="form-text text-danger">*Wajib</small>
+                                    </div>
+                                </div>
+                                <div class="form-group row">
+                                    <label for="keterangan" class="col-sm-2 col-form-label">Keterangan</label>
+                                    <div class="col-sm-10">
+                                        <textarea class="form-control" name="keterangan" id="keterangan" rows="5" placeholder="Masukan keterangan"></textarea>
+                                        <small class="form-text text-muted">*Opsional</small>
+                                    </div>
+                                </div>
+                                <div class="form-group row">
+                                    <label for="keterangan" class="col-sm-2 col-form-label">Kurir</label>
+                                    <div class="col-sm-10">
+                                        <select onchange="changekurir()" class="form-control" name="kurir" id="kurir"
+                                            required>
+                                            <option value="" selected disabled>Pilih Kurir</option>
+                                            {{-- <option value="JNE">JNE</option> --}}
+                                            <option value="JNT">JNT</option>
+                                            <option value="Messanger PT. PAS">Messanger PT. PAS</option>
+                                            <option value="Messanger PT. BAS">Messanger PT. BAS</option>
+                                            <option value="Ojek Online">Ojek Online</option>
+                                            <option value="Lainnya">Lainnya</option>
+                                        </select>
+                                        <small class="form-text text-danger">*Wajib</small>
+                                    </div>
                                 </div>
                                 <div class="form-group row" id="kurir-lain-container">
                                 </div>
@@ -128,7 +141,6 @@
     </div>
 @endsection
 
-
 @push('scripts')
     <script type="text/javascript">
         $('#PostKedatanganForm').on('submit', function() {
@@ -138,7 +150,7 @@
 
         function changekurir() {
             var kurir = $('#kurir').val()
-            if (kurir == 'Dll') {
+            if (kurir == 'Lainnya') {
                 $('#kurir-lain-container').html(`
                     <label for="example-search-input" class="col-sm-2 col-form-label">Kurir Lain</label>
                     <div class="col-sm-10">

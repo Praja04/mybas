@@ -608,10 +608,12 @@ Route::group(['middleware' => ['auth', 'rules', 'access_log']], function () {
 });
 Route::group(['middleware' => ['auth', 'rules', 'access_log']], function () {
     Route::get('/ecafesedaap-scan', 'EcafeSeedapController@scanPage');
+    Route::get('/ecafesedaap-scan/{kategori}', 'EcafeSeedapController@showDisplay');
 });
 
 Route::group(['middleware' => ['access_log']], function () {
     Route::get('/ecafesedaap-scan', 'EcafeSeedapController@scanPage');
+    Route::get('/ecafesedaap-scan/{kategori}', 'EcafeSeedapController@showDisplay');
     Route::post('/ecafesedaap-scan/do-scan', 'EcafeSeedapController@doScan');
 });
 
@@ -708,3 +710,7 @@ require base_path('routes/halo-security.php');
 require base_path('routes/kedatangan-beras.php');
 require base_path('routes/kedatangan-lauk.php');
 require base_path('routes/pengecekan-boiler.php');
+
+Route::fallback(function () {
+    abort(404);
+});

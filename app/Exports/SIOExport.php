@@ -12,9 +12,11 @@ class SIOExport implements FromArray
     public function getSIOData(): array
     {
         $sioData = [];
-        $sioData[] = ['No', 'Nama Perusahaan', 'Nama Perizinan', 'Nama Karyawan', 'NIK Karyawan', 'Nomor Izin', 'Tanggal Terbit', 'Tanggal Habis', 'Harga', 'Keterangan'];
+        $sioData[] = ['No', 'Nama Perusahaan', 'Nama Perizinan', 'Nama Karyawan', 'NIK Karyawan', 'Departemen', 'Tanggal Mulai Ikatan Dinas', 'Tanggal Selesai Ikatan Dinas', 'Nomor Izin', 'Tanggal Terbit', 'Tanggal Habis', 'Harga', 'Keterangan'];
 
-        $sios = SIO::where('status', '!=', 'deleted')->get();
+        $sios = SIO::with('department')
+            ->where('status', '!=', 'deleted')
+            ->get();
 
         foreach ($sios as $key => $sio) {
             $sioSertifikasi = SIOSertifikasi::where('id_sio', $sio->id)->where('status', '!=', 'deleted')->orderBy('tanggal_terbit', 'desc')->first();
@@ -26,6 +28,9 @@ class SIOExport implements FromArray
                     $sio->nama_perizinan,
                     $sio->nama_karyawan,
                     $sio->nik_karyawan,
+                    $sio->department->name,
+                    $sio->tanggal_mulai_ikatan_dinas,
+                    $sio->tanggal_selesai_ikatan_dinas,
                     $sioSertifikasi->nomor_izin,
                     $sioSertifikasi->tanggal_terbit,
                     $sioSertifikasi->tanggal_habis,

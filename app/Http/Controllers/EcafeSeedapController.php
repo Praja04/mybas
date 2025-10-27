@@ -6,11 +6,11 @@ use App\ecafeSedaapBas;
 use App\Imports\Ecafesedaap\OvertimeImport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Session;
 use App\Imports\ExcelImport;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Http\Controllers\Controller;
-
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Session;
 
 class EcafeSeedapController extends Controller
 {
@@ -26,55 +26,105 @@ class EcafeSeedapController extends Controller
 
     public function scanPage()
     {
-        return view('hr.ecafesedaap.scan-page');
+        // old ver
+        // return view('hr.ecafesedaap.scan-page');
+        return view('hr.ecafesedaap.redirect');
     }
+
+    // new ver
+    public function showDisplay($kategori)
+    {
+        if (!in_array($kategori, ['staff', 'non-staff'])) {
+            abort(404);
+        }
+
+        return view('hr.ecafesedaap.display', compact('kategori'));
+    }
+
 
     public function doScan(Request $request)
     {
-        // Cek apakah data sudah ada
-        if (date('H') >= 0 && date('H') <= 06) {
-            $date1 = date('Y-m-d', strtotime('-1 day'));
-            $date2 = date('Y-m-d');
-        } else {
-            $date1 = date('Y-m-d');
-            $date2 = date('Y-m-d', strtotime('+1 day'));
+        // ambil kategori dari ajax
+        $kategori = $request->kategori;
+        $request->validate([
+            'kategori' => 'required|in:staff,non-staff',
+        ]);
+
+        $rfid = (int) $request->rfid;
+        $isCheckOnly = $request->has('cek') && $request->cek;
+
+        // --- ambil data dari database SMU, tapi kalau gagal fallback ke RFID ---
+        try {
+            $nik = DB::connection('192.168.178.44-admin')
+                ->table('MSIDCARD')
+                ->select('NIK', 'EMPNM', 'DEPTID', 'FOTOBLOB')
+                ->where(['CARDNODEVICE' => $rfid])
+                ->where('STATUS', 'X')
+                ->orderByRaw('CAST(EMPCARDID AS SIGNED) DESC')
+                ->first();
+
+            Log::info('[Ecanteensedaap] Berhasil connect ke DB SMU dan ambil data RFID');
+        } catch (\Exception $e) {
+            Log::warning('Gagal connect ke DB, pakai fallback RFID', [
+                'error' => $e->getMessage(),
+            ]);
+
+            $nik = null;
         }
 
-        $rfid = (int)$request->rfid;
+        // --- fallback kalau koneksi gagal ---
+        if (!$nik) {
+            $nik = (object)[
+                'NIK'     => 'RFID-' . $rfid,
+                'EMPNM'   => 'User RFID ' . $rfid,
+                'DEPTID'  => 'Unknown',
+                'FOTOBLOB' => null
+            ];
+        }
 
-        $nik = DB::connection('192.168.178.44-admin')
-        ->table('MSIDCARD')
-        ->select('NIK', 'EMPNM')
-        ->where(['CARDNODEVICE' => $rfid])
-        ->where('STATUS', 'X') 
-        ->orderByRaw('CAST(EMPCARDID AS SIGNED) desc')
-        ->first();
+        // ambil data user yang lebih lengkap
+        $user = (object)[
+            'NIK'      => $nik->NIK,
+            'EMPNM'    => $nik->EMPNM,
+            'DEPTID'   => $nik->DEPTID ?? 'Unknown',
+            'FOTOBLOB' => $nik->FOTOBLOB ?? null,
+        ];
+
+        // $user = DB::connection('192.168.178.44-admin')
+        //     ->table('MSIDCARD')
+        //     ->select('NIK', 'CARDNODEVICE', 'EMPNM', 'DEPTID', 'FOTOBLOB')
+        //     ->where(['NIK' => $nik->NIK, 'CARDNODEVICE' => (int)$request->rfid])
+        //     ->first();
 
         // menampilkan jumlah sisa porsi pada display scan
         $currentTime = strtotime(date('H:i:s'));
-        $startTime   =  strtotime("00:00:01");
-        $endTime     = strtotime("05:59:00");
+        $startTime   =  strtotime("00:00:00");
+        $endTime     = strtotime("06:00:00");
 
-        if ($currentTime >= strtotime("09:00:01") and  $currentTime <= strtotime("16:00:00")) {
+        if ($currentTime >= strtotime("06:00:01") and  $currentTime <= strtotime("14:00:00")) {
+            // SHIFT 1 (06:00 - 14:00)
             $shift = 1;
             $tanggal = date('Y-m-d');
-            $startDate = date('Y-m-d 09:00:00');
-            $endDate = date('Y-m-d 16:00:00');
-        } else if ($currentTime >= strtotime("16:00:01") and  $currentTime <= strtotime("22:30:00")) {
+            $startDate = date('Y-m-d 06:00:01');
+            $endDate = date('Y-m-d 14:00:00');
+        } else if ($currentTime >= strtotime("14:00:01") and  $currentTime <= strtotime("22:00:00")) {
+            // SHIFT 2 (14:00 - 22:00)
             $shift = 2;
             $tanggal = date('Y-m-d');
-            $startDate = date('Y-m-d 16:00:00');
-            $endDate = date('Y-m-d 22:30:00');
-        } else if ($currentTime >= strtotime("22:30:01") and  $currentTime <= strtotime("23:59:00")) {
+            $startDate = date('Y-m-d 14:00:00');
+            $endDate = date('Y-m-d 22:00:00');
+        } else if ($currentTime >= strtotime("22:00:01") and  $currentTime <= strtotime("23:59:59")) {
+            // SHIFT 3 (22:00 - 23:59)
             $shift = 3;
             $tanggal = date('Y-m-d');
-            $startDate = date('Y-m-d 22:30:00');
-            $endDate = date('Y-m-d', strtotime('1 day')) . ' 07:00:00';
-        } else if ($currentTime >= strtotime("00:00:01") and  $currentTime <= strtotime("07:00:00")) {
+            $startDate = date('Y-m-d 22:00:01');
+            $endDate = date('Y-m-d', strtotime('1 day')) . ' 23:59:59';
+        } else if ($currentTime >= strtotime("00:00:00") and  $currentTime <= strtotime("06:00:00")) {
+            // SHIFT 3, tapi tanggal hari sebelumnya
             $shift = 3;
             $tanggal = date('Y-m-d', strtotime('-1 day'));
             $startDate = $tanggal . ' 00:00:00';
-            $endDate = $tanggal . '  07:00:00';
+            $endDate = $tanggal . '  06:00:00';
         } else {
             $shift = 1;
             $tanggal = null;
@@ -84,60 +134,113 @@ class EcafeSeedapController extends Controller
 
         $shift_number = $shift;
 
-        // menarik data scan pada db ecafesedaap_scan
+        // hitung jumlah yang sudah scan
         $jumlah_scan = DB::table('ecafesedaap_scan')
             // ->whereBetween('waktu', [$startDate, $endDate])
             ->where('shift', $shift_number)
             ->where('tanggal', $tanggal)
             // ->where('kategori', 'non-staff')
+            ->where('kategori', $kategori)
             ->count();
-        // menarik data jumlah pesanan pada db ecafesedaapbas
-        $jumlah_pesanan = DB::table('ecafesedaapbas')
+
+        // ambil total porsi yang di-set admin
+        $pesanan = DB::table('ecafesedaapbas')
             ->where('tanggal', $tanggal)
             ->where('shift', $shift_number)
-            ->where('kategori', 'non-staff')
-            ->first()->jumlah;
-
-        // menamilkan sisa porsi
-        $sisa_porsi = $jumlah_pesanan - $jumlah_scan;
-
-        $data['sisa_porsi'] = $sisa_porsi;
-
-        // Ini kalo data nya ga ada di secure accesss
-        if ($nik == null || $rfid == 0) {
-            return response(['success' => 0, 'message' => 'Data tidak ditemukan. Hubungi HRD', 'data' => $data]);
-        }
-
-        $cek = DB::table('ecafesedaap_scan')->where('rf_id', $request->rfid)->where('waktu', '>=', $date1 . ' 06:00:00')->where('waktu', '<=', $date2 . ' 06:00:00')->first();
-
-        // Ini kalo data nya udah ada di database secan makan, berarti udah pernah scan
-        if ($cek != null) {
-            return response(['success' => 0, 'data' => $data, 'message' => 'Kamu sudah scan makan pada : <br /> <strong>' . $cek->waktu . '</strong>']);
-        }
-
-        // Ambil data yang lebih lengkap
-        $user = DB::connection('192.168.178.44-admin')
-            ->table('MSIDCARD')
-            ->select('NIK', 'CARDNODEVICE', 'EMPNM', 'DEPTID', 'FOTOBLOB')
-            ->where(['NIK' => $nik->NIK, 'CARDNODEVICE' => (int)$request->rfid])
+            // ->where('kategori', 'non-staff')
+            ->where('kategori', $kategori)
             ->first();
+
+
+        if (!$pesanan) {
+            // kalau admin belum setting porsi
+            return response([
+                'success' => 0,
+                'message' => 'Belum ada pengaturan jumlah porsi untuk shift ini. Silakan hubungi admin.',
+                'data' => [
+                    'sisa_porsi' => 0
+                ]
+            ]);
+        }
+
+        $total_porsi = $pesanan->jumlah;
+        $sisa_porsi = $total_porsi - $jumlah_scan;
+
+        // cek sisa porsi tanpa scan
+        if ($isCheckOnly) {
+            $defaultImagePath = public_path('assets/media/images/no-image.jpg');
+            $defaultImage = base64_encode(file_get_contents($defaultImagePath));
+
+            $data = [
+                'nik' => '',
+                'name' => '',
+                'department' => '',
+                'image' => $defaultImage,
+                'sisa_porsi' => $sisa_porsi,
+            ];
+
+            return response([
+                'success' => 1,
+                'message' => 'Berhasil menghitung sisa porsi',
+                'data' => $data,
+            ]);
+        }
+
+        // Ini kalo data nya ga ada di db SMU
+        if (!$rfid) {
+            return response([
+                'success' => 0,
+                'message' => 'Data tidak ditemukan. Hubungi HRD',
+                'data' => ['sisa_porsi' => $sisa_porsi]
+            ]);
+        }
+
+        //  hitung range tanggal scan
+        if (date('H') >= 0 && date('H') <= 06) {
+            $date1 = date('Y-m-d', strtotime('-1 day')); // anggap hari sebelumnya
+            $date2 = date('Y-m-d');
+        } else {
+            $date1 = date('Y-m-d');
+            $date2 = date('Y-m-d', strtotime('+1 day'));
+        }
+
+        // cek apakah sudah scan hari ini
+        $cek = DB::table('ecafesedaap_scan')
+            ->where('rf_id', $request->rfid)
+            ->where('waktu', '>=', $date1 . ' 06:00:00')
+            ->where('waktu', '<=', $date2 . ' 06:00:00')
+            ->first();
+
+        // Ini kalo data nya udah ada di database scan makan, berarti udah pernah scan di hari tsb
+        if ($cek) {
+            return response([
+                'success' => 0,
+                'data' => ['sisa_porsi' => $sisa_porsi],
+                'message' => 'Kamu sudah scan makan pada : <br /> <strong>' . $cek->waktu . '</strong>'
+            ]);
+        }
+
+        // insert id card yang sudah scan
         DB::table('ecafesedaap_scan')->insert([
-            'rf_id' => $request->rfid,
+            'rf_id' => $rfid,
             'nik' => $user->NIK,
             'nama' => $user->EMPNM,
             'waktu' => date('Y-m-d H:i:s'),
             'tanggal' => $tanggal,
-            'shift' => $shift_number
+            'shift' => $shift_number,
+            'kategori' => $kategori,
         ]);
+
+        $defaultImagePath = public_path('assets/media/images/no-image.jpg');
+        $defaultImage = base64_encode(file_get_contents($defaultImagePath));
 
         $data = [
             'nik' => $user->NIK,
             'name' => $user->EMPNM,
             'department' => $user->DEPTID,
-            'image' => base64_encode($user->FOTOBLOB)
+            'image' => $user->FOTOBLOB ? base64_encode($user->FOTOBLOB) : $defaultImage,
+            'sisa_porsi' => $sisa_porsi - 1, // dikurangi setelah scan
         ];
-
-        $data['sisa_porsi'] = $sisa_porsi - 1;
 
         return response(['success' => 1, 'message' => 'Selamat menikmati', 'data' => $data]);
     }
@@ -278,31 +381,31 @@ class EcafeSeedapController extends Controller
     {
         $shiftData = $request->input('shift');
         $shiftQtyData = $request->input('shift_qty');
-        $isUpdated = false; 
-    
+        $isUpdated = false;
+
         foreach ($shiftData as $category => $indexes) {
             foreach ($indexes as $index => $value) {
                 $quantity = $shiftQtyData[$category][$index];
-    
+
                 $updatedRows = ecafeSedaapBas::where('tanggal', $request->tanggal_pesan)
-                                ->where('kategori', $category)
-                                ->where('shift', $index)
-                                ->update(['jumlah' => $quantity]);
-    
+                    ->where('kategori', $category)
+                    ->where('shift', $index)
+                    ->update(['jumlah' => $quantity]);
+
                 if ($updatedRows > 0) {
                     $isUpdated = true;
                 }
             }
         }
-    
+
         if (!$isUpdated) {
             Session::flash('error', 'Error: Silahkan upload pesanan terlebih dahulu.');
             return back();
         }
-            Session::flash('info', 'Data Update Anda Berhasil Disimpan');
+        Session::flash('info', 'Data Update Anda Berhasil Disimpan');
         return back();
     }
-    
+
 
     public function showeditJumlahPesanan()
     {

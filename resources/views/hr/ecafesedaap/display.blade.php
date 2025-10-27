@@ -12,6 +12,10 @@
     <div class="container">
         <div class="card card-custom gutter-b w-100">
             <div class="card-body">
+                <h1 class="text-center"> Ecafesedaap ({{ ucfirst($kategori) }})</h1>
+
+                <input type="hidden" id="kategori" value="{{ $kategori }}">
+
                 <div class="row">
                     <div class="col-md-3">
                         <img id="image" alt="Pic" class="rounded w-100"
@@ -23,6 +27,7 @@
                             class="indikator-berhasil indikator"></div>
                         <div style="border-top: 10px solid #F64E60; width: 120%; display:none"
                             class="indikator-gagal indikator"></div>
+
                         <div class="form-group">
                             <label for="nik" style="font-weight: bold; font-size: 29px">NIK</label>
                             <input id="nik" type="text" class="form-control text-white"
@@ -92,12 +97,16 @@
                 $('.indikator').removeClass('not-visible')
             }
             number = number + 1
-        }, 1000);
+        }, 1500);
 
         var data = {
-            'rfid': '989989'
+            'rfid': '989989',
+            'kategori': $('#kategori').val(),
+            'cek': true
         }
 
+        // console.log("inital render: ", data);
+        // count sisa porsi
         doScan(data);
 
         setTimeout(function() {
@@ -111,9 +120,11 @@
 
                 if (scanner_value != $('#temp_rfid').val()) {
                     var data = {
-                        'rfid': scanner_value
+                        'rfid': scanner_value,
+                        'kategori': $('#kategori').val(),
                     }
 
+                    // console.log("send data to controller: ", data);
                     doScan(data);
                     $('#temp_rfid').val(scanner_value);
                 }
@@ -134,7 +145,7 @@
 
         function doScan(data) {
             $('#loading').show()
-            // console.log(data);
+            // console.log( data );
 
             clearTimeout(timeOut);
             $.ajax({
@@ -149,7 +160,7 @@
                         timeOut = setTimeout(function() {
                             $('.indikator-berhasil').hide()
 
-                            $('#image').attr('src', 'data:image/jpg;base64,..');
+                            $('#image').attr('src', "{{ asset('assets/media/images/no-image.jpg') }}");
                             $('#name').val('');
                             $('#nik').val('');
                             $('#department').val('');
@@ -165,8 +176,8 @@
                     $('#loading').hide()
                 },
                 error: function(error) {
+                    // console.error(error.responseJSON.message);
                     // warning()
-                    // console.error("response error: ", error.responseJSON.message);
                     $('#temp_rfid').val('');
                     $('#loading').hide()
                     $('.indikator-bug').show()
@@ -182,7 +193,11 @@
             $('.indikator-gagal').hide()
             $('.message').html(message)
 
-            $('#image').attr('src', 'data:image/jpg;base64,' + data.image);
+            if (data.image) {
+                $('#image').attr('src', 'data:image/jpg;base64,' + data.image);
+            } else {
+                $('#image').attr('src', "{{ asset('assets/media/images/no-image.jpg') }}");
+            }
             $('#name').val(data.name);
             $('#nik').val(data.nik);
             $('#department').val(data.department);
@@ -206,7 +221,11 @@
                 return;
             }
 
-            $('#image').attr('src', 'data:image/jpg;base64,' + data.image);
+            if (data.image) {
+                $('#image').attr('src', 'data:image/jpg;base64,' + data.image);
+            } else {
+                $('#image').attr('src', "{{ asset('assets/media/images/no-image.jpg') }}");
+            }
             $('#name').val(data.name);
             $('#nik').val(data.nik);
             $('#department').val(data.department);

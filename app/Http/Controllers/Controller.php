@@ -30,11 +30,10 @@ class Controller extends BaseController
     public function permission($permission)
     {
         $permissions = AuthGroup::find(Auth::user()->auth_group_id)->permissions()->orderBy('name')->get();
-        if($permissions->where('codename', $permission)->first() == null) {
+        if ($permissions->where('codename', $permission)->first() == null) {
             // Ini berarti ga boleh akses. Langsung Redirect ke halaman 403
             abort(403);
         }
-
     }
 
     public function myPermissions()
@@ -48,9 +47,10 @@ class Controller extends BaseController
         return md5(uniqid(time(), true));
     }
 
-    public function formatTanggal($date) {
+    public function formatTanggal($date)
+    {
 
-        if($date == null) {
+        if ($date == null) {
             return '-';
         }
 
@@ -60,7 +60,12 @@ class Controller extends BaseController
         return $date . '/' . $month . '/' . $year;
     }
 
-    function expired($expired_date) {
+    function expired($expired_date)
+    {
+        if (empty($expired_date) || strtotime($expired_date) === false) {
+            return null;
+        }
+
         return (strtotime($expired_date) - strtotime(date('Y-m-d'))) / 86400;
     }
 
@@ -71,37 +76,37 @@ class Controller extends BaseController
         $prefixLength = strlen($prefix);
 
         $numberBefore = DB::table($tableName)
-        ->selectRaw('SUBSTR('.$columnName.', '.($prefixLength+1).') as code')
-        ->orderByRaw('CAST(SUBSTR('.$columnName.', '.($prefixLength+1).') AS SIGNED) desc')
-        ->whereRaw('SUBSTR('.$columnName.',1, '.($prefixLength).') = \''.$prefix.'\'');
-        
-        if($aditionalWhere != null) {
+            ->selectRaw('SUBSTR(' . $columnName . ', ' . ($prefixLength + 1) . ') as code')
+            ->orderByRaw('CAST(SUBSTR(' . $columnName . ', ' . ($prefixLength + 1) . ') AS SIGNED) desc')
+            ->whereRaw('SUBSTR(' . $columnName . ',1, ' . ($prefixLength) . ') = \'' . $prefix . '\'');
+
+        if ($aditionalWhere != null) {
             $numberBefore = $numberBefore->whereRaw($aditionalWhere);
         }
 
         $numberBefore = $numberBefore->first();
 
-        if($numberBefore == null) {
-            return $prefix.'00001';
+        if ($numberBefore == null) {
+            return $prefix . '00001';
         }
 
-        $currentNumber = (int)$numberBefore->code+1;
-        
+        $currentNumber = (int)$numberBefore->code + 1;
+
         switch ($currentNumber) {
             case $currentNumber < 10:
-                $currentCode = $prefix.'0000'.$currentNumber;
+                $currentCode = $prefix . '0000' . $currentNumber;
                 break;
             case $currentNumber < 100:
-                $currentCode = $prefix.'000'.$currentNumber;
+                $currentCode = $prefix . '000' . $currentNumber;
                 break;
             case $currentNumber < 1000:
-                $currentCode = $prefix.'00'.$currentNumber;
+                $currentCode = $prefix . '00' . $currentNumber;
                 break;
             case $currentNumber < 10000:
-                $currentCode = $prefix.'0'.$currentNumber;
+                $currentCode = $prefix . '0' . $currentNumber;
                 break;
             default:
-                $currentCode = $prefix.$currentNumber;
+                $currentCode = $prefix . $currentNumber;
                 break;
         }
 

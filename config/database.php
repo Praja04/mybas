@@ -113,10 +113,10 @@ return [
         ],
         '192.168.178.44-admin' => [
             'driver'    => 'mysql',
-            'host'      => '192.168.154.218',
-            'database'  => 'parking',
-            'username'  => 'secureparking',
-            'password'  => 'securepas',
+            'host'      => env('SMU_DB_HOST'),
+            'database'  => env('SMU_DB_DATABASE'),
+            'username'  => env('SMU_DB_USERNAME'),
+            'password'  => env('SMU_DB_PASSWORD'),
             'charset'   => 'utf8',
             'collation' => 'utf8_unicode_ci',
             'prefix'    => '',
@@ -148,7 +148,7 @@ return [
             'prefix' => '',
             'prefix_indexes' => true,
         ],
- 
+
         'sqlsrv' => [
             'driver' => 'sqlsrv',
             'url' => env('DATABASE_URL'),
@@ -164,11 +164,11 @@ return [
 
         'boilerdb' => [
             'driver' => 'mysql',
-            'host' => env('BOILERDB_HOST', '10.11.11.174'), 
-            'port' => env('BOILERDB_PORT', '4306'), 
-            'database' => env('BOILERDB_DATABASE', 'boilerdb'), 
-            'username' => env('BOILERDB_USERNAME', 'adminboiler'), 
-            'password' => env('BOILERDB_PASSWORD', 'admin123'), 
+            'host' => env('BOILERDB_HOST', '10.11.11.174'),
+            'port' => env('BOILERDB_PORT', '4306'),
+            'database' => env('BOILERDB_DATABASE', 'boilerdb'),
+            'username' => env('BOILERDB_USERNAME', 'adminboiler'),
+            'password' => env('BOILERDB_PASSWORD', 'admin123'),
             'unix_socket' => env('DB_SOCKET', ''),
             'charset' => 'utf8mb4',
             'collation' => 'utf8mb4_unicode_ci',
@@ -209,7 +209,7 @@ return [
 
         'options' => [
             'cluster' => env('REDIS_CLUSTER', 'redis'),
-            'prefix' => env('REDIS_PREFIX', Str::slug(env('APP_NAME', 'laravel'), '_').'_database_'),
+            'prefix' => env('REDIS_PREFIX', Str::slug(env('APP_NAME', 'laravel'), '_') . '_database_'),
         ],
 
         'default' => [

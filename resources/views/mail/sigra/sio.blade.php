@@ -1,61 +1,86 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title> Sigra Notification SIO</title>
+    <title>Pengingat SIO - SIGRA Notification</title>
 </head>
 
-<body>
-    <h3 style="text-align: center">Sigra Notification SIO <span
-            style="font-size: 5px; color: #eee">{{ date('YmdHis') }}</span></h3>
+<body
+    style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; color: #333; background-color: #f9f9f9; padding: 20px;">
+    <div
+        style="max-width: 800px; margin: 0 auto; background-color: #fff; border-radius: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); padding: 20px;">
 
-    <p style="margin-top: 10px; margin-bottom: 10px; background-color: #eee; padding: 5px">Diinformasikan
-        sertifikat-sertifikat berikut akan atau sudah expired. Harap untuk ditindak lanjuti agar tidak menerima email
-        notifikasi ini berikutnya. <span style="font-size: 5px; color: #eee">{{ date('YmdHis') }}</span></p>
+        <h2 style="text-align: center; color: #a80000; margin-bottom: 10px;">
+            SIGRA - Pengingat SIO
+        </h2>
 
-    <div style="width: 98%">
-        <table style="width: 100%; border-collapse: collapse; margin-left: 15px; margin-light: 15px">
+        <p style="text-align: center; font-size: 13px; color: #6c757d; margin-top: 0;">
+            MyBAS mendeteksi adanya Surat Izin Operasional (SIO) yang akan atau telah melewati masa berlaku.
+        </p>
+
+        <p style="margin-top: 15px; line-height: 1.6;">
+            Mohon perhatian untuk segera menindaklanjuti kontrak berikut agar tidak menerima notifikasi serupa pada
+            periode berikutnya.
+        </p>
+
+        <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
             <thead>
-                <tr style="background-color: #eee">
-                    <th style="border: 1px solid #333;padding: 8px;">No</th>
-                    <th style="border: 1px solid #333;padding: 8px;">PT</th>
-                    <th style="border: 1px solid #333;padding: 8px;">NAMA PERIZINAN</th>
-                    <th style="border: 1px solid #333;padding: 8px;">NOMOR PERIZINAN</th>
-                    <th style="border: 1px solid #333;padding: 8px;">NAMA KARYAWAN</th>
-                    <th style="border: 1px solid #333;padding: 8px;">NIK KARYAWAN</th>
-                    <th style="border: 1px solid #333;padding: 8px;">TANGGAL EXPIRED</th>
-                    <th style="border: 1px solid #333;padding: 8px;">DUE DATE</th>
-                    <th style="border: 1px solid #333;padding: 8px;">KETERANGAN</th>
+                <tr style="background-color: #a80000; color: #fff;">
+                    <th style="border: 1px solid #ddd; padding: 8px;">No</th>
+                    <th style="border: 1px solid #ddd; padding: 8px;">PT</th>
+                    <th style="border: 1px solid #ddd; padding: 8px;">Nama Perizinan</th>
+                    <th style="border: 1px solid #ddd; padding: 8px;">Nomor Perizinan</th>
+                    <th style="border: 1px solid #ddd; padding: 8px;">Nama Karyawan</th>
+                    <th style="border: 1px solid #ddd; padding: 8px;">NIK Karyawan</th>
+                    <th style="border: 1px solid #ddd; padding: 8px;">Depatemen</th>
+                    <th style="border: 1px solid #ddd; padding: 8px;">Tanggal Ikatan Dinas</th>
+                    <th style="border: 1px solid #ddd; padding: 8px;">Tanggal Expired</th>
+                    <th style="border: 1px solid #ddd; padding: 8px;">Sisa Waktu</th>
+                    <th style="border: 1px solid #ddd; padding: 8px;">Status</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach ($sertifikasi as $key => $sertifikat)
-                    <tr style="background-color: {{ $sertifikat->due_date > 0 ? '#FFC857' : '#C5283D' }}">
-                        <td style="border: 1px solid #333;padding: 8px;">{{ $key + 1 }}</td>
-                        <td style="border: 1px solid #333;padding: 8px;">{{ $sertifikat->perusahaan }}</td>
-                        <td style="border: 1px solid #333;padding: 8px;">{{ $sertifikat->nama_perizinan }}</td>
-                        <td style="border: 1px solid #333;padding: 8px;">{{ $sertifikat->nomor_izin }}</td>
-                        <td style="border: 1px solid #333;padding: 8px;">{{ $sertifikat->nama_karyawan }}</td>
-                        <td style="border: 1px solid #333;padding: 8px;">{{ $sertifikat->nik_karyawan }}</td>
-                        <td style="border: 1px solid #333;padding: 8px;">
-                            {{ @formatTanggalIndonesia($sertifikat->tanggal_habis) }}</td>
-                        <td style="border: 1px solid #333;padding: 8px;">{{ $sertifikat->due_date }} hari</td>
-                        <td style="border: 1px solid #333;padding: 8px;">
-                            {{ $sertifikat->due_date > 0 ? 'Hampir Expired' : 'Expired' }}</td>
+                    <tr style="background-color: {{ $sertifikat->due_date > 0 ? '#FFF8E1' : '#FDECEA' }};">
+                        <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">{{ $key + 1 }}</td>
+                        <td style="border: 1px solid #ddd; padding: 8px;">{{ $sertifikat->perusahaan }}</td>
+                        <td style="border: 1px solid #ddd; padding: 8px;">{{ $sertifikat->nama_perizinan }}</td>
+                        <td style="border: 1px solid #ddd; padding: 8px;">{{ $sertifikat->nomor_izin }}</td>
+                        <td style="border: 1px solid #ddd; padding: 8px;">{{ $sertifikat->nama_karyawan }}</td>
+                        <td style="border: 1px solid #ddd; padding: 8px;">{{ $sertifikat->nik_karyawan }}</td>
+                        <td style="border: 1px solid #ddd; padding: 8px;">{{ $sertifikat->department }}</td>
+                        <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">
+                            {{ @formatTanggalIndonesia($sertifikat->tanggal_mulai_ikatan_dinas) }} -
+                            {{ @formatTanggalIndonesia($sertifikat->tanggal_selesai_ikatan_dinas) }}
+                        </td>
+                        <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">
+                            {{ @formatTanggalIndonesia($sertifikat->tanggal_habis) }}
+                        </td>
+                        <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">
+                            {{ abs($sertifikat->due_date) }} hari {{ $sertifikat->due_date > 0 ? 'lagi' : 'lalu' }}
+                        </td>
+                        <td
+                            style="border: 1px solid #ddd; padding: 8px; text-align: center; font-weight: bold; color: {{ $sertifikat->due_date > 0 ? '#856404' : '#721c24' }};">
+                            {{ $sertifikat->due_date > 0 ? 'Hampir Expired' : 'Sudah Expired' }}
+                        </td>
                     </tr>
                 @endforeach
-                <tr>
-                    <td colspan="7"><span style="font-size: 5px; color: #eee">{{ date('YmdHis') }}</span></td>
-                </tr>
             </tbody>
         </table>
-    </div>
 
-    <p style="margin-top: 30px; margin-bottom: 20px">*Note : <i>Notifikasi ini di genereate oleh system. Dan tidak perlu
-            dibalas.</i> <span style="font-size: 5px; color: #eee">{{ date('YmdHis') }}</span></p>
+        <p style="margin-top: 25px; font-size: 13px; color: #6c757d;">
+            <strong>Catatan:</strong> Email ini dikirim otomatis oleh MyBAS. Anda tidak perlu membalas pesan ini.
+        </p>
+
+        <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+
+        <p style="text-align: center; font-size: 11px; color: #bbb;">
+            &copy; {{ date('Y') }} MyBAS | Dikirim otomatis pada {{ date('d M Y H:i:s') }}
+        </p>
+
+    </div>
 </body>
 
 </html>

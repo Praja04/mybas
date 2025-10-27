@@ -30,8 +30,9 @@ class Legalitas extends Mailable
      */
     public function build()
     {
-        return $this->view('mail.sigra.legalitas', [
-            'sertifikasi' => $this->sertifikasi
-        ]);
+        return $this->subject('Pengingat: Sertifikasi Legalitas Akan Segera Berakhir')
+            ->view('mail.sigra.legalitas', [
+                'sertifikasi' => $this->sertifikasi
+            ]);
     }
 }

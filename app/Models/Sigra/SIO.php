@@ -13,4 +13,9 @@ class SIO extends Model
     {
         return $this->belongsTo(Perusahaan::class, 'id_perusahaan');
     }
+
+    public function department()
+    {
+        return $this->belongsTo('App\Department', 'dept_id');
+    }
 }

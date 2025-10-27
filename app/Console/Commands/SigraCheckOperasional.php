@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Mail;
 use App\Models\Sigra\Operasional;
 use App\Models\Sigra\SertifikasiOperasional;
 use App\Mail\Sigra\Operasional as EmailOperasional;
+use Illuminate\Support\Facades\Log;
 
 class SigraCheckOperasional extends Command
 {
@@ -40,10 +41,21 @@ class SigraCheckOperasional extends Command
         return (strtotime($expired_date) - strtotime(date('Y-m-d'))) / 86400;
     }
 
-    function sendEmail($emails, $sertifikat)
+    function sendEmail($sertifikat)
     {
+        $emails = DB::table('sigra_email_penerima')
+            ->where('jenis', 'operasional')
+            ->where('active', 'Y')
+            ->get();
+
+        if ($emails->isEmpty()) {
+            Log::warning('Tidak ada penerima email untuk jenis "operasional".');
+            return;
+        }
+
         foreach ($emails as $email) {
-            Mail::mailer(setEmail($email->email_penerima))->to($email->email_penerima)->send(new EmailOperasional($sertifikat));
+            // Mail::mailer(setEmail($email->email_penerima))->to($email->email_penerima)->send(new EmailOperasional($sertifikat));
+            Mail::to($email->email_penerima)->send(new EmailOperasional($sertifikat));
         }
     }
 
@@ -55,9 +67,6 @@ class SigraCheckOperasional extends Command
     public function handle()
     {
         $certificates = [];
-        // Get an emails
-        $emails = DB::table('sigra_email_penerima')
-            ->where('jenis', 'operasional')->get();
 
         $operasional = Operasional::where('status', '!=', 'deleted')
             ->where('status', '!=', 'inactive')->get();
@@ -70,19 +79,30 @@ class SigraCheckOperasional extends Command
 
             if ($sertifikasi != null) {
                 $selisih_hari = $this->expired($sertifikasi->tanggal_expired);
-                // buat kondisi kurang dari 30 hari dan tidak melewati dari 60 hari
-                if ($selisih_hari <= 30 && $selisih_hari >= -60) {
+                // buat kondisi kurang dari 45 hari dan tidak melewati dari 60 hari
+                if ($selisih_hari <= 45 && $selisih_hari >= -60) {
                     // Di sini dilakukan send notifikasi
                     $sertifikasi->perusahaan = $data->perusahaan->nama_perusahaan;
                     $sertifikasi->nama_perizinan = $data->nama_perizinan;
                     $sertifikasi->nomor_perizinan = $data->nomor_perizinan;
                     $sertifikasi->due_date = $this->expired($sertifikasi->tanggal_expired);
-                    $this->info('Udah mau expired nih.. ' . $sertifikasi->tanggal_expired . ' due date ' . $sertifikasi->due_date);
+
+                    if ($selisih_hari < 0) {
+                        $this->info("[SIGRA Operasional] {$sertifikasi->nama_perizinan} sudah berakhir pada {$sertifikasi->tanggal_expired} (melewati " . abs($selisih_hari) . " hari)");
+                    } else {
+                        $this->info("[SIGRA Operasional] {$sertifikasi->nama_perizinan} akan berakhir pada {$sertifikasi->tanggal_expired} (dalam {$selisih_hari} hari)");
+                    }
+
                     $certificates[] = $sertifikasi;
                 }
             }
         }
 
-        $this->sendEmail($emails, $certificates);
+        if (!empty($certificates)) {
+            $this->sendEmail($certificates);
+            $this->info('Email notifikasi pengingat sertifikasi operasional telah dikirim.');
+        } else {
+            $this->info('Tidak ada sertifikasi operasional yang akan atau sudah expired. Tidak ada email dikirim.');
+        }
     }
 }

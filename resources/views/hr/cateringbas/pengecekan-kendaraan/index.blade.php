@@ -51,7 +51,6 @@
     </div>
 
     {{-- modal create jumlah pesanan catering --}}
-    {{-- modal create jumlah pesanan catering --}}
     <div class="modal fade" id="modalPesananCatering" tabindex="-1" role="dialog" aria-labelledby="exampleModalSizeSm"
         aria-hidden="true">
         <div class="modal-dialog modal-lg" role="document">
@@ -187,7 +186,7 @@
                                     class="btn btn-sm btn-danger text-white mx-2">
                                     <i class="fa fa-trash"></i>
                                 </a>
-                                <a href="{{ url('') }}/${row.id_transaksi}"
+                                <a href="{{ url('') }}/cateringbas/kuesioner-kendaraan/${row.id_transaksi}"
                                     class="btn btn-sm btn-info text-white mx-2">
                                     <i class="fa fa-eye"></i>
                                 </a>
@@ -283,7 +282,8 @@
                                 text: response.message,
                             }).then(function() {
                                 var id_transaksi = response.id_transaksi;
-                                window.location.href = "{{ url('') }}/" +
+                                window.location.href =
+                                    "{{ url('') }}/cateringbas/kuesioner-kendaraan/" +
                                     id_transaksi;
                             });
                         } else {

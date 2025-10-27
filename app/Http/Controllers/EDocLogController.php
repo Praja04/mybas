@@ -3,16 +3,16 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use DB;
 use App\Http\Requests;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
-use Session;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\EDoc\EDocMail;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Http\File;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Session;
 use Image;
 use Yajra\DataTables\Datatables;
 
@@ -263,7 +263,7 @@ class EDocLogController extends Controller
             'tanggal_pengiriman' => $request->tanggal_pengiriman,
             'keterangan'         => $request->keterangan,
             'jenis'              => $request->jenis,
-            'kurir'              => $request->kurir == 'Dll' ? $request->kurir_lain : $request->kurir,
+            'kurir'              => $request->kurir == 'Lainnya' ? $request->kurir_lain : $request->kurir,
             'created_at'         => date('Y-m-d H:i:s'),
             'created_by'         => Auth::user()->username,
         ];

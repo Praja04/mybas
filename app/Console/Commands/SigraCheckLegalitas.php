@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Mail;
 use App\Models\Sigra\Legalitas;
 use App\Models\Sigra\SertifikasiLegalitas;
 use App\Mail\Sigra\Legalitas as EmailLegalitas;
+use Illuminate\Support\Facades\Log;
 
 class SigraChecklegalitas extends Command
 {
@@ -44,7 +45,14 @@ class SigraChecklegalitas extends Command
     {
         // Get an emails
         $emails = DB::table('sigra_email_penerima')
-            ->where('jenis', 'legalitas')->get();
+            ->where('jenis', 'legalitas')
+            ->where('active', 'Y')
+            ->get();
+
+        if ($emails->isEmpty()) {
+            Log::warning('Tidak ada penerima email untuk jenis "legalitas".');
+            return;
+        }
 
         foreach ($emails as $email) {
             Mail::to($email->email_penerima)->send(new EmailLegalitas($sertifikat));
@@ -66,24 +74,34 @@ class SigraChecklegalitas extends Command
         foreach ($legalitas as $key => $data) {
             $sertifikasi = SertifikasiLegalitas::where('id_legalitas', $data->id)->where('status', '!=', 'deleted')->orderBy('tanggal_habis', 'desc')->first();
 
-
             // if ($sertifikasi != null && $sertifikasi->tanggal_habis != null) {
             //     if ($this->expired($sertifikasi->tanggal_habis) <= 30) {
 
             if ($sertifikasi != null) {
                 $selisih_hari = $this->expired($sertifikasi->tanggal_habis);
-                // buat kondisi kurang dari 30 hari dan tidak melewati dari 60 hari
-                if ($selisih_hari <= 30 && $selisih_hari >= -60) {
+                // buat kondisi kurang dari 45 hari dan tidak melewati dari 60 hari
+                if ($selisih_hari <= 45 && $selisih_hari >= -60) {
                     // Di sini dilakukan send notifikasi
                     $sertifikasi->perusahaan = $data->perusahaan->nama_perusahaan;
                     $sertifikasi->nama_legalitas = $data->nama_legalitas;
                     $sertifikasi->due_date = $this->expired($sertifikasi->tanggal_habis);
-                    $this->info('Udah mau expired nih.. ' . $sertifikasi->tanggal_habis . ' due date ' . $sertifikasi->due_date);
+
+                    if ($selisih_hari < 0) {
+                        $this->info("[SIGRA Legalitas] {$sertifikasi->nama_legalitas} sudah berakhir pada {$sertifikasi->tanggal_habis} (melewati " . abs($selisih_hari) . " hari)");
+                    } else {
+                        $this->info("[SIGRA Legalitas] {$sertifikasi->nama_legalitas} akan berakhir pada {$sertifikasi->tanggal_habis} (dalam {$selisih_hari} hari)");
+                    }
+
                     $certificates[] = $sertifikasi;
                 }
             }
         }
 
-        $this->sendEmail($certificates);
+        if (!empty($certificates)) {
+            $this->sendEmail($certificates);
+            $this->info('Email notifikasi pengingat sertifikasi legalitas telah dikirim.');
+        } else {
+            $this->info('Tidak ada sertifikasi legalitas yang akan atau sudah expired. Tidak ada email dikirim.');
+        }
     }
 }

@@ -85,9 +85,11 @@
                         <div class="form-group">
                             <label for="password">Password</label>
                             <div class="input-group">
-                                <input name="password" type="password" class="form-control" id="password" placeholder="Enter password">
+                                <input name="password" type="password" class="form-control" id="password"
+                                    placeholder="Enter password">
                                 <div class="input-group-append">
-                                    <button type="button" class="btn btn-outline-secondary" onclick="togglePasswordVisibility()">
+                                    <button type="button" class="btn btn-outline-secondary"
+                                        onclick="togglePasswordVisibility()">
                                         <i id="password-eye-icon" class="fa fa-eye"></i>
                                     </button>
                                 </div>
@@ -164,14 +166,16 @@
                         <div class="form-group">
                             <label for="password">New Password</label>
                             <div class="input-group">
-                                <input name="edit_password" type="password" class="form-control" id="editPasword" placeholder="Enter password">
+                                <input name="edit_password" type="password" class="form-control" id="editPasword"
+                                    placeholder="Enter password">
                                 <div class="input-group-append">
-                                    <button type="button" class="btn btn-outline-secondary" onclick="toggleEditPasswordVisibility()">
+                                    <button type="button" class="btn btn-outline-secondary"
+                                        onclick="toggleEditPasswordVisibility()">
                                         <i id="password-eye-icon" class="fas fa-eye"></i>
                                     </button>
                                 </div>
                             </div>
-                        </div>                          
+                        </div>
 
                         <div class="form-group">
                             <label for="editAuthGroupId">Group</label>
@@ -202,7 +206,7 @@
         </div>
     </div>
 
-    {{--Modal change user --}}
+    {{-- Modal change user --}}
     <div class="modal" id="modal-change-permission">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -257,9 +261,12 @@
                         name: 'email'
                     },
                     {
-                        data: 'group.name', name: 'group.name', render: function (data, type, row) {
-                        return `<a onClick="groupPermissions('${row.group.id}')" href="javascript:;">${data}</a>`;
-                    }},
+                        data: 'group.name',
+                        name: 'group.name',
+                        render: function(data, type, row) {
+                            return `<a onClick="groupPermissions('${row.group.id}')" href="javascript:;">${data}</a>`;
+                        }
+                    },
                     {
                         data: 'department.name',
                         name: 'department.name'
@@ -355,42 +362,43 @@
             // handle form edit 1
             // kondisi satu get user id untuk diubah
             $(document).on('click', '.edit-user', function(e) {
-            e.preventDefault();
-            var button = $(this);
-            var userId = button.data('id');
-            var editUrl = "{{ url('/master/user/ubah') }}/" + userId;
+                e.preventDefault();
+                var button = $(this);
+                var userId = button.data('id');
+                var editUrl = "{{ url('/master/user/ubah') }}/" + userId;
 
-            $('#form-edit')[0].reset();
+                $('#form-edit')[0].reset();
 
-            $.ajax({
-                url: editUrl,
-                type: 'PUT',
-                success: function(response) {
-                    if (response.status == 'success') {
-                        var user = response.user;
+                $.ajax({
+                    url: editUrl,
+                    type: 'PUT',
+                    success: function(response) {
+                        if (response.status == 'success') {
+                            var user = response.user;
 
-                        // Set values from the response to the form fields
-                        $('#editUserId').val(user.id);
-                        $('#editUsername').val(user.username);
-                        $('#editName').val(user.name);
-                        $('#editEmail').val(user.email);
+                            // Set values from the response to the form fields
+                            $('#editUserId').val(user.id);
+                            $('#editUsername').val(user.username);
+                            $('#editName').val(user.name);
+                            $('#editEmail').val(user.email);
 
-                        console.log('editPasword:', user.password);
+                            console.log('editPasword:', user.password);
 
-                        $('#editPasword').val(user.password); // Set password here
-                        $('#editAuthGroupId').val(user.auth_group_id).trigger('change');
-                        $('#editDepartmentId').val(user.department_id).trigger('change');
+                            $('#editPasword').val(user.password); // Set password here
+                            $('#editAuthGroupId').val(user.auth_group_id).trigger('change');
+                            $('#editDepartmentId').val(user.dept_id).trigger('change');
 
-                        $('#editUserModal').modal('show');
-                    } else {
-                        Swal.fire('Error', response.message, 'error');
+                            $('#editUserModal').modal('show');
+                        } else {
+                            Swal.fire('Error', response.message, 'error');
+                        }
+                    },
+                    error: function(xhr) {
+                        Swal.fire('Error', 'Terjadi kesalahan saat mengambil data pengguna.',
+                            'error');
                     }
-                },
-                error: function(xhr) {
-                    Swal.fire('Error', 'Terjadi kesalahan saat mengambil data pengguna.', 'error');
-                }
+                });
             });
-        });
 
             // handle form edit 2
             // kondisi 2 untuk button submit create dari get id sebelum nya
@@ -481,22 +489,21 @@
 
         // toggle buat edit
         function toggleEditPasswordVisibility() {
-        let passwordInput = document.getElementById('editPasword');
-        let toggleIcon = document.getElementById('password-eye-icon');
+            let passwordInput = document.getElementById('editPasword');
+            let toggleIcon = document.getElementById('password-eye-icon');
 
-        if (passwordInput.type === 'password') {
-            passwordInput.type = 'text';
-            toggleIcon.classList.remove('fa-eye');
-            toggleIcon.classList.add('fa-eye-slash');
-        } else {
-            passwordInput.type = 'password';
-            toggleIcon.classList.remove('fa-eye-slash');
-            toggleIcon.classList.add('fa-eye');
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                toggleIcon.classList.remove('fa-eye');
+                toggleIcon.classList.add('fa-eye-slash');
+            } else {
+                passwordInput.type = 'password';
+                toggleIcon.classList.remove('fa-eye-slash');
+                toggleIcon.classList.add('fa-eye');
+            }
         }
-    }
 
-    function groupPermissions(id)
-    {
+        function groupPermissions(id) {
             // alert(id);
             $(".group_id").val(id);
             $.ajax({
@@ -505,15 +512,15 @@
                 data: {
                     id: id
                 },
-                success: function ( response )
-                {
+                success: function(response) {
                     $(".auth-permissions").html("");
                     $.each(response.auth_permissions, (key, data) => {
                         $(".auth-permissions").append(`
                         <li>
                             <div class="checkbox">
                             <label>
-                                <input class="mr-1" name="permissions[]" type="checkbox" checked value="`+data.id+`">`+data.codename+`
+                                <input class="mr-1" name="permissions[]" type="checkbox" checked value="` + data.id +
+                            `">` + data.codename + `
                             </label>
                             </div>
                         </li>
@@ -527,7 +534,8 @@
                         <li>
                             <div class="checkbox">
                             <label>
-                                <input class="mr-1" name="permissions[]" type="checkbox" value="`+data.id+`">`+data.codename+`
+                                <input class="mr-1" name="permissions[]" type="checkbox" value="` + data.id + `">` +
+                            data.codename + `
                             </label>
                             </div>
                         </li>
@@ -535,42 +543,41 @@
                     });
                     $("#modal-change-permission").modal("show");
                     // console.log( response );
-                    },
-                error: function ( error) {
-                    console.log( error );
+                },
+                error: function(error) {
+                    console.log(error);
                 }
             })
-    }
+        }
 
-    $(document).ready( function () {
-        $('#change-permission-form').submit( function (e) {
+        $(document).ready(function() {
+            $('#change-permission-form').submit(function(e) {
                 e.preventDefault();
                 var data = $(this).serialize();
                 $.ajax({
                     url: '{{ URL::to('/permission/auth-group/change-permissions') }}',
                     type: 'POST',
                     data: data,
-                    success: function ( response ) {
+                    success: function(response) {
                         if (response.success == 1) {
-                        setTimeout(function() {
-                            location.reload();
-                        }, 500);
-                        }else{
-                        alert("Tidak bisa menyimpan data, silahkan periksa inputan anda");
+                            setTimeout(function() {
+                                location.reload();
+                            }, 500);
+                        } else {
+                            alert("Tidak bisa menyimpan data, silahkan periksa inputan anda");
                         }
                     },
-                    error : function ( error ) {
+                    error: function(error) {
                         if (error.status == 422) {
-                        $('.help-block').text('');
-                        $.each(error.responseJSON.errors, (index, item) => {
-                            $('._'+index+' .help-block').text(item);
-                        });
+                            $('.help-block').text('');
+                            $.each(error.responseJSON.errors, (index, item) => {
+                                $('._' + index + ' .help-block').text(item);
+                            });
                         }
                     }
                 })
-        });
-    })
-
+            });
+        })
     </script>
 
     {{-- buat password --}}
