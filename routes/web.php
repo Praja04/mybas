@@ -3,7 +3,6 @@
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 
-
 Route::group(['middleware' => ['auth', 'rules', 'access_log']], function () {
 
     Route::get('/', 'HomeController@index')->name('home');
@@ -710,6 +709,9 @@ require base_path('routes/halo-security.php');
 require base_path('routes/kedatangan-beras.php');
 require base_path('routes/kedatangan-lauk.php');
 require base_path('routes/pengecekan-boiler.php');
+
+// local only
+require base_path('routes/mail-testing.php');
 
 Route::fallback(function () {
     abort(404);

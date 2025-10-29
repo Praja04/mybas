@@ -33,6 +33,6 @@ class RemainderMail extends Mailable
         $data = $this->data;
 
         return $this->view('mail.edoc.edoc_remainder', compact('data'))
-            ->subject('Remainder E-Doc !!!');
+            ->subject('Pengingat: Pengambilan E-Document untuk ' . ($data->nama_penerima ?? 'Penerima'));
     }
 }

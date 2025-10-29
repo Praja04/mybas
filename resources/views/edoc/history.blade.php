@@ -49,7 +49,7 @@
                     <div class="card card-custom gutter-b">
                         <div class="card-header card-header-tabs-line">
                             <div class="card-title">
-                                <h3 class="card-label">History @if (!in_array('edoc_security', $permissions)) Edoc Dari <u>{{ Auth::user()->name }}</u> /
+                                <h3 class="card-label">History @if (!in_array('security', $permissions)) Edoc Dari <u>{{ Auth::user()->name }}</u> /
                                         Untuk dept <u>{{ $dept }}</u> @endif
                                 </h3>
                             </div>
@@ -311,9 +311,9 @@
                 trigger: trigger,
                 template: '<div class="tooltip ' + theme + ' ' + width +
                     '" role="tooltip">\
-                                                                                                                                                    <div class="arrow"></div>\
-                                                                                                                                                    <div class="tooltip-inner"></div>\
-                                                                                                                                                </div>'
+                                                                                                                                                                                                                                    <div class="arrow"></div>\
+                                                                                                                                                                                                                                    <div class="tooltip-inner"></div>\
+                                                                                                                                                                                                                                </div>'
             });
         }
 
@@ -393,15 +393,27 @@
                         "sortable": false,
                         "searchable": false,
                         render: function(data, type, row) {
+                            // belum diambil
                             if (row.status == 1) {
-                                return `<a href="javascript:void(0)" onClick="changeDepartment('${row.id_barang}', '${row.dept_penerima}')" data-toggle="tooltip" title="Ganti department penerima" class="btn btn-primary btn-sm btn-icon">
-                        <i class="las la-edit"></i>
-                    </a>`
+                                return `<a 
+                                            href="javascript:void(0)" 
+                                            onClick="changeDepartment('${row.id_barang}', '${row.dept_penerima}')" 
+                                            data-toggle="tooltip" 
+                                            title="Ganti department penerima" 
+                                            class="btn btn-dark btn-sm"
+                                            >
+                                                <i class="las la-edit"></i>Ganti departemen
+                                        </a>`
                             }
-
-                            return `<a href="javascript:void(0)" onClick="returnBarang('${row.id_barang}', '${row.dept_penerima}')" data-toggle="tooltip" title="Return Barang / Dokumen" class="btn btn-secondary btn-sm btn-icon">
-                    <i class="las la-undo-alt"></i>
-                </a>`
+                            // sudah diambil
+                            return `<a 
+                                        href="javascript:void(0)" 
+                                        onClick="returnBarang('${row.id_barang}', '${row.dept_penerima}')" 
+                                        data-toggle="tooltip" 
+                                        title="Return Barang / Dokumen" 
+                                        class="btn btn-primary btn-sm">
+                                            <i class="las la-undo-alt"></i> Return Barang
+                                    </a>`
                         }
                     },
                 @endif
@@ -451,11 +463,11 @@
                                  ${
                                     response.data.data.updated_by
                                     ? `<b>${response.data.data.updated_by}</b> Mengambil Barang/Dokumen
-                                    
-                                        <br>Bukti Foto:<hr>
-                                        ${response.data.data.foto 
-                                            ? `<img src="{{ url('e-doc/pengambilan') }}/${response.data.data.foto}" width="100%">`
-                                            : '<i>Tidak ada foto</i>'}`
+                                                                                                                    
+                                                                                                                        <br>Bukti Foto:<hr>
+                                                                                                                        ${response.data.data.foto 
+                                                                                                                            ? `<img src="{{ url('e-doc/pengambilan') }}/${response.data.data.foto}" width="100%">`
+                                                                                                                            : '<i>Tidak ada foto</i>'}`
                                             
                                     : '<span class="text-muted">Belum Diambil</span>'
                                 }
