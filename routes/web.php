@@ -1,7 +1,6 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Storage;
 
 Route::group(['middleware' => ['auth', 'rules', 'access_log']], function () {
 
@@ -212,6 +211,10 @@ Route::group(['middleware' => ['auth', 'rules', 'access_log']], function () {
     Route::post('/attachment/upload', 'LocalAttachmentController@upload')->name('attachment.upload');
     Route::get('/attachment/download/{id}', 'LocalAttachmentController@download');
     Route::get('/attachment/generate', 'LocalAttachmentController@generateTransactionId')->name('attachment.generate-transaction-id');
+    Route::delete('/attachment/delete/{id}', 'LocalAttachmentController@delete')->name('attachment.delete');
+    Route::delete('/attachment/delete-all/{transactionId}', 'LocalAttachmentController@deleteAll')->name('attachment.delete-all');
+
+
 
     Route::get('/checklist/schedule', 'ChecklistScheduleController@index');
     Route::post('/master/checklist_schedule/store', 'ChecklistScheduleController@store');
@@ -709,6 +712,7 @@ require base_path('routes/halo-security.php');
 require base_path('routes/kedatangan-beras.php');
 require base_path('routes/kedatangan-lauk.php');
 require base_path('routes/pengecekan-boiler.php');
+// require base_path('routes/oauth.php');
 
 // local only
 require base_path('routes/mail-testing.php');

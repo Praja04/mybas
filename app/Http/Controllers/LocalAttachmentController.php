@@ -36,7 +36,15 @@ class LocalAttachmentController extends Controller
         $attachment->transaction_type = $transaction_type;
         $attachment->save();
 
-        return response()->json(['success' => 1, 'message' => 'Image uploaded succesfully']);
+        return response()->json([
+            'success' => 1,
+            'message' => 'Image uploaded successfully',
+            'data' => [
+                'id' => $attachment->id,
+                'original_file_name' => $original_file_name,
+                'encode_file_name' => $encode_file_name
+            ]
+        ]);
     }
 
     public function generateTransactionId()
@@ -67,5 +75,72 @@ class LocalAttachmentController extends Controller
         } else {
             return response()->json(['error' => 'File not found'], 404);
         }
+    }
+
+    public function delete($id)
+    {
+        $attachment = LocalAttachment::find($id);
+
+        if (!$attachment) {
+            return response()->json([
+                'success' => 0,
+                'message' => 'File tidak ditemukan'
+            ], 404);
+        }
+
+        $filePath = $attachment->transaction_type . '/' . $attachment->encode_file_name;
+
+        if (Storage::disk('public')->exists($filePath)) {
+            Storage::disk('public')->delete($filePath);
+        }
+
+        $attachment->delete();
+
+        return response()->json([
+            'success' => 1,
+            'message' => 'File berhasil dihapus'
+        ]);
+    }
+
+    public function deleteAll($transactionId)
+    {
+        $attachments = LocalAttachment::where('transaction_id', $transactionId)->get();
+
+        if ($attachments->isEmpty()) {
+            return response()->json([
+                'success' => 0,
+                'message' => 'Tidak ada file untuk dihapus'
+            ], 404);
+        }
+
+        $deleted = 0;
+        $failed = 0;
+
+        foreach ($attachments as $attachment) {
+            $filePath = $attachment->transaction_type . '/' . $attachment->encode_file_name;
+
+            try {
+                if (!Storage::disk('public')->exists($filePath)) {
+                    $failed++;
+                    continue;
+                }
+
+                if (!Storage::disk('public')->delete($filePath)) {
+                    $failed++;
+                    continue;
+                }
+                $attachment->delete();
+                $deleted++;
+            } catch (\Throwable $e) {
+                $failed++;
+            }
+        }
+
+        return response()->json([
+            'success' => $failed === 0 ? 1 : 0,
+            'message' => "Hapus file selesai",
+            'deleted' => $deleted,
+            'failed' => $failed
+        ]);
     }
 }

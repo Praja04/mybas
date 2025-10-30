@@ -2,6 +2,7 @@
 
 namespace App\Models\Sigra;
 
+use App\Department;
 use Illuminate\Database\Eloquent\Model;
 
 class SIO extends Model
@@ -16,6 +17,6 @@ class SIO extends Model
 
     public function department()
     {
-        return $this->belongsTo('App\Department', 'dept_id');
+        return $this->belongsTo(Department::class, 'dept_id');
     }
 }
