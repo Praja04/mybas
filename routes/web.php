@@ -578,11 +578,11 @@ Route::prefix('bas_logger/spv/')->group(function () {
 Route::group(['middleware' => ['auth', 'rules', 'access_log']], function () {
     Route::get('/ecafesedaap/upload-jumlah-pesanan', 'HR\Ecafesedaap\UploadJumlahPesananController@index');
 });
+
 // Upload Excel
 Route::group(['middleware' => ['auth', 'rules', 'access_log']], function () {
     Route::post('/ecafesedaap/import_excel', 'EcafeSeedapController@import_excel');
 });
-
 
 Route::group(['middleware' => ['auth', 'rules', 'access_log']], function () {
     Route::post('/PostPesananCatering', 'EcafeSeedapController@store');
@@ -596,6 +596,7 @@ Route::group(['middleware' => ['auth', 'rules', 'access_log']], function () {
     Route::post('/PostPesananCatering', 'EcafeSeedapController@store');
     Route::get('/ecafesedaap/upload-jumlah-pesanan', 'EcafeSeedapController@index');
 });
+
 Route::group(['middleware' => ['auth', 'rules', 'access_log']], function () {
     Route::post('/PostPesananCatering', 'EcafeSeedapController@store');
     Route::post('/PostViewCatering', 'EcafeSeedapController@view');
@@ -609,11 +610,6 @@ Route::group(['middleware' => ['auth', 'rules', 'access_log']], function () {
     Route::post('/PencarianReport', 'EcafeSeedapController@PencarianReport');
 });
 Route::group(['middleware' => ['auth', 'rules', 'access_log']], function () {
-    Route::get('/ecafesedaap-scan', 'EcafeSeedapController@scanPage');
-    Route::get('/ecafesedaap-scan/{kategori}', 'EcafeSeedapController@showDisplay');
-});
-
-Route::group(['middleware' => ['access_log']], function () {
     Route::get('/ecafesedaap-scan', 'EcafeSeedapController@scanPage');
     Route::get('/ecafesedaap-scan/{kategori}', 'EcafeSeedapController@showDisplay');
     Route::post('/ecafesedaap-scan/do-scan', 'EcafeSeedapController@doScan');
