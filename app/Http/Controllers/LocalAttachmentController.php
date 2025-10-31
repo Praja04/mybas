@@ -59,23 +59,26 @@ class LocalAttachmentController extends Controller
     public function download($id)
     {
         $attachment = LocalAttachment::find($id);
-        // Ambil path dari penyimpanan lokal berdasarkan transaction_type dan encode_file_name
+
+        if (!$attachment) {
+            return response("File tidak ditemukan di database.", 404);
+        }
+
         $filePath = storage_path('app/public/' . $attachment->transaction_type . '/' . $attachment->encode_file_name);
 
         if (file_exists($filePath)) {
             $typefile = mime_content_type($filePath);
-            // Mendapatkan nama file asli
             $originalFileName = $attachment->original_file_name;
 
-            // Mengirimkan file sebagai respons
             return response()->file($filePath, [
                 'Content-Type' => $typefile,
                 'Content-Disposition' => 'attachment; filename="' . $originalFileName . '"'
             ]);
         } else {
-            return response()->json(['error' => 'File not found'], 404);
+            return response("File tidak ditemukan di server.", 404);
         }
     }
+
 
     public function delete($id)
     {

@@ -582,7 +582,7 @@
         var myDropzone5 = new Dropzone(id, {
             url: "{{ url('/attachment/upload') }}",
             parallelUploads: 20,
-            maxFilesize: 50,
+            maxFilesize: 2,
             timeout: 180000,
             previewTemplate: previewTemplate,
             previewsContainer: id + " .dropzone-items",
@@ -652,6 +652,22 @@
             }
         });
 
+        myDropzone5.on("error", function(file, errorMessage, xhr) {
+            let message = "Upload gagal";
+
+            if (xhr && xhr.response) {
+                try {
+                    const res = JSON.parse(xhr.response);
+                    message = res.message || message;
+                } catch (e) {
+                    message = xhr.responseText || message;
+                }
+            } else if (typeof errorMessage === "string") {
+                message = errorMessage;
+            }
+
+            $(file.previewElement).find("[data-dz-errormessage]").text(message);
+        });
 
         $('#form-create-sertifikat').on('submit', function(e) {
             e.preventDefault();
@@ -1081,9 +1097,46 @@
             );
         }
 
-        // todo 404
         function downloadAttachment(id) {
-            window.location.href = "{{ url('/attachment/download') }}/" + id
+            const url = "{{ url('/attachment/download') }}/" + id;
+
+            $.ajax({
+                url: url,
+                method: 'GET',
+                xhrFields: {
+                    responseType: 'blob'
+                },
+                success: function(data, status, xhr) {
+                    // Ambil nama file dari header response
+                    let disposition = xhr.getResponseHeader('Content-Disposition');
+                    let filename = 'sio_attachment';
+                    if (disposition && disposition.indexOf('filename=') !== -1) {
+                        filename = disposition.split('filename=')[1].replace(/"/g, '');
+                    }
+
+                    // Buat link blob dan auto-download
+                    let blob = new Blob([data]);
+                    let link = document.createElement('a');
+                    link.href = window.URL.createObjectURL(blob);
+                    link.download = filename;
+                    link.click();
+                },
+                error: function(xhr) {
+                    if (xhr.status === 404) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'File tidak ditemukan',
+                            text: 'File mungkin sudah dihapus atau rusak.',
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Gagal mengunduh file',
+                            text: 'Terjadi kesalahan tak terduga. Coba lagi nanti.',
+                        });
+                    }
+                }
+            });
         }
 
         function deleteAttachment(id) {
