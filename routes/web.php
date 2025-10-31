@@ -7,7 +7,7 @@ Route::group(['middleware' => ['auth', 'rules', 'access_log']], function () {
     Route::get('/', 'HomeController@index')->name('home');
     Route::get('/home', 'HomeController@index')->name('home');
 
-    Route::post('logout', 'Auth\LoginController@logout');
+    Route::post('logout', 'Auth\LoginController@logout')->name('logout');
 
     //	Route::get('/pkw', 'PKWController@belum_terdaftar');
     Route::get('/pkw/pkwt', 'PKWController@pkwt');

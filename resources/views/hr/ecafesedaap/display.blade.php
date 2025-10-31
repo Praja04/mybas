@@ -31,18 +31,20 @@
                         <div class="form-group">
                             <label for="nik" style="font-weight: bold; font-size: 29px">NIK</label>
                             <input id="nik" type="text" class="form-control text-white"
-                                style="font-size: 29px; background-color: #525461; font-weight: bold" placeholder="NIK">
+                                style="font-size: 29px; background-color: #525461; font-weight: bold" placeholder="NIK"
+                                disabled>
                         </div>
                         <div class="form-group">
                             <label for="nama" style="font-weight: bold; font-size: 29px">NAMA</label>
                             <input id="name" type="text" class="form-control text-white"
-                                style="font-size: 29px; background-color: #525461; font-weight: bold" placeholder="Nama">
+                                style="font-size: 29px; background-color: #525461; font-weight: bold" placeholder="Nama"
+                                disabled>
                         </div>
                         <div class="form-group">
                             <label for="department" style="font-weight: bold; font-size: 29px">DEPARTMENT</label>
                             <input id="department" type="text" class="form-control text-white"
                                 style="font-size: 29px; background-color: #525461; font-weight: bold"
-                                placeholder="Department">
+                                placeholder="Department" disabled>
                         </div>
                     </div>
                     <div class="col-md-3">
@@ -59,20 +61,20 @@
                     </div>
                 </div>
                 <div class="separator separator-solid my-7"></div>
-                <div class="row">
-                    <div class="col-3">
+                <div class="row g-2 align-items-center">
+                    <div class="col-12 col-md-3">
                         <input id="scanner" autofocus type="text" class="form-control text-white"
                             placeholder="Scan here.." style="background-color: #525461">
                         <input type="hidden" id="temp_rfid">
                     </div>
-                    <div class="col-5">
+                    <div class="col-12 col-md-5 text-center my-2 my-md-0">
                         <span id="loading" style="font-size: 26px; background-color: #eee; font-weight: bold"
                             class="rounded px-2">
                             <i class="fas fa-spinner fa-spin text-dark-75" style="font-size: 26px"></i>
                             LOADING.. MOHON TUNGGU
                         </span>
                     </div>
-                    <div class="col-4">
+                    <div class="col-12 col-md-4">
                         <div class="col bg-light-success px-6 py-3 rounded-xl text-center">
                             <div class="fas text-dark-75" style="font-size: 30px">SISA PORSI = <span
                                     id="sisa-porsi">0</span></div>
