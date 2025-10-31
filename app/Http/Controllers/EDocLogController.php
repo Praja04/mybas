@@ -82,49 +82,49 @@ class EDocLogController extends Controller
             'created_by' => Auth::user()->name,
         ]);
 
-        $detail = [
-            'petugas' =>  Auth::user()->name,
-            'tanggal_kedatangan' => $request->tanggal_kedatangan,
-            'nama_pt_pengirim' => $request->nama_pt_pengirim,
-            'nama_penerima' => $request->nama_penerima,
-            'jenis' => $request->jenis,
-            'keterangan' => $request->keterangan,
-        ];
-        // $detail = collect($detail);
-        $pic = DB::table('edoc_pic')->where('dept', $request->dept_penerima)->get();
+        // data for body email
+        // $detail = [
+        //     'petugas' =>  Auth::user()->name,
+        //     'tanggal_kedatangan' => $request->tanggal_kedatangan,
+        //     'nama_pt_pengirim' => $request->nama_pt_pengirim,
+        //     'nama_penerima' => $request->nama_penerima,
+        //     'jenis' => $request->jenis,
+        //     'keterangan' => $request->keterangan,
+        // ];
+        // $pic = DB::table('edoc_pic')->where('dept', $request->dept_penerima)->get();
 
-        $to = '';
-        $cc = [];
+        // $to = '';
+        // $cc = [];
 
 
-        foreach ($pic as $key => $list) {
-            $user =  DB::table('users')->where('username', $list->nik)->first();
-            // dd($user);
-            // jika users dari edoc_pic belum terdaftar di users beri null dan lanjutkan looping
-            if ($user == null) {
-                continue;
-            }
+        // foreach ($pic as $key => $list) {
+        //     $user =  DB::table('users')->where('username', $list->nik)->first();
+        //     // jika users dari edoc_pic belum terdaftar di users beri null dan lanjutkan looping
+        //     if ($user == null) {
+        //         continue;
+        //     }
 
-            // ubah parameter key menjadi to pada email
-            if ($user->email != null) {
-                if ($to == '') {
-                    $to = $user->email;
-                } else {
-                    $cc[] = $user->email;
-                }
-            }
-        }
+        //     if ($user->email != null) {
+        //         if ($to == '') {
+        //             $to = $user->email;
+        //         } else {
+        //             $cc[] = $user->email;
+        //         }
+        //     }
+        // }
 
-        // dd($to);
+        // if ($to != '') {
+        //     Mail::mailer(setEmail($to))
+        //         ->to($to)
+        //         ->cc($cc)
+        //         ->send(new EDocMail(
+        //             'Yth. ' . $request->nama_penerima . ', MyBAS mencatat adanya dokumen masuk (E-Document) yang ditujukan kepada Anda. Berikut detail informasinya:',
+        //             'E-DOCUMENT NOTIFICATION',
+        //             $detail
+        //         ));
+        // }
 
-        if ($to != '') {
-            Mail::mailer(setEmail($to))
-                ->to($to)
-                ->cc($cc)
-                ->send(new EDocMail('Halooo... sdr/i ' . $request->nama_penerima . ' Ada E-Document yang baru saja di tunjukan untuk kamu, Berikut detailnya :', 'E-DOCUMENT NOTIFICATION', $detail));
-        }
-
-        Session::flash('info', 'Data Berhasil Di Simpan..');
+        Session::flash('info', 'Berhasil menyimpan kedatangan');
         return back();
     }
 
@@ -498,7 +498,11 @@ class EDocLogController extends Controller
             Mail::mailer(setEmail($to))
                 ->to($to)
                 ->cc($cc)
-                ->send(new EDocMail('Halooo... sdr/i ' . $data->nama_penerima . ' Ada E-Document yang baru saja di tunjukan untuk kamu, Berikut detailnya :', 'E-DOCUMENT NOTIFICATION', $detail));
+                ->send(new EDocMail(
+                    'Yth. ' . $request->nama_penerima . ', MyBAS mencatat adanya dokumen masuk (E-Document) yang ditujukan kepada Anda. Berikut detail informasinya:',
+                    'E-DOCUMENT NOTIFICATION',
+                    $detail
+                ));
         }
 
         Session::flash('info', 'Data Berhasil Di Simpan..');
@@ -543,7 +547,11 @@ class EDocLogController extends Controller
             Mail::mailer(setEmail($to))
                 ->to($to)
                 ->cc($cc)
-                ->send(new EDocMail('Halooo... sdr/i ' . $data->nama_penerima . ' Ada E-Document yang baru saja di tunjukan untuk kamu, Berikut detailnya :', 'E-DOCUMENT NOTIFICATION', $detail));
+                ->send(new EDocMail(
+                    'Yth. ' . $request->nama_penerima . ', MyBAS mencatat adanya dokumen masuk (E-Document) yang ditujukan kepada Anda. Berikut detail informasinya:',
+                    'E-DOCUMENT NOTIFICATION',
+                    $detail
+                ));
         }
 
         Session::flash('info', 'Data Berhasil Di Simpan..');

@@ -152,11 +152,20 @@
                                     {{ Auth::user()->department->name }}
                                 @endif
                             </div>
-                            <div class="navi mt-2">
+                            {{-- <div class="navi mt-2">
                                 <a href="javascript:"
                                     class="btn btn-sm btn-light-danger font-weight-bolder py-2 px-5 logout">Sign Out</a>
-                            </div>
+                            </div> --}}
                         </div>
+                    </div>
+                    <div>
+                        <a href="{{ url('/profile') }}"
+                            class="btn btn-sm btn-light-success font-weight-bolder py-2 px-5 w-100 mt-4 mb-2">Edit
+                            Profile</a>
+                        <a href="javascript:"
+                            class="btn btn-sm btn-light-danger font-weight-bolder py-2 px-5 w-100 logout my-2">Sign
+                            Out</a>
+
                     </div>
                 @endif
                 <!--end::Header-->

@@ -165,8 +165,10 @@
                                                                 <strong>(
                                                                     <span data-dz-size="">340kb</span>)</strong>
                                                             </div>
+                                                            {{-- todo: show error if failed --}}
                                                             <div class="dropzone-error" data-dz-errormessage=""></div>
                                                         </div>
+                                                        {{-- todo:  --}}
                                                         <div class="dropzone-progress">
                                                             <div class="progress">
                                                                 <div class="progress-bar bg-primary" role="progressbar"
@@ -233,6 +235,9 @@
                     </button>
                 </div>
                 <div class="modal-body">
+                    <button type="button" class="btn btn-secondary btn-sm" id="delete-all-attachments">
+                        <i class="fa fa-trash"></i> Hapus Semua
+                    </button>
                     <table class="table table-hover table-dark" id="table-attachments">
                         <thead>
                             <tr>
@@ -243,7 +248,19 @@
                                 </th>
                             </tr>
                         </thead>
-                        <tbody></tbody>
+                        <tbody>
+                            {{-- loading --}}
+                            <tr id="attachment-loading">
+                                <td colspan="3" class="text-center">
+                                    <div class="spinner-border text-light" role="status"
+                                        style="width:1.5rem;height:1.5rem;">
+                                        <span class="sr-only">Loading files...</span>
+                                    </div>
+                                    <br>
+                                    <small>Loading files...</small>
+                                </td>
+                            </tr>
+                        </tbody>
                     </table>
                 </div>
                 <div class="modal-footer">
@@ -467,14 +484,12 @@
                     console.log(error);
                 }
             })
-            closeCreateSertifikat();
             $('#container-create-sertifikat').slideDown();
         }
 
         function editSertifikasi(id) {
             $('.sertification-form-title').text('Edit Surat Izin Operator');
             $('#transaction-type').val('edit');
-            closeCreateSertifikat();
             // Get current data to ajax
             $.ajax({
                 // ambil data sertifikat
@@ -533,8 +548,6 @@
         }
 
         function closeCreateSertifikat() {
-            myDropzone5.removeAllFiles(true);
-
             $('#form-create-sertifikat')[0].reset();
             resetSertifikatValidation();
             $('#container-create-sertifikat').slideUp();
@@ -609,6 +622,36 @@
                     '0');
             }, 300)
         });
+
+        // handle remove file
+        myDropzone5.on("removedfile", function(file) {
+            if (file.xhr) {
+                try {
+                    const response = JSON.parse(file.xhr.response);
+                    const uploadedFile = response.data ?? null;
+
+                    if (uploadedFile && uploadedFile.id) {
+                        $.ajax({
+                            url: "{{ url('/attachment/delete') }}/" + uploadedFile.id,
+                            type: "DELETE",
+                            dataType: "JSON",
+                            headers: {
+                                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                            },
+                            success: function(res) {
+                                console.log('File deleted:', res.message);
+                            },
+                            error: function(err) {
+                                console.error('Failed to delete file:', err.responseJSON.message);
+                            }
+                        });
+                    }
+                } catch (e) {
+                    console.warn("Could not parse Dropzone upload response:", e);
+                }
+            }
+        });
+
 
         $('#form-create-sertifikat').on('submit', function(e) {
             e.preventDefault();
@@ -769,27 +812,53 @@
 
         function showDocuments(id) {
             var table = $('#table-attachments tbody');
-            // Clear the table content
-            table.html('');
+            var $deleteAllBtn = $('#delete-all-attachments');
+
+            // table.html('');
+            table.html(`
+                <tr>
+                    <td colspan="3" class="text-center">
+                        <div class="spinner-border text-light" role="status" style="width:1.5rem;height:1.5rem;">
+                            <span class="sr-only">Loading...</span>
+                        </div>
+                        <br>
+                        <small>Loading file...</small>
+                    </td>
+                </tr>
+            `);
+
+            $deleteAllBtn.hide();
+
             // Do get attachment by the id
             $.ajax({
                 url: "{{ url('sigra/sio/get-attachments') }}/" + id,
                 type: "GET",
                 dataType: "JSON",
                 success: function(response) {
+                    table.html('');
+
                     if (response.data.length > 0) {
+                        // set transaction_id to modal
+                        const transactionId = response.data[0].transaction_id;
+                        $("#document-attachment-modal").data('transaction-id', transactionId);
+
+                        $deleteAllBtn.show();
+
                         $.each(response.data, function(key, val) {
-                            var row = '' +
-                                '<tr>' +
-                                '<td>' + (key + 1) + '</td>' +
-                                '<td>' + val.original_file_name + '</td>' +
-                                '<td>' +
-                                '<a title="Download" onClick="downloadAttachment(\'' + val.id +
-                                '\')" href="javascript:" class="text-hover-dark">' +
-                                '<i class="fa fa-cloud-download-alt text-hover-dark text-success"></i>' +
-                                '</a>' +
-                                '</td>' +
-                                '</tr>';
+                            var row = `
+                                <tr>
+                                    <td>${key + 1}</td>
+                                    <td>${val.original_file_name}</td>
+                                    <td class="d-flex justify-content-center align-items-center">
+                                        <a href="javascript:" title="Delete" onClick="deleteAttachment('${val.id}')" class="mx-3 text-danger">
+                                            <i class="fa fa-trash"></i>
+                                        </a>
+                                        <a href="javascript:" title="Download" onClick="downloadAttachment('${val.id}')" class="mx-3 text-success">
+                                            <i class="fa fa-download"></i>
+                                        </a>
+
+                                    </td>
+                                </tr>`;
                             table.append(row);
                         });
                     } else {
@@ -802,6 +871,13 @@
                 },
                 error: function(error) {
                     console.log(error);
+                    table.html(`
+                        <tr>
+                            <td colspan="3" class="text-center text-danger">
+                                <small>Gagal memuat file. Silakan coba lagi.</small>
+                            </td>
+                        </tr>
+                    `);
                 }
             });
             $('#document-attachment-modal').modal('show');
@@ -826,7 +902,18 @@
 
         function getSertifikasi(id) {
             var table = $('#sertifikasi table tbody');
-            table.html('');
+            // table.html('');
+            table.html(`
+                <tr>
+                    <td colspan="9" class="text-center">
+                        <div class="spinner-border text-primary" role="status" style="width: 2rem; height: 2rem;">
+                            <span class="sr-only">Loading...</span>
+                        </div>
+                        <br>
+                        <small>Loading...</small>
+                    </td>
+                </tr>
+            `);
 
             $.ajax({
                 url: '{{ url('sigra/sio/get-sertifikat') }}/' + id,
@@ -834,7 +921,8 @@
                 type: 'GET',
                 success: function(response) {
                     console.log(response);
-                    if (response.data.length == 0) {
+                    table.html('');
+                    if (!response.data || response.data.length === 0) {
                         var row = '' +
                             '<tr>' +
                             '<td colspan="9" class="text-center"><span class="label label-secondary label-inline">Belum ada sertifikasi</span></td>' +
@@ -845,39 +933,50 @@
                         var count = val.attachments.length;
                         var tanggal_habis = val.tanggal_habis == null ? '-' : formatTanggalIndonesia(val
                             .tanggal_habis);
-                        var row = '' +
-                            '<tr>' +
-                            '<td>' + (key + 1) + '</td>' +
-                            '<td>' + val.nomor_izin + '</td>' +
-                            '<td>' + val.harga + '</td>' +
-                            '<td>' + formatTanggalIndonesia(val.tanggal_terbit) + '</td>' +
-                            '<td>' + tanggal_habis + '</td>' +
-                            '<td>' + (val.keterangan ?? "-") + '</td>' +
-                            // '<td>' + val.masa_berlaku + '</td>' +
-                            // '<td>' + val.keterangan + '</td>' +
-                            '<td>' +
-                            '<a title="Tampilkan attachment" onClick="showDocuments(' + val.id +
-                            ')" href="javascript:" class="mr-10 position-relative text-hover-dark mr-1">' +
-                            '<span style="z-index: 99; position: absolute; right: -30px; top: -9px" class="label label-rounded label-light-dark label-sm mr-2">' +
-                            count + '</span>' +
-                            '<span style="z-index: 100; position: absolute"><i class="fa fa-folder-open"></i></span>' +
-                            '</a>' +
-                            '<a title="Edit" onClick="editSertifikasi(' + val.id +
-                            ')" href="javascript:" class="text-hover-dark mr-1">' +
-                            '<i class="fa fa-edit"></i>' +
-                            '</a>' +
-                            '<a title="Hapus" onClick="deleteSertifikasi(' + val.id +
-                            ')" href="javascript:" class="text-hover-dark">' +
-                            '<i class="fa fa-trash"></i>' +
-                            '</a>' +
-                            '</td>' +
-                            '</tr>';
+                        var row = `
+                            <tr>
+                                <td>${key + 1}</td>
+                                <td>${val.nomor_izin}</td>
+                                <td>${val.harga}</td>
+                                <td>${formatTanggalIndonesia(val.tanggal_terbit)}</td>
+                                <td>${tanggal_habis}</td>
+                                <td>${val.keterangan ?? "-"}</td>
+                                <td>
+                                    <a title="Tampilkan attachment"
+                                    onClick="showDocuments(${val.id})"
+                                    href="javascript:"
+                                    class="mr-10 position-relative text-hover-dark mr-1">
+                                        <span id="attachment-count-${val.transaction_id}"
+                                            style="z-index: 99; position: absolute; right: -30px; top: -9px"
+                                            class="label label-rounded label-light-dark label-sm mr-2">
+                                            ${count}
+                                        </span>
+                                        <span style="z-index: 100; position: absolute">
+                                            <i class="fa fa-folder-open"></i>
+                                        </span>
+                                    </a>
+                                    <a title="Edit" onClick="editSertifikasi(${val.id})"
+                                    href="javascript:" class="text-hover-dark mr-1">
+                                    <i class="fa fa-edit"></i>
+                                    </a>
+                                    <a title="Hapus" onClick="deleteSertifikasi(${val.id})"
+                                    href="javascript:" class="text-hover-dark">
+                                    <i class="fa fa-trash"></i>
+                                    </a>
+                                </td>
+                            </tr>`;
                         table.append(row);
                     });
                 },
                 error: function(e) {
-                    console.log('error');
-                    console.log(e);
+                    console.log('cannot load SIO certification data: ', e);
+                    table.html(`
+                        <tr>
+                            <td colspan="9" class="text-center text-danger">
+                                <small>Gagal memuat data sertifikasi. Coba lagi.</small>
+                            </td>
+                        </tr>
+                    `);
                 }
             });
         }
@@ -982,9 +1081,107 @@
             );
         }
 
+        // todo 404
         function downloadAttachment(id) {
             window.location.href = "{{ url('/attachment/download') }}/" + id
         }
+
+        function deleteAttachment(id) {
+            var transactionId = $("#document-attachment-modal").data('transaction-id');
+            console.log({
+                transactionId
+            });
+
+            Swal.fire({
+                title: 'Yakin hapus file ini?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Hapus',
+                cancelButtonText: 'Batal'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: "{{ url('/attachment/delete') }}/" + id,
+                        type: "DELETE",
+                        dataType: "JSON",
+                        headers: {
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        },
+                        success: function(res) {
+                            Swal.fire('Terhapus!', 'File berhasil dihapus', 'success');
+
+                            $('#document-attachment-modal').modal('hide');
+
+                            // kurangi badge count di button folder
+                            const $badge = $(`#attachment-count-${transactionId}`);
+                            const currentCount = parseInt($badge.text().trim());
+                            if (!isNaN(currentCount) && currentCount > 0) {
+                                $badge.text(currentCount - 1);
+                            }
+
+                            getSertifikasi($("#sio-id").val());
+
+                        },
+                        error: function(err) {
+                            Swal.fire('Error', 'Gagal menghapus file. Silakan coba lagi', 'error');
+                        }
+                    });
+                }
+            });
+        }
+
+        $('#delete-all-attachments').on('click', function() {
+            const transactionId = $("#document-attachment-modal").data('transaction-id');
+            if (!transactionId) return;
+
+            Swal.fire({
+                title: 'Hapus semua file?',
+                text: 'Semua file attachment akan dihapus permanen.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonText: 'Batal',
+                confirmButtonText: 'Hapus Semua'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: "{{ url('/attachment/delete-all') }}/" + transactionId,
+                        type: "DELETE",
+                        dataType: "JSON",
+                        headers: {
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        },
+                        beforeSend: function() {
+                            $('#delete-all-attachments').prop('disabled', true).html(
+                                '<i class="fa fa-spin fa-spinner"></i> Menghapus...');
+                        },
+                        success: function(res) {
+                            if (res.success) {
+                                Swal.fire('Berhasil!', "Berhasil menghapus semua file",
+                                    'success');
+                                $('#document-attachment-modal').modal('hide');
+                                $(`#attachment-count-${transactionId}`).text('0');
+                            } else {
+                                Swal.fire({
+                                    icon: 'warning',
+                                    title: 'Beberapa file gagal dihapus',
+                                    html: `
+                                        <p>${res.deleted} berhasil, ${res.failed} gagal </p>
+                                    `
+                                });
+                            }
+                        },
+                        error: function() {
+                            Swal.fire('Error', 'Terjadi kesalahan', 'error');
+                        },
+                        complete: function() {
+                            $('#delete-all-attachments').prop('disabled', false).html(
+                                '<i class="fa fa-trash"></i> Hapus Semua');
+                        }
+                    });
+                }
+            });
+        });
 
         $('[data-switch=true]').bootstrapSwitch();
 
@@ -1021,7 +1218,7 @@
                             } else {
                                 Swal.fire(
                                     'Hmmm!',
-                                    'Gagal mengubah statue, coba lagi.',
+                                    'Gagal mengubah status, silakan coba lagi.',
                                     'error'
                                 );
                                 $('#perizinan-status').bootstrapSwitch('state', !data, true);

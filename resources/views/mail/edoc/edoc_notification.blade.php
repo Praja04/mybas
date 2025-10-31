@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>EMAIL</title>
+    <title>E-Document Notification</title>
 </head>
 
 <body style="padding: 0;margin:0; font-family: Arial, Helvetica, sans-serif">
@@ -15,7 +15,6 @@
             <tr>
                 <td align="center" valign="top" style="padding-right:10px;padding-left:10px;" id="bodyCell">
                     <!--[if (gte mso 9)|(IE)]><table align="center" border="0" cellspacing="0" cellpadding="0" style="width:600px;" width="600"><tr><td align="center" valign="top"><![endif]-->
-
 
                     <!-- Email Wrapper Webview Close //-->
 
@@ -32,7 +31,7 @@
                                                 <td align="center" valign="middle"
                                                     style="padding-top: 40px; padding-bottom: 10px;" class="emailLogo">
                                                     <!-- Logo and Link // -->
-                                                    <p>My BAS Online Notification</p>
+                                                    <p>MyBAS Online Notification</p>
                                                 </td>
                                             </tr>
                                         </tbody>
@@ -64,7 +63,6 @@
                                                     class="topBorder">&nbsp;</td>
                                             </tr>
 
-
                                             <tr>
                                                 <td align="center" valign="top" style="padding-bottom: 20px;"
                                                     class="imgHero">
@@ -81,7 +79,7 @@
                                                     class="mainTitle">
                                                     <!-- Main Title Text // -->
                                                     <h2 class="text"
-                                                        style="color:#000000; font-family:'Poppins', Helvetica, Arial, sans-serif; font-size:28px; font-weight:500; font-style:normal; letter-spacing:normal; line-height:36px; text-transform:none; text-align:center; padding:0; margin:0">
+                                                        style="color:#000000; font-family:'Poppins', Helvetica, Arial, sans-serif; font-size:28px; font-weight:600; font-style:normal; letter-spacing:normal; line-height:36px; text-transform:none; text-align:center; padding:0; margin:0">
                                                         {{ $data['title'] }}
                                                     </h2>
                                                 </td>
@@ -93,7 +91,7 @@
                                                     class="subTitle">
                                                     <!-- Sub Title Text // -->
                                                     <h4 class="text"
-                                                        style="color:#999999; font-family:'Poppins', Helvetica, Arial, sans-serif; font-size:16px; font-weight:500; font-style:normal; letter-spacing:normal; line-height:24px; text-transform:none; text-align:center; padding:0; margin:0">
+                                                        style="color:#999999; font-family:'Poppins', Helvetica, Arial, sans-serif; font-size:16px; font-weight:400; font-style:normal; letter-spacing:normal; line-height:24px; text-transform:none; text-align:center; padding:0; margin:0">
                                                         {{ $data['app'] }}
                                                     </h4>
                                                 </td>
@@ -113,49 +111,47 @@
                                                                     <!-- Description Text// -->
                                                                     <table border="1" cellpadding="2"
                                                                         cellspacing="0" width="100%"
-                                                                        class="tableDescription" style="">
-                                                                        <thead>
-                                                                            <tr class="text-center"
-                                                                                style="text-align: center;">
-                                                                                <th>Nama Security </th>
-                                                                                <th>Tanggal Kedatangan </th>
-                                                                                <th>Nama PT Pengirim </th>
-                                                                                <th>Nama Penerima </th>
-                                                                                <th>Jenis </th>
+                                                                        style="border-collapse: collapse; border: 1px solid #ddd; font-family: 'Open Sans', Arial, sans-serif; font-size: 13px; color: #333;">
+                                                                        <thead style="background-color:#f8f8f8;">
+                                                                            <tr style="text-align:center;">
+                                                                                <th>Nama Security</th>
+                                                                                <th>Tanggal Kedatangan</th>
+                                                                                <th>Nama PT Pengirim</th>
+                                                                                <th>Nama Penerima</th>
+                                                                                <th>Jenis</th>
                                                                             </tr>
                                                                         </thead>
                                                                         <tbody>
-                                                                            <tr class="text-center"
-                                                                                style="text-align: center;">
-                                                                                {{-- {{dd($value)}} --}}
+                                                                            <tr style="text-align:center;">
                                                                                 <td>{{ $data['description']['petugas'] }}
                                                                                 </td>
                                                                                 <td>{{ \Carbon\Carbon::parse($data['description']['tanggal_kedatangan'])->format('d-M-Y') }}
                                                                                 </td>
-                                                                                <td>{{ $data['description']['nama_pt_pengirim'] }}
+                                                                                <td style="text-align:left;">
+                                                                                    {{ $data['description']['nama_pt_pengirim'] }}
                                                                                 </td>
-                                                                                <td>{{ $data['description']['nama_penerima'] }}
+                                                                                <td style="text-align:left;">
+                                                                                    {{ $data['description']['nama_penerima'] }}
                                                                                 </td>
                                                                                 <td>{{ $data['description']['jenis'] }}
                                                                                 </td>
                                                                             </tr>
                                                                         </tbody>
                                                                         <tfoot>
-                                                                            <tr class="text-center"
-                                                                                style="text-align: center;">
+                                                                            <tr>
                                                                                 <th colspan="5"
-                                                                                    style="background-color: antiquewhite">
-                                                                                    Keterangan</th>
+                                                                                    style="background-color:#f8f8f8; padding:8px; text-align:left;">
+                                                                                    Keterangan:</th>
                                                                             </tr>
-                                                                            <tr class="text-center"
-                                                                                style="text-align: center;">
-                                                                                <th colspan="5"
-                                                                                    style="background-color: antiquewhite">
+                                                                            <tr>
+                                                                                <td colspan="5"
+                                                                                    style="padding:8px; text-align:left;">
                                                                                     {{ $data['description']['keterangan'] }}
-                                                                                </th>
+                                                                                </td>
                                                                             </tr>
                                                                         </tfoot>
                                                                     </table>
+
                                                                     {{-- {{ $data['description'] }} --}}
                                                                 </td>
                                                             </tr>
@@ -209,8 +205,6 @@
                                     </table>
                                     <!-- Table Card Close// -->
 
-
-
                                 </td>
                             </tr>
                         </tbody>
@@ -235,7 +229,7 @@
                                                     <!-- Brand Information // -->
                                                     <p class="text"
                                                         style="color:#777777; font-family:'Open Sans', Helvetica, Arial, sans-serif; font-size:12px; font-weight:400; font-style:normal; letter-spacing:normal; line-height:20px; text-transform:none; text-align:center; padding:0; margin:0;">
-                                                        © PT. Bumi Alam Segar 2023
+                                                        © PT. Bumi Alam Segar {{ date('Y') }}
                                                     </p>
                                                 </td>
                                             </tr>
@@ -249,14 +243,12 @@
                                                         style="color:#777777; font-family:'Open Sans', Helvetica, Arial, sans-serif; font-size:12px; font-weight:400; font-style:normal; letter-spacing:normal; line-height:20px; text-transform:none; text-align:center; padding:0; margin:0;">
                                                         <a href="#"
                                                             style="color:#777777;text-decoration:underline;"
-                                                            target="_blank"> BAS APP </a>&nbsp;|&nbsp;<a
-                                                            href="#"
+                                                            target="_blank">BAS APP</a>&nbsp;|&nbsp;<a href="#"
                                                             style="color:#777777;text-decoration:underline;"
-                                                            target="_blank"> ITE - 4003 </a>&nbsp;
+                                                            target="_blank">ITE - 4003</a>&nbsp;
                                                     </p>
                                                 </td>
                                             </tr>
-
 
                                             <!-- Space -->
                                             <tr>

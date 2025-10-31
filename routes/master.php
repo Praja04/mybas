@@ -10,6 +10,11 @@ Route::prefix('master/user')->group(function () {
         Route::put('/nonaktifkan/{id}', 'Master\UserController@update')->name('master.user.nonaktifkan');
         Route::put('/ubah/{id}', 'Master\UserController@ubah')->name('master.user.ubah');
         Route::put('/prosesUbah/{id}', 'Master\UserController@prosesUbah')->name('master.user.proses');
-        // tambahkan function update
     });
+});
+
+// END USER ROUTES
+Route::group(['middleware' => ['auth', 'access_log', 'rules']], function () {
+    Route::get('/profile', 'Master\UserController@showProfile')->name('user.show.profile');
+    Route::put('/profile/update', 'Master\UserController@updateProfile')->name('user.update.profile');
 });

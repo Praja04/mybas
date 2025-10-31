@@ -41,7 +41,9 @@ class EDocMail extends Mailable
             'description' => $this->description,
             'link' => $this->link
         ];
-        // dd($data);
-        return $this->view('mail.edoc.edoc_notification', ['data' => $data]);
+
+        $subject = 'Notifikasi Kedatangan E-Document untuk ' . ($this->description['nama_penerima'] ?? 'Anda');
+
+        return $this->view('mail.edoc.edoc_notification', ['data' => $data])->subject($subject);
     }
 }
