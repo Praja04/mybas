@@ -29,7 +29,6 @@ class Kernel extends ConsoleKernel
         $schedule->command('sigra:check-kontrak-vendor')->mondays()->at('07:00');
         $schedule->command('sigra:check-legalitas')->mondays()->at('07:00');
         $schedule->command('sigra:check-operasional')->mondays()->at('07:00');
-        $schedule->command('sigra:check-sh-bahan-baku')->mondays()->at('07:00');
         $schedule->command('sigra:check-sio')->mondays()->at('07:00');
     }
 
@@ -40,7 +39,7 @@ class Kernel extends ConsoleKernel
      */
     protected function commands()
     {
-        $this->load(__DIR__.'/Commands');
+        $this->load(__DIR__ . '/Commands');
 
         require base_path('routes/console.php');
     }
