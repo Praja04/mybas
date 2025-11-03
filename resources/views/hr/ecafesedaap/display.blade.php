@@ -157,6 +157,10 @@
                 dataType: "JSON",
                 success: function(response) {
                     if (response.success == 1) {
+                        if (!data.cek) {
+                            playSound('ecafesedaap-scan-success.mp3');
+                        }
+
                         success(response.data, response.message)
 
                         timeOut = setTimeout(function() {
@@ -173,6 +177,9 @@
                         //     location.reload();
                         // }, 1000);
                     } else {
+                        if (!data.cek) {
+                            playSound('ecafesedaap-scan-failed.mp3');
+                        }
                         failed(response.data, response.message)
                     }
                     $('#loading').hide()
@@ -189,7 +196,7 @@
         }
 
         function success(data, message) {
-            playSound('ecafesedaap-scan-success.mp3')
+            // playSound('ecafesedaap-scan-success.mp3')
             $('.indikator-berhasil').show()
             $('.indikator-normal').hide()
             $('.indikator-gagal').hide()
@@ -208,7 +215,7 @@
         }
 
         function failed(data, message) {
-            playSound('ecafesedaap-scan-failed.mp3')
+            // playSound('ecafesedaap-scan-failed.mp3')
             $('.indikator-berhasil').hide()
             $('.indikator-normal').hide()
             $('.indikator-gagal').show()
