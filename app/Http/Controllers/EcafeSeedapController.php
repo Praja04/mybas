@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 use App\Imports\ExcelImport;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Http\Controllers\Controller;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Session;
 
@@ -44,7 +45,6 @@ class EcafeSeedapController extends Controller
 
     public function doScan(Request $request)
     {
-        // ambil kategori dari ajax
         $kategori = $request->kategori;
         $request->validate([
             'kategori' => 'required|in:staff,non-staff',
@@ -53,7 +53,7 @@ class EcafeSeedapController extends Controller
         $rfid = (int) $request->rfid;
         $isCheckOnly = $request->has('cek') && $request->cek;
 
-        // --- ambil data dari database SMU, tapi kalau gagal fallback ke RFID ---
+        // --- ambil data user dari database SMU ---
         try {
             $nik = DB::connection('192.168.178.44-admin')
                 ->table('MSIDCARD')
@@ -63,38 +63,22 @@ class EcafeSeedapController extends Controller
                 ->orderByRaw('CAST(EMPCARDID AS SIGNED) DESC')
                 ->first();
 
-            Log::info('[Ecanteensedaap] Berhasil connect ke DB SMU dan ambil data RFID');
+            Log::info('[' . Carbon::now()->format('Y-m-d H:i:s') . '] [Ecanteensedaap] Berhasil connect ke DB SMU dan ambil data RFID');
         } catch (\Exception $e) {
-            Log::warning('Gagal connect ke DB, pakai fallback RFID', [
-                'error' => $e->getMessage(),
-            ]);
+            Log::warning('[' . Carbon::now()->format('Y-m-d H:i:s') . '] [Ecanteensedaap] Gagal connect ke DB, pakai fallback RFID - ' . $e->getMessage());
 
             $nik = null;
         }
 
         // --- fallback kalau koneksi gagal ---
-        if (!$nik) {
-            $nik = (object)[
-                'NIK'     => 'RFID-' . $rfid,
-                'EMPNM'   => 'User RFID ' . $rfid,
-                'DEPTID'  => 'Unknown',
-                'FOTOBLOB' => null
-            ];
-        }
-
-        // ambil data user yang lebih lengkap
-        $user = (object)[
-            'NIK'      => $nik->NIK,
-            'EMPNM'    => $nik->EMPNM,
-            'DEPTID'   => $nik->DEPTID ?? 'Unknown',
-            'FOTOBLOB' => $nik->FOTOBLOB ?? null,
-        ];
-
-        // $user = DB::connection('192.168.178.44-admin')
-        //     ->table('MSIDCARD')
-        //     ->select('NIK', 'CARDNODEVICE', 'EMPNM', 'DEPTID', 'FOTOBLOB')
-        //     ->where(['NIK' => $nik->NIK, 'CARDNODEVICE' => (int)$request->rfid])
-        //     ->first();
+        // if (!$nik) {
+        //     $nik = (object)[
+        //         'NIK'     => 'RFID-' . $rfid,
+        //         'EMPNM'   => 'User RFID ' . $rfid,
+        //         'DEPTID'  => 'Unknown',
+        //         'FOTOBLOB' => null
+        //     ];
+        // }
 
         // menampilkan jumlah sisa porsi pada display scan
         $currentTime = strtotime(date('H:i:s'));
@@ -139,7 +123,6 @@ class EcafeSeedapController extends Controller
             // ->whereBetween('waktu', [$startDate, $endDate])
             ->where('shift', $shift_number)
             ->where('tanggal', $tanggal)
-            // ->where('kategori', 'non-staff')
             ->where('kategori', $kategori)
             ->count();
 
@@ -147,13 +130,12 @@ class EcafeSeedapController extends Controller
         $pesanan = DB::table('ecafesedaapbas')
             ->where('tanggal', $tanggal)
             ->where('shift', $shift_number)
-            // ->where('kategori', 'non-staff')
             ->where('kategori', $kategori)
             ->first();
 
 
+        // kalau admin belum setting porsi
         if (!$pesanan) {
-            // kalau admin belum setting porsi
             return response([
                 'success' => 0,
                 'message' => 'Belum ada pengaturan jumlah porsi untuk shift ini. Silakan hubungi admin.',
@@ -166,13 +148,13 @@ class EcafeSeedapController extends Controller
         $total_porsi = $pesanan->jumlah;
         $sisa_porsi = $total_porsi - $jumlah_scan;
 
-        // cek sisa porsi tanpa scan
+        // cek sisa porsi tanpa scan (initial render)
         if ($isCheckOnly) {
             $defaultImagePath = public_path('assets/media/images/no-image.jpg');
             $defaultImage = base64_encode(file_get_contents($defaultImagePath));
 
             $data = [
-                'nik' => '',
+                'nik' => '001', // dummy buat cek porsi aja
                 'name' => '',
                 'department' => '',
                 'image' => $defaultImage,
@@ -181,16 +163,16 @@ class EcafeSeedapController extends Controller
 
             return response([
                 'success' => 1,
-                'message' => 'Berhasil menghitung sisa porsi',
+                'message' => 'Berhasil menghitung sisa porsi. Silakan scan ID card.',
                 'data' => $data,
             ]);
         }
 
         // Ini kalo data nya ga ada di db SMU
-        if (!$rfid) {
+        if (!$rfid || !$nik) {
             return response([
                 'success' => 0,
-                'message' => 'Data tidak ditemukan. Hubungi HRD',
+                'message' => 'ID card tidak dikenali. Silakan scan ulang atau hubungi HRD',
                 'data' => ['sisa_porsi' => $sisa_porsi]
             ]);
         }
@@ -219,6 +201,14 @@ class EcafeSeedapController extends Controller
                 'message' => 'Kamu sudah scan makan pada : <br /> <strong>' . $cek->waktu . '</strong>'
             ]);
         }
+
+        // ambil data user yang lebih lengkap
+        $user = (object)[
+            'NIK'      => $nik->NIK,
+            'EMPNM'    => $nik->EMPNM,
+            'DEPTID'   => $nik->DEPTID ?? 'Unknown',
+            'FOTOBLOB' => $nik->FOTOBLOB ?? null,
+        ];
 
         // insert id card yang sudah scan
         DB::table('ecafesedaap_scan')->insert([
