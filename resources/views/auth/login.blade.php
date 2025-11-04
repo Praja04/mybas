@@ -1,3 +1,4 @@
+{{-- login asli --}}
 @extends('layouts.base')
 
 @push('styles')
@@ -213,7 +214,7 @@
                 data: $(this).serialize(),
                 success: function(response) {
                     if (response.success == 1) {
-                        location.reload();
+                        window.location.href = response.redirect ?? '/';
                     }
                 },
                 error: function(error) {
