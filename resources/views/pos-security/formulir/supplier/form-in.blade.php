@@ -6,7 +6,7 @@
 <div class="tab-pane fade show active" id="supplier-in" role="tabpanel" aria-labelledby="supplier-in-tab">
     <div class="row justify-content-center my-5">
         <div class="col-lg-12">
-            <div class="card p-4 shadow-sm">
+            <div class="card p-5 shadow-sm form-container">
 
                 {{-- Header --}}
                 <div class="text-end mb-4 mt-3">
@@ -19,17 +19,15 @@
 
                 <div id="formAlert" class="alert mt-3" style="display: none;"></div>
 
-                {{-- todo --}}
-                {{-- {{ route('ajax.ga.sistem-tracking.visitor-transaksi.store') }} --}}
-                <form id="visitorForm" action="" method="POST" enctype="multipart/form-data"
-                    onsubmit="return false;">
+                <form id="visitorForm" action="{{ route('ajax.pos-security.visitor-transaksi.store') }}" method="POST"
+                    enctype="multipart/form-data" onsubmit="return false;">
                     @csrf
                     <input type="hidden" name="createdby" id="createdby">
 
                     <div class="d-flex flex-column flex-md-row gap-2 justify-content-start mb-4">
                         <button type="button" class="btn btn-sm d-flex align-items-center gap-2 btn-outline-primary"
                             onclick="location.reload()">
-                            <i class="bi bi-arrow-clockwise"></i> Refresh halaman
+                            <i class="mdi mdi-refresh"></i> Refresh halaman
                         </button>
                         <!-- Reset Button -->
                         <button type="button"
@@ -49,73 +47,74 @@
                         </button>
                     </div>
 
-                    {{-- Row 3 kolom: Form | KTP | Selfie --}}
                     <div class="row">
-                        {{-- FORM UTAMA --}}
-                        <div class="col-md-6">
+                        <div class="col-lg-6">
                             <div class="mb-3">
-                                <label class="form-label fw-semibold">Nama Supir <span
+                                <label class="form-label fw-semibold" for="namavisitor">Nama Supir <span
                                         class="text-danger">*</span></label>
                                 <input type="text" class="form-control" name="namavisitor" id="namavisitor" required
                                     placeholder="Masukkan nama visitor">
                             </div>
 
                             <div class="mb-3">
-                                <label class="form-label fw-semibold">Nama Kernet</label>
-                                <input type="text" class="form-control" name="namakernet"
+                                <label class="form-label fw-semibold" for="nama-kernet">Nama Kernet (Opsional)</label>
+                                <input type="text" class="form-control" name="namakernet" id="nama-kernet"
                                     placeholder="Opsional, jika ada">
                             </div>
 
                             <div class="mb-3">
-                                <label class="form-label fw-semibold">Nama Perusahaan <span
+                                <label class="form-label fw-semibold" for="namacomp">Nama Perusahaan <span
                                         class="text-danger">*</span></label>
                                 <input type="text" class="form-control" id="namacomp" name="namacomp" required
                                     placeholder="Masukkan nama perusahaan">
                             </div>
 
                             <div class="mb-3">
-                                <label class="form-label fw-semibold">No. KTP / SIM <span
+                                <label class="form-label fw-semibold" for="nomor-ktp">No. KTP / SIM <span
                                         class="text-danger">*</span></label>
-                                <input type="text" class="form-control" name="nomorktp" required
+                                <input type="text" class="form-control" name="nomorktp" id="nomor-ktp" required
                                     placeholder="Masukkan nomor identitas">
                             </div>
 
                             <div class="mb-3">
-                                <label class="form-label fw-semibold">Tanggal Lahir</label>
+                                <label class="form-label fw-semibold" for="tglLahir">Tanggal Lahir</label>
                                 <input type="text" class="form-control flatpickr-single" name="tgllahir"
                                     id="tglLahir" placeholder="Pilih tanggal lahir">
                             </div>
 
                             <div class="mb-3">
-                                <label class="form-label fw-semibold">Tujuan <span class="text-danger">*</span></label>
+                                <label class="form-label fw-semibold" for="purpose">Tujuan <span
+                                        class="text-danger">*</span></label>
                                 <select class="form-select" id="purpose" name="purpose" required>
-                                    <option value="">-- Pilih Tujuan --</option>
+                                    <option value="" disabled selected>-- Pilih Tujuan --</option>
                                     <option value="BONGKAR">BONGKAR</option>
                                     <option value="MUAT">MUAT</option>
                                 </select>
                             </div>
                             <div class="mb-3">
-                                <label class="form-label fw-semibold">Nomor Polisi <span
+                                <label class="form-label fw-semibold" for="nopol">Nomor Polisi <span
                                         class="text-danger">*</span></label>
                                 <input type="text" class="form-control" id="nopol" name="nopol" required
                                     placeholder="Contoh: B 1234 CD">
                             </div>
 
                             <div class="mb-3">
-                                <label class="form-label fw-semibold">Jumlah Orang</label>
+                                <label class="form-label fw-semibold" for="sumpeople">Jumlah Orang (Maks. 2) <span
+                                        class="text-danger">*</span></label>
                                 <input type="number" class="form-control" id="sumpeople" name="sumpeople"
-                                    min="1" max="2" readonly value="1"
-                                    placeholder="Jumlah orang dalam kendaraan">
+                                    min="1" max="2" value="1"
+                                    placeholder="Jumlah orang dalam kendaraan" required>
                             </div>
 
                             <div class="mb-3">
-                                <label class="form-label fw-semibold">No HP Driver</label>
+                                <label class="form-label fw-semibold" for="nohpdriver">No HP Driver</label>
                                 <input type="text" class="form-control" id=nohpdriver name="nohpdriver"
                                     placeholder="Contoh: 081234567890">
                             </div>
 
                             <div class="mb-3">
-                                <label class="form-label fw-semibold">Nomor Kartu ID</label>
+                                <label class="form-label fw-semibold">Nomor Kartu ID <span
+                                        class="text-danger">*</span></label>
                                 <input type="text" class="form-control" name="rfid" required
                                     placeholder="Scan atau masukkan nomor kartu RFID" disabled>
                                 <!-- Pesan ini akan ditambahkan secara otomatis oleh JavaScript -->
@@ -123,7 +122,7 @@
 
                         </div>
 
-                        <div class="col-md-6">
+                        <div class="col-lg-6">
                             <div class="row">
                                 {{-- FOTO KTP --}}
                                 <div class="col-md-6 d-flex flex-column align-items-center mb-4">
@@ -335,9 +334,16 @@
 </div>
 
 @push('scripts')
-    {{-- todo --}}
-    <script src="{{ asset('portal\module\ga\sistem-tracking\formulir\pages\formulir-supplier-input2.js') }}"></script>
-    <script src="{{ asset('portal\module\ga\sistem-tracking\formulir\pages\formulir-supplier-input-store.js') }}"></script>
+    <script src="{{ asset('assets/velzon/libs/flatpickr/flatpickr.min.js') }}"></script>
+    <script src="{{ asset('assets/velzon/libs/flatpickr/l10n/id.js') }}"></script>
+    <script>
+        flatpickr('.datepicker', {
+            locale: 'id'
+        });
+    </script>
+
+    <script src="{{ asset('assets/js/pos-security/formulir/pages/formulir-supplier-input2.js') }}"></script>
+    <script src="{{ asset('assets/js/pos-security/formulir/pages/formulir-supplier-input-store.js') }}"></script>
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             flatpickr("#tglLahir", {

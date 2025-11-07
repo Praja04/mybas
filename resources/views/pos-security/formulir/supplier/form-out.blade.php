@@ -168,7 +168,7 @@
 
 @push('scripts')
     {{-- <script src="{{ asset('assets/plugins/custom/html5-qrcode/html5-qrcode.min.js') }}"></script> --}}
-    <script src="{{ asset('portal/module/ga/sistem-tracking/formulir/pages/formulir-supplier-out.js') }}"></script>
+    <script src="{{ asset('assets/js/pos-security/formulir/pages/formulir-supplier-out.js') }}"></script>
     <script>
         function hotReload() {
             // Tambahkan query unik agar browser gak ambil dari cache

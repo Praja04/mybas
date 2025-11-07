@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\PosSecurity\Ajax\Formulir\SupplierFormAjax;
 use App\Http\Controllers\PosSecurity\Ajax\Formulir\TamuFormAjax;
 use Illuminate\Support\Facades\Route;
 
@@ -7,6 +8,14 @@ use Illuminate\Support\Facades\Route;
 Route::post('/store-vendor-tamu', [TamuFormAjax::class, 'store'])->name("ajax.pos-security.vendor-transaksi.store_vendor");
 Route::post('/search-vendor-tamu', [TamuFormAjax::class, 'search'])->name("ajax.pos-security.vendor-transaksi.search_vendor");
 Route::post('/kembalikan-vendor-tamu', [TamuFormAjax::class, 'kembali_kartu'])->name("ajax.ga.sistem-tracking.vendor-transaksi.kembali_kartu");
+
+// transaksi supplier
+Route::post('/store-supplier', [SupplierFormAjax::class, 'store'])->name("ajax.pos-security.visitor-transaksi.store");
+Route::post('/search-supplier', [SupplierFormAjax::class, 'search'])->name("ajax.pos-security.visitor-transaksi.search");
+Route::post('/kembalikan-supplier', [SupplierFormAjax::class, 'kembali_kartu'])->name("ajax.pos-security.visitor-transaksi.kembali_kartu");
+Route::post('/supplier/block', [SupplierFormAjax::class, 'blacklist'])->name('ajax.pos-security.visitor-transaksi.block');
+Route::post('/supplier/report-lost', [SupplierFormAjax::class, 'reportLostCard'])->name('ajax.pos-security.visitor-transaksi.reportLost');
+Route::get('/supplier/detail', [SupplierFormAjax::class, 'getVisitorDetail'])->name('ajax.pos-security.visitor-transaksi.detail');
 
 // Route::post('ajax/absensi-rest-log', [AbsensiRestLogAjax::class, 'search'])->name("ajax.ga.sistem-tracking.absensirestlog.search");
 
@@ -31,7 +40,6 @@ Route::post('/kembalikan-vendor-tamu', [TamuFormAjax::class, 'kembali_kartu'])->
 //     Route::post('/store-supplier', [SupplierFormAjax::class, 'store'])->name("ajax.ga.sistem-tracking.visitor-transaksi.store");
 //     Route::post('/search-supplier', [SupplierFormAjax::class, 'search'])->name("ajax.ga.sistem-tracking.visitor-transaksi.search");
 //     Route::post('/kembalikan-supplier', [SupplierFormAjax::class, 'kembali_kartu'])->name("ajax.ga.sistem-tracking.visitor-transaksi.kembali_kartu");
-
 //     Route::post('/supplier/block', [SupplierFormAjax::class, 'blacklist'])->name('ajax.ga.sistem-tracking.visitor-transaksi.block');
 //     Route::post('/supplier/report-lost', [SupplierFormAjax::class, 'reportLostCard'])->name('ajax.ga.sistem-tracking.visitor-transaksi.reportLost');
 //     Route::get('/supplier/detail', [SupplierFormAjax::class, 'getVisitorDetail'])->name('ajax.ga.sistem-tracking.visitor-transaksi.detail');
