@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 
 class PosSecurityController extends Controller
 {
+    // controller sementara
     public function index()
     {
         return view('pos-security.dashboard.index');
@@ -16,11 +17,6 @@ class PosSecurityController extends Controller
         return view('pos-security.formulir.index');
     }
 
-    public function formTamu()
-    {
-        return view('pos-security.formulir.tamu.index');
-    }
-
     public function formSupplier()
     {
         return view('pos-security.formulir.supplier.index');
@@ -29,5 +25,10 @@ class PosSecurityController extends Controller
     public function display()
     {
         return view('pos-security.display.index');
+    }
+
+    public function absensiVisitor()
+    {
+        return view('pos-security.absensi.index');
     }
 }

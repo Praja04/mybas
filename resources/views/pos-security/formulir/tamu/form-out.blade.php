@@ -26,12 +26,11 @@
                                 <i class="bi bi-arrow-clockwise"></i> Refresh
                             </button>
                         </div> --}}
+
                         <!-- Tombol Cari Data -->
                         <div class="col-md-4">
-                            <!-- Label agar sejajar dengan input lainnya -->
                             <label class="form-label d-none d-md-block">&nbsp;</label>
 
-                            <!-- Tombol dalam grid responsif -->
                             <div class="d-grid gap-2 d-md-flex justify-content-md-between">
                                 <!-- Tombol Cari Data Pengunjung -->
                                 <button type="button" class="btn btn-outline-primary w-100 w-md-auto"
@@ -52,19 +51,19 @@
                 </form>
 
                 <!-- HASIL DATA VISITOR -->
-                <div id="visitorResult" class="p-4" style="display: none;">
+                <div id="visitorResult" style="display: none;">
                     <h4 class="fw-bold mb-4 text-center text-primary">
-                        <i class="fas fa-id-card-alt me-2"></i> Detail Transporter Terakhir
+                        <i class="fas fa-id-card-alt me-2"></i> Detail Tamu / Vendor / Transporter
                     </h4>
 
                     <!-- Row Pertama -->
                     <div class="row g-4 mb-4">
                         <!-- Informasi Pengunjung -->
                         <div class="col-md-4">
-                            <div class="card border-0 shadow-sm rounded-4 h-100">
+                            <div class="card bg-light border-0 shadow-sm rounded-4 h-100">
                                 <div class="card-body">
                                     <h6 class="text-muted mb-3">
-                                        <i class="fas fa-user me-2 text-primary"></i>Informasi Transporter
+                                        <i class="fas fa-user text-primary"></i>Informasi Transporter
                                     </h6>
                                     <ul class="list-unstyled mb-0 small">
                                         <li><strong>Nama:</strong> <span id="visitorName">-</span></li>
@@ -80,16 +79,16 @@
 
                         <!-- Status Kunjungan -->
                         <div class="col-md-4">
-                            <div class="card border-0 shadow-sm rounded-4 h-100">
+                            <div class="card bg-light border-0 shadow-sm rounded-4 h-100">
                                 <div class="card-body">
                                     <h6 class="text-muted mb-3">
-                                        <i class="fas fa-clock me-2 text-danger"></i>Status Kunjungan
+                                        <i class="fas fa-clock text-danger"></i>Status Kunjungan
                                     </h6>
                                     <ul class="list-unstyled mb-0 small">
                                         <li><strong>Masuk:</strong> <span id="visitorDateIn">-</span> <span
-                                                id="visitorTimeIn">-</span></li>
+                                                id="visitorTimeIn"></span></li>
                                         <li><strong>Keluar:</strong> <span id="visitorDateOut">-</span> <span
-                                                id="visitorTimeOut">-</span></li>
+                                                id="visitorTimeOut"></span></li>
                                         <li><strong>Status Kartu:</strong>
                                             <span id="visitorCardStatus" class="badge bg-warning text-dark">-</span>
                                         </li>
@@ -102,7 +101,7 @@
 
                         <!-- Foto KTP -->
                         <div class="col-md-4">
-                            <div class="card border-0 shadow-sm rounded-4 h-100 text-center">
+                            <div class="card bg-light border-0 shadow-sm rounded-4 h-100 text-center">
                                 <div class="card-body">
                                     <h6 class="text-muted mb-3">
                                         <i class="fas fa-id-card me-2 text-success"></i>Foto KTP/SIM
@@ -115,7 +114,7 @@
                     </div>
 
                     <!-- Row Kedua: Foto Selfie -->
-                    <div class="card border-0 shadow-sm rounded-4 mb-4">
+                    <div class="card bg-light border-0 shadow-sm rounded-4 mb-4">
                         <div class="card-body">
                             <h6 class="text-muted mb-3">
                                 <i class="fas fa-camera me-2 text-info"></i>Foto Selfie
@@ -171,8 +170,7 @@
 
 @push('scripts')
     {{-- <script src="{{ asset('assets/plugins/custom/html5-qrcode/html5-qrcode.min.js') }}"></script> --}}
-    {{-- todo --}}
-    <script src="{{ asset('portal/module/ga/sistem-tracking/formulir/pages/formulir-tamu-out.js') }}"></script>
+    <script src="{{ asset('assets/js/pos-security/formulir/pages/formulir-tamu-out.js') }}"></script>
     <script>
         function hotReload() {
             // Tambahkan query unik agar browser gak ambil dari cache

@@ -38,7 +38,7 @@
         <!-- Tabs Content -->
         <div class="tab-content" id="formTabsContent">
             <!-- tamu IN Tab -->
-            @include('pos-security.formulir.tamu.form-in')
+            @include('pos-security.formulir.tamu.form-in', ['departments' => $departments])
             <!-- tamu OUT Tab -->
             @include('pos-security.formulir.tamu.form-out')
         </div>

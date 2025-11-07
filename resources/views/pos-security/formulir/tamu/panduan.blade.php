@@ -153,11 +153,11 @@
         <div class="col-auto d-flex flex-wrap gap-2" id="formTabs-pos2" role="tablist">
             <button class="tab-card active" id="tamu-in-tab" data-bs-toggle="tab" data-bs-target="#tamu-in"
                 type="button" role="tab" aria-controls="tamu-in" aria-selected="true">
-                POS 2 MASUK
+                MASUK (IN)
             </button>
             <button class="tab-card" id="tamu-out-tab" data-bs-toggle="tab" data-bs-target="#tamu-out" type="button"
                 role="tab" aria-controls="tamu-out" aria-selected="false">
-                POS 2 KELUAR
+                KELUAR (OUT)
             </button>
         </div>
 

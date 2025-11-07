@@ -125,7 +125,7 @@ $menus = [
         @yield('title', '')
     </x-slot>
 
-    <x-slot name="longName">POS Security</x-slot>
+    <x-slot name="longName">Pos Security</x-slot>
     <x-slot name="shortName">POS</x-slot>
 
     @yield('content')
@@ -135,6 +135,7 @@ $menus = [
     </x-slot>
 
     <x-slot name="scripts">
+        {{-- @include('pos-security.routes.ajax') --}}
         @stack('scripts')
     </x-slot>
 </x-templates.velzon-hs.base>

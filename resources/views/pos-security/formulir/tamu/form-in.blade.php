@@ -1,4 +1,3 @@
-{{-- MAIN FORMS --}}
 <div class="tab-pane fade show active" id="tamu-in" role="tabpanel">
     <div class="row justify-content-center my-5">
         <div class="col-lg-12">
@@ -7,23 +6,22 @@
                 <div class="text-end mb-4 mt-3">
                     <h2 class="fw-bold text-primary">
                         <i class="fas fa-user-plus me-2"></i>
-                        Form Data POS 2 (Tamu / Vendor / Transporter)
+                        Form Data Tamu / Vendor / Transporter
                     </h2>
                     <p class="text-muted mb-0">Silakan isi data Tamu / Vendor / Transporter yang akan masuk ke area
                         bongkar/muat</p>
                 </div>
 
                 <div id="formAlert" class="alert mt-3" style="display: none;"></div>
-                <!-- FORM LAYOUT -->
-                {{-- todo --}}
-                {{-- {{ route('ajax.ga.sistem-tracking.vendor-transaksi.store_vendor') }} --}}
-                <form id="vendorform" action="" method="POST" enctype="multipart/form-data" id="vendorform">
+
+                <form id="vendorform" action="{{ route('ajax.pos-security.vendor-transaksi.store_vendor') }}"
+                    method="POST" enctype="multipart/form-data" id="vendorform">
                     @csrf
 
                     <div class="d-flex flex-column flex-md-row gap-2 justify-content-start mb-4">
                         <button type="button" class="btn btn-sm d-flex align-items-center gap-2 btn-outline-primary"
                             onclick="location.reload()">
-                            <i class="bi bi-arrow-clockwise"></i> Refresh halaman
+                            <i class="mdi mdi-refresh"></i> Refresh halaman
                         </button>
 
                         <!-- Reset Button -->
@@ -46,7 +44,6 @@
                     </div>
 
                     <div class="row g-4">
-                        <!-- 🟦 BAGIAN 1: FORM DATA TAMU -->
                         <div class="col-lg-6">
                             <div class="mb-3">
                                 <label class="form-label fw-semibold">Nama Vendor / Tamu / Transporter</label>
@@ -121,6 +118,10 @@
                                 <label class="form-label fw-semibold">Departemen</label>
                                 <select name="hostdeptid" class="form-select assign-departement-ga w-100">
                                     <option value="">-- Pilih Departemen --</option>
+                                    @foreach ($departments as $dept)
+                                        <option value="{{ $dept->id }}">{{ $dept->name }}</option>
+                                    @endforeach
+
                                 </select>
                             </div>
 
@@ -329,11 +330,17 @@
 </div>
 
 @push('scripts')
-    {{-- todo --}}
-    <script type="module" src="{{ asset('portal\module\ga\sistem-tracking\formulir\pages\formulir-tamu-index.js') }}">
+    <script src="{{ asset('assets/velzon/libs/flatpickr/flatpickr.min.js') }}"></script>
+    <script src="{{ asset('assets/velzon/libs/flatpickr/l10n/id.js') }}"></script>
+    <script>
+        flatpickr('.datepicker', {
+            locale: 'id'
+        });
     </script>
-    <script src="{{ asset('portal\module\ga\sistem-tracking\formulir\pages\formulir-tamu-input.js') }}"></script>
-    <script src="{{ asset('portal\module\ga\sistem-tracking\formulir\pages\formulir-tamu-input-store2.js') }}"></script>
+
+    {{-- <script type="module" src="{{ asset('assets/js/pos-security/formulir/pages/formulir-tamu-index.js') }}"></script> --}}
+    <script src="{{ asset('assets/js/pos-security/formulir/pages/formulir-tamu-input.js') }}"></script>
+    <script src="{{ asset('assets/js/pos-security/formulir/pages/formulir-tamu-input-store2.js') }}"></script>
 
     <script>
         document.addEventListener("DOMContentLoaded", function() {
