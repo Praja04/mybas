@@ -708,7 +708,7 @@ require base_path('routes/halo-security.php');
 require base_path('routes/kedatangan-beras.php');
 require base_path('routes/kedatangan-lauk.php');
 require base_path('routes/pengecekan-boiler.php');
-// require base_path('routes/oauth.php');
+require base_path('routes/pos-security.php');
 
 // local only
 require base_path('routes/mail-testing.php');

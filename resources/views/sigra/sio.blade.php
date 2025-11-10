@@ -472,6 +472,9 @@
             $('.sertification-form-title').text('Tambah Surat Izin Operator (SIO)');
             $('#transaction-type').val('create');
 
+            $('#form-create-sertifikat')[0].reset();
+            resetSertifikatValidation();
+
             // Generate new transaction_id
             $.ajax({
                 url: "{{ route('attachment.generate-transaction-id') }}",
@@ -490,9 +493,8 @@
         function editSertifikasi(id) {
             $('.sertification-form-title').text('Edit Surat Izin Operator');
             $('#transaction-type').val('edit');
-            // Get current data to ajax
+
             $.ajax({
-                // ambil data sertifikat
                 url: "{{ url('/sigra/sio/sertifikasi/get') }}/" + id,
                 type: "GET",
                 dataType: "JSON",
@@ -550,6 +552,7 @@
         function closeCreateSertifikat() {
             $('#form-create-sertifikat')[0].reset();
             resetSertifikatValidation();
+            $('.submit-button').prop('disabled', false);
             $('#container-create-sertifikat').slideUp();
         }
 
@@ -581,6 +584,7 @@
 
         var myDropzone5 = new Dropzone(id, {
             url: "{{ url('/attachment/upload') }}",
+            autoProcessQueue: false,
             parallelUploads: 20,
             maxFilesize: 2,
             timeout: 180000,
@@ -625,30 +629,35 @@
 
         // handle remove file
         myDropzone5.on("removedfile", function(file) {
-            if (file.xhr) {
-                try {
-                    const response = JSON.parse(file.xhr.response);
-                    const uploadedFile = response.data ?? null;
+            //     if (file.xhr) {
+            //         try {
+            //             const response = JSON.parse(file.xhr.response);
+            //             const uploadedFile = response.data ?? null;
 
-                    if (uploadedFile && uploadedFile.id) {
-                        $.ajax({
-                            url: "{{ url('/attachment/delete') }}/" + uploadedFile.id,
-                            type: "DELETE",
-                            dataType: "JSON",
-                            headers: {
-                                'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                            },
-                            success: function(res) {
-                                console.log('File deleted:', res.message);
-                            },
-                            error: function(err) {
-                                console.error('Failed to delete file:', err.responseJSON.message);
-                            }
-                        });
-                    }
-                } catch (e) {
-                    console.warn("Could not parse Dropzone upload response:", e);
-                }
+            //             if (uploadedFile && uploadedFile.id) {
+            //                 $.ajax({
+            //                     url: "{{ url('/attachment/delete') }}/" + uploadedFile.id,
+            //                     type: "DELETE",
+            //                     dataType: "JSON",
+            //                     headers: {
+            //                         'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            //                     },
+            //                     success: function(res) {
+            //                         console.log('File deleted:', res.message);
+            //                     },
+            //                     error: function(err) {
+            //                         console.error('Failed to delete file:', err.responseJSON.message);
+            //                     }
+            //                 });
+            //             }
+            //         } catch (e) {
+            //             console.warn("Could not parse Dropzone upload response:", e);
+            //         }
+            //     }
+
+            const hasError = myDropzone5.getRejectedFiles().length > 0;
+            if (!hasError) {
+                $('.submit-button').prop('disabled', false);
             }
         });
 
@@ -667,7 +676,16 @@
             }
 
             $(file.previewElement).find("[data-dz-errormessage]").text(message);
+            $('.submit-button').prop('disabled', true);
         });
+
+        myDropzone5.on("success", function(file, response) {
+            // cek apakah semua upload selesai
+            if (myDropzone5.getQueuedFiles().length === 0 && myDropzone5.getUploadingFiles().length === 0) {
+                submitForm();
+            }
+        });
+
 
         $('#form-create-sertifikat').on('submit', function(e) {
             e.preventDefault();
@@ -684,7 +702,11 @@
                 cancelButtonText: 'Batal'
             }).then((result) => {
                 if (result.isConfirmed) {
-                    submitForm();
+                    if (myDropzone5.getQueuedFiles().length > 0) {
+                        myDropzone5.processQueue();
+                    } else {
+                        submitForm();
+                    }
                 }
             });
         });
@@ -1019,12 +1041,16 @@
             });
             // perbaiki export sio dan implementasi sweet alert kedalam nya
             $('#sio_filter').append(
-                "<a href='" + "{{ route('sigra.export.sio') }}" +
-                "' class='btn btn-outline-success float-left btn-sm' onclick='exportExcel()'>" +
+                "<button id='btnExportSIO' class='btn btn-outline-success float-left btn-sm'>" +
                 "<i class='la la-file-excel-o'></i> Export excel <i class='la la-download'></i>" +
-                "</a>"
-            )
+                "</button>"
+            );
         }
+
+        $(document).on('click', '#btnExportSIO', function() {
+            exportExcel();
+        });
+
 
         getPerizinansio();
 
@@ -1090,11 +1116,56 @@
         }
 
         function exportExcel() {
-            Swal.fire(
-                'Yeay',
-                'Berhasil mendownload file sio.',
-                'success',
+            const $btn = $('#btnExportSIO');
+            const originalHtml = $btn.html();
+
+            // disable btn
+            $btn.prop('disabled', true).html(
+                "<i class='fa fa-spin fa-spinner'></i> Exporting..."
             );
+
+            $.ajax({
+                url: "{{ route('sigra.export.sio') }}",
+                method: 'GET',
+                xhrFields: {
+                    responseType: 'blob'
+                },
+                success: function(data, status, xhr) {
+                    let disposition = xhr.getResponseHeader('Content-Disposition');
+                    let filename = 'sio.xlsx';
+                    if (disposition && disposition.indexOf('filename=') !== -1) {
+                        filename = disposition.split('filename=')[1].replace(/"/g, '');
+                    }
+
+                    let blob = new Blob([data], {
+                        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                    });
+
+                    let link = document.createElement('a');
+                    link.href = window.URL.createObjectURL(blob);
+                    link.download = filename;
+                    link.click();
+
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Berhasil!',
+                        text: 'File SIO berhasil diunduh.',
+                        timer: 2500,
+                        showConfirmButton: false
+                    });
+                },
+                error: function(xhr) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Gagal!',
+                        text: "Terjadi kesalahan dalam mengekspor data. Silakan coba lagi nanti",
+                        confirmButtonText: 'OK'
+                    });
+                },
+                complete: function() {
+                    $btn.prop('disabled', false).html(originalHtml);
+                }
+            });
         }
 
         function downloadAttachment(id) {

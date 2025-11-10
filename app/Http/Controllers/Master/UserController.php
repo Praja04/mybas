@@ -175,8 +175,11 @@ class UserController extends Controller
             'id'    => 'required|integer|exists:users,id',
             'name'  => 'required|string|max:150',
             'email' => 'required|email|max:255|unique:users,email,' . $request->id,
+            'password' => 'nullable|min:6|confirmed',
         ], [
             'email.unique'    => 'Email sudah digunakan oleh pengguna lain.',
+            'password.confirmed' => 'Konfirmasi password tidak cocok.',
+            'password.min' => 'Password minimal 6 karakter.',
         ]);
 
         $user = User::find($request->id);
@@ -192,9 +195,9 @@ class UserController extends Controller
         $user->email = $request->email;
 
         // update password jika ada
-        // if ($request->has('password') && $request->password) {
-        //     $user->password = bcrypt($request->password);
-        // }
+        if ($request->has('password') && $request->password) {
+            $user->password = bcrypt($request->password);
+        }
 
         if ($user->save()) {
             return response()->json([

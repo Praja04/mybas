@@ -11,6 +11,7 @@ use App\Exports\SIOExport;
 use App\Models\Sigra\SIOSertifikasi;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Models\LocalAttachment;
+use Illuminate\Support\Facades\Storage;
 
 class SioController extends Controller
 {
@@ -93,11 +94,6 @@ class SioController extends Controller
                 </a>',
                 $sio->nama_karyawan ?? '-',
                 $sio->nik_karyawan ?? '-',
-                // "<a class='text-hover-dark' href='javascript:' onClick=\"showDepartmentModal('$sio->id')\">
-                //     <i class='text-danger font-size-sm'></i>
-                //     " . ($sio->dept_id ?? 'Belum ditambahkan') . "
-                // </a>",
-
                 $sio->department->name ?? '-',
                 $ikatan_dinas ?? '-',
 
@@ -259,11 +255,36 @@ class SioController extends Controller
 
     public function deleteSertifikasi($id)
     {
-        $data = SIOSertifikasi::find($id);
-        $data->status = 'deleted';
-        $data->save();
-        return response()->json(['success' => 1, 'message' => 'Delete data succeed']);
+        try {
+            $sertifikasi = SIOSertifikasi::findOrFail($id);
+
+            $attachments = LocalAttachment::where('transaction_id', $sertifikasi->transaction_id)->get();
+
+            foreach ($attachments as $attachment) {
+                $filePath = $attachment->transaction_type . '/' . $attachment->encode_file_name;
+
+                if (Storage::disk('public')->exists($filePath)) {
+                    Storage::disk('public')->delete($filePath);
+                }
+
+                $attachment->delete();
+            }
+
+            $sertifikasi->status = 'deleted';
+            $sertifikasi->save();
+
+            return response()->json([
+                'success' => 1,
+                'message' => 'Sertifikasi dan semua attachment berhasil dihapus'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => 0,
+                'message' => 'Gagal menghapus sertifikasi: ' . $e->getMessage()
+            ], 500);
+        }
     }
+
 
     public function getSertifikasi($id)
     {

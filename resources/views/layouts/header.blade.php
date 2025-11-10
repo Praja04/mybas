@@ -950,6 +950,16 @@
                                                 </a>
                                             </li>
                                         @endif
+                                        @if (in_array('pos-security', $permissions))
+                                            <li class="menu-item" aria-haspopup="true">
+                                                <a href="{{ url('/pos-security/dashboard') }}" class="menu-link">
+                                                    <i class="menu-bullet menu-bullet-line">
+                                                        <span></span>
+                                                    </i>
+                                                    <span class="menu-text">POS Security</span>
+                                                </a>
+                                            </li>
+                                        @endif
                                     </ul>
                                 </div>
                             </li>

@@ -46,9 +46,13 @@ class LoginController extends Controller
         if (Auth::attempt([
             'username' => $request['nik'],
             'password' => $request['password'],
-            'status' => '1'], true)) {
-            return response()->json(['success' => '1'], 200);
-        }else{
+            'status' => '1'
+        ], true)) {
+            return response()->json([
+                'success' => 1,
+                'redirect' => session()->pull('url.intended', url('/'))
+            ], 200);
+        } else {
             return response()->json(['success' => '0'], 401);
         }
     }
