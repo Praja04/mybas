@@ -165,10 +165,8 @@
                                                                 <strong>(
                                                                     <span data-dz-size="">340kb</span>)</strong>
                                                             </div>
-                                                            {{-- todo: show error if failed --}}
                                                             <div class="dropzone-error" data-dz-errormessage=""></div>
                                                         </div>
-                                                        {{-- todo:  --}}
                                                         <div class="dropzone-progress">
                                                             <div class="progress">
                                                                 <div class="progress-bar bg-primary" role="progressbar"

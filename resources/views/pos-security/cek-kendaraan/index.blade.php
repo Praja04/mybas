@@ -1,6 +1,6 @@
 @extends('pos-security.layouts.base')
 
-@section('title', 'Form Supplier')
+@section('title', 'Form Pengecekan Kendaraan')
 
 @push('styles')
     <style>
@@ -32,14 +32,15 @@
 @section('content')
     <div class="container-fluid">
         {{-- panduan dan menu tabs --}}
+        {{-- todo: ganti ke cek kendaraan --}}
         @include('pos-security.formulir.supplier.panduan')
 
         <!-- Tabs Content -->
         <div class="tab-content" id="formTabsContent">
             <!-- Supplier IN Tab -->
-            @include('pos-security.formulir.supplier.form-in')
+            @include('pos-security.cek-kendaraan.form-in-cek')
             <!-- Supplier OUT Tab -->
-            @include('pos-security.formulir.supplier.form-out')
+            @include('pos-security.cek-kendaraan.form-out-cek')
         </div>
     </div>
 @endsection

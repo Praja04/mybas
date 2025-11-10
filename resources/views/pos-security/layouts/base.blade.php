@@ -16,6 +16,12 @@ $menus = [
                 'icon' => 'mdi-file-document-outline',
                 'submenu' => [],
             ],
+            [
+                'path' => 'pos-security/formulir/cek-kendaraan',
+                'label' => 'Formulir Pengecekan Kendaraan',
+                'icon' => 'mdi-camera-rear',
+                'submenu' => [],
+            ],
         ],
     ],
     [
@@ -80,6 +86,12 @@ $menus = [
                     ],
                 ],
             ],
+            [
+                'path' => 'pos-security/history/kendaraan',
+                'label' => 'Riwayat Pengecekan Kendaraan',
+                'icon' => 'mdi-truck',
+                'submenu' => [],
+            ],
         ],
     ],
     [
@@ -125,7 +137,7 @@ $menus = [
         @yield('title', '')
     </x-slot>
 
-    <x-slot name="longName">POS Security</x-slot>
+    <x-slot name="longName">Pos Security</x-slot>
     <x-slot name="shortName">POS</x-slot>
 
     @yield('content')
@@ -135,6 +147,7 @@ $menus = [
     </x-slot>
 
     <x-slot name="scripts">
+        {{-- @include('pos-security.routes.ajax') --}}
         @stack('scripts')
     </x-slot>
 </x-templates.velzon-hs.base>

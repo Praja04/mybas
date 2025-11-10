@@ -169,10 +169,19 @@ class EcafeSeedapController extends Controller
         }
 
         // Ini kalo data nya ga ada di db SMU
-        if (!$rfid || !$nik) {
+        if (!$rfid) {
             return response([
                 'success' => 0,
-                'message' => 'ID card tidak dikenali. Silakan scan ulang atau hubungi HRD',
+                'message' => 'RFID dari ID card tidak dikenali. Silakan scan ulang atau hubungi petugas.',
+                'data' => ['sisa_porsi' => $sisa_porsi]
+            ]);
+        }
+
+        // fallback
+        if (!$nik) {
+            return response([
+                'success' => 0,
+                'message' => 'Sistem sedang mengalami gangguan. Silakan coba lagi atau hubungi petugas.',
                 'data' => ['sisa_porsi' => $sisa_porsi]
             ]);
         }

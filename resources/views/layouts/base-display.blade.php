@@ -101,9 +101,11 @@
                                 </div>
                             </div>
                             <!--end::User-->
-                            <button id="btnLogout" class="btn btn-sm font-weight-bold">
-                                <i class="fas fa-sign-out-alt"></i> Keluar
-                            </button>
+                            @auth
+                                <button id="btnLogout" class="btn btn-sm font-weight-bold">
+                                    <i class="fas fa-sign-out-alt"></i> Keluar
+                                </button>
+                            @endauth
 
                         </div>
                         {{-- @endif --}}
@@ -230,6 +232,15 @@
                     });
                 }
             });
+        });
+    </script>
+
+    <script>
+        $(document).ready(function() {
+            const token = $('meta[name="csrf-token"]').attr('content');
+            if (!token) {
+                console.warn("CSRF token not found");
+            }
         });
     </script>
 

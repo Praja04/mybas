@@ -297,13 +297,16 @@ class CateringController extends Controller
 
     private function generateIdtransaksi()
     {
-        $latestId = pengirimCateringbas::orderBy('id_transaksi', 'desc')->first();
+        $latestId = pengirimCateringbas::orderByRaw('CAST(SUBSTRING(id_transaksi, 3) AS UNSIGNED) DESC')->first();
 
         if (!$latestId) {
             return 'K-001';
         }
+
         $latestIdNumber = (int)substr($latestId->id_transaksi, 2);
+
         $newIdNumber = $latestIdNumber + 1;
+
         $newId = 'K-' . str_pad($newIdNumber, 3, '0', STR_PAD_LEFT);
 
         return $newId;
@@ -856,19 +859,19 @@ class CateringController extends Controller
     {
         $now = now();
         $user_name = auth()->user()->name;
-    
+
         // Dapatkan semua ID transaksi yang memenuhi kriteria
         $transaksiIds = PengirimCateringbas::query()
             ->where('status_cek_kendaraan', 'menunggu approval')
             ->where('status_cek_kedatangan', 'menunggu approval')
             ->where('status_pengambilan_sampel', 'menunggu approval')
             ->pluck('id_transaksi');
-    
+
         if ($transaksiIds->isEmpty()) {
             Session::flash('error', 'Tidak ada transaksi yang memenuhi kriteria!');
             return back();
         }
-    
+
         PengirimCateringbas::query()
             ->whereIn('id_transaksi', $transaksiIds)
             ->update([
@@ -885,7 +888,7 @@ class CateringController extends Controller
                 "approval_cek_kendaraan_at" => $now,
                 "approval_cek_kendaraan_by" => $user_name,
             ]);
-    
+
         CateringbasPengecekanJumlahPesanan::query()
             ->whereIn('id_transaksi', $transaksiIds)
             ->update([
@@ -893,7 +896,7 @@ class CateringController extends Controller
                 "approved_at" => $now,
                 "approved_by" => $user_name,
             ]);
-    
+
         pengambilanSampelCateringbas::query()
             ->whereIn('id_transaksi', $transaksiIds)
             ->update([
@@ -901,7 +904,7 @@ class CateringController extends Controller
                 "approved_at" => $now,
                 "approved_by" => $user_name,
             ]);
-    
+
         PengecekanKendaraanCateringbas::query()
             ->whereIn('id_transaksi', $transaksiIds)
             ->update([
@@ -909,11 +912,11 @@ class CateringController extends Controller
                 "approved_at" => $now,
                 "approved_by" => $user_name,
             ]);
-    
+
         Session::flash('info', 'Transaksi yang memenuhi kriteria berhasil di-approve!');
         return back();
     }
-    
+
 
 
 
@@ -1105,10 +1108,10 @@ class CateringController extends Controller
     public function getReportingUserCatering()
     {
         $dataPesanan = pengirimCateringbas::orWhere('status_cek_kendaraan', '!=', 'sudah')
-        ->orWhere('status_cek_kedatangan', '!=', 'sudah')
-        ->orWhere('status_pengambilan_sampel', '!=', 'sudah')
-        ->orderBy('id', 'desc')
-        ->get();
+            ->orWhere('status_cek_kedatangan', '!=', 'sudah')
+            ->orWhere('status_pengambilan_sampel', '!=', 'sudah')
+            ->orderBy('id', 'desc')
+            ->get();
 
         $datacatering = [];
 
@@ -1308,10 +1311,10 @@ class CateringController extends Controller
             'tanggal_awal' => 'required|date',
             'tanggal_akhir' => 'required|date|after_or_equal:tanggal_awal'
         ]);
-    
+
         $tanggalAwal = Carbon::parse($validated['tanggal_awal'])->format('Y-m-d');
         $tanggalAkhir = Carbon::parse($validated['tanggal_akhir'])->format('Y-m-d');
-    
+
         $reportData = EcafeSedaapBas::selectRaw('tanggal, kategori, 
                     SUM(CASE WHEN shift = 1 THEN jumlah ELSE 0 END) as shift1_sum, 
                     SUM(CASE WHEN shift = 2 THEN jumlah ELSE 0 END) as shift2_sum, 
@@ -1321,25 +1324,25 @@ class CateringController extends Controller
             ->orderBy('tanggal', 'asc')
             ->orderBy('kategori', 'asc')
             ->get();
-    
+
         return response()->json($reportData);
-    }    
+    }
 
     public function exportPdf($tanggal_awal, $tanggal_akhir)
     {
         $tanggalAwal = $tanggal_awal->input('tanggal_awal');
         $tanggalAkhir = $tanggal_akhir->input('tanggal_akhir');
-    
+
         $reportData = EcafeSedaapBas::selectRaw('tanggal, kategori, 
                         SUM(CASE WHEN shift = 1 THEN jumlah ELSE 0 END) as shift1_sum, 
                         SUM(CASE WHEN shift = 2 THEN jumlah ELSE 0 END) as shift2_sum, 
                         SUM(CASE WHEN shift = 3 THEN jumlah ELSE 0 END) as shift3_sum')
-                ->whereBetween('tanggal', [$tanggalAwal, $tanggalAkhir])
-                ->groupBy('tanggal', 'kategori')
-                ->orderBy('tanggal', 'asc')
-                ->orderBy('kategori', 'asc')
-                ->get();
-    
+            ->whereBetween('tanggal', [$tanggalAwal, $tanggalAkhir])
+            ->groupBy('tanggal', 'kategori')
+            ->orderBy('tanggal', 'asc')
+            ->orderBy('kategori', 'asc')
+            ->get();
+
         // Render data ke dalam file PDF
         $pdf = PDF::loadView('hr.cateringbas.cetak-report-catering.report-catering-pdf', ['reportData' => $reportData]);
         return $pdf->download('laporan_mingguan.pdf');

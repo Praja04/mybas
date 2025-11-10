@@ -109,7 +109,7 @@
                                                         <th>KETERANGAN</th>
                                                         <th>DIBUAT</th>
                                                         <th>STATUS</th>
-                                                        @if (in_array('edoc_security', $permissions))
+                                                        @if (in_array('security', $permissions))
                                                             <th>AKSI</th>
                                                         @endif
                                                     </tr>
@@ -311,9 +311,9 @@
                 trigger: trigger,
                 template: '<div class="tooltip ' + theme + ' ' + width +
                     '" role="tooltip">\
-                                                                                                                                                                                                                                    <div class="arrow"></div>\
-                                                                                                                                                                                                                                    <div class="tooltip-inner"></div>\
-                                                                                                                                                                                                                                </div>'
+                                                                                                                                                                                                                                            <div class="arrow"></div>\
+                                                                                                                                                                                                                                            <div class="tooltip-inner"></div>\
+                                                                                                                                                                                                                                        </div>'
             });
         }
 
@@ -387,7 +387,7 @@
                         }
                     }
                 },
-                @if (in_array('edoc_security', $permissions))
+                @if (in_array('security', $permissions))
                     {
                         data: null,
                         "sortable": false,
@@ -463,11 +463,11 @@
                                  ${
                                     response.data.data.updated_by
                                     ? `<b>${response.data.data.updated_by}</b> Mengambil Barang/Dokumen
-                                                                                                                    
-                                                                                                                        <br>Bukti Foto:<hr>
-                                                                                                                        ${response.data.data.foto 
-                                                                                                                            ? `<img src="{{ url('e-doc/pengambilan') }}/${response.data.data.foto}" width="100%">`
-                                                                                                                            : '<i>Tidak ada foto</i>'}`
+                                                                                                                            
+                                                                                                                                <br>Bukti Foto:<hr>
+                                                                                                                                ${response.data.data.foto 
+                                                                                                                                    ? `<img src="{{ url('e-doc/pengambilan') }}/${response.data.data.foto}" width="100%">`
+                                                                                                                                    : '<i>Tidak ada foto</i>'}`
                                             
                                     : '<span class="text-muted">Belum Diambil</span>'
                                 }
