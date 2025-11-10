@@ -42,5 +42,4 @@
             @include('pos-security.formulir.supplier.form-out')
         </div>
     </div>
-    </div>
 @endsection

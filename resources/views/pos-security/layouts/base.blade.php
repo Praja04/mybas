@@ -16,6 +16,12 @@ $menus = [
                 'icon' => 'mdi-file-document-outline',
                 'submenu' => [],
             ],
+            [
+                'path' => 'pos-security/formulir/cek-kendaraan',
+                'label' => 'Formulir Pengecekan Kendaraan',
+                'icon' => 'mdi-camera-rear',
+                'submenu' => [],
+            ],
         ],
     ],
     [
@@ -79,6 +85,12 @@ $menus = [
                         'label' => 'Vendor/Tamu',
                     ],
                 ],
+            ],
+            [
+                'path' => 'pos-security/history/kendaraan',
+                'label' => 'Riwayat Pengecekan Kendaraan',
+                'icon' => 'mdi-truck',
+                'submenu' => [],
             ],
         ],
     ],
