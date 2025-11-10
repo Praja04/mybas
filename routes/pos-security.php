@@ -15,5 +15,7 @@ Route::prefix('pos-security')->group(function () {
         Route::get('/absensi/display', 'PosSecurityController@display')->name('pos-security.absensi.display');
 
         Route::get('/absensi/visitor', 'PosSecurityController@absensiVisitor')->name('pos-security.absensi.visitor');
+
+        Route::get('/formulir/cek-kendaraan', 'PosSecurityController@formCekKendaraan')->name('pos-security.formulir.cek.kendaraan');
     });
 });

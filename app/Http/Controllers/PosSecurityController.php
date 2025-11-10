@@ -31,4 +31,9 @@ class PosSecurityController extends Controller
     {
         return view('pos-security.absensi.index');
     }
+
+    public function formCekKendaraan()
+    {
+        return view('pos-security.cek-kendaraan.index');
+    }
 }
