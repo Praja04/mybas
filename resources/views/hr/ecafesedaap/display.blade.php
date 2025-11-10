@@ -64,7 +64,7 @@
                 <div class="row g-2 align-items-center">
                     <div class="col-12 col-md-3">
                         <input id="scanner" autofocus type="text" class="form-control text-white"
-                            placeholder="Scan here.." style="background-color: #525461">
+                            placeholder="Scan here.." style="background-color: #525461" autofocus>
                         <input type="hidden" id="temp_rfid">
                     </div>
                     <div class="col-12 col-md-5 text-center my-2 my-md-0">
@@ -185,8 +185,8 @@
                     $('#loading').hide()
                 },
                 error: function(error) {
-                    // console.error(error.responseJSON.message);
-                    // warning()
+                    console.log(error);
+                    console.error("error: ", error.responseJSON.message);
                     $('#temp_rfid').val('');
                     $('#loading').hide()
                     $('.indikator-bug').show()
@@ -240,5 +240,41 @@
             $('#department').val(data.department);
             $('#sisa-porsi').text(data.sisa_porsi);
         }
+
+        // refresh jika ganti shift (jam 06:00, 14:00, 22:00) 
+        setInterval(function() {
+            const now = new Date();
+            const hour = now.getHours();
+            const minute = now.getMinutes();
+            const second = now.getSeconds();
+
+            if (
+                ((hour === 6) || (hour === 14) || (hour === 22)) &&
+                minute === 0 && second <= 5
+            ) {
+                // full refresh 
+                window.location.href = window.location.pathname + '?t=' + new Date().getTime();
+            }
+        }, 1000);
+
+        // refresh jika 10 menit tidak ada scan
+        let idleTimer;
+        const idleLimit = 10 * 60 * 1000;
+
+        function resetIdleTimer() {
+            clearTimeout(idleTimer);
+            idleTimer = setTimeout(function() {
+                window.location.href = window.location.pathname + '?t=' + new Date().getTime();
+            }, idleLimit);
+        }
+
+        // reset timer setiap kali user melakukan scan 
+        $('#scanner').on('keypress', function(e) {
+            if (e.which === 13) {
+                resetIdleTimer();
+            }
+        });
+
+        resetIdleTimer();
     </script>
 @endpush
