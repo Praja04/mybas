@@ -166,6 +166,7 @@
                                                         class="dropzone-select btn btn-light-secondary font-weight-bold text-dark btn-sm">Attach
                                                         files</a>
                                                 </div>
+                                                <small>Max. 2MB (.pdf)</small>
                                                 <div class="dropzone-items">
                                                     <div class="dropzone-item" style="display:none">
                                                         <div class="dropzone-file">
@@ -241,7 +242,7 @@
             <div class="modal-content bg-dark border border-1">
                 <div class="modal-header">
                     <h5 class="create-modal-title text-white" id="exampleModalLabel"><i class="fa fa-folder-open"></i>
-                        <span>File file attachment</span>
+                        <span>File Attachments</span>
                     </h5>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                         <i aria-hidden="true" class="ki ki-close text-white"></i>
@@ -536,15 +537,16 @@
         var myDropzone5 = new Dropzone(id, {
             url: "{{ url('/attachment/upload') }}",
             parallelUploads: 20,
-            // update maxFilesize
-            maxFilesize: 50,
+            maxFilesize: 2, // 2mb
             timeout: 180000,
             previewTemplate: previewTemplate,
             previewsContainer: id + " .dropzone-items",
             clickable: id + " .dropzone-select",
             headers: {
                 'X-CSRF-TOKEN': '{{ csrf_token() }}'
-            }
+            },
+            acceptedFiles: ".pdf",
+            dictInvalidFileType: "Tipe file tidak diperbolehkan. Hanya .pdf yang bisa diunggah"
         });
 
         myDropzone5.on("sending", function(file, xhr, formData) {
@@ -714,27 +716,46 @@
 
         function showDocuments(id) {
             var table = $('#table-attachments tbody');
-            // Clear the table content
-            table.html('');
+            table.html(`
+                <tr>
+                    <td colspan="3" class="text-center">
+                        <div class="spinner-border text-light" role="status" style="width:1.5rem;height:1.5rem;">
+                            <span class="sr-only">Loading...</span>
+                        </div>
+                        <br>
+                        <small>Loading file...</small>
+                    </td>
+                </tr>
+            `);
+
             // Do get attachment by the id
             $.ajax({
                 url: "{{ url('sigra/kontrak-vendor/get-attachments') }}/" + id,
                 type: "GET",
                 dataType: "JSON",
                 success: function(response) {
+                    table.html('');
+
                     if (response.data.length > 0) {
+                        // set transaction_id to modal
+                        const transactionId = response.data[0].transaction_id;
+                        $("#document-attachment-modal").data('transaction-id', transactionId);
+
                         $.each(response.data, function(key, val) {
-                            var row = '' +
-                                '<tr>' +
-                                '<td>' + (key + 1) + '</td>' +
-                                '<td>' + val.original_file_name + '</td>' +
-                                '<td>' +
-                                '<a title="Download" onClick="downloadAttachment(\'' + val.id +
-                                '\')" href="javascript:" class="text-hover-dark">' +
-                                '<i class="fa fa-cloud-download-alt text-hover-dark text-success"></i>' +
-                                '</a>' +
-                                '</td>' +
-                                '</tr>';
+                            var row = `
+                                <tr>
+                                    <td>${key + 1}</td>
+                                    <td>${val.original_file_name}</td>
+                                    <td class="d-flex justify-content-center align-items-center">
+                                        <a href="javascript:" title="Delete" onClick="deleteAttachment('${val.id}')" class="mx-3 text-danger">
+                                            <i class="fa fa-trash"></i>
+                                        </a>
+                                        <a href="javascript:" title="Download" onClick="downloadAttachment('${val.id}')" class="mx-3 text-success">
+                                            <i class="fa fa-download"></i>
+                                        </a>
+
+                                    </td>
+                                </tr>`;
                             table.append(row);
                         });
                     } else {
@@ -745,7 +766,7 @@
                         table.append(row);
                     }
                 },
-                errir: function(error) {
+                error: function(error) {
                     console.log(error);
                 }
             });
@@ -781,15 +802,26 @@
 
         function getKontrak(id) {
             var table = $('#kontrak table tbody');
-            table.html('');
+            table.html(`
+                <tr>
+                    <td colspan="9" class="text-center">
+                        <div class="spinner-border text-primary" role="status" style="width: 2rem; height: 2rem;">
+                            <span class="sr-only">Loading...</span>
+                        </div>
+                        <br>
+                        <small>Loading...</small>
+                    </td>
+                </tr>
+            `);
 
             $.ajax({
                 url: "{{ url('sigra/kontrak-vendor/get-kontrak') }}/" + id,
                 dataType: 'JSON',
                 type: 'GET',
                 success: function(response) {
+                    table.html('');
                     console.log(response);
-                    if (response.data.length == 0) {
+                    if (!response.data || response.data.length === 0) {
                         var row = '' +
                             '<tr>' +
                             '<td colspan="9" class="text-center"><span class="label label-secondary label-inline">Belum ada kontrak</span></td>' +
@@ -805,7 +837,7 @@
                             '<td>' + formatTanggalIndonesia(val.tanggal_mulai) + '</td>' +
                             '<td>' + formatTanggalIndonesia(val.tanggal_selesai) + '</td>' +
                             '<td>' + hargaFormatted + '</td>' +
-                            '<td>' + val.keterangan + '</td>' +
+                            '<td>' + (val.keterangan ?? "") + '</td>' +
                             '<td>' +
                             '<a title="Tampilkan attachment" onClick="showDocuments(' + val.id +
                             ')" href="javascript:" class="mr-10 position-relative text-hover-dark mr-1">' +
@@ -938,7 +970,85 @@
         }
 
         function downloadAttachment(id) {
-            window.location.href = "{{ url('/attachment/download') }}/" + id
+            const url = "{{ url('/attachment/download') }}/" + id;
+
+            $.ajax({
+                url: url,
+                method: 'GET',
+                xhrFields: {
+                    responseType: 'blob'
+                },
+                success: function(data, status, xhr) {
+                    // Ambil nama file dari header response
+                    let disposition = xhr.getResponseHeader('Content-Disposition');
+                    let filename = 'kontrak_vendor_attachment';
+                    if (disposition && disposition.indexOf('filename=') !== -1) {
+                        filename = disposition.split('filename=')[1].replace(/"/g, '');
+                    }
+
+                    // Buat link blob dan auto-download
+                    let blob = new Blob([data]);
+                    let link = document.createElement('a');
+                    link.href = window.URL.createObjectURL(blob);
+                    link.download = filename;
+                    link.click();
+                },
+                error: function(xhr) {
+                    if (xhr.status === 404) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'File tidak ditemukan',
+                            text: 'File mungkin sudah dihapus atau rusak.',
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Gagal mengunduh file',
+                            text: 'Terjadi kesalahan tak terduga. Coba lagi nanti.',
+                        });
+                    }
+                }
+            });
+        }
+
+        function deleteAttachment(id) {
+            var transactionId = $("#document-attachment-modal").data('transaction-id');
+
+            Swal.fire({
+                title: 'Yakin hapus file ini?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Hapus',
+                cancelButtonText: 'Batal'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: "{{ url('/attachment/delete') }}/" + id,
+                        type: "DELETE",
+                        dataType: "JSON",
+                        headers: {
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        },
+                        success: function(res) {
+                            Swal.fire('Terhapus!', 'File berhasil dihapus', 'success');
+
+                            $('#document-attachment-modal').modal('hide');
+
+                            // kurangi badge count di button folder
+                            const $badge = $(`#attachment-count-${transactionId}`);
+                            const currentCount = parseInt($badge.text().trim());
+                            if (!isNaN(currentCount) && currentCount > 0) {
+                                $badge.text(currentCount - 1);
+                            }
+
+                            getKontrak($("#kontrak-vendor-id").val());
+                        },
+                        error: function(err) {
+                            Swal.fire('Error', 'Gagal menghapus file. Silakan coba lagi', 'error');
+                        }
+                    });
+                }
+            });
         }
 
         $('[data-switch=true]').bootstrapSwitch();
