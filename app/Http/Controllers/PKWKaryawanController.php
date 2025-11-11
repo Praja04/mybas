@@ -42,7 +42,7 @@ class PKWKaryawanController extends Controller
         $nik = $karyawan->nik;
         $foto_name = $karyawan->foto_diri;
 
-        $url = \URL::to('/') . '/images/foto/' . $foto_name;
+        $url = 'http://172.21.5.105/images/foto/' . $foto_name;
         $image = file_get_contents($url);
         // return $url;
         // $image = $request->file('image');
