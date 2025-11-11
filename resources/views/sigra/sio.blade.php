@@ -156,6 +156,7 @@
                                                         class="dropzone-select btn btn-light-secondary font-weight-bold text-dark btn-sm">Attach
                                                         files</a>
                                                 </div>
+                                                <small>Max. 2MB (.pdf)</small>
                                                 <div class="dropzone-items">
                                                     <div class="dropzone-item" style="display:none">
                                                         <div class="dropzone-file">
@@ -592,8 +593,8 @@
             headers: {
                 'X-CSRF-TOKEN': '{{ csrf_token() }}'
             },
-            acceptedFiles: ".jpeg,.jpg,.png,.pdf,.doc,.docx",
-            dictInvalidFileType: "Tipe file tidak diperbolehkan. Hanya gambar dan dokumen yang bisa diunggah"
+            acceptedFiles: ".pdf",
+            dictInvalidFileType: "Tipe file tidak diperbolehkan. Hanya .pdf yang bisa diunggah"
         });
 
         myDropzone5.on("sending", function(file, xhr, formData) {
