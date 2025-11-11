@@ -255,27 +255,20 @@ class SioController extends Controller
 
     public function deleteSertifikasi($id)
     {
+        // soft delete
+        $data = SIOSertifikasi::find($id);
+        if (!$data) {
+            return response()->json([
+                'success' => 0,
+                'message' => 'Sertifikasi tidak ditemukan'
+            ], 404);
+        }
         try {
-            $sertifikasi = SIOSertifikasi::findOrFail($id);
-
-            $attachments = LocalAttachment::where('transaction_id', $sertifikasi->transaction_id)->get();
-
-            foreach ($attachments as $attachment) {
-                $filePath = $attachment->transaction_type . '/' . $attachment->encode_file_name;
-
-                if (Storage::disk('public')->exists($filePath)) {
-                    Storage::disk('public')->delete($filePath);
-                }
-
-                $attachment->delete();
-            }
-
-            $sertifikasi->status = 'deleted';
-            $sertifikasi->save();
-
+            $data->status = 'deleted';
+            $data->save();
             return response()->json([
                 'success' => 1,
-                'message' => 'Sertifikasi dan semua attachment berhasil dihapus'
+                'message' => 'Delete data succeed'
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -283,6 +276,42 @@ class SioController extends Controller
                 'message' => 'Gagal menghapus sertifikasi: ' . $e->getMessage()
             ], 500);
         }
+
+        // $sertifikasi = SIOSertifikasi::find($id);
+
+        // if (!$sertifikasi) {
+        //     return response()->json([
+        //         'success' => 0,
+        //         'message' => 'Sertifikasi tidak ditemukan'
+        //     ], 404);
+        // }
+
+        // try {
+        //     $attachments = LocalAttachment::where('transaction_id', $sertifikasi->transaction_id)->get();
+
+        //     foreach ($attachments as $attachment) {
+        //         $filePath = $attachment->transaction_type . '/' . $attachment->encode_file_name;
+
+        //         if (Storage::disk('public')->exists($filePath)) {
+        //             Storage::disk('public')->delete($filePath);
+        //         }
+
+        //         $attachment->delete();
+        //     }
+
+        //     $sertifikasi->status = 'deleted';
+        //     $sertifikasi->save();
+
+        //     return response()->json([
+        //         'success' => 1,
+        //         'message' => 'Sertifikasi dan semua attachment berhasil dihapus'
+        //     ]);
+        // } catch (\Exception $e) {
+        //     return response()->json([
+        //         'success' => 0,
+        //         'message' => 'Gagal menghapus sertifikasi: ' . $e->getMessage()
+        //     ], 500);
+        // }
     }
 
 
