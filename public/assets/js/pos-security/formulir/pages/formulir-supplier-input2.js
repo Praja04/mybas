@@ -692,6 +692,7 @@ const video = document.getElementById("video");
 const canvas = document.getElementById("canvas");
 const captureBtn = document.getElementById("captureBtn");
 const retakeBtn = document.getElementById("retakeBtn");
+const saveBtn = document.getElementById("saveBtn");
 const startCamera = document.getElementById("startCamera");
 const capturedImage = document.getElementById("capturedImage");
 const capturedImageContainer = document.getElementById(
@@ -1142,6 +1143,7 @@ async function startWebcam(options = {}) {
             { el: startCamera, show: false },
             { el: captureBtn, show: true },
             { el: retakeBtn, show: false },
+            { el: saveBtn, show: false },
         ]);
     } catch (err) {
         alert("Gagal mengakses kamera: " + err.message);
@@ -1162,6 +1164,7 @@ function captureImage() {
         { el: video, show: false },
         { el: captureBtn, show: false },
         { el: retakeBtn, show: true },
+        { el: saveBtn, show: true },
     ]);
     stopStream();
 }
@@ -1172,6 +1175,7 @@ function retakePhoto() {
         { el: video, show: true },
         { el: captureBtn, show: true },
         { el: retakeBtn, show: false },
+        { el: saveBtn, show: false },
     ]);
     startCamera.click();
 }

@@ -273,7 +273,8 @@
                 <button id="captureBtn" class="btn btn-secondary me-2" style="display: none;">Capture</button>
                 <button id="retakeBtn" class="btn btn-warning" style="display: none;">Ambil Ulang</button>
 
-                <button type="button" class="btn btn-primary" onclick="saveCaptureIdentitas()">Simpan Foto</button>
+                <button id="saveBtn" type="button" class="btn btn-primary"
+                    onclick="saveCaptureIdentitas()">Simpan Foto</button>
             </div>
         </div><!-- /.modal-content -->
     </div><!-- /.modal-dialog -->
