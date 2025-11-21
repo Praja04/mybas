@@ -638,7 +638,7 @@
                             }
                         },
                         error: function(error) {
-                            console.log(error.responseJSON.message);
+                            // console.log(error.responseJSON.message);
                             // alert('ID CARD tidak di kenali');
                             // alert(error.responseJSON.message);
                             Swal.fire({
@@ -725,16 +725,16 @@
                                             sortable: false,
                                             render: function(data, type, row) {
                                                 return '<div class="form-group">\
-                                                                                                                                                                                                                                                                                                                        <div class="checkbox-list">\
-                                                                                                                                                                                                                                                                                                                            <label class="checkbox">\
-                                                                                                                                                                                                                                                                                                                                <input type="checkbox" name="id_barang[]" value="' +
+                                                                                                                                                                                                                                                                                                                            <div class="checkbox-list">\
+                                                                                                                                                                                                                                                                                                                                <label class="checkbox">\
+                                                                                                                                                                                                                                                                                                                                    <input type="checkbox" name="id_barang[]" value="' +
                                                     row.id_barang +
                                                     '" class="checks" />\
-                                                                                                                                                                                                                                                                                                                                    <span></span>\
-                                                                                                                                                                                                                                                                                                                                Pilih\
-                                                                                                                                                                                                                                                                                                                        </label>\
-                                                                                                                                                                                                                                                                                                                    </div>\
-                                                                                                                                                                                                                                                                                                                </div>'
+                                                                                                                                                                                                                                                                                                                                        <span></span>\
+                                                                                                                                                                                                                                                                                                                                    Pilih\
+                                                                                                                                                                                                                                                                                                                            </label>\
+                                                                                                                                                                                                                                                                                                                        </div>\
+                                                                                                                                                                                                                                                                                                                    </div>'
                                             }
                                         },
                                         {

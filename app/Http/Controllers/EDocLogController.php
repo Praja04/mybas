@@ -12,6 +12,7 @@ use App\Mail\EDoc\EDocMail;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Http\File;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Session;
 use Image;
 use Yajra\DataTables\Datatables;
@@ -163,48 +164,57 @@ class EDocLogController extends Controller
 
     public function ScanPengambilan($rfid)
     {
-        // $rfid = (int)$rfid;
+        try {
+            // $rfid = (int)$rfid;
 
-        // Ambil NIK berdasarkan RFID
-        $user = DB::connection('192.168.178.44-admin')
-            ->table('MSIDCARD')
-            ->select('NIK')
-            ->where('CARDNODEVICE', $rfid)
-            ->value('NIK');
+            // Ambil NIK berdasarkan RFID
+            $user = DB::connection('192.168.178.44-admin')
+                ->table('MSIDCARD')
+                ->select('NIK')
+                ->where('CARDNODEVICE', $rfid)
+                ->value('NIK');
 
-        if (!$user) {
+            if (!$user) {
+                return response()->json([
+                    'status' => 'failed',
+                    'message' => 'ID Card tidak dikenali. Silakan gunakan ID Card yang sesuai.'
+                ], 404);
+            }
+
+            // Ambil data PIC
+            $pic = DB::table('edoc_pic')->where('nik', $user)->first();
+
+            // VALIDASI: PIC tidak ditemukan
+            if (!$pic) {
+                return response()->json([
+                    'status' => 'failed',
+                    'message' => 'Anda bukan PIC pada departemen terkait. Silakan gunakan ID Card PIC yang sesuai.'
+                ], 404);
+            }
+
+            // Ambil list barang
+            $list_barang = DB::table('edoc_kedatangan')
+                ->select('jenis')
+                ->where('dept_penerima', $pic->dept)
+                ->get();
+
+            $groupBy = $list_barang->groupBy('jenis');
+
+            return response()->json([
+                'data' => [
+                    'pic'      => $pic,
+                    'groupBy'  => $groupBy,
+                ],
+                'status' => 'success'
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('[ EDOC - ScanPengambilan]: ' . $e->getMessage());
+
             return response()->json([
                 'status' => 'failed',
-                'message' => 'ID Card tidak dikenali. Silakan gunakan ID Card yang sesuai.'
-            ], 404);
+                'message' => 'Terjadi kesalahan sistem atau koneksi database gagal. Silakan coba lagi.'
+            ], 500);
         }
-
-        // Ambil data PIC
-        $pic = DB::table('edoc_pic')->where('nik', $user)->first();
-
-        // VALIDASI: PIC tidak ditemukan
-        if (!$pic) {
-            return response()->json([
-                'status' => 'failed',
-                'message' => 'Anda bukan PIC pada departemen terkait. Silakan gunakan ID Card PIC yang sesuai.'
-            ], 404);
-        }
-
-        // Ambil list barang
-        $list_barang = DB::table('edoc_kedatangan')
-            ->select('jenis')
-            ->where('dept_penerima', $pic->dept)
-            ->get();
-
-        $groupBy = $list_barang->groupBy('jenis');
-
-        return response()->json([
-            'data' => [
-                'pic'      => $pic,
-                'groupBy'  => $groupBy,
-            ],
-            'status' => 'success'
-        ]);
     }
 
     public function GetListBarang($dept, $jenis)
@@ -299,28 +309,37 @@ class EDocLogController extends Controller
 
     public function ScanPengiriman($rfid)
     {
-        // $rfid = (int)$rfid;
-        $user = DB::connection('192.168.178.44-admin')
-            ->table('MSIDCARD')
-            ->select('NIK')
-            ->where(['CARDNODEVICE' => $rfid])
-            ->value('NIK');
+        try {
+            // $rfid = (int)$rfid;
+            $user = DB::connection('192.168.178.44-admin')
+                ->table('MSIDCARD')
+                ->select('NIK')
+                ->where(['CARDNODEVICE' => $rfid])
+                ->value('NIK');
 
-        if (!$user) {
+            if (!$user) {
+                return response()->json([
+                    'status'  => 'failed',
+                    'message' => 'ID Card tidak dikenali. Silakan gunakan ID Card yang sesuai.'
+                ], 404);
+            }
+
+            $nik  = $user;
+
             return response()->json([
-                'status'  => 'failed',
-                'message' => 'ID Card tidak dikenali. Silakan gunakan ID Card yang sesuai.'
-            ], 404);
+                'data' => [
+                    'nik' => $nik,
+                ],
+                'status' => 'success'
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('[EDOC - ScanPengiriman]' . $e->getMessage());
+
+            return response()->json([
+                'status' => 'failed',
+                'message' => 'Terjadi kesalahan sistem atau koneksi database gagal. Silakan coba lagi.'
+            ], 500);
         }
-
-        $nik  = $user;
-
-        return response()->json([
-            'data' => [
-                'nik' => $nik,
-            ],
-            'status' => 'success'
-        ]);
     }
 
     public function ShowListPengiriman($nik)

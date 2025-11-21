@@ -256,7 +256,7 @@
                                 @endif
                                 <li class="menu-item {{ request()->is('edoc/history') ? 'menu-item-active' : '' }}"
                                     aria-haspopup="true">
-                                    <a class="menu-link" href="{{ url('edoc/history?filter=1') }}">
+                                    <a class="menu-link" href="{{ url('edoc/history') }}">
                                         <i class="fas fa-history menu-icon"></i>
                                         <span class="menu-text">History E-doc</span>
                                     </a>
