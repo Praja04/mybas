@@ -41,7 +41,7 @@ class Listbasopkaryawan extends Component
         $usersArray = SecurityUserGA::all()->pluck('nik')->toArray();
 
         $users = User::whereIn('username', $usersArray)->get()
-        ->pluck('email');
+            ->pluck('email');
 
         $users = $users->filter(function ($item) {
             return $item != '';
@@ -60,14 +60,23 @@ class Listbasopkaryawan extends Component
     {
         $item = BaSopKaryawan::find($id);
 
-        $pdf = PDF::loadView('pages.halo-security.ba-sop-karyawan',compact('item'));
+        $pdf = PDF::loadView('pages.halo-security.ba-sop-karyawan', compact('item'));
 
         return $pdf->download('Data Berita Acara S.O.P Karyawan.pdf');
     }
 
+    public function preview($id)
+    {
+        $item = BaSopKaryawan::find($id);
+
+        $pdf = PDF::loadView('pages.halo-security.ba-sop-karyawan', compact('item'));
+
+        return $pdf->stream('Data Berita Acara S.O.P Karyawan.pdf');
+    }
+
     public function exportexcelkaryawan(Request $request)
     {
-        return Excel::download(new HsBaSopKaryawan(),'Halo Security Berita Acara S.O.P Karyawan.xlsx');
+        return Excel::download(new HsBaSopKaryawan(), 'Halo Security Berita Acara S.O.P Karyawan.xlsx');
     }
 
     public function sendDeleteKaryawanConfirmationMail($emails, $karyawan)
@@ -78,7 +87,7 @@ class Listbasopkaryawan extends Component
     public function render(Request $request)
     {
         // $this->permission('hs_sop');
-        
+
         $data = BaSopKaryawan::query();
 
         // filter by search
@@ -113,5 +122,4 @@ class Listbasopkaryawan extends Component
 
         return view('livewire.listbasopkaryawan', compact('basopkaryawan'));
     }
-
 }

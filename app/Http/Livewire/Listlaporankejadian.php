@@ -31,7 +31,7 @@ class Listlaporankejadian extends Component
         $usersArray = SecurityUserGA::all()->pluck('nik')->toArray();
 
         $users = User::whereIn('username', $usersArray)->get()
-        ->pluck('email');
+            ->pluck('email');
 
         $users = $users->filter(function ($item) {
             return $item != '';
@@ -41,7 +41,7 @@ class Listlaporankejadian extends Component
 
         $this->sendDeleteLaporanKejadianConfirmationMail($emails, $item);
 
-        return redirect()->route('ba-list-laporankejadian')->with(['success'=>'Data BA Laporan Kejadian berhasil dihapus']);
+        return redirect()->route('ba-list-laporankejadian')->with(['success' => 'Data BA Laporan Kejadian berhasil dihapus']);
     }
 
     public function sendDeleteLaporanKejadianConfirmationMail($emails, $item)
@@ -53,20 +53,20 @@ class Listlaporankejadian extends Component
     {
         $item = BaLaporanKejadian::find($lk_id);
 
-        $pdf = PDF::loadView('pages.halo-security.ba-laporan-kejadian',compact('item'));
+        $pdf = PDF::loadView('pages.halo-security.ba-laporan-kejadian', compact('item'));
 
-        return $pdf->download('Data Berita Acara Laporan Kejadian.pdf');
+        return $pdf->stream('Data Berita Acara Laporan Kejadian.pdf');
     }
 
     public function exportexcelkejadian(Request $request)
     {
-        return Excel::download(new HsBaLaporanKejadian(),'Halo Security Berita Acara Laporan Kejadian.xlsx');
+        return Excel::download(new HsBaLaporanKejadian(), 'Halo Security Berita Acara Laporan Kejadian.xlsx');
     }
 
     public function render(Request $request)
     {
         // $this->permission('hs_kejadian');
-        
+
         $data = BaLaporanKejadian::query();
 
         // filter by search
