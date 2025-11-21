@@ -83,45 +83,45 @@ class EDocLogController extends Controller
         ]);
 
         // data for body email
-        $detail = [
-            'petugas' =>  Auth::user()->name,
-            'tanggal_kedatangan' => $request->tanggal_kedatangan,
-            'nama_pt_pengirim' => $request->nama_pt_pengirim,
-            'nama_penerima' => $request->nama_penerima,
-            'jenis' => $request->jenis,
-            'keterangan' => $request->keterangan,
-        ];
-        $pic = DB::table('edoc_pic')->where('dept', $request->dept_penerima)->get();
+        // $detail = [
+        //     'petugas' =>  Auth::user()->name,
+        //     'tanggal_kedatangan' => $request->tanggal_kedatangan,
+        //     'nama_pt_pengirim' => $request->nama_pt_pengirim,
+        //     'nama_penerima' => $request->nama_penerima,
+        //     'jenis' => $request->jenis,
+        //     'keterangan' => $request->keterangan,
+        // ];
+        // $pic = DB::table('edoc_pic')->where('dept', $request->dept_penerima)->get();
 
-        $to = '';
-        $cc = [];
+        // $to = '';
+        // $cc = [];
 
-        foreach ($pic as $key => $list) {
-            $user =  DB::table('users')->where('username', $list->nik)->first();
-            // jika users dari edoc_pic belum terdaftar di users beri null dan lanjutkan looping
-            if ($user == null) {
-                continue;
-            }
+        // foreach ($pic as $key => $list) {
+        //     $user =  DB::table('users')->where('username', $list->nik)->first();
+        //     // jika users dari edoc_pic belum terdaftar di users beri null dan lanjutkan looping
+        //     if ($user == null) {
+        //         continue;
+        //     }
 
-            if ($user->email != null) {
-                if ($to == '') {
-                    $to = $user->email;
-                } else {
-                    $cc[] = $user->email;
-                }
-            }
-        }
+        //     if ($user->email != null) {
+        //         if ($to == '') {
+        //             $to = $user->email;
+        //         } else {
+        //             $cc[] = $user->email;
+        //         }
+        //     }
+        // }
 
-        if ($to != '') {
-            Mail::mailer(setEmail($to))
-                ->to($to)
-                ->cc($cc)
-                ->send(new EDocMail(
-                    'Yth. ' . $request->nama_penerima . ', MyBAS mencatat adanya dokumen masuk (E-Document) yang ditujukan kepada Anda. Berikut detail informasinya:',
-                    'E-DOCUMENT NOTIFICATION',
-                    $detail
-                ));
-        }
+        // if ($to != '') {
+        //     Mail::mailer(setEmail($to))
+        //         ->to($to)
+        //         ->cc($cc)
+        //         ->send(new EDocMail(
+        //             'Yth. ' . $request->nama_penerima . ', MyBAS mencatat adanya dokumen masuk (E-Document) yang ditujukan kepada Anda. Berikut detail informasinya:',
+        //             'E-DOCUMENT NOTIFICATION',
+        //             $detail
+        //         ));
+        // }
 
         Session::flash('info', 'Berhasil menyimpan kedatangan');
         return back();
@@ -163,22 +163,45 @@ class EDocLogController extends Controller
 
     public function ScanPengambilan($rfid)
     {
-        $rfid = (int)$rfid;
+        // $rfid = (int)$rfid;
+
+        // Ambil NIK berdasarkan RFID
         $user = DB::connection('192.168.178.44-admin')
             ->table('MSIDCARD')
             ->select('NIK')
-            ->where(['CARDNODEVICE' => $rfid])
+            ->where('CARDNODEVICE', $rfid)
             ->value('NIK');
 
-        // $user  = $nik;
+        if (!$user) {
+            return response()->json([
+                'status' => 'failed',
+                'message' => 'ID Card tidak dikenali. Silakan gunakan ID Card yang sesuai.'
+            ], 404);
+        }
 
-        $pic         = DB::table('edoc_pic')->where('nik', $user)->first();
-        $list_barang = DB::table('edoc_kedatangan')->select('jenis')->where('dept_penerima', $pic->dept)->get();
-        $groupBy     = $list_barang->groupBy('jenis');
+        // Ambil data PIC
+        $pic = DB::table('edoc_pic')->where('nik', $user)->first();
+
+        // VALIDASI: PIC tidak ditemukan
+        if (!$pic) {
+            return response()->json([
+                'status' => 'failed',
+                'message' => 'Anda bukan PIC pada departemen terkait. Silakan gunakan ID Card PIC yang sesuai.'
+            ], 404);
+        }
+
+        // Ambil list barang
+        $list_barang = DB::table('edoc_kedatangan')
+            ->select('jenis')
+            ->where('dept_penerima', $pic->dept)
+            ->get();
+
+        $groupBy = $list_barang->groupBy('jenis');
+
         return response()->json([
             'data' => [
-                'pic' => $pic,
-                'groupBy' => $groupBy,
+                'pic'      => $pic,
+                'groupBy'  => $groupBy,
             ],
             'status' => 'success'
         ]);
@@ -276,12 +299,19 @@ class EDocLogController extends Controller
 
     public function ScanPengiriman($rfid)
     {
-        $rfid = (int)$rfid;
+        // $rfid = (int)$rfid;
         $user = DB::connection('192.168.178.44-admin')
             ->table('MSIDCARD')
             ->select('NIK')
             ->where(['CARDNODEVICE' => $rfid])
             ->value('NIK');
+
+        if (!$user) {
+            return response()->json([
+                'status'  => 'failed',
+                'message' => 'ID Card tidak dikenali. Silakan gunakan ID Card yang sesuai.'
+            ], 404);
+        }
 
         $nik  = $user;
 
@@ -296,9 +326,19 @@ class EDocLogController extends Controller
     public function ShowListPengiriman($nik)
     {
         $pic = DB::table('edoc_pic')->where('nik', $nik)->first();
+
+        if (!$pic) {
+            return response()->json([
+                'status' => 'failed',
+                'message' => 'Anda bukan PIC pada departemen terkait. Silakan gunakan ID Card PIC yang sesuai.'
+            ], 404);
+        }
+
         $data =  DB::table('edoc_pengiriman')
             ->where('dept_pengirim', $pic->dept)
-            ->where('status', 1)->get();
+            ->where('status', 1)
+            ->get();
+
         return Datatables::of($data)->addIndexColumn()->make(true);
     }
 
@@ -466,43 +506,43 @@ class EDocLogController extends Controller
             'dept_penerima' => $request->dept_penerima_baru,
         ]);
 
-        $data = DB::table('edoc_kedatangan')->where('id_barang', $request->id_barang)->first();
+        // $data = DB::table('edoc_kedatangan')->where('id_barang', $request->id_barang)->first();
 
-        $detail = [
-            'petugas' =>  Auth::user()->name,
-            'tanggal_kedatangan' => $data->tanggal_kedatangan,
-            'nama_pt_pengirim' => $data->nama_pt_pengirim,
-            'nama_penerima' => $data->nama_penerima,
-            'jenis' => $data->jenis,
-            'keterangan' => $data->keterangan,
-        ];
+        // $detail = [
+        //     'petugas' =>  Auth::user()->name,
+        //     'tanggal_kedatangan' => $data->tanggal_kedatangan,
+        //     'nama_pt_pengirim' => $data->nama_pt_pengirim,
+        //     'nama_penerima' => $data->nama_penerima,
+        //     'jenis' => $data->jenis,
+        //     'keterangan' => $data->keterangan,
+        // ];
 
-        $pic = DB::table('edoc_pic')->where('dept', $data->dept_penerima)->get();
+        // $pic = DB::table('edoc_pic')->where('dept', $data->dept_penerima)->get();
 
-        $to = '';
-        $cc = [];
+        // $to = '';
+        // $cc = [];
 
-        foreach ($pic as $key => $list) {
-            $user =  DB::table('users')->where('username', $list->nik)->first();
-            if ($user->email != null) {
-                if ($key == 0) {
-                    $to = $user->email;
-                } else {
-                    $cc[] = $user->email;
-                }
-            }
-        }
+        // foreach ($pic as $key => $list) {
+        //     $user =  DB::table('users')->where('username', $list->nik)->first();
+        //     if ($user->email != null) {
+        //         if ($key == 0) {
+        //             $to = $user->email;
+        //         } else {
+        //             $cc[] = $user->email;
+        //         }
+        //     }
+        // }
 
-        if ($to != '') {
-            Mail::mailer(setEmail($to))
-                ->to($to)
-                ->cc($cc)
-                ->send(new EDocMail(
-                    'Yth. ' . $request->nama_penerima . ', MyBAS mencatat adanya dokumen masuk (E-Document) yang ditujukan kepada Anda. Berikut detail informasinya:',
-                    'E-DOCUMENT NOTIFICATION',
-                    $detail
-                ));
-        }
+        // if ($to != '') {
+        //     Mail::mailer(setEmail($to))
+        //         ->to($to)
+        //         ->cc($cc)
+        //         ->send(new EDocMail(
+        //             'Yth. ' . $request->nama_penerima . ', MyBAS mencatat adanya dokumen masuk (E-Document) yang ditujukan kepada Anda. Berikut detail informasinya:',
+        //             'E-DOCUMENT NOTIFICATION',
+        //             $detail
+        //         ));
+        // }
 
         Session::flash('info', 'Data Berhasil Di Simpan..');
         return back();
@@ -515,43 +555,43 @@ class EDocLogController extends Controller
             'status' => 1
         ]);
 
-        $data = DB::table('edoc_kedatangan')->where('id_barang', $request->id_barang)->first();
+        // $data = DB::table('edoc_kedatangan')->where('id_barang', $request->id_barang)->first();
 
-        $detail = [
-            'petugas' =>  Auth::user()->name,
-            'tanggal_kedatangan' => $data->tanggal_kedatangan,
-            'nama_pt_pengirim' => $data->nama_pt_pengirim,
-            'nama_penerima' => $data->nama_penerima,
-            'jenis' => $data->jenis,
-            'keterangan' => $data->keterangan,
-        ];
+        // $detail = [
+        //     'petugas' =>  Auth::user()->name,
+        //     'tanggal_kedatangan' => $data->tanggal_kedatangan,
+        //     'nama_pt_pengirim' => $data->nama_pt_pengirim,
+        //     'nama_penerima' => $data->nama_penerima,
+        //     'jenis' => $data->jenis,
+        //     'keterangan' => $data->keterangan,
+        // ];
 
-        $pic = DB::table('edoc_pic')->where('dept', $data->dept_penerima)->get();
+        // $pic = DB::table('edoc_pic')->where('dept', $data->dept_penerima)->get();
 
-        $to = '';
-        $cc = [];
+        // $to = '';
+        // $cc = [];
 
-        foreach ($pic as $key => $list) {
-            $user =  DB::table('users')->where('username', $list->nik)->first();
-            if ($user->email != null) {
-                if ($key == 0) {
-                    $to = $user->email;
-                } else {
-                    $cc[] = $user->email;
-                }
-            }
-        }
+        // foreach ($pic as $key => $list) {
+        //     $user =  DB::table('users')->where('username', $list->nik)->first();
+        //     if ($user->email != null) {
+        //         if ($key == 0) {
+        //             $to = $user->email;
+        //         } else {
+        //             $cc[] = $user->email;
+        //         }
+        //     }
+        // }
 
-        if ($to != '') {
-            Mail::mailer(setEmail($to))
-                ->to($to)
-                ->cc($cc)
-                ->send(new EDocMail(
-                    'Yth. ' . $request->nama_penerima . ', MyBAS mencatat adanya dokumen masuk (E-Document) yang ditujukan kepada Anda. Berikut detail informasinya:',
-                    'E-DOCUMENT NOTIFICATION',
-                    $detail
-                ));
-        }
+        // if ($to != '') {
+        //     Mail::mailer(setEmail($to))
+        //         ->to($to)
+        //         ->cc($cc)
+        //         ->send(new EDocMail(
+        //             'Yth. ' . $request->nama_penerima . ', MyBAS mencatat adanya dokumen masuk (E-Document) yang ditujukan kepada Anda. Berikut detail informasinya:',
+        //             'E-DOCUMENT NOTIFICATION',
+        //             $detail
+        //         ));
+        // }
 
         Session::flash('info', 'Data Berhasil Di Simpan..');
         return back();
