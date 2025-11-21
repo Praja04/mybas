@@ -17,7 +17,8 @@ Route::prefix('halo-security')->group(function () {
         // Proses Ubah Data BA SOP Karyawan List
         Route::post('/ba-sop-karyawan/proseseditkaryawan/{id}', '\App\Http\Livewire\Editbasopkaryawan@EditBaSopKaryawan')->name('basopkaryawan.editkaryawan');
         // Cetak satu data karyawan ke dalam pdf
-        Route::get('/ba-sop-karyawan/listpdfkaryawan/{id}', '\App\Http\Livewire\Listbasopkaryawan@print_pdf')->name('printpdf.karyawan');
+        Route::get('/ba-sop-karyawan/listpdfkaryawan/{id}', '\App\Http\Livewire\Listbasopkaryawan@print_pdf')->name('download.pdf.karyawan');
+        Route::get('/ba-sop-karyawan/preview/{id}', '\App\Http\Livewire\Listbasopkaryawan@preview')->name('preview.pdf.karyawan');
         // Proses Report Excel Karyawan
         Route::get('/export-excel/excelkaryawan', '\App\Http\Livewire\Listbasopkaryawan@exportexcelkaryawan')->name('excel-report-karyawan');
 
@@ -72,7 +73,7 @@ Route::prefix('halo-security')->group(function () {
         // Upload Dokumen Satu Halaman
         Route::post('/bai/dokumenttd', '\App\Http\Livewire\Listbaintrogasi@upload_dokumenttd')->name('upload-dokumen-ttd');
         // Proses mengambil data untuk diubah
-        Route::get('/bai/introgasi/{bai_id}','\App\Http\Livewire\Listbaintrogasi@get_introgasi');
+        Route::get('/bai/introgasi/{bai_id}', '\App\Http\Livewire\Listbaintrogasi@get_introgasi');
         // Cetak Dokumen ttd BA Introgasi
         Route::get('/bai/pdfdokumenttd/{bai_id}', '\App\Http\Livewire\Listbaintrogasi@print_dokumenttd')->name('printdokumenttd.introgasi');
         // Read Data Laporan Kejadian
@@ -159,7 +160,7 @@ Route::prefix('halo-security')->group(function () {
         Route::delete('/bai/destroytemplate/{id}', 'HaloSecurity\TemplateController@destroy')->name('destroy-template');
 
         // Refresh Token Ajax
-        Route::post('/keep-token-alive', function() {
+        Route::post('/keep-token-alive', function () {
             return 'Token must have been valid, and the session expiration has been extended.'; //https://stackoverflow.com/q/31449434/470749
         });
 

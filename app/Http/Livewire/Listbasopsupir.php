@@ -41,7 +41,7 @@ class Listbasopsupir extends Component
         $usersArray = SecurityUserGA::all()->pluck('nik')->toArray();
 
         $users = User::whereIn('username', $usersArray)->get()
-        ->pluck('email');
+            ->pluck('email');
 
         $users = $users->filter(function ($item) {
             return $item != '';
@@ -62,12 +62,12 @@ class Listbasopsupir extends Component
 
         $pdf = PDF::loadView('pages.halo-security.ba-sop-supir', compact('item'));
 
-        return $pdf->download('Data Berita Acara S.O.P Supir.pdf');
+        return $pdf->stream('Data Berita Acara S.O.P Supir.pdf');
     }
 
     public function exportexcelsupir(Request $request)
     {
-        return Excel::download(new HsBaSopSupir(),'Halo Security Berita Acara S.O.P Supir.xlsx');
+        return Excel::download(new HsBaSopSupir(), 'Halo Security Berita Acara S.O.P Supir.xlsx');
     }
 
     public function sendDeleteSupirConfirmationMail($emails, $supir)
@@ -78,7 +78,7 @@ class Listbasopsupir extends Component
     public function render(Request $request)
     {
         // $this->permission('hs_sop');
-        
+
         $data = BaSopSupir::query();
 
         // filter by search

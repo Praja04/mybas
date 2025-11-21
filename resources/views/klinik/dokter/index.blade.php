@@ -324,37 +324,37 @@
                             </div>
                         </div>
                         <!-- <div class="row" id="validasi-container" style="display: none">
-                            <div class="col-12">
-                                <h5 class="judul mb-5">Validasi SKD</h5>
-                                <div class="row mt-2 px-4 scrollbar py-3" style="max-height:300px; overflow-y: auto">
-                                    <table id="table-pemeriksaan" class="table table-bordered">
-                                        <thead>
-                                            <div class="card-body">
-                                                <div class="col-sm-12">
-                                                    <div class="form-group">
-                                                        <label for="exampleSelectl">Upload Bukti SKD</label>
-                                                        <label for=""></label>
-                                                        <img class="img-preview img-fluid mb-3 col-sm-2" alt="">
-                                                        <input disabled type="file" class="form-control-file" name="fileskd"
-                                                            id="fileskd" placeholder="Masukan"
-                                                            aria-describedby="fileHelpId" required
-                                                            onchange="previewImage()">
-                                                    </div>
-                                                </div>
-                                                <tr>
-                                                    {{-- <th>Tgl Pemeriksaan</th>
+                                                <div class="col-12">
+                                                    <h5 class="judul mb-5">Validasi SKD</h5>
+                                                    <div class="row mt-2 px-4 scrollbar py-3" style="max-height:300px; overflow-y: auto">
+                                                        <table id="table-pemeriksaan" class="table table-bordered">
+                                                            <thead>
+                                                                <div class="card-body">
+                                                                    <div class="col-sm-12">
+                                                                        <div class="form-group">
+                                                                            <label for="exampleSelectl">Upload Bukti SKD</label>
+                                                                            <label for=""></label>
+                                                                            <img class="img-preview img-fluid mb-3 col-sm-2" alt="">
+                                                                            <input disabled type="file" class="form-control-file" name="fileskd"
+                                                                                id="fileskd" placeholder="Masukan"
+                                                                                aria-describedby="fileHelpId" required
+                                                                                onchange="previewImage()">
+                                                                        </div>
+                                                                    </div>
+                                                                    <tr>
+                                                                        {{-- <th>Tgl Pemeriksaan</th>
                                                 <th>Waktu Pemeriksaan</th>
                                                 <th>Keluhan</th>
                                                 <th>Diagnosa</th>
                                                 <th>Dokter</th>
                                                 <th></th> --}}
-                                                </tr>
-                                        </thead>
-                                        <tbody></tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div> -->
+                                                                    </tr>
+                                                            </thead>
+                                                            <tbody></tbody>
+                                                        </table>
+                                                    </div>
+                                                </div>
+                                            </div> -->
                     </div>
                     <div class="col-4">
                         <h5 class="judul mb-5">Detail Pemeriksaan <div class="btn btn-danger font-bold"
@@ -732,32 +732,32 @@
                 'Dipulangkan dan berobat') {
                 table.append(
                     '<tr>\
-                        <td>' +
+                                            <td>' +
                     data
                     .tanggal_pemeriksaan +
                     '</td>\
-                        <td>' +
+                                            <td>' +
                     data
                     .waktu_pemeriksaan +
                     '</td>\
-                        <td>' +
+                                            <td>' +
                     data
                     .keluhan +
                     '</td>\
-                        <td>' +
+                                            <td>' +
                     data
                     .data_diagnosa
                     .nama_diagnosa +
                     '</td>\
-                        <td>' +
+                                            <td>' +
                     data
                     .dokter +
                     '</td>\
-                        <td><button onClick="doValidasi(\'' +
+                                            <td><button onClick="doValidasi(\'' +
                     data
                     .id +
                     '\')" class="btn btn-warning text-dark btn-sm">Validasi</button></td>\
-                    </tr>'
+                                        </tr>'
                 )
             }
         }
@@ -799,76 +799,76 @@
             data.obat.forEach(function(obat, index) {
                 list_obat +=
                     "\
-                                                                                            <tr>\
-                                                                                                <td>" +
+                                                                                                                <tr>\
+                                                                                                                    <td>" +
                     (
                         parseInt(
                             index) +
                         1) +
                     "</td>\
-                                                                                                <td>" +
+                                                                                                                    <td>" +
                     obat
                     .nama_obat +
                     "</td>\
-                                                                                                <td class='text-center'>" +
+                                                                                                                    <td class='text-center'>" +
                     obat
                     .pivot
                     .quantity + "</td>\
-                                                                                            </tr>\
-                                                                                            ";
+                                                                                                                </tr>\
+                                                                                                                ";
             });
 
             $(".timeline-items").append(
                 "\
-                                                                                        <div class='timeline-item'>\
-                                                                                            <div class='timeline-desc timeline-desc-light-success'>\
-                                                                                                <i class='font-weight-bolder text-success' style='background-color: #eee; padding-left: 2px; padding-right: 5px; border-radius: 5px;'>" +
+                                                                                                            <div class='timeline-item'>\
+                                                                                                                <div class='timeline-desc timeline-desc-light-success'>\
+                                                                                                                    <i class='font-weight-bolder text-success' style='background-color: #eee; padding-left: 2px; padding-right: 5px; border-radius: 5px;'>" +
                 formatTanggalIndonesia2(data.tanggal_pemeriksaan) + " " + data.waktu_pemeriksaan +
                 "</i>\
-                                                                                            <div class='font-weight-normal text-dark-50 mt-2'>\
-                                                                                                <ul style='margin: 0; padding: 0; padding-left: 80px'>\
-                                                                                                    <li>Keluhan : " +
+                                                                                                                <div class='font-weight-normal text-dark-50 mt-2'>\
+                                                                                                                    <ul style='margin: 0; padding: 0; padding-left: 80px'>\
+                                                                                                                        <li>Keluhan : " +
                 data
                 .keluhan +
                 "</li>\
-                                                                                            <li>Diagnosa : " +
+                                                                                                                <li>Diagnosa : " +
                 data
                 .data_diagnosa
                 .nama_diagnosa +
                 "</li>\
-                                                                                            <li>Suhu : " +
+                                                                                                                <li>Suhu : " +
                 data
                 .suhu +
                 "</li>\
-                                                                                            <li>Tensi : " +
+                                                                                                                <li>Tensi : " +
                 data
                 .tensi +
                 "</li>\
-                                                                                            <li>Dokter : " +
+                                                                                                                <li>Dokter : " +
                 data
                 .dokter +
                 "</li>\
-                                                                                            </ul>\
-                                                                                            <div style='margin-top: 10px; width: 100%; margin-left: 70px; padding: 5px; border: 1px solid #eee; border-radius: 10px '>\
-                                                                                                <h6>Obat : </h6>\
-                                                                                                <table class='table table-bordered table-hover'>\
-                                                                                                    <thead>\
-                                                                                                        <tr>\
-                                                                                                            <th class='text-center' style='width: 2px'>No</th>\
-                                                                                                            <th>Nama Obat</th>\
-                                                                                                        <th class='text-center'>Qty</th>\
-                                                                                                        </tr>\
-                                                                                                    </thead>\
-                                                                                                    <tbody>\
-                                                                                                    " +
+                                                                                                                </ul>\
+                                                                                                                <div style='margin-top: 10px; width: 100%; margin-left: 70px; padding: 5px; border: 1px solid #eee; border-radius: 10px '>\
+                                                                                                                    <h6>Obat : </h6>\
+                                                                                                                    <table class='table table-bordered table-hover'>\
+                                                                                                                        <thead>\
+                                                                                                                            <tr>\
+                                                                                                                                <th class='text-center' style='width: 2px'>No</th>\
+                                                                                                                                <th>Nama Obat</th>\
+                                                                                                                            <th class='text-center'>Qty</th>\
+                                                                                                                            </tr>\
+                                                                                                                        </thead>\
+                                                                                                                        <tbody>\
+                                                                                                                        " +
                 list_obat + "\
-                                                                                            </tbody>\
-                                                                                            </table>\
-                                                                                            </div>\
-                                                                                            </div>\
-                                                                                            </div>\
-                                                                                            </div>\
-                                                                                            ")
+                                                                                                                </tbody>\
+                                                                                                                </table>\
+                                                                                                                </div>\
+                                                                                                                </div>\
+                                                                                                                </div>\
+                                                                                                                </div>\
+                                                                                                                ")
         }
 
         function previewImage() {
@@ -1256,9 +1256,20 @@
                     data: {
                         rfid: rfid
                     },
+                    beforeSend: function() {
+                        Swal.fire({
+                            title: 'Memindai ID...',
+                            text: 'Mohon tunggu sebentar',
+                            allowOutsideClick: false,
+                            didOpen: () => {
+                                Swal.showLoading();
+                            }
+                        });
+                    },
 
                     // kondisi jika data belum terdaftar di secure access
                     success: function(response) {
+                        Swal.close();
                         if (response.success == '0') {
                             Swal.fire({
                                 icon: 'error',
@@ -1300,7 +1311,13 @@
                         getDataPemeriksaan();
                     },
                     error: function(e) {
+                        Swal.close();
                         console.log(e);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Terjadi kesalahan',
+                            text: 'Gagal melakukan pemindaian. Silakan coba lagi.'
+                        });
                     }
                 });
             }

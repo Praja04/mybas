@@ -28,7 +28,7 @@ class SIOExport implements FromArray
                     $sio->nama_perizinan,
                     $sio->nama_karyawan,
                     $sio->nik_karyawan,
-                    $sio->department->name,
+                    optional($sio->department)->name ?? '-',
                     $sio->tanggal_mulai_ikatan_dinas,
                     $sio->tanggal_selesai_ikatan_dinas,
                     $sioSertifikasi->nomor_izin,

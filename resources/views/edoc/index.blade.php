@@ -419,6 +419,7 @@
                                                         <th>Tanggal Pengiriman</th>
                                                         <th>Jenis</th>
                                                         <th>Kurir</th>
+                                                        <th>Keterangan</th>
                                                         <th>Status</th>
                                                     </tr>
                                                 </thead>
@@ -533,88 +534,127 @@
                                 sessionStorage.setItem('nik', response.data.pic.nik);
                                 $('#scanner').val('')
                                 $('.AppendScanPengambilan').html('');
-                                $('.AppendScanPengambilan').append(
-                                    '\
-                                                                                                                                                <h2 class="text-center">\
-                                                                                                                                                    <span class="badge badge-info"><i class="fas fa-user text-white mr-2"><b class="NamaPIC text-white ml-3">' +
-                                    response.data.pic.nama +
-                                    '</b></i></span>\
-                                                                                                                                                    <span class="badge badge-info"><i class="fas fa-users mr-2 text-white"><b class="DeptPIC text-white ml-3">' +
-                                    response.data.pic.dept +
-                                    '</b></i></span>\
-                                                                                                                                                        <input type="hidden" class="form-control DeptValue" value="' +
-                                    response.data.pic.dept +
-                                    '" />\
-                                                                                                                                                    </div>\
-                                                                                                                                                </h2>\
-                                                                                                                                                <div class="card card-custom gutter-b">\
-                                                                                                                                                    <div class="card-header card-header-tabs-line">\
-                                                                                                                                                        <div class="card-toolbar">\
-                                                                                                                                                            <ul class="nav nav-tabs nav-bold nav-tabs-line tabappend">\
-                                                                                                                                                            </ul>\
-                                                                                                                                                        </div>\
-                                                                                                                                                    </div>\
-                                                                                                                                                    <div class="card-body">\
-                                                                                                                                                        <div class="tab-content tabappendkonten">\
-                                                                                                                                                    </div>'
-                                )
+                                $('.AppendScanPengambilan').append(`
+                                    <!-- Card Informasi Data Penerima -->
+                                    <div class="card card-custom mb-4">
+                                        <div class="card-header">
+                                            <h3 class="card-title">
+                                                <i class="fas fa-info-circle mr-2"></i> Informasi Data Penerima
+                                            </h3>
+                                        </div>
+
+                                        <div class="card-body">
+
+                                            <div class="form-group row mb-3">
+                                                <label class="col-sm-3 font-weight-bold">Nama :</label>
+                                                <div class="col-sm-9">
+                                                    <span class="NamaPIC text-primary font-weight-bold">
+                                                        ${response.data.pic.nama}
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            <div class="form-group row mb-3">
+                                                <label class="col-sm-3 font-weight-bold">Departemen :</label>
+                                                <div class="col-sm-9">
+                                                    <span class="DeptPIC text-primary font-weight-bold">
+                                                        ${response.data.pic.dept}
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            <input type="hidden" class="DeptValue" value="${response.data.pic.dept}">
+                                        </div>
+                                    </div>
+
+                                    <!-- Alert Informasi -->
+                                    <div class="alert alert-primary mb-4" role="alert" style="font-size: 15px;">
+                                        <i class="fas fa-hand-point-right mr-2"></i>
+                                        <strong>Silakan pilih jenis barang yang akan diambil</strong>
+                                    </div>
+
+                                    <!-- Card Tab Dokumen / Barang -->
+                                    <div class="card card-custom gutter-b">
+                                        <div class="card-header card-header-tabs-line">
+                                            <div class="card-toolbar">
+                                                <ul class="nav nav-tabs nav-bold nav-tabs-line tabappend"></ul>
+                                            </div>
+                                        </div>
+
+                                        <div class="card-body">
+                                            <div class="tab-content tabappendkonten"></div>
+                                        </div>
+                                    </div>
+                                `);
 
                                 $.each(response.data.groupBy, function(key, value) {
-                                    $('.tabappend').append(
-                                        '\
-                                                                                                                                            <li class="nav-item">\
-                                                                                                                                                <a class="nav-link" onclick="ShowTable(\'' +
-                                        key +
-                                        '\')" data-toggle="tab" href="#tab_' + key +
-                                        '">\
-                                                                                                                                                    <span class="nav-icon"><i class="fas fa-list-alt"></i></span>\
-                                                                                                                                                    <span class="nav-text">' +
-                                        key +
-                                        '</span>\
-                                                                                                                                                </a>\
-                                                                                                                                            </li>'
-                                    )
+                                    $('.tabappend').append(`
+                                        <li class="nav-item">
+                                            <a class="nav-link" data-toggle="tab" href="#tab_${key}" onclick="ShowTable('${key}')">
+                                                <span class="nav-icon"><i class="fas fa-list-alt"></i></span>
+                                                <span class="nav-text">${key}</span>
+                                            </a>
+                                        </li>
+                                    `);
                                 });
+
+
                                 $.each(response.data.groupBy, function(key, value) {
-                                    $('.tabappendkonten').append(
-                                        '\
-                                                                                                                                                <div class="tab-pane fade show" id="tab_' +
-                                        key +
-                                        '" role="tabpanel" aria-labelledby="tab_' + key +
-                                        '">\
-                                                                                                                                                    <div class="table-responsive">\
-                                                                                                                                                        <table class="table table-bordered">\
-                                                                                                                                                            <thead>\
-                                                                                                                                                                <tr class="text-center">\
-                                                                                                                                                                    <th>No.</th>\
-                                                                                                                                                                    <th>PILIH</th>\
-                                                                                                                                                                    <th style="background-color: #DFF2E9">#</th>\
-                                                                                                                                                                    <th>Dept Penerima</th>\
-                                                                                                                                                                    <th>Nama PT Pengirim</th>\
-                                                                                                                                                                    <th>Tanggal Kedatangan</th>\
-                                                                                                                                                                    <th>Keterangan</th>\
-                                                                                                                                                                    <th>Petugas</th>\
-                                                                                                                                                                    <th>Status</th>\
-                                                                                                                                                                </tr>\
-                                                                                                                                                            </thead>\
-                                                                                                                                                            <tbody id="table_' +
-                                        key +
-                                        '">\
-                                                                                                                                                            </tbody>\
-                                                                                                                                                        </table>\
-                                                                                                                                                    </div>'
-                                    )
+                                    $('.tabappendkonten').append(`
+                                        <div class="tab-pane fade show" 
+                                            id="tab_${key}" 
+                                            role="tabpanel" 
+                                            aria-labelledby="tab_${key}">
+
+                                            <div class="table-responsive">
+
+                                                <table class="table table-bordered">
+                                                    <thead>
+                                                        <tr class="text-center">
+                                                            <th>No.</th>
+                                                            <th>PILIH</th>
+                                                            <th style="background-color: #DFF2E9">#</th>
+                                                            <th>Dept Penerima</th>
+                                                            <th>Nama Penerima</th>
+                                                            <th>Nama PT Pengirim</th>
+                                                            <th>Tanggal Kedatangan</th>
+                                                            <th>Keterangan</th>
+                                                            <th>Petugas Penerima</th>
+                                                            <th>Status</th>
+                                                        </tr>
+                                                    </thead>
+
+                                                    <tbody id="table_${key}">
+                                                    </tbody>
+
+                                                </table>
+
+                                            </div>
+
+                                        </div>
+                                    `);
                                 });
+
                             }
                         },
                         error: function(error) {
-                            alert('ID CARD tidak di kenali');
+                            // console.log(error.responseJSON.message);
+                            // alert('ID CARD tidak di kenali');
+                            // alert(error.responseJSON.message);
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Gagal',
+                                text: error.responseJSON.message,
+                                confirmButtonText: 'OK'
+                            });
                         }
                     });
                 }
             });
 
             var table_pengiriman = '';
+            let pengirimanErrorShown = false;
+
 
             $('#scannerPengiriman').keypress(function(e) {
                 if (e.which == 13) {
@@ -631,6 +671,7 @@
                         },
                         success: function(response) {
                             if (response.status == 'success') {
+                                pengirimanErrorShown = false;
                                 $('.NikValue').val(response.data.nik)
                                 Webcam.attach('#cameraPengiriman');
                                 $('#scannerPengiriman').val('')
@@ -642,14 +683,35 @@
                                 }
 
                                 //tinggal looping aja
+                                $.fn.dataTable.ext.errMode = 'none'; // turn off retry datatables
+
                                 table_pengiriman = $('#list_pengiriman').DataTable({
                                     processing: true,
                                     serverSide: true,
                                     searching: true,
+                                    language: {
+                                        emptyTable: "Tidak ada data pengiriman untuk departemen ini"
+                                    },
                                     ajax: {
                                         url: "{{ url('edoc/ShowListPengiriman') }}/" + response
                                             .data.nik,
                                         type: 'GET',
+                                        error: function(xhr) {
+                                            if (!pengirimanErrorShown) {
+                                                pengirimanErrorShown = true;
+
+                                                Swal.fire({
+                                                    icon: 'error',
+                                                    title: 'Gagal',
+                                                    text: xhr.responseJSON ? xhr
+                                                        .responseJSON.message :
+                                                        'Terjadi kesalahan.',
+                                                    confirmButtonText: 'OK'
+                                                });
+                                            }
+
+                                            $('#list_pengiriman').DataTable().clear();
+                                        }
                                     },
                                     columns: [{
                                             data: 'DT_RowIndex',
@@ -663,16 +725,16 @@
                                             sortable: false,
                                             render: function(data, type, row) {
                                                 return '<div class="form-group">\
-                                                                                                                                                            <div class="checkbox-list">\
-                                                                                                                                                                <label class="checkbox">\
-                                                                                                                                                                    <input type="checkbox" name="id_barang[]" value="' +
+                                                                                                                                                                                                                                                                                                                            <div class="checkbox-list">\
+                                                                                                                                                                                                                                                                                                                                <label class="checkbox">\
+                                                                                                                                                                                                                                                                                                                                    <input type="checkbox" name="id_barang[]" value="' +
                                                     row.id_barang +
                                                     '" class="checks" />\
-                                                                                                                                                                        <span></span>\
-                                                                                                                                                                    Pilih\
-                                                                                                                                                            </label>\
-                                                                                                                                                        </div>\
-                                                                                                                                                    </div>'
+                                                                                                                                                                                                                                                                                                                                        <span></span>\
+                                                                                                                                                                                                                                                                                                                                    Pilih\
+                                                                                                                                                                                                                                                                                                                            </label>\
+                                                                                                                                                                                                                                                                                                                        </div>\
+                                                                                                                                                                                                                                                                                                                    </div>'
                                             }
                                         },
                                         {
@@ -705,6 +767,10 @@
                                             name: 'kurir'
                                         },
                                         {
+                                            data: 'keterangan',
+                                            name: 'keterangan'
+                                        },
+                                        {
                                             data: null,
                                             name: null,
                                             sortable: false,
@@ -721,7 +787,15 @@
                             }
                         },
                         error: function(error) {
-                            alert('ID CARD tidak di kenali');
+                            console.log(error.responseJSON.message);
+                            // alert('ID CARD tidak di kenali');
+                            // alert(error.responseJSON.message);
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Gagal',
+                                text: error.responseJSON.message,
+                                confirmButtonText: 'OK'
+                            });
                         }
                     });
                 }
@@ -772,9 +846,10 @@
                                     </td>
                                     <td style="background-color: #DFF2E9"><a class="btn btn-sm btn-dark" onclick="AmbilBarang('${value.id_barang}', '${nik}')"><i class="fas fa-check-double"></i> Ambil</a></td>
                                     <td>${value.dept_penerima}</td>
+                                    <td>${value.nama_penerima}</td>
                                     <td>${value.nama_pt_pengirim}</td>
                                     <td>${formatTanggalIndonesia2(value.tanggal_kedatangan)}</td>
-                                    <td>${value.keterangan}</td>
+                                    <td>${value.keterangan ?? ""}</td>
                                     <td>${value.created_by}</td>
                                     <td>${status}</td>
                                 </tr>`)
