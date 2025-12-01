@@ -5,8 +5,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>(Halo Security) New Berita Acara S.O.P Karyawan</title>
+    <title>(Halo Security) Terdapat Data Baru - Berita Acara S.O.P Karyawan</title>
     <style>
+        body {
+            padding: 20px;
+        }
+
         table,
         th,
         td {
@@ -22,11 +26,15 @@
     </p>
 
     <h2 style="text-align: center; color: #6A6A6A;">
-        <span style="color: red; font-weight: bold;">NEW</span> - (Halo
-        Security) Berita Acara S.O.P Karyawan
+        <span style="color: red; font-weight: bold;">Data Baru</span> - Berita Acara S.O.P Karyawan
     </h2>
 
-    <table style="width:100%">
+    <p style="text-align: center; color: #6A6A6A;">
+        Telah ditambahkan data baru pada <strong>Berita Acara S.O.P Karyawan</strong>.<br>
+        Silakan akses link di bawah ini untuk melihat atau mencetak berita acara terkait.
+    </p>
+
+    <table style="width:100%;">
         <thead>
             <tr>
                 <th scope="col" style="font-weight: bold; color: white; background-color: #AF2120;">Informasi</th>
@@ -36,18 +44,25 @@
 
         <tbody>
             <tr>
-                <td style="font-weight: bold; text-align: center; color: #6B6A6B;">Untuk melihat data baru berita acara
-                    s.o.p karyawan silahkan masuk melalui link berikut ini:</td>
+                <td style="font-weight: bold; text-align: center; color: #6B6A6B;">
+                    Melihat detail data BA S.O.P Karyawan terbaru
+                </td>
                 <td style="font-weight: bold; text-align: center; color: black;">
-                    href="{{ route('ba-sop-list-karyawan') }}" style="text-decoration: none; color:red;">Menu BA
-                    S.O.P Karyawan</a></td>
+                    <a href="{{ route('ba-sop-list-karyawan') }}" style="text-decoration: none; color:red;">
+                        Buka Menu BA S.O.P Karyawan
+                    </a>
+                </td>
             </tr>
             <tr>
-                <td style="font-weight: bold; text-align: center; color: #6B6A6B;">Untuk mencetak laporan data baru
-                    berita acara s.o.p karyawan silahkan klik link berikut ini:</td>
+                <td style="font-weight: bold; text-align: center; color: #6B6A6B;">
+                    Download PDF BA S.O.P Karyawan
+                </td>
                 <td style="font-weight: bold; text-align: center; color: black;">
-                    href="{{ route('download.pdf.karyawan', $createbasopkaryawan->id) }}"
-                    style="text-decoration: none; color:red;">Download PDF</a></td>
+                    <a href="{{ route('download.pdf.karyawan', $createbasopkaryawan->id) }}"
+                        style="text-decoration: none; color:red;">
+                        Download PDF
+                    </a>
+                </td>
             </tr>
         </tbody>
     </table>

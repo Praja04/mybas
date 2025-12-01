@@ -5,8 +5,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>(Halo Security) New Berita Acara S.O.P Supir</title>
+    <title>(Halo Security) Terdapat Data Baru - Berita Acara S.O.P Supir</title>
     <style>
+        body {
+            padding: 20px;
+        }
+
         table,
         th,
         td {
@@ -22,9 +26,13 @@
     </p>
 
     <h2 style="text-align: center; color: #6A6A6A;">
-        <span style="color: red; font-weight: bold;">NEW</span> - (Halo
-        Security) Berita Acara S.O.P Supir
+        <span style="color: red; font-weight: bold;">Data Baru</span> - Berita Acara S.O.P Supir
     </h2>
+
+    <p style="text-align: center; color: #6A6A6A;">
+        Telah ditambahkan data baru pada <strong>Berita Acara S.O.P Supir</strong>.<br>
+        Silakan akses link di bawah ini untuk melihat atau mencetak berita acara terkait.
+    </p>
 
     <table style="width:100%">
 
@@ -37,18 +45,26 @@
 
         <tbody>
             <tr>
-                <td style="font-weight: bold; text-align: center; color: #6B6A6B;">Untuk melihat data baru berita acara
-                    s.o.p supir silahkan masuk melalui link berikut ini:</td>
-                <td style="font-weight: bold; text-align: center; color: black;"><a
-                        href="{{ route('ba-sop-list-supir') }}" style="text-decoration: none; color:red;">Menu BA S.O.P
-                        Supir</a></td>
+                <td style="font-weight: bold; text-align: center; color: #6B6A6B;">
+                    Melihat detail data BA S.O.P Supir terbaru
+                </td>
+                <td style="font-weight: bold; text-align: center; color: black;">
+                    <a href="{{ route('ba-sop-list-supir') }}" style="text-decoration: none; color:red;">Buka Menu BA
+                        S.O.P
+                        Supir
+                    </a>
+                </td>
             </tr>
             <tr>
-                <td style="font-weight: bold; text-align: center; color: #6B6A6B;">Untuk mencetak laporan data baru
-                    berita acara s.o.p supir silahkan klik link berikut ini:</td>
-                <td style="font-weight: bold; text-align: center; color: black;"><a
-                        href="{{ route('printpdf.supir', $createbasopsupir->id) }}"
-                        style="text-decoration: none; color:red;">Download PDF</a></td>
+                <td style="font-weight: bold; text-align: center; color: #6B6A6B;">
+                    Download PDF BA S.O.P Supir
+                </td>
+                <td style="font-weight: bold; text-align: center; color: black;">
+                    <a href="{{ route('printpdf.supir', $createbasopsupir->id) }}"
+                        style="text-decoration: none; color:red;">
+                        Download PDF
+                    </a>
+                </td>
             </tr>
         </tbody>
 

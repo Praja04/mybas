@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>(Halo Security) Delete Berita Acara S.O.P Karyawan</title>
+    <title>(Halo Security) Terdapat Data Dihapus - Berita Acara S.O.P Karyawan</title>
     <style>
         table,
         th,
@@ -22,12 +22,11 @@
     </p>
 
     <h2 style="text-align: center; color: #6A6A6A;">
-        <span style="color: red; font-weight: bold;">Delete</span> - (Halo
-        Security) Berita Acara S.O.P Karyawan
+        <span style="color: red; font-weight: bold;">Data Dihapus</span> - Berita Acara S.O.P Karyawan
     </h2>
 
     <p style="text-align: center; color: #6B6A6B;">
-        Ada data berita acara sop karyawan yang dihapus, silahkan hubungi ke pihak security POS 1 atau POS 2
+        Terdapat data berita acara sop karyawan yang dihapus, silahkan hubungi ke pihak security POS 1.
     </p>
 
     <table style="width:100%; margin-top: 10px;">

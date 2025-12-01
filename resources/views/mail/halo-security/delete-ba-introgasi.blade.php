@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>(Halo Security) Delete Berita Acara Introgasi</title>
+    <title>(Halo Security) Terdapat Data Dihapus - Berita Acara Introgasi</title>
     <style>
         table,
         th,
@@ -22,12 +22,11 @@
     </p>
 
     <h2 style="text-align: center; color: #6A6A6A;">
-        <span style="color: red; font-weight: bold;">Delete</span> - (Halo
-        Security) Berita Acara Introgasi
+        <span style="color: red; font-weight: bold;">Data Dihapus</span> - Berita Acara Introgasi
     </h2>
 
     <p style="text-align: center; color: #6B6A6B;">
-        Ada data berita acara introgasi yang dihapus, silahkan hubungi ke pihak security POS 1 atau POS 2
+        Terdapat data Berita Acara Introgasi yang dihapus, silahkan hubungi ke pihak security POS 1.
     </p>
 
     <table style="width:100%; margin-top: 10px;">

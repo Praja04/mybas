@@ -30,6 +30,8 @@ class AddBaSopKaryawan extends Mailable
      */
     public function build()
     {
-        return $this->subject('(Halo Security) New Berita Acara S.O.P Karyawan')->view('mail.halo-security.add-ba-sop-karyawan');
+        return $this
+            ->subject('(Halo Security) Terdapat Data Baru - Berita Acara S.O.P Karyawan')
+            ->view('mail.halo-security.add-ba-sop-karyawan');
     }
 }
