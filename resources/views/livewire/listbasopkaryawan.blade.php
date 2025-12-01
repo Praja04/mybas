@@ -1,97 +1,125 @@
 <div class="container-fluid">
+    {{-- EXPORT EXCEL --}}
     <form method="get" action="{{ route('excel-report-karyawan') }}" id="excelkaryawan">
         {{ csrf_field() }}
-        {{-- EXPORT EXCEL --}}
+
         <div class="card">
-            <div class="card-header align-items-center d-flex">
-                <h4 class="card-title mb-0 flex-grow-1 text-center">Export Excel</h4>
+            <div class="card-header text-center">
+                <h4 class="card-title mb-0">Export Excel</h4>
             </div>
+
             <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div class="form-group">
+
+                <div class="row g-3">
+
+                    <div class="col-12 col-md-4">
                         <div class="input-group">
-                            <label class="input-group-text" for="inputGroupSelect01">From Export</label>
-                            <input id="startDate" name="startDate" class="form-control" id="exampleInputdate"
-                                type="date" />
+                            <label class="input-group-text">From Export</label>
+                            <input id="startDate" name="startDate" type="date" class="form-control">
                         </div>
                     </div>
-                    <div class="form-group" style="margin-left: -120px;">
+
+                    <div class="col-12 col-md-4">
                         <div class="input-group">
-                            <label class="input-group-text" for="inputGroupSelect01">To Export</label>
-                            <input id="endDate" name="endDate" type="date" class="form-control"
-                                id="exampleInputdate" />
+                            <label class="input-group-text">To Export</label>
+                            <input id="endDate" name="endDate" type="date" class="form-control">
                         </div>
                     </div>
-                    <div class="form-group">
-                        <div class="input-group">
-                            <button type="submit" style="width: 100%;" class="btn btn-success btn-md"><i
-                                    class="ri-file-excel-2-fill" style="margin-top: 10px; margin-right: 4px;"></i>
-                                Export Excel</button>
-                        </div>
+
+                    <div class="col-12 col-md-4">
+                        <button type="submit" class="btn btn-success w-100">
+                            <i class="ri-file-excel-2-fill me-1"></i>
+                            Export Excel
+                        </button>
                     </div>
+
                 </div>
+
             </div>
         </div>
     </form>
+
+    {{-- FILTER DATA --}}
     <form action="{{ route('ba-sop-list-karyawan') }}" method="get">
         {{ csrf_field() }}
+
         <div class="col-12">
             <div class="card">
-                <div class="card-header">
-                    <h4 class="card-title mb-0 flex-grow-1 text-center">Filter Data List Berita Acara S.O.P Karyawan
-                    </h4>
+                <div class="card-header text-center">
+                    <h4 class="card-title mb-0">Filter Data List Berita Acara S.O.P Karyawan</h4>
                 </div>
+
                 <div class="card-body">
-                    <div class="row">
-                        <div class="col-3">
+
+                    <div class="row g-3">
+
+                        <div class="col-12 col-md-3">
                             <div class="input-group">
-                                <label class="input-group-text" for="inputGroupSelect01">Tanggal</label>
-                                <input type="date" name="created_at"
-                                    value="{{ isset($_GET['created_at']) ? $_GET['created_at'] : '' }}"
-                                    class="form-control" id="exampleInputdate">
+                                <label class="input-group-text">Tanggal</label>
+                                <input type="date" name="created_at" value="{{ request('created_at') }}"
+                                    class="form-control">
                             </div>
                         </div>
-                        <div class="col-4">
+
+                        <div class="col-12 col-md-4">
                             <div class="input-group">
-                                <label class="input-group-text" for="inputGroupSelect01">Jenis Kelamin</label>
-                                <select class="form-select" id="inputGroupSelect01" name="jenis_kelamin">
+                                <label class="input-group-text">Jenis Kelamin</label>
+                                <select class="form-select" name="jenis_kelamin">
                                     <option value="">Semua</option>
-                                    <option {{ Request('jenis_kelamin') == 'laki-laki' ? 'selected' : '' }}
-                                        value="laki-laki">Laki - Laki</option>
-                                    <option {{ Request('jenis_kelamin') == 'perempuan' ? 'selected' : '' }}
-                                        value="perempuan">Perempuan</option>
+                                    <option value="laki-laki"
+                                        {{ request('jenis_kelamin') == 'laki-laki' ? 'selected' : '' }}>Laki - Laki
+                                    </option>
+                                    <option value="perempuan"
+                                        {{ request('jenis_kelamin') == 'perempuan' ? 'selected' : '' }}>Perempuan
+                                    </option>
                                 </select>
                             </div>
                         </div>
-                        <div class="col-3">
+
+                        <div class="col-12 col-md-3">
                             <div class="input-group">
-                                <label class="input-group-text" for="inputGroupSelect01">Shift</label>
-                                <select class="form-select" id="inputGroupSelect01" name="shift">
+                                <label class="input-group-text">Shift</label>
+                                <select class="form-select" name="shift">
                                     <option value="">Semua Shift</option>
-                                    <option {{ Request('shift') == '1' ? 'selected' : '' }} value="1">Shift 1
+                                    <option value="1" {{ request('shift') == '1' ? 'selected' : '' }}>Shift 1
                                     </option>
-                                    <option {{ Request('shift') == '2' ? 'selected' : '' }} value="2">Shift 2
+                                    <option value="2" {{ request('shift') == '2' ? 'selected' : '' }}>Shift 2
                                     </option>
-                                    <option {{ Request('shift') == '3' ? 'selected' : '' }} value="3">Shift 3
+                                    <option value="3" {{ request('shift') == '3' ? 'selected' : '' }}>Shift 3
                                     </option>
                                 </select>
                             </div>
                         </div>
-                        <div class="col-2">
-                            <button type="submit" style="width: 100%;" class="btn btn-md btn-primary"><i
-                                    class="ri-filter-3-line" style="margin-top: 10px; margin-right: 4px;"></i>
-                                Filter</button>
+
+                        <div class="col-12 col-md-2">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="ri-filter-3-line me-1"></i> Filter
+                            </button>
                         </div>
+
                     </div>
+
                 </div>
             </div>
-    </form>
-    <div class="card">
-        <div class="card-header align-items-center d-flex">
-            <h4 class="card-title mb-0 flex-grow-1 text-center">List Berita Acara S.O.P Karyawan</h4>
-            <a href="{{ route('listkaryawan.trash') }}" class="btn btn-md btn-success"><i class="ri-recycle-fill"
-                    style="margin-top: 8px; margin-right: 4px;"></i> Recycling</a>
         </div>
+
+    </form>
+
+    {{-- TABLE --}}
+    <div class="card">
+        <div class="card-header">
+            <div class="align-items-center row">
+                <div class="col-12 col-md-8 text-center text-md-start">
+                    <h4 class="card-title mb-0">List Berita Acara S.O.P Karyawan</h4>
+                </div>
+                <div class="col-12 col-md-4 text-center text-md-end mt-2 mt-md-0">
+                    <a href="{{ route('listkaryawan.trash') }}" class="btn btn-md btn-success"><i
+                            class="ri-recycle-fill" style="margin-top: 8px; margin-right: 4px;"></i> Recycling
+                    </a>
+                </div>
+            </div>
+        </div>
+
         <div class="card-body">
             <div class="table-responsive">
                 <table id="basopkaryawan" class="table table-md table-bordered border-secondary table-nowrap"
@@ -157,12 +185,9 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="11">
-                                    <div class="d-flex justify-content-center">
-                                        <img src="/found.png" style="width: 200px; margin: 50px;">
-                                    </div>
+                                <td colspan="12">
                                     <div class="text-center">
-                                        <h1>Data tidak ditemukan</h1>
+                                        <span class="text-center text-muted">Data tidak ditemukan</span>
                                     </div>
                                 </td>
                             </tr>
@@ -229,7 +254,13 @@
 
     <script>
         $(document).ready(function() {
-            $('#basopkaryawan').DataTable();
+            $('#basopkaryawan').DataTable({
+                columnDefs: [{
+                    orderable: false,
+                    targets: [-1]
+                }]
+
+            });
         });
     </script>
 @endpush
