@@ -67,6 +67,7 @@ class EcafeSeedapController extends Controller
         } catch (\Exception $e) {
             Log::warning('[' . Carbon::now()->format('Y-m-d H:i:s') . '] [Ecanteensedaap] Gagal connect ke DB, pakai fallback RFID - ' . $e->getMessage());
 
+            $dbError = true;
             $nik = null;
         }
 
@@ -169,16 +170,15 @@ class EcafeSeedapController extends Controller
         }
 
         // Ini kalo data nya ga ada di db SMU
-        if (!$rfid) {
+        if (!$rfid || !$nik) {
             return response([
                 'success' => 0,
-                'message' => 'RFID dari ID card tidak dikenali. Silakan scan ulang atau hubungi petugas.',
+                'message' => 'ID card tidak dikenali. Silakan scan ulang atau hubungi HRD.',
                 'data' => ['sisa_porsi' => $sisa_porsi]
             ]);
         }
 
-        // fallback
-        if (!$nik) {
+        if ($dbError) {
             return response([
                 'success' => 0,
                 'message' => 'Sistem sedang mengalami gangguan. Silakan coba lagi atau hubungi petugas.',
