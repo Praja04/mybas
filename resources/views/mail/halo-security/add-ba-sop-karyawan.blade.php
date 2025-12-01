@@ -17,7 +17,8 @@
 
 <body>
     <p style="text-align: center;">
-        <img style="width: 200px" src="{{ asset('assets/media/logos/logo_bas_compress.png') }}" alt="Kop Surat">
+        <img style="width: 200px" src="{{ $message->embed(public_path('assets/media/logos/logo_bas_compress.png')) }}"
+            alt="Kop Surat">
     </p>
 
     <h2 style="text-align: center; color: #6A6A6A;">
@@ -26,7 +27,6 @@
     </h2>
 
     <table style="width:100%">
-
         <thead>
             <tr>
                 <th scope="col" style="font-weight: bold; color: white; background-color: #AF2120;">Informasi</th>
@@ -38,20 +38,22 @@
             <tr>
                 <td style="font-weight: bold; text-align: center; color: #6B6A6B;">Untuk melihat data baru berita acara
                     s.o.p karyawan silahkan masuk melalui link berikut ini:</td>
-                <td style="font-weight: bold; text-align: center; color: black;"><a
-                        href="{{ route('ba-sop-list-karyawan') }}" style="text-decoration: none; color:red;">Menu BA
-                        S.O.P Karyawan</a></td>
+                <td style="font-weight: bold; text-align: center; color: black;">
+                    href="{{ route('ba-sop-list-karyawan') }}" style="text-decoration: none; color:red;">Menu BA
+                    S.O.P Karyawan</a></td>
             </tr>
             <tr>
                 <td style="font-weight: bold; text-align: center; color: #6B6A6B;">Untuk mencetak laporan data baru
                     berita acara s.o.p karyawan silahkan klik link berikut ini:</td>
-                <td style="font-weight: bold; text-align: center; color: black;"><a
-                        href="{{ route('download.pdf.karyawan', $createbasopkaryawan->id) }}"
-                        style="text-decoration: none; color:red;">Download PDF</a></td>
+                <td style="font-weight: bold; text-align: center; color: black;">
+                    href="{{ route('download.pdf.karyawan', $createbasopkaryawan->id) }}"
+                    style="text-decoration: none; color:red;">Download PDF</a></td>
             </tr>
         </tbody>
-
     </table>
+
+    <span style="font-size:1px;color:transparent;">{{ now() }}</span>
+
 </body>
 
 </html>

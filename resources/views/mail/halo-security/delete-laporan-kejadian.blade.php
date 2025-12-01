@@ -17,8 +17,8 @@
 
 <body>
     <p style="text-align: center;">
-        <img style="width: 500px; height: 150px;"
-            src="https://www.forumhrdindonesia.com/wp-content/uploads/2021/02/Perkasa-Alam-Segar-PAS.png" alt="Kop Surat">
+        <img style="width: 200px" src="{{ $message->embed(public_path('assets/media/logos/logo_bas_compress.png')) }}"
+            alt="Kop Surat">
     </p>
 
     <h2 style="text-align: center; color: #6A6A6A;">
@@ -54,6 +54,9 @@
         </tbody>
 
     </table>
+
+    <span style="font-size:1px;color:transparent;">{{ now() }}</span>
+
 </body>
 
 </html>
