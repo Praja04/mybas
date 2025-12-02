@@ -77,11 +77,13 @@ $menus = [
                 'icon' => 'mdi-account-group-outline',
                 'submenu' => [
                     [
-                        'path' => 'pos-security/history/supplier/pas',
+                        // 'path' => 'pos-security/history/supplier/pas',
+                        'path' => 'pos-security/history/supplier',
                         'label' => 'Supplier',
                     ],
                     [
-                        'path' => 'pos-security/history/vendor/pas',
+                        // 'path' => 'pos-security/history/vendor/pas',
+                        'path' => 'pos-security/history/tamu',
                         'label' => 'Vendor/Tamu',
                     ],
                 ],

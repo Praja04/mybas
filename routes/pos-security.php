@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\PosSecurity\Web\History\HistoryController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('pos-security')->group(function () {
@@ -17,5 +18,9 @@ Route::prefix('pos-security')->group(function () {
         Route::get('/absensi/visitor', 'PosSecurityController@absensiVisitor')->name('pos-security.absensi.visitor');
 
         Route::get('/formulir/cek-kendaraan', 'PosSecurityController@formCekKendaraan')->name('pos-security.formulir.cek.kendaraan');
+
+
+        Route::get('/history/tamu', [HistoryController::class, 'vendor']);
+        Route::get('/history/supplier', [HistoryController::class, 'supplier']);
     });
 });
