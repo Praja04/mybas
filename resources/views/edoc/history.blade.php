@@ -42,11 +42,14 @@
 @endpush
 
 @section('content')
+    {{-- TABLE --}}
     <div class="container">
         <div class="main-body">
             <div class="row">
                 <div class="col-sm-12">
                     <div class="card card-custom gutter-b">
+
+                        {{-- CARD HEADER --}}
                         <div class="card-header card-header-tabs-line">
                             <div class="card-title">
                                 <h3 class="card-label">History @if (!in_array('security', $permissions)) Edoc Dari <u>{{ Auth::user()->name }}</u> /
@@ -70,8 +73,10 @@
                                 </ul>
                             </div>
                         </div>
+
                         <div class="card-body">
                             <div class="tab-content">
+                                {{-- KEDATANGAN TABLE --}}
                                 <div class="tab-pane fade show active" id="kt_tab_pane_1_3" role="tabpanel"
                                     aria-labelledby="kt_tab_pane_1_3">
                                     <div class="row">
@@ -120,6 +125,8 @@
                                         </div>
                                     </div>
                                 </div>
+
+                                {{-- PENGIRIMAN TABLE --}}
                                 <div class="tab-pane fade" id="kt_tab_pane_2_3" role="tabpanel"
                                     aria-labelledby="kt_tab_pane_2_3">
                                     <table id="table-pengiriman" class="table table-bordered">
@@ -130,7 +137,7 @@
                                                 <th>DEPT PENERIMA</th>
                                                 <th>NAMA PENERIMA</th>
                                                 <th>NAMA PT PENGIRIM</th>
-                                                <th>TANGGAL KEDATANGAN</th>
+                                                <th>TANGGAL PENGIRIMAN</th>
                                                 <th>JENIS</th>
                                                 <th>KETERANGAN</th>
                                                 <th>DIBUAT</th>
@@ -151,11 +158,13 @@
                                                     <td class="text-center">{{ $edoc->nama_penerima }}</td>
                                                     <td class="text-center">{{ $edoc->nama_pt_penerima }}</td>
                                                     <td class="text-center">
-                                                        {{ Carbon\carbon::parse($edoc->tanggal_pengiriman)->format('d-M-Y') }}
+                                                        {{ Carbon\carbon::parse($edoc->tanggal_pengiriman)->locale('id')->translatedFormat('d F Y') }}
                                                     </td>
                                                     <td class="text-center">{{ $edoc->jenis }}</td>
                                                     <td class="text-center">{{ $edoc->keterangan }}</td>
-                                                    <td class="text-center">{{ $edoc->created_at }}</td>
+                                                    <td class="text-center">
+                                                        {{ Carbon\carbon::parse($edoc->created_at)->locale('id')->translatedFormat('d F Y H:i') }}
+                                                    </td>
                                                     <td class="text-center">
                                                         @if ($edoc->status == 1)
                                                             <span class="badge badge-warning">Proses</span>
@@ -176,7 +185,7 @@
         </div>
     </div>
 
-    <!-- Modal -->
+    {{-- DETAIL KEDATANGAN MODAL --}}
     <div class="modal fade" id="modalkedatangan" tabindex="-1" role="dialog" aria-labelledby="modelTitleId"
         aria-hidden="true">
         <div class="modal-dialog modal-lg" role="document">
@@ -203,6 +212,7 @@
         </div>
     </div>
 
+    {{-- DETAIL PENGIRIMAN MODAL --}}
     <div class="modal fade" id="modalpengiriman" tabindex="-1" role="dialog" aria-labelledby="modelTitleId"
         aria-hidden="true">
         <div class="modal-dialog modal-lg" role="document">
@@ -229,6 +239,7 @@
         </div>
     </div>
 
+    {{-- CHANGE DEPT MODAL --}}
     <div class="modal fade" id="modalChangeDept" tabindex="-1" role="dialog" aria-labelledby="modelTitleId"
         aria-hidden="true">
         <div class="modal-dialog" role="document">
@@ -258,6 +269,7 @@
         </div>
     </div>
 
+    {{-- RETURN MODAL --}}
     <div class="modal fade" id="modalReturnBarang" tabindex="-1" role="dialog" aria-labelledby="modelTitleId"
         aria-hidden="true">
         <div class="modal-dialog" role="document">
@@ -303,19 +315,21 @@
         }
 
         var initTooltip = function(el) {
-            var theme = el.data('theme') ? 'tooltip-' + el.data('theme') : '';
-            var width = el.data('width') == 'auto' ? 'tooltop-auto-width' : '';
+            var theme = el.data('theme') ? `tooltip-${el.data('theme')}` : '';
+            var width = el.data('width') === 'auto' ? 'tooltop-auto-width' : '';
             var trigger = el.data('trigger') ? el.data('trigger') : 'hover';
 
             $(el).tooltip({
                 trigger: trigger,
-                template: '<div class="tooltip ' + theme + ' ' + width +
-                    '" role="tooltip">\
-                                                                                                                                                                                                                                            <div class="arrow"></div>\
-                                                                                                                                                                                                                                            <div class="tooltip-inner"></div>\
-                                                                                                                                                                                                                                        </div>'
+                template: `
+                    <div class="tooltip ${theme} ${width}" role="tooltip">
+                        <div class="arrow"></div>
+                        <div class="tooltip-inner"></div>
+                    </div>
+                `
             });
         }
+
 
         $('[data-toggle="tooltip"]').each(function() {
             initTooltip($(this));
@@ -336,12 +350,14 @@
             processing: true,
             columns: [{
                     data: 'DT_RowIndex',
-                    "searchable": false,
-                    "orderable": false,
-                    name: 'DT_RowIndex'
+                    name: 'DT_RowIndex',
+                    searchable: false,
+                    orderable: false,
                 },
                 {
                     data: 'id',
+                    searchable: false,
+                    orderable: false,
                     render: function(data, type, row) {
                         return `<a href="javascript:void(0)" onclick="detailKedatangan('${data}')"
                     class="btn btn-dark btn-sm"><i class="fas fa-eye"></i>
@@ -362,7 +378,10 @@
                 },
                 {
                     data: 'tanggal_kedatangan',
-                    name: 'tanggal_kedatangan'
+                    name: 'tanggal_kedatangan',
+                    render: function(data) {
+                        return data.display;
+                    }
                 },
                 {
                     data: 'jenis',
@@ -374,11 +393,16 @@
                 },
                 {
                     data: 'created_at',
-                    name: 'created_at'
+                    name: 'created_at',
+                    render: function(data) {
+                        return data.display;
+                    }
                 },
                 {
                     data: 'status',
                     name: 'status',
+                    searchable: false,
+                    orderable: false,
                     render: function(data, type, row) {
                         if (data == 1) {
                             return `<span class="badge badge-warning"> Belum Diambil</span>`
@@ -390,8 +414,8 @@
                 @if (in_array('security', $permissions))
                     {
                         data: null,
-                        "sortable": false,
-                        "searchable": false,
+                        searchable: false,
+                        orderable: false,
                         render: function(data, type, row) {
                             // belum diambil
                             if (row.status == 1) {
@@ -463,11 +487,11 @@
                                  ${
                                     response.data.data.updated_by
                                     ? `<b>${response.data.data.updated_by}</b> Mengambil Barang/Dokumen
-                                                                                                                            
-                                                                                                                                <br>Bukti Foto:<hr>
-                                                                                                                                ${response.data.data.foto 
-                                                                                                                                    ? `<img src="{{ url('e-doc/pengambilan') }}/${response.data.data.foto}" width="100%">`
-                                                                                                                                    : '<i>Tidak ada foto</i>'}`
+                                                                                                                                                                                                                                    
+                                                                                                                                                                                                                                        <br>Bukti Foto:<hr>
+                                                                                                                                                                                                                                        ${response.data.data.foto 
+                                                                                                                                                                                                                                            ? `<img src="{{ url('e-doc/pengambilan') }}/${response.data.data.foto}" width="100%">`
+                                                                                                                                                                                                                                            : '<i>Tidak ada foto</i>'}`
                                             
                                     : '<span class="text-muted">Belum Diambil</span>'
                                 }
