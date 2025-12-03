@@ -41,4 +41,9 @@ class PosSecurityController extends Controller
     {
         return view('pos-security.cek-kendaraan.index');
     }
+
+    public function blacklist()
+    {
+        return view('pos-security.blacklist.index');
+    }
 }

@@ -21,6 +21,10 @@ Route::prefix('pos-security')->group(function () {
 
         Route::get('/formulir/cek-kendaraan', 'PosSecurityController@formCekKendaraan')->name('pos-security.formulir.cek.kendaraan');
 
+        Route::get('/blacklist', 'PosSecurityController@blacklist')->name('pos-security.blacklist');
+
+
+
 
         Route::get('/history/tamu', [HistoryController::class, 'vendor']);
         Route::get('/history/supplier', [HistoryController::class, 'supplier']);

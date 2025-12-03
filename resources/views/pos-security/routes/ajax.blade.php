@@ -1,6 +1,7 @@
 <script>
     var API_GET_VISITOR_DETAIL_SUPPLIER = '{{ route('ajax.pos-security.visitor-transaksi.detail') }}';
     var API_ABSENSI_REST_LOG_SEARCH = '{{ route('ajax.pos-security.absensirestlog.search') }}';
+    var API_BLACKLIST_SHOW = '{{ route('ajax.pos-security.blacklist.show') }}';
 </script>
 
 {{-- <script>

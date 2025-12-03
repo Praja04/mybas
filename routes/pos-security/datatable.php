@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\PosSecurity\Datatable\Absensi\AbsensiDatatable;
 use App\Http\Controllers\PosSecurity\Datatable\Absensi\AbsensiGateDatatable;
+use App\Http\Controllers\PosSecurity\Datatable\Blacklist\BlacklistDatatable;
 use App\Http\Controllers\PosSecurity\Datatable\History\HistorySupplierDatatable;
 use App\Http\Controllers\PosSecurity\Datatable\History\HistoryVendorDatatable;
 use Illuminate\Support\Facades\Route;
@@ -21,17 +22,17 @@ use Illuminate\Support\Facades\Route;
 
 
 // BAS
-Route::prefix('history/')->group(function () {
+Route::prefix('history')->group(function () {
     Route::get('/supplier', [HistorySupplierDatatable::class, 'index'])
         ->name("datatable.pos-security.history.visitor.supplier");
     Route::get('/tamu', [HistoryVendorDatatable::class, 'index'])
         ->name("datatable.pos-security.history.visitor.vendor");
 });
 
-// Route::prefix('blacklist')->group(function () {
-//     Route::get('/', [BlacklistDatatable::class, 'index'])
-//         ->name("datatable.pos-security.blacklist.supplier.pas");
-// });
+Route::prefix('blacklist')->group(function () {
+    Route::get('/', [BlacklistDatatable::class, 'index'])
+        ->name("datatable.pos-security.blacklist.supplier.pas");
+});
 
 Route::prefix('absensi')->group(function () {
     Route::get('/', [AbsensiDatatable::class, 'index'])
