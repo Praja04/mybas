@@ -40,7 +40,7 @@ $menus = [
                 'submenu' => [],
             ],
             [
-                'path' => 'pos-security/absensi/security',
+                'path' => 'pos-security/absensi/gate',
                 'label' => 'Absensi Tapping Security',
                 'icon' => 'mdi-barcode-scan',
                 'submenu' => [],

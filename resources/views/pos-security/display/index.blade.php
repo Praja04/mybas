@@ -300,8 +300,7 @@
         </div>
     </div>
 
-    {{-- todo --}}
-    {{-- @include('ga.module.sistem-tracking.routes.ajax') --}}
+    @include('pos-security.routes.ajax')
 
     <script>
         // Ambil elemen-elemen yang dibutuhkan
