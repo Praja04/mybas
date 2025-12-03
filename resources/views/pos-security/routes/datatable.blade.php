@@ -4,6 +4,9 @@
 
     var API_DATATABLE_BLACKLIST_SUPPLIER = "{{ route('datatable.pos-security.blacklist.supplier.pas') }}";
 
+    var API_DATATABLE_KARTU_AKTIF = "{{ route('datatable.pos-security.kartu-aktif.index') }}";
+    var API_DATATABLE_KARTU_AKTIF_DETAIL = "{{ route('datatable.pos-security.kartu-aktif.detail.index') }}";
+
     var API_DATATABLE_ABSENSI_LOGS = "{{ route('datatable.pos-security.absensi.log.index') }}";
     var API_DATATABLE_ABSENSI_LOG_GATE = "{{ route('datatable.pos-security.absensi.log.gate.index') }}";
 </script>

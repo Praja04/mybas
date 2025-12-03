@@ -105,7 +105,7 @@ $menus = [
                 'icon' => 'mdi-card-account-details-outline',
                 'submenu' => [
                     [
-                        'path' => 'pos-security/kartu-aktif',
+                        'path' => 'pos-security/kartu/kartu-aktif',
                         'label' => 'List Kartu Aktif',
                     ],
                 ],

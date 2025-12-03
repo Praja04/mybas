@@ -205,7 +205,7 @@
 
 @push('scripts')
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script>
+    {{-- <script>
         const ctx = document.getElementById('visitorChart').getContext('2d');
         new Chart(ctx, {
             type: 'bar',
@@ -241,7 +241,7 @@
                 }
             }
         });
-    </script>
+    </script> --}}
     <script>
         $(document).ready(function() {
             $('#btn-filter').on('click', function() {

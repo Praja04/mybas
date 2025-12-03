@@ -5,6 +5,8 @@ use App\Http\Controllers\PosSecurity\Datatable\Absensi\AbsensiGateDatatable;
 use App\Http\Controllers\PosSecurity\Datatable\Blacklist\BlacklistDatatable;
 use App\Http\Controllers\PosSecurity\Datatable\History\HistorySupplierDatatable;
 use App\Http\Controllers\PosSecurity\Datatable\History\HistoryVendorDatatable;
+use App\Http\Controllers\PosSecurity\Datatable\KartuAktif\KartuAktifDatatable;
+use App\Http\Controllers\PosSecurity\Datatable\KartuAktif\KartuAktifDetailDatatable;
 use Illuminate\Support\Facades\Route;
 
 // Route::group(['middleware' => ['secure.auth', 'secure.auth.rules', 'access_log']], function () {
@@ -41,11 +43,11 @@ Route::prefix('absensi')->group(function () {
         ->name("datatable.pos-security.absensi.log.gate.index");
 });
 
-    // Route::prefix('kartu')->group(function () {
-    //     Route::get('/kartu-aktif', [KartuAktifDatatable::class, 'index'])
-    //         ->name("datatable.pos-security.kartu-aktif.index");
-    //     Route::get('/kartu-aktif/detail', [KartuAktifDetailDatatable::class, 'index'])
-    //         ->name("datatable.pos-security.kartu-aktif.detail.index");
-    // });
+Route::prefix('kartu')->group(function () {
+    Route::get('/kartu-aktif', [KartuAktifDatatable::class, 'index'])
+        ->name("datatable.pos-security.kartu-aktif.index");
+    Route::get('/kartu-aktif/detail', [KartuAktifDetailDatatable::class, 'index'])
+        ->name("datatable.pos-security.kartu-aktif.detail.index");
+});
 // });
 // });

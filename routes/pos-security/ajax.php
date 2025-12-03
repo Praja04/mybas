@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\PosSecurity\Ajax\Absensi\AbsensiRestLogAjax;
 use App\Http\Controllers\PosSecurity\Ajax\Blacklist\BlacklistAjax;
+use App\Http\Controllers\PosSecurity\Ajax\Dashboard\DashboardAjax;
 use App\Http\Controllers\PosSecurity\Ajax\Formulir\SupplierFormAjax;
 use App\Http\Controllers\PosSecurity\Ajax\Formulir\TamuFormAjax;
 use Illuminate\Support\Facades\Route;
@@ -22,6 +23,8 @@ Route::get('/supplier/detail', [SupplierFormAjax::class, 'getVisitorDetail'])->n
 Route::post('/absensi-rest-log', [AbsensiRestLogAjax::class, 'search'])->name("ajax.pos-security.absensirestlog.search");
 Route::get('/blacklist/show', [BlacklistAjax::class, 'show'])->name('ajax.pos-security.blacklist.show');
 
+Route::post('/dashboard/filter', [DashboardAjax::class, 'filter'])->name('ajax.pos-security.dashboard.filter');
+Route::post('/dashboard/statistik', [DashboardAjax::class, 'statistikPerusahaanDepartemen'])->name('ajax.pos-security.dashboard.statistik');
 
 // Route::group(['middleware' => ['secure.auth', 'secure.auth.rules', 'access_log']], function () {
 //   Route::prefix('ajax')->group(function () {

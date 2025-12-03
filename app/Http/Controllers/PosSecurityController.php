@@ -46,4 +46,9 @@ class PosSecurityController extends Controller
     {
         return view('pos-security.blacklist.index');
     }
+
+    public function kartuAktif()
+    {
+        return view('pos-security.kartu.index');
+    }
 }

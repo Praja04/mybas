@@ -23,6 +23,8 @@ Route::prefix('pos-security')->group(function () {
 
         Route::get('/blacklist', 'PosSecurityController@blacklist')->name('pos-security.blacklist');
 
+        Route::get('/kartu/kartu-aktif', 'PosSecurityController@kartuAktif')->name('pos-security.kartu-aktif');
+
 
 
 
