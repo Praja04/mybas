@@ -149,7 +149,9 @@ $menus = [
     </x-slot>
 
     <x-slot name="scripts">
-        {{-- @include('pos-security.routes.ajax') --}}
+        @include('pos-security.routes.ajax')
+        @include('pos-security.routes.datatable')
+
         @stack('scripts')
     </x-slot>
 </x-templates.velzon-hs.base>

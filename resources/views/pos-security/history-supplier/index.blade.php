@@ -53,10 +53,6 @@
 @endsection
 
 @push('scripts')
-    <script>
-        var API_DATATABLE_HISTORY_SUPPLIER = "{{ route('datatable.pos-security.history.visitor.supplier') }}";
-    </script>
-
     <script type="module" src="{{ asset('assets/js/pos-security/history/pages/history-supplier.js') }}"></script>
 
     <script src="{{ asset('assets/js/pos-security/history/pages/history-supplier-modal.js') }}"></script>

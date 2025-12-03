@@ -69,10 +69,6 @@
 @endsection
 
 @push('scripts')
-    <script>
-        var API_DATATABLE_HISTORY_VENDOR = "{{ route('datatable.pos-security.history.visitor.vendor') }}";
-    </script>
-
     <script type="module" src="{{ asset('assets/js/pos-security/history/pages/history-vendor.js') }}"></script>
     <script>
         function showImageModal(imageUrl) {

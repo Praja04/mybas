@@ -32,7 +32,7 @@
 @section('content')
     <div class="container-fluid">
 
-        <!-- panduan d  an menu tabs -->
+        <!-- panduan dan menu tabs -->
         @include('pos-security.formulir.tamu.panduan')
 
         <!-- Tabs Content -->
