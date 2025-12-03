@@ -210,9 +210,7 @@ class TamuFormAjax extends Controller
     //    tamu
     public function store(Request $request)
     {
-        // dd($request->all());
-        // Validasi tetap sama
-        // Validasi
+        // Validasi data
         $validator = Validator::make($request->all(), [
             'namavisitor'       => 'required|string|max:100',
             'nomorktp'          => 'required|string|max:100',
@@ -243,28 +241,23 @@ class TamuFormAjax extends Controller
             'foto.required'             => 'Foto selfie wajib diunggah.',
         ]);
 
-        // Validasi Kondisional: hanya jika jenis == transporter
+        // Validasi kondisional:
+        // Jika jenis visitor adalah "transporter", maka field nopol dan purpose menjadi wajib
         $validator->sometimes(['nopol', 'purpose'], 'required|string|max:20', function ($input) {
             return $input->jenis === 'transporter';
         });
 
-        $validator->sometimes('nopol', 'required|string|max:20', function ($input) {
-            return $input->jenis === 'transporter';
-        });
-
-        // dd($request->input('nomorktp'));
-
-
-        // Ambil input untuk pengecekan blacklist
+        // Ambil nama, tanggal lahir, dan nomor identitas
         $normalized_nama = Str::lower($this->normalize_name($request->input('namavisitor')));
         $input_tanggal_lahir = Carbon::parse($request->input('tgllahir'))->format('Y-m-d');
         $input_no_identitas = $request->input('nomorktp');
 
-        // Cek blacklist
-        // todo
+        // Cek blacklist berdasarkan:
+        // Nomor identitas atau nama + tanggal lahir
         $blacklist = DB::table('ga_lgtk_blacklist_identitas')
             ->where(function ($q) use ($input_no_identitas, $normalized_nama, $input_tanggal_lahir) {
                 $q->where('no_identitas', $input_no_identitas)
+
                     ->orWhere(function ($q2) use ($normalized_nama, $input_tanggal_lahir) {
                         $q2->whereRaw('LOWER(TRIM(nama)) = ?', [$normalized_nama])
                             ->where('tanggal_lahir', $input_tanggal_lahir);
@@ -273,6 +266,7 @@ class TamuFormAjax extends Controller
             ->where('aktif', true)
             ->first();
 
+        // Jika visitor ditemukan dalam blacklist
         if ($blacklist) {
             return response()->json([
                 'success' => false,
@@ -285,8 +279,7 @@ class TamuFormAjax extends Controller
             ], 403);
         }
 
-
-
+        // Jika validasi gagal, kembalikan response error 422 (Unprocessable Entity)
         if ($validator->fails()) {
             return response()->json([
                 'message' => 'Validasi gagal',
@@ -294,8 +287,9 @@ class TamuFormAjax extends Controller
             ], 422);
         }
 
-
         try {
+            // Mapping purpose (jenis kunjungan) ke prefix ID visitor
+            // Prefix ini digunakan sebagai bagian awal ID unik visitor
             $prefixMapping = [
                 'MUAT'    => 'BM',
                 'BONGKAR' => 'GB',
@@ -307,6 +301,7 @@ class TamuFormAjax extends Controller
             $prefix = $prefixMapping[$jenis] ?? 'TM';
             $trnVisitorId = $this->generateVisitorId($prefix);
 
+            // Proses foto KTP
             $ktpImagePath = null;
             if ($request->has('imgvisitorpathin')) {
                 $ktpImagePath = $this->saveImageFromBase64(
@@ -348,27 +343,24 @@ class TamuFormAjax extends Controller
                 'type'                 => strtoupper($request->jenis),
                 'tgl_lahir'            => $request->tgllahir,
                 'sumpeople'            => $request->sumpeople ?? 1,
-                'gateidin'             => 'POS02',
-                'gatelineidin'         => 'JGB02',
+                'gateidin'             => 'POS01', // gate id masuk
+                'gatelineidin'         => 'JGB01', // gate line id
                 'datein'               => $dateIn,
                 'timein'               => $timeIn,
                 'createdby'            => 'system', // default (tidak dikirim)
                 'createdon'            => $now,
                 'imgvisitorpathin'     => $ktpImagePath,
                 'foto'                 => json_encode($selfiePaths),
-                'nohpdriver'           => null,
+                // 'nohpdriver'           => null,
                 'typevisitor'          => '1',
-                'flagtrx'              => 'X',
+                'flagtrx'              => 'X', // flag status transaksi (default: X => baru dibuat)
                 'kartu_dikembalikan'   => false,
                 'qr_code_saat_ini'     => $request->qr_code_saat_ini ?? null,
             ];
 
-            // dd($visitorData);
-
-
-
             DB::transaction(function () use ($visitorData, &$isNewRecord, &$isUpdated, &$isCardInUse) {
 
+                // Cek apakah kartu RFID masih digunakan oleh visitor lain (belum diserahkan kembali)
                 $kartuMasihDipakai = GaVisitorVendorTransaction::where('no_kartu', $visitorData['no_kartu'])
                     ->where(function ($q) {
                         $q->whereNull('kartu_dikembalikan')
@@ -382,9 +374,11 @@ class TamuFormAjax extends Controller
                     return;
                 }
 
+                // Cek apakah record visitor dengan ID ini sudah ada
                 $existing = GaVisitorVendorTransaction::where('trnvisitorid', $visitorData['trnvisitorid'])->first();
 
                 if ($existing) {
+                    // Jika visitor belum checkout, update record existing
                     if (
                         is_null($existing->gateidout) &&
                         is_null($existing->gatelineidout) &&
@@ -396,6 +390,7 @@ class TamuFormAjax extends Controller
                         $isUpdated = true;
                     }
                 } else {
+                    // Jika belum ada record, buat record baru
                     GaVisitorVendorTransaction::create($visitorData);
                     $isNewRecord = true;
                 }
@@ -409,8 +404,6 @@ class TamuFormAjax extends Controller
                 })
                 ->orderByDesc('id')
                 ->first();
-
-            // dd($kartuDipakaiOleh);
 
             if ($isCardInUse) {
                 $namaVisitor = $kartuDipakaiOleh->namavisitor ?? '-';
@@ -428,8 +421,6 @@ class TamuFormAjax extends Controller
                     'message' => $message,
                 ], 400);
             }
-
-
 
             $message = 'Data Transporter /vendor / tamu tidak diubah.';
             if ($isNewRecord) {
@@ -561,8 +552,7 @@ class TamuFormAjax extends Controller
                 'kartu_dikembalikan' => true
             ];
 
-            // Update in both databases
-            $this->updateInBothDatabases($id, $updateData);
+            GaVisitorTransaction::where('id', $id)->update($updateData);
 
             return response()->json([
                 'success' => true,

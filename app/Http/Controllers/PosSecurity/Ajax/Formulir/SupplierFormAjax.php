@@ -636,8 +636,8 @@ class SupplierFormAjax extends Controller
                 'kartu_dikembalikan' => true
             ];
 
-            // Update in both databases
-            $this->updateInBothDatabases($id, $updateData);
+            GaVisitorTransaction::where('id', $id)->update($updateData);
+
 
             return response()->json([
                 'success' => true,
