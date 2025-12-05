@@ -51,4 +51,9 @@ class PosSecurityController extends Controller
     {
         return view('pos-security.kartu.index');
     }
+
+    public function kartuAktifDetail()
+    {
+        return view('pos-security.kartu.detail');
+    }
 }

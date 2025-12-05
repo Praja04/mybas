@@ -24,9 +24,7 @@ Route::prefix('pos-security')->group(function () {
         Route::get('/blacklist', 'PosSecurityController@blacklist')->name('pos-security.blacklist');
 
         Route::get('/kartu/kartu-aktif', 'PosSecurityController@kartuAktif')->name('pos-security.kartu-aktif');
-
-
-
+        Route::get('/kartu/kartu-aktif/detail/{nomor_kartu}', 'PosSecurityController@kartuAktifDetail')->name('pos-security.kartu-aktif.detail');
 
         Route::get('/history/tamu', [HistoryController::class, 'vendor']);
         Route::get('/history/supplier', [HistoryController::class, 'supplier']);

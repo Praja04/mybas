@@ -61,11 +61,11 @@ class KartuAktifDatatable extends Controller
 
                 // todo
                 // Buat URL menggunakan helper route
-                // $url = route('portal.ga.sistem-tracking.kartu.pengguna_kartu', ['nomor_kartu' => $item->nomor_kartu]);
+                $url = route('pos-security.kartu-aktif.detail', ['nomor_kartu' => $item->nomor_kartu]);
 
                 // Buat tombol HTML
-                // return '<a href="' . e($url) . '" class="btn btn-sm btn-primary">Detail</a>';
-                return '<a href="#" class="btn btn-sm btn-primary">Detail</a>';
+                return '<a href="' . e($url) . '" class="btn btn-sm btn-primary">Detail</a>';
+                // return '<a href="#" class="btn btn-sm btn-primary">Detail</a>';
             })
             // Tambahkan 'action' ke rawColumns karena sekarang berisi HTML
             ->rawColumns(['action'])
