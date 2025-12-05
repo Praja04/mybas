@@ -220,7 +220,7 @@
     <script src="{{ asset('assets/js/pos-security/formulir/pages/formulir-supplier-input2.js') }}"></script>
     <script src="{{ asset('assets/js/pos-security/formulir/pages/formulir-supplier-input-store.js') }}"></script>
 
-    {{-- <script src="{{ asset('assets/js/pos-security/form-cek-kendaraan/form-input.js') }}"></script> --}}
+    {{-- <script src="{{ asset('assets/js/pos-security/formulir-cek-kendaraan/form-input.js') }}"></script> --}}
 
     <script>
         document.addEventListener("DOMContentLoaded", function() {

@@ -38,9 +38,9 @@
         <!-- Tabs Content -->
         <div class="tab-content" id="formTabsContent">
             <!-- Supplier IN Tab -->
-            @include('pos-security.cek-kendaraan.form-in-cek')
+            @include('pos-security.formulir.cek-kendaraan.form-in-cek')
             <!-- Supplier OUT Tab -->
-            @include('pos-security.cek-kendaraan.form-out-cek')
+            @include('pos-security.formulir.cek-kendaraan.form-out-cek')
         </div>
     </div>
 @endsection
