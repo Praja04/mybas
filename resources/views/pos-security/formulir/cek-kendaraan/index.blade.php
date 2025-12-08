@@ -33,14 +33,11 @@
     <div class="container-fluid">
         {{-- panduan dan menu tabs --}}
         {{-- todo: ganti ke cek kendaraan --}}
-        @include('pos-security.formulir.supplier.panduan')
+        @include('pos-security.formulir.cek-kendaraan.panduan')
 
         <!-- Tabs Content -->
         <div class="tab-content" id="formTabsContent">
-            <!-- Supplier IN Tab -->
-            @include('pos-security.formulir.cek-kendaraan.form-in-cek')
-            <!-- Supplier OUT Tab -->
-            @include('pos-security.formulir.cek-kendaraan.form-out-cek')
+            @include('pos-security.formulir.cek-kendaraan.form')
         </div>
     </div>
 @endsection

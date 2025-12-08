@@ -3,6 +3,10 @@
 
     var API_ABSENSI_REST_LOG_SEARCH = '{{ route('ajax.pos-security.absensirestlog.search') }}';
 
+    var API_FORM_SEARCH_SUPPLIER = '{{ route('ajax.pos-security.visitor-transaksi.search') }}';
+
+    var API_FORM_SEARCH_KENDARAAN = '{{ route('ajax.pos-security.cek-kendaraan.search') }}';
+
     var API_BLACKLIST_SHOW = '{{ route('ajax.pos-security.blacklist.show') }}';
 
     var API_DASHBOARD_FILTER = '{{ route('ajax.pos-security.dashboard.filter') }}';

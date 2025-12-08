@@ -130,7 +130,7 @@
                                 <input type="text" class="form-control" name="rfid" required
                                     placeholder="Scan atau masukkan nomor kartu RFID">
                                 <small class="text-muted d-block mt-1">
-                                    <i class="fas fa-info-circle me-1"></i>
+                                    <i class="mdi mdi-information-outline"></i>
                                     Mohon lengkapi semua data pengunjung terlebih dahulu sebelum scan atau input nomor
                                     kartu RFID.
                                 </small>

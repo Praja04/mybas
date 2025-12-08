@@ -30,5 +30,8 @@ window.fotoConfig = {
         "Kondisi Dalam Kendaraan/Bak Kendaraan",
         "Temuan Barang Mencurigakan",
     ],
-    VENDOR: ["Surat Jalan/Pembelian Barang", "Temuan Barang Mencurigakan"],
+    "MOBIL VENDOR": [
+        "Surat Jalan/Pembelian Barang",
+        "Temuan Barang Mencurigakan",
+    ],
 };

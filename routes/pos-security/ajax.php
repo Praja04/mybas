@@ -3,6 +3,7 @@
 use App\Http\Controllers\PosSecurity\Ajax\Absensi\AbsensiRestLogAjax;
 use App\Http\Controllers\PosSecurity\Ajax\Blacklist\BlacklistAjax;
 use App\Http\Controllers\PosSecurity\Ajax\Dashboard\DashboardAjax;
+use App\Http\Controllers\PosSecurity\Ajax\Formulir\CekKendaraanFormAjax;
 use App\Http\Controllers\PosSecurity\Ajax\Formulir\SupplierFormAjax;
 use App\Http\Controllers\PosSecurity\Ajax\Formulir\TamuFormAjax;
 use Illuminate\Support\Facades\Route;
@@ -19,6 +20,11 @@ Route::post('/kembalikan-supplier', [SupplierFormAjax::class, 'kembali_kartu'])-
 Route::post('/supplier/block', [SupplierFormAjax::class, 'blacklist'])->name('ajax.pos-security.visitor-transaksi.block');
 Route::post('/supplier/report-lost', [SupplierFormAjax::class, 'reportLostCard'])->name('ajax.pos-security.visitor-transaksi.reportLost');
 Route::get('/supplier/detail', [SupplierFormAjax::class, 'getVisitorDetail'])->name('ajax.pos-security.visitor-transaksi.detail');
+
+// cek kendaraan
+Route::post('/store-kendaraan', [CekKendaraanFormAjax::class, 'store'])->name("ajax.pos-security.cek-kendaraan.store");
+Route::get('/search-kendaraan', [CekKendaraanFormAjax::class, 'search'])->name("ajax.pos-security.cek-kendaraan.search");
+
 
 Route::post('/absensi-rest-log', [AbsensiRestLogAjax::class, 'search'])->name("ajax.pos-security.absensirestlog.search");
 Route::get('/blacklist/show', [BlacklistAjax::class, 'show'])->name('ajax.pos-security.blacklist.show');
