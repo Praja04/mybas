@@ -32,6 +32,17 @@ window.fotoConfig = {
     ],
     "MOBIL VENDOR": [
         "Surat Jalan/Pembelian Barang",
+        "Kondisi Dalam Kendaraan/Bak Kendaraan",
+        "Temuan Barang Mencurigakan",
+    ],
+    "MOBIL PENGANGKUT SAMPAH": [
+        "Surat Jalan/Pembelian Barang",
+        "Kondisi Dalam Kendaraan/Bak Kendaraan",
+        "Temuan Barang Mencurigakan",
+    ],
+    LAINNYA: [
+        "Surat Jalan/Pembelian Barang",
+        "Kondisi Dalam Kendaraan/Bak Kendaraan",
         "Temuan Barang Mencurigakan",
     ],
 };

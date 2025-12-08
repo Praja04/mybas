@@ -15,7 +15,7 @@
 
                     <div class="mt-3">
                         <a href="#!" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#panduanModal">
-                            <i class="mdi mdi-information-outline"></i> Panduan Pengisian
+                            <i class="mdi mdi-information-outline me-1"></i> Panduan Pengisian
                         </a>
                     </div>
                 </div>
@@ -29,16 +29,15 @@
                                 Nomor Polisi
                             </label>
                             <input type="text" class="form-control form-control-lg text-center" id="nopol-search"
-                                name="nopol-search" placeholder="Masukan nomor polisi">
+                                name="nopol-search" placeholder="Masukkan nomor polisi">
                         </div>
 
-                        <!-- Tombol Cari Data -->
                         <div class="col-md-4">
                             <label class="form-label d-none d-md-block">&nbsp;</label>
 
                             <div class="d-grid gap-2 d-md-flex justify-content-md-between">
-                                <button type="button" class="btn btn-outline-primary w-100 w-md-auto"
-                                    id="searchVisitorData" data-bs-toggle="tooltip" data-bs-placement="top"
+                                <button type="button" class="btn btn-primary w-100 w-md-auto" id="searchVisitorData"
+                                    data-bs-toggle="tooltip" data-bs-placement="top"
                                     title="Cari data pengunjung berdasarkan ID atau Nomor Kartu">
                                     <i class="mdi mdi-account-search"></i>
                                     Cari
@@ -58,18 +57,19 @@
 
                 {{-- Main Form --}}
                 <form id="cekKendaraanForm" method="POST" enctype="multipart/form-data" onsubmit="return false;"
-                    style="display: none;" action="{{ route('ajax.pos-security.cek-kendaraan.store') }}">
+                    action="{{ route('ajax.pos-security.cek-kendaraan.store') }}" style="display: none;">
+                    {{-- todo --}}
                     @csrf
                     {{-- <input type="hidden" name="createdby" id="createdby"> --}}
-                    <input type="hidden" name="mode" id="formMode" value="in">
 
                     <div class="d-flex flex-column flex-md-row gap-2 justify-content-start mb-4">
-                        <button type="button" class="btn btn-sm d-flex align-items-center gap-2 btn-outline-primary"
+
+                        {{-- <button type="button" class="btn btn-outline-primary px-4 py-2 d-flex align-items-center gap-2"
                             onclick="location.reload()">
-                            <i class="mdi mdi-refresh"></i> Refresh halaman
-                        </button>
-                        <!-- Reset Button -->
-                        {{-- todo --}}
+                            <i class="mdi mdi-refresh"></i>
+                            <span>Refresh Halaman</span>
+                        </button> --}}
+
                         <button type="button"
                             class="btn btn-outline-secondary px-4 py-2 d-flex align-items-center gap-2"
                             onclick="resetFormButton()" id="resetBtn" data-bs-toggle="tooltip" data-bs-placement="top"
@@ -85,55 +85,72 @@
                             <i class="mdi mdi-content-save"></i>
                             <span>Simpan Data</span>
                         </button>
+
                     </div>
 
                     {{-- Input --}}
                     <div class="row mt-4">
                         {{-- Autofilled field --}}
-                        <div class="col-lg-6 order-1 order-lg-2">
+                        <div class="col-lg-6 order-1 order-lg-1"id="section-kendaraan">
+                            <div class="alert alert-info mt-3">
+                                <strong>Data Kendaraan (Otomatis)</strong>
+                                <br>Data di bawah ini diambil dari sistem dan tidak perlu diubah.
+                            </div>
+
                             <div class="mb-3">
                                 <label class="form-label fw-semibold" for="nama-supir">Nama Supir <span
                                         class="text-danger">*</span></label>
-                                <input type="text" class="form-control bg-light text-muted" name="nama_supir"
-                                    id="nama-supir" required placeholder="Nama supir" disabled readonly>
+                                <input type="text" class="form-control bg-light" name="nama_supir" id="nama-supir"
+                                    required placeholder="Nama supir" readonly>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold" for="nama-kernet">Nama Kernet (Jika Ada)</label>
+                                <input type="text" class="form-control bg-light" name="nama_kernet" id="nama-kernet"
+                                    required placeholder="Nama kernet" readonly>
                             </div>
 
                             <div class="mb-3">
                                 <label class="form-label fw-semibold" for="company">Nama Perusahaan <span
                                         class="text-danger">*</span></label>
-                                <input type="text" class="form-control bg-light text-muted" name="company"
-                                    id="company" required placeholder="Nama perusahaan" disabled readonly>
+                                <input type="text" class="form-control bg-light" name="company" id="company"
+                                    required placeholder="Nama perusahaan" readonly>
                             </div>
 
                             <div class="mb-3">
                                 <label class="form-label fw-semibold" for="nomor-polisi">Nomor Polisi <span
                                         class="text-danger">*</span></label>
-                                <input type="text" class="form-control bg-light text-muted" name="nomor_polisi"
-                                    id="nomor-polisi" required placeholder="Nomor polisi" disabled readonly>
-                            </div>
-                        </div>
-
-                        {{-- Form pemeriksaan --}}
-                        <div class="col-lg-6 order-2 order-lg-1">
-                            <div class="mb-3">
-                                <label class="form-label fw-semibold" for="nama_petugas">Nama Petugas Pemeriksa
-                                    <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" name="nama_petugas" id="nama_petugas"
-                                    required placeholder="Masukkan nama petugas yang memeriksa">
+                                <input type="text" class="form-control bg-light" name="nomor_polisi"
+                                    id="nomor-polisi" required placeholder="Nomor polisi" readonly>
                             </div>
 
                             <div class="mb-3">
-                                <label class="form-label fw-semibold" for="tgl-periksa">Tanggal Pemeriksaan
+                                <label class="form-label fw-semibold" for="tgl_periksa">Tanggal Pemeriksaan
                                     <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control flatpickr-single" name="tgl_periksa"
-                                    id="tgl-periksa" placeholder="Pilih tanggal pemeriksaan">
+                                <input type="text" class="form-control bg-light" name="tgl_periksa"
+                                    id="tgl_periksa" placeholder="yyyy-mm-dd" readonly>
                             </div>
 
                             <div class="mb-3">
                                 <label class="form-label fw-semibold" for="jam_periksa">Jam Pemeriksaan <span
                                         class="text-danger">*</span></label>
-                                <input type="time" class="form-control" name="jam_periksa" id="jam_periksa"
-                                    required placeholder="Masukkan jam pemeriksaan">
+                                <input type="time" class="form-control bg-light" name="jam_periksa"
+                                    id="jam_periksa" placeholder="HH:MM" readonly>
+                            </div>
+                        </div>
+
+                        {{-- Form pemeriksaan --}}
+                        <div class="col-lg-6 order-2 order-lg-2" id="section-pemeriksaan">
+                            <div class="alert alert-warning mt-3">
+                                <strong>Data Pemeriksaan (WAJIB DIISI)</strong>
+                                <br>Silakan isi data berikut dan lakukan pengambilan foto.
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold" for="nama_petugas">Nama Petugas Pemeriksa
+                                    <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" name="nama_petugas" id="nama_petugas"
+                                    required placeholder="Masukkan nama petugas yang memeriksa">
                             </div>
 
                             <div class="mb-3">
@@ -153,6 +170,15 @@
                                     <option value="" disabled selected>-- Pilih Jenis Truk --</option>
                                 </select>
                             </div>
+
+                            <div class="mb-3" id="otherTruckContainer" style="display: none;">
+                                <label class="form-label fw-semibold" for="otherTruckType">
+                                    Jenis Truk Lainnya <span class="text-danger">*</span>
+                                </label>
+                                <input type="text" class="form-control" name="otherTruckType" id="otherTruckType"
+                                    placeholder="Contoh: Truk Tangki Limbah, Truk Tangki Air, dll">
+                            </div>
+
                         </div>
                     </div>
 
@@ -211,143 +237,15 @@
 </div>
 
 @push('scripts')
-    <script src="{{ asset('assets/velzon/libs/flatpickr/flatpickr.min.js') }}"></script>
-    <script src="{{ asset('assets/velzon/libs/flatpickr/l10n/id.js') }}"></script>
-    <script>
-        flatpickr('.datepicker', {
-            locale: 'id'
-        });
-    </script>
-
     <script src="{{ asset('assets/js/pos-security/formulir-cek-kendaraan/form-kendaraan-input.js') }}"></script>
     <script src="{{ asset('assets/js/pos-security/formulir-cek-kendaraan/form-kendaraan-input-store.js') }}"></script>
+    <script src="{{ asset('assets/js/pos-security/formulir-cek-kendaraan/foto-config.js') }}"></script>
+    {{-- <script src="{{ asset('assets/js/pos-security/formulir-cek-kendaraan/truck-options.js') }}"></script> --}}
 
     <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            flatpickr("#tgl-periksa", {
-                locale: "id",
-                altInput: true,
-                altFormat: "j F Y",
-                maxDate: "today",
-                allowInput: true,
-                dateFormat: "Y-m-d", // format value yang dikirim ke backend
-
-                // Parse manual input dari user dalam format DD-MM-YYYY
-                parseDate: function(datestr, format) {
-                    // Jika format inputnya 15-06-2000
-                    const parts = datestr.split("-");
-                    if (parts.length === 3) {
-                        const [day, month, year] = parts;
-                        return new Date(`${year}-${month}-${day}`);
-                    }
-                    return flatpickr.parseDate(datestr, format);
-                },
-
-                // Format value ke dalam format Y-m-d
-                formatDate: function(date, format) {
-                    const yyyy = date.getFullYear();
-                    const mm = String(date.getMonth() + 1).padStart(2, "0");
-                    const dd = String(date.getDate()).padStart(2, "0");
-                    return `${yyyy}-${mm}-${dd}`;
-                },
-            });
-        });
-    </script>
-
-    <script src="{{ asset('assets/js/pos-security/const/photo.js') }}"></script>
-
-    <script>
-        // label in modal
-        $(function() {
-            $(document).on('click', '[data-bs-target="#myModal"]', function() {
-                const $btn = $(this);
-                const labelText = $btn.closest('.d-flex.flex-column').find('label').text().trim() || 'Foto';
-                $('#myModalLabel').text(`Foto ${labelText}`);
-            });
-        });
-
-        $(document).ready(function() {
-            const $muatan = $('#muatanType');
-            const $truckContainer = $('#truckTypeContainer');
-            const $truck = $('#truckType');
-            const $fotoSection = $('#fotoSection');
-
-            const options = {
-                LIQUID: [{
-                    value: 'MUAT GULA CAIR',
-                    text: 'Truk Muat Gula Cair'
-                }],
-                NONLIQUID: [{
-                        value: 'BONGKAR MATERIAL',
-                        text: 'Truck Bongkar Material'
-                    },
-                    {
-                        value: 'MUAT FINISH GOOD',
-                        text: 'Truck Muat Finish Good (WFG)'
-                    },
-                    {
-                        value: 'SPAREPART',
-                        text: 'Mobil Sparepart/Bahan Bangunan'
-                    },
-                    {
-                        value: 'MOBIL VENDOR',
-                        text: 'Mobil Pribadi Vendor/Perusahaan'
-                    }
-                ]
-            };
-
-            $truckContainer.hide();
-
-            // render jenis truk setelah pilih jenis muatan
-            $muatan.on('change', function() {
-                const selected = $(this).val();
-
-                $truck.empty().append('<option value="" disabled selected>-- Pilih Jenis Truk --</option>');
-
-                $fotoSection.empty();
-
-                if (selected && options[selected]) {
-                    $truckContainer.show();
-
-                    options[selected].forEach(opt => {
-                        $truck.append(`<option value="${opt.value}">${opt.text}</option>`);
-                    });
-                } else {
-                    $truckContainer.hide();
-                }
-            });
-
-            // render foto section berdasarkan jenis truk
-            $truck.on('change', function() {
-                const value = $(this).val();
-                const sections = fotoConfig[value] || [];
-
-                $fotoSection.html(sections.map(label => {
-                    const key = label.replace(/\s+/g, '_').toLowerCase();
-
-                    return `
-                        <div class="col-12 col-lg-4 d-flex flex-column align-items-center mb-4 foto-slot"
-                            data-key="${key}">
-                            <label class="form-label fw-semibold mb-2">${label}</label>
-
-                            <div class="preview-container d-flex flex-wrap gap-2 justify-content-center mb-2"
-                                id="preview-${key}"
-                                style="width: 100%; min-height: 180px; background:#f8f9fa; padding:10px; border-radius:6px; border:1px solid #dee2e6;">
-                            </div>
-
-                            <button type="button"
-                                class="btn btn-sm btn-primary w-100 open-camera"
-                                data-key="${key}"
-                                data-bs-toggle="modal"
-                                data-bs-target="#myModal">
-                                <i class="fas fa-camera me-1"></i> Ambil Foto ${label}
-                            </button>
-
-                            <input type="hidden" name="photos[${key}]" id="input-${key}">
-                        </div>
-                    `;
-                }).join(''));
-            });
-        });
+        function hotReload() {
+            const url = window.location.origin + window.location.pathname + '?_=' + Date.now();
+            window.location.replace(url);
+        }
     </script>
 @endpush

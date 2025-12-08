@@ -3,6 +3,28 @@ $(document).ready(function () {
     $("#cekKendaraanForm").on("submit", function (e) {
         e.preventDefault();
 
+        let valid = true;
+        let firstEmptyLabel = "";
+
+        $("#fotoSection input[required]").each(function () {
+            if (!$(this).val()) {
+                valid = false;
+                const key = $(this).attr("id").replace("input-", "");
+                firstEmptyLabel = key.replace(/_/g, " ");
+                return false;
+            }
+        });
+
+        if (!valid) {
+            Swal.fire({
+                icon: "error",
+                title: "Gagal!",
+                text: `Foto ${firstEmptyLabel} wajib diisi.`,
+            });
+            e.preventDefault();
+            return false;
+        }
+
         $("#submitBtn")
             .prop("disabled", true)
             .html('<i class="fas fa-spinner fa-spin me-2"></i>Menyimpan...');
@@ -114,12 +136,27 @@ function resetFormButton() {
     const nomorPolisi = $("#nomor-polisi").val();
     const createdby = $("#createdby").val();
 
+    const now = new Date();
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth() + 1).padStart(2, "0");
+    const dd = String(now.getDate()).padStart(2, "0");
+    const hh = String(now.getHours()).padStart(2, "0");
+    const min = String(now.getMinutes()).padStart(2, "0");
+
     $("#cekKendaraanForm")[0].reset();
 
     $("#nama-supir").val(namaSupir);
     $("#company").val(company);
     $("#nomor-polisi").val(nomorPolisi);
-    $("#createdby").val(createdby);
+    $("#tgl_periksa").val(`${yyyy}-${mm}-${dd}`);
+    $("#jam_periksa").val(`${hh}:${min}`);
+    if (createdby !== null) {
+        $("#createdby").val(createdby);
+    }
+
+    if (typeof resetForm === "function") {
+        resetForm(); // reset photo
+    }
 
     resetForm();
 
