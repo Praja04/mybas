@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\DB;
 use App\Mail\Sigra\SIO as EmailSIO;
 use App\Models\Sigra\SIO;
 use App\Models\Sigra\SIOSertifikasi;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
@@ -32,6 +33,16 @@ class SioPollingController extends Controller
     public function checkSio()
     {
         try {
+            $now = Carbon::now();
+
+            if ($now->dayOfWeek !== Carbon::MONDAY || $now->hour !== 8) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Belum waktunya polling SIO',
+                    'server_time' => $now->format('Y-m-d H:i:s')
+                ], 403);
+            }
+
             $certificates = [];
 
             $sioList = SIO::with('department')
@@ -72,20 +83,20 @@ class SioPollingController extends Controller
                     'success' => true,
                     'message' => 'Berhasil mengirimkan email notifikasi SIO melalui polling API.',
                     'total' => count($certificates)
-                ]);
+                ], 200);
             }
 
             return response()->json([
                 'success' => true,
                 'message' => 'Tidak ada sertifikat SIO yang akan expired.',
                 'total' => 0
-            ]);
-        } catch (\Exception $e) {
+            ], 200);
+        } catch (\Throwable $e) {
             Log::error('Polling SIO Error: ' . $e->getMessage());
 
             return response()->json([
                 'success' => false,
-                'message' => 'Error polling SIO API',
+                'message' => 'Error polling SIO API, retry...',
                 'error' => $e->getMessage()
             ], 500);
         }
