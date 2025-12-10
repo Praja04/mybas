@@ -39,7 +39,6 @@ function onScanError(errorMessage) {
     console.error("Scan error:", errorMessage);
     alert("Terjadi kesalahan saat memindai: " + errorMessage);
 }
-
 function searchVisitorData(keyword) {
     console.log("Keyword pencarian:", keyword);
 
@@ -55,19 +54,7 @@ function searchVisitorData(keyword) {
             // Tambahkan loading spinner jika mau
         },
         success: function (response) {
-            // console.log(response.data);
-
-            // console.log(
-            //     "Elemennya ada?",
-            //     document.getElementById("visitorKTP")
-            // );
-
-            // console.log("Isi no_ktp_sim:", response.data.no_ktp_sim);
-
-            console.log(response.success);
-
             if (response.success) {
-                // Isi data ke elemen HTML
                 document
                     .getElementById("returnCard")
                     .setAttribute(
@@ -76,6 +63,8 @@ function searchVisitorData(keyword) {
                     );
                 document.getElementById("visitorName").innerText =
                     response.data.namavisitor || "-";
+                document.getElementById("visitorKeterangan").innerText =
+                    response.data.keterangan || "-";
                 document.getElementById("visitorCompany").innerText =
                     response.data.namacomp || "-";
                 document.getElementById("visitorCard").innerText =
@@ -97,7 +86,7 @@ function searchVisitorData(keyword) {
 
                 // Waktu keluar
                 document.getElementById("visitorTimeOut").innerText =
-                    response.data.timeout || "-";
+                    response.data.timeout || "";
 
                 // Status kartu
                 let statusKartu = "-";

@@ -791,6 +791,8 @@ function checkAllRequiredElements() {
     const purpose = document.querySelector('[name="purpose"]');
     const nopol = document.querySelector('[name="nopol"]');
     const nohpdriverInput = document.querySelector('[name="nohpdriver"]');
+    const tglLahir = document.querySelector('[name="tgllahir"]');
+    const nomorKtp = document.querySelector('[name="nomorktp"]');
 
     const hasKtp = ktpInput && ktpInput.value.trim() !== "";
     const hasSelfie = Array.isArray(selfiePhotos) && selfiePhotos.length > 0;
@@ -800,6 +802,8 @@ function checkAllRequiredElements() {
     const hasNopol = nopol && nopol.value.trim() !== "";
     const hasNohpdriver =
         nohpdriverInput && nohpdriverInput.value.trim() !== "";
+    const hasTglLahir = tglLahir && tglLahir.value.trim() !== "";
+    const hasNomorKtp = nomorKtp && nomorKtp.value.trim() !== "";
 
     const allCompleted =
         hasKtp &&
@@ -808,7 +812,9 @@ function checkAllRequiredElements() {
         hasComp &&
         hasPurpose &&
         hasNopol &&
-        hasNohpdriver;
+        hasNohpdriver &&
+        hasTglLahir &&
+        hasNomorKtp;
 
     rfidField.disabled = !allCompleted;
 
@@ -820,6 +826,8 @@ function checkAllRequiredElements() {
         hasPurpose,
         hasNopol,
         hasNohpdriver,
+        hasTglLahir,
+        hasNomorKtp,
         allCompleted,
     });
 
@@ -830,7 +838,10 @@ function checkAllRequiredElements() {
         hasNama,
         hasComp,
         hasPurpose,
-        hasNopol
+        hasNopol,
+        hasNohpdriver,
+        hasTglLahir,
+        hasNomorKtp
     );
 }
 
@@ -841,7 +852,10 @@ function updateRfidFieldMessage(
     hasNama,
     hasComp,
     hasPurpose,
-    hasNopol
+    hasNopol,
+    hasNohpdriver,
+    hasTglLahir,
+    hasNomorKtp
 ) {
     let existingMessage = document.getElementById("rfidFieldMessage");
 
@@ -861,12 +875,15 @@ function updateRfidFieldMessage(
     let missingItems = [];
     if (!hasKtp) missingItems.push("Foto KTP");
     if (!hasSelfie) missingItems.push("Foto Selfie");
-    if (!hasNama) missingItems.push("Nama");
+    if (!hasNama) missingItems.push("Nama Supir");
     if (!hasComp) missingItems.push("Perusahaan");
-    if (!hasPurpose) missingItems.push("Keperluan");
-    if (!hasNopol) missingItems.push("No Polisi");
+    if (!hasPurpose) missingItems.push("Tujuan");
+    if (!hasNopol) missingItems.push("Nomor Polisi");
+    if (!hasNohpdriver) missingItems.push("No HP");
+    if (!hasTglLahir) missingItems.push("Tanggal Lahir");
+    if (!hasNomorKtp) missingItems.push("Nomor KTP/SIM");
 
-    existingMessage.innerHTML = `<i class="fas fa-info-circle me-1"></i>Lengkapi terlebih dahulu: ${missingItems.join(
+    existingMessage.innerHTML = `<i class="mdi mdi-information-outline me-1"></i> Lengkapi terlebih dahulu: ${missingItems.join(
         ", "
     )}`;
 }
