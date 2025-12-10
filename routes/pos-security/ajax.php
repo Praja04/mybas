@@ -24,7 +24,7 @@ Route::get('/supplier/detail', [SupplierFormAjax::class, 'getVisitorDetail'])->n
 // cek kendaraan
 Route::post('/store-kendaraan', [CekKendaraanFormAjax::class, 'store'])->name("ajax.pos-security.cek-kendaraan.store");
 Route::get('/search-kendaraan', [CekKendaraanFormAjax::class, 'search'])->name("ajax.pos-security.cek-kendaraan.search");
-
+Route::get('/kendaraan/show', [CekKendaraanFormAjax::class, 'show'])->name("ajax.pos-security.cek-kendaraan.show");
 
 Route::post('/absensi-rest-log', [AbsensiRestLogAjax::class, 'search'])->name("ajax.pos-security.absensirestlog.search");
 Route::get('/blacklist/show', [BlacklistAjax::class, 'show'])->name('ajax.pos-security.blacklist.show');

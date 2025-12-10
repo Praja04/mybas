@@ -8,27 +8,17 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
+use App\Models\PosSecurity\GaCekKendaraan;
 use App\Models\PosSecurity\GaVisitorTransaction;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
 class CekKendaraanFormAjax extends Controller
 {
-
-    private function normalize_name($name)
-    {
-        // Ubah ke huruf kecil, hapus spasi berlebih
-        return strtolower(preg_replace('/\s+/', ' ', trim($name)));
-    }
-
     // cari data kendaraan
     public function search(Request $request)
     {
-        $keyword = $request->input('keyword');
-
-        //     $nopol = strtoupper(str_replace(' ', '', $keyword));
-        //         ->whereRaw("REPLACE(UPPER(nomor_polisi),' ','') = ?", [$nopol])
-
+        $keyword = strtoupper(str_replace(' ', '', $request->input('keyword')));
 
         if (!$keyword) {
             return response()->json([
@@ -37,21 +27,17 @@ class CekKendaraanFormAjax extends Controller
             ], 422);
         }
 
-        // cari kendaraan yang masih ada di area
+        // cari kendaraan yang masih ada di area di table supplier
         $visitor = DB::table('ga_visitor_transaction')
-            ->where(function ($query) use ($keyword) {
-                $query->where('nopol', $keyword);  // todo: normalize?
-            })
-            ->whereNull('dateout')
+            ->whereRaw("REPLACE(UPPER(nopol),' ','') = ?", [$keyword])
+            ->where('keterangan', 'SUPIR')
             ->orderBy('created_at', 'desc')
             ->first();
 
+        // jika tidak ada -> cari di table vendor
         if (!$visitor) {
             $visitor = DB::table('ga_visitor_vendor')
-                ->where(function ($query) use ($keyword) {
-                    $query->where('nopol', $keyword);
-                })
-                ->whereNull('dateout')
+                ->whereRaw("REPLACE(UPPER(nopol),' ','') = ?", [$keyword])
                 ->orderBy('created_at', 'desc')
                 ->first();
         }
@@ -63,19 +49,8 @@ class CekKendaraanFormAjax extends Controller
             ]);
         }
 
-        // cek apakah dia sudah cek kendaraan sebelumnya
-        // $cekTerakhir = DB::table('ga_cek_kendaraan')
-        //     ->where('nomor_polisi', $keyword)
-        //     ->whereNotNull('datein')
-        //     ->whereNull('dateout')
-        //     ->exists();
-
-        // if ($cekTerakhir) {
-        //     return response()->json([
-        //         'success' => false,
-        //         'message' => 'Kendaraan ini sudah melakukan cek masuk.'
-        //     ], 409);
-        // }
+        // todo
+        // validasi apakah sudah cek kendaraan pada kedatangan saat ini
 
         return response()->json([
             'success' => true,
@@ -83,20 +58,19 @@ class CekKendaraanFormAjax extends Controller
         ]);
     }
 
-
-    // supplier
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
+            'trnvisitorid'  => 'required',
             'nama_supir'    => 'required|string|max:100',
             'company'       => 'required|string|max:100',
-            'nomor_polisi'  => 'required|string|max:100',
+            'nomor_polisi'  => 'required|string|max:50',
             'nama_petugas'  => 'required|string|max:100',
             'tgl_periksa'   => 'required|date|before_or_equal:today',
             'jam_periksa'   => 'required|date_format:H:i',
-            'muatan_type'   => 'required|string|max:100',
-            'truck_type'    => 'required|string|max:100',
-            // todo: validasi photos di frontend
+            'muatan_type'   => 'required|string|max:50',
+            'truck_type'    => 'required|string|max:50',
+            'otherTruckType' => 'nullable|string|max:50'
             // 'photos'   => 'required|array|min:1',
         ], [
             'nama_supir.required'   => 'Nama supir harus diisi',
@@ -121,11 +95,11 @@ class CekKendaraanFormAjax extends Controller
         }
 
         try {
-            // cek lagi apakah sudah ada di dalam
+            // validasi apakah sudah cek kendaraan pada kedatangan saat ini
             $cekAktif = DB::table('ga_cek_kendaraan')
                 ->where('nomor_polisi', $request->nomor_polisi)
-                ->whereNotNull('datein')
-                ->whereNull('dateout')
+                ->where('trnvisitorid', $request->trnvisitorid)
+                // ->where('datein', now())
                 ->exists();
 
             if ($cekAktif) {
@@ -178,12 +152,14 @@ class CekKendaraanFormAjax extends Controller
                 'jam_periksa'   => $request->jam_periksa,
                 'muatan_type'   => $request->muatan_type,
                 'truck_type'    => $request->truck_type,
-                'foto_in'          => json_encode($photoPaths),
+                'truck_type_other' => $request->otherTruckType,
+                'foto_in'       => json_encode($photoPaths),
                 'createdby'     => 'system', // default
                 'datein'        => now()->toDateString(),
-                'dateout'       => null,
+                'timein'        => now()->format('H:i:s'),
                 'created_at'    => now(),
                 'updated_at'    => now(),
+                'trnvisitorid'  => $request->trnvisitorid
             ];
 
             DB::table('ga_cek_kendaraan')->insert($data);
@@ -308,13 +284,31 @@ class CekKendaraanFormAjax extends Controller
 
 
     /**
-     * Show visitor detail
+     * Show cek kendaraan detail
      */
-    public function show($id)
+    public function show(Request $request)
     {
-        $visitor = GaVisitorTransaction::findOrFail($id);
+        $request->validate([
+            'id' => 'required'
+        ]);
 
-        return view('visitor.show', compact('visitor'));
+        $trncekid = $request->id;
+
+        $data = GaCekKendaraan::query()
+            ->where('trncekid', $trncekid)
+            ->first();
+
+        if (!$data) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Data pengecekan kendaraan tidak ditemukan.'
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $data
+        ]);
     }
 
     /**
@@ -397,5 +391,11 @@ class CekKendaraanFormAjax extends Controller
             }
             throw $e;
         }
+    }
+
+    private function normalize_name($name)
+    {
+        // Ubah ke huruf kecil, hapus spasi berlebih
+        return strtolower(preg_replace('/\s+/', ' ', trim($name)));
     }
 }

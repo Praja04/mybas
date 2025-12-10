@@ -1,6 +1,7 @@
 <script>
     var API_DATATABLE_HISTORY_SUPPLIER = "{{ route('datatable.pos-security.history.visitor.supplier') }}";
     var API_DATATABLE_HISTORY_VENDOR = "{{ route('datatable.pos-security.history.visitor.vendor') }}";
+    var API_DATATABLE_HISTORY_KENDARAAN = "{{ route('datatable.pos-security.history.visitor.kendaraan') }}";
 
     var API_DATATABLE_BLACKLIST_SUPPLIER = "{{ route('datatable.pos-security.blacklist.supplier.pas') }}";
 

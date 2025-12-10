@@ -75,6 +75,11 @@ class PosSecurityController extends Controller
         return view("pos-security.history-tamu.index");
     }
 
+    public function historyCekKendaraan()
+    {
+        return view("pos-security.history-cek-kendaraan.index");
+    }
+
     // public function supplier_smu()
     // {
     //     return view("ga.module.sistem-tracking.pages.history.supplier-smu");

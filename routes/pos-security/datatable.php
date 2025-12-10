@@ -3,6 +3,7 @@
 use App\Http\Controllers\PosSecurity\Datatable\Absensi\AbsensiDatatable;
 use App\Http\Controllers\PosSecurity\Datatable\Absensi\AbsensiGateDatatable;
 use App\Http\Controllers\PosSecurity\Datatable\Blacklist\BlacklistDatatable;
+use App\Http\Controllers\PosSecurity\Datatable\History\HistoryCekKendaraanDatatable;
 use App\Http\Controllers\PosSecurity\Datatable\History\HistorySupplierDatatable;
 use App\Http\Controllers\PosSecurity\Datatable\History\HistoryVendorDatatable;
 use App\Http\Controllers\PosSecurity\Datatable\KartuAktif\KartuAktifDatatable;
@@ -29,6 +30,8 @@ Route::prefix('history')->group(function () {
         ->name("datatable.pos-security.history.visitor.supplier");
     Route::get('/tamu', [HistoryVendorDatatable::class, 'index'])
         ->name("datatable.pos-security.history.visitor.vendor");
+    Route::get('/kendaraan', [HistoryCekKendaraanDatatable::class, 'index'])
+        ->name("datatable.pos-security.history.visitor.kendaraan");
 });
 
 Route::prefix('blacklist')->group(function () {
