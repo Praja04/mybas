@@ -28,10 +28,18 @@
                                     <table border="0" cellpadding="0" cellspacing="0" width="100%">
                                         <tbody>
                                             <tr>
-                                                <td align="center" valign="middle"
-                                                    style="padding-top: 40px; padding-bottom: 10px;" class="emailLogo">
-                                                    <!-- Logo and Link // -->
-                                                    <p>MyBAS Online Notification</p>
+                                                <td>
+                                                    <p style="text-align: center;">
+                                                        <img style="width: 200px"
+                                                            src="{{ $message->embed(public_path('assets/media/logos/logo_bas_compress.png')) }}"
+                                                            alt="Kop Surat">
+                                                    </p>
+
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>
+                                                    <p style="text-align: center;">MyBAS Online Notification</p>
                                                 </td>
                                             </tr>
                                         </tbody>
@@ -146,7 +154,7 @@
                                                                             <tr>
                                                                                 <td colspan="5"
                                                                                     style="padding:8px; text-align:left;">
-                                                                                    {{ $data['description']['keterangan'] }}
+                                                                                    {{ $data['description']['keterangan'] ?? '-' }}
                                                                                 </td>
                                                                             </tr>
                                                                         </tfoot>
@@ -273,6 +281,7 @@
             </tr>
         </tbody>
     </table>
+    <span style="font-size:1px;color:transparent;">{{ now() }}</span>
 </body>
 
 </html>

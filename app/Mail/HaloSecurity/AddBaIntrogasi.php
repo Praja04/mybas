@@ -32,6 +32,8 @@ class AddBaIntrogasi extends Mailable
      */
     public function build()
     {
-        return $this->subject('(Halo Security) New Berita Acara Introgasi')->view('mail.halo-security.add-ba-introgasi');
+        return $this
+            ->subject('(Halo Security) Terdapat Data Baru - Berita Acara Introgasi')
+            ->view('mail.halo-security.add-ba-introgasi');
     }
 }

@@ -26,21 +26,27 @@
             transform: translateY(-2px);
             box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
         }
+
+        .foto-slot {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .foto-slot .preview-container {
+            flex: 1 1 auto;
+        }
+
+        .foto-slot button {
+            margin-top: auto;
+        }
     </style>
 @endpush
 
 @section('content')
     <div class="container-fluid">
-        {{-- panduan dan menu tabs --}}
-        {{-- todo: ganti ke cek kendaraan --}}
-        @include('pos-security.formulir.supplier.panduan')
+        @include('pos-security.formulir.cek-kendaraan.panduan')
 
-        <!-- Tabs Content -->
-        <div class="tab-content" id="formTabsContent">
-            <!-- Supplier IN Tab -->
-            @include('pos-security.cek-kendaraan.form-in-cek')
-            <!-- Supplier OUT Tab -->
-            @include('pos-security.cek-kendaraan.form-out-cek')
-        </div>
+        @include('pos-security.formulir.cek-kendaraan.form')
     </div>
 @endsection

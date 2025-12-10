@@ -35,30 +35,32 @@
                         </button>
                     </div>
                     <div class="card-body">
-                        <table class="ga-history-vendor-pas-datatables table nowrap align-middle" style="width:100%">
-                            <thead>
-                                <tr>
-                                    <th>No</th>
-                                    <th>Nama Tamu</th>
-                                    <th>Perusahaan</th>
-                                    <th>Host</th>
-                                    <th>Tujuan</th>
-                                    <th>No Kartu</th>
-                                    <th>No Identitas</th>
-                                    <th>Plat Nomor</th>
-                                    <th>Pos</th>
-                                    <th>Waktu Scan</th>
-                                    <th>Aktivitas</th>
-                                    <th>Kartu Dikembalikan</th>
-                                    <th>Foto Diri</th>
-                                    <th>Foto Identitas</th>
-                                    {{-- <th>Aksi</th>  --}}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <!-- Data akan diisi oleh DataTable JS -->
-                            </tbody>
-                        </table>
+                        <div class="table-responsive">
+                            <table class="ga-history-vendor-pas-datatables table nowrap align-middle" style="width:100%">
+                                <thead>
+                                    <tr>
+                                        <th>No</th>
+                                        <th>Nama Tamu</th>
+                                        <th>Perusahaan</th>
+                                        <th>Host</th>
+                                        <th>Tujuan</th>
+                                        <th>No Kartu</th>
+                                        <th>No Identitas</th>
+                                        <th>Plat Nomor</th>
+                                        <th>Pos</th>
+                                        <th>Waktu Scan</th>
+                                        <th>Aktivitas</th>
+                                        <th>Kartu Dikembalikan</th>
+                                        <th>Foto Diri</th>
+                                        <th>Foto Identitas</th>
+                                        {{-- <th>Aksi</th>  --}}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Data akan diisi oleh DataTable JS -->
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -68,8 +70,8 @@
 @endsection
 
 @push('scripts')
-    {{-- todo --}}
-    {{-- <script type="module" src="{{ asset('portal\module\ga\sistem-tracking\absensi\pages\absensi-rest-log.js') }}"></script> --}}
+    <script type="module" src="{{ asset('assets/js/pos-security/absensi/pages/absensi-rest-log.js') }}"></script>
+
     <script>
         function showImageModal(imageUrl) {
             document.getElementById('modalImage').src = imageUrl;

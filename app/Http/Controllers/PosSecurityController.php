@@ -2,16 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Department;
 use Illuminate\Http\Request;
 
 class PosSecurityController extends Controller
 {
-    // controller sementara
-    public function index()
-    {
-        return view('pos-security.dashboard.index');
-    }
-
+    // form menu view
     public function form()
     {
         return view('pos-security.formulir.index');
@@ -20,6 +16,22 @@ class PosSecurityController extends Controller
     public function formSupplier()
     {
         return view('pos-security.formulir.supplier.index');
+    }
+
+    public function formTamu()
+    {
+        $departments = Department::where('status', '1')->get();
+        return view('pos-security.formulir.tamu.index', compact('departments'));
+    }
+
+    public function formCekKendaraan()
+    {
+        return view('pos-security.formulir.cek-kendaraan.index');
+    }
+
+    public function dashboard()
+    {
+        return view('pos-security.dashboard.index');
     }
 
     public function display()
@@ -32,8 +44,44 @@ class PosSecurityController extends Controller
         return view('pos-security.absensi.index');
     }
 
-    public function formCekKendaraan()
+    public function absensiGate()
     {
-        return view('pos-security.cek-kendaraan.index');
+        return view('pos-security.absensi.gate');
     }
+
+    public function blacklist()
+    {
+        return view('pos-security.blacklist.index');
+    }
+
+    public function kartuAktif()
+    {
+        return view('pos-security.kartu.index');
+    }
+
+    public function kartuAktifDetail()
+    {
+        return view('pos-security.kartu.detail');
+    }
+
+    public function historySupplier()
+    {
+        // return view("ga.module.sistem-tracking.pages.history.supplier-pas");
+        return view("pos-security.history-supplier.index");
+    }
+
+    public function historyVendor()
+    {
+        return view("pos-security.history-tamu.index");
+    }
+
+    // public function supplier_smu()
+    // {
+    //     return view("ga.module.sistem-tracking.pages.history.supplier-smu");
+    // }
+
+    // public function vendor_smu()
+    // {
+    //     return view("ga.module.sistem-tracking.pages.history.vendor-smu");
+    // }
 }

@@ -30,6 +30,8 @@ class DeleteBaSopKaryawan extends Mailable
      */
     public function build()
     {
-        return $this->subject('(Halo Security) Delete Berita Acara S.O.P Karyawan')->view('mail.halo-security.delete-ba-sop-karyawan');
+        return $this
+            ->subject('(Halo Security) Terdapat Data Berita Acara S.O.P Karyawan yang Dihapus')
+            ->view('mail.halo-security.delete-ba-sop-karyawan');
     }
 }

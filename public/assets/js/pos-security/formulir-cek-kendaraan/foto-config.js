@@ -13,25 +13,36 @@ window.fotoConfig = {
         "Kolong Mobil Truck Belakang",
         "Kotak Toolkit dan Dongkrak",
         "Kolong Belakang",
-        "Foto Barang Bukti Temuan yang Disimpan Sementara di Pos 1",
+        "Temuan Barang Mencurigakan",
     ],
     "BONGKAR MATERIAL": [
         "Kabin Depan Mobil",
         "Kondisi Dalam Bak Truck",
-        "Barang Mencurigakan yang Diturunkan di Pos 1",
+        "Temuan Barang Mencurigakan",
     ],
     "MUAT FINISH GOOD": [
         "Kabin Depan Mobil",
         "Kondisi Bak Truck",
-        "Barang Mencurigakan yang Diturunkan di Pos 1",
+        "Temuan Barang Mencurigakan",
     ],
     SPAREPART: [
         "Surat Jalan/Pembelian Barang",
         "Kondisi Dalam Kendaraan/Bak Kendaraan",
-        "Temuan Barang Mencurigakan dan Diturunkan di Pos 1",
+        "Temuan Barang Mencurigakan",
     ],
-    VENDOR: [
+    "MOBIL VENDOR": [
         "Surat Jalan/Pembelian Barang",
-        "Temuan Barang Mencurigakan dan Diturunkan di Pos 1",
+        "Kondisi Dalam Kendaraan/Bak Kendaraan",
+        "Temuan Barang Mencurigakan",
+    ],
+    "MOBIL PENGANGKUT SAMPAH": [
+        "Surat Jalan/Pembelian Barang",
+        "Kondisi Dalam Kendaraan/Bak Kendaraan",
+        "Temuan Barang Mencurigakan",
+    ],
+    LAINNYA: [
+        "Surat Jalan/Pembelian Barang",
+        "Kondisi Dalam Kendaraan/Bak Kendaraan",
+        "Temuan Barang Mencurigakan",
     ],
 };

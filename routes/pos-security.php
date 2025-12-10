@@ -1,21 +1,28 @@
 <?php
 
+use App\Http\Controllers\PosSecurityController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('pos-security')->group(function () {
     Route::group(['middleware' => ['auth', 'access_log', 'rules']], function () {
-        Route::get('/dashboard', 'PosSecurityController@index')->name('pos-security.dashboard');
 
-        Route::get('/formulir', 'PosSecurityController@form')->name('pos-security.formulir');
+        Route::get('/formulir', [PosSecurityController::class, 'form'])->name('pos-security.formulir');
+        Route::get('/formulir/supplier', [PosSecurityController::class, 'formSupplier'])->name('pos-security.formulir.supplier');
+        Route::get('/formulir/tamu', [PosSecurityController::class, 'formTamu'])->name('pos-security.formulir.tamu');
+        Route::get('/formulir/cek-kendaraan', [PosSecurityController::class, 'formCekKendaraan'])->name('pos-security.formulir.cek.kendaraan');
 
-        Route::get('/formulir/tamu', 'PosSecurity\Web\Form\TamuFormController@index')->name('pos-security.formulir.tamu');
+        Route::get('/absensi/visitor', [PosSecurityController::class, 'absensiVisitor'])->name('pos-security.absensi.visitor');
+        Route::get('/absensi/gate', [PosSecurityController::class, 'absensiGate'])->name('pos-security.absensi.gate');
+        Route::get('/absensi/display', [PosSecurityController::class, 'display'])->name('pos-security.absensi.display');
 
-        Route::get('/formulir/supplier', 'PosSecurityController@formSupplier')->name('pos-security.formulir.supplier');
+        Route::get('/dashboard', [PosSecurityController::class, 'dashboard'])->name('pos-security.dashboard');
 
-        Route::get('/absensi/display', 'PosSecurityController@display')->name('pos-security.absensi.display');
+        Route::get('/blacklist', [PosSecurityController::class, 'blacklist'])->name('pos-security.blacklist');
 
-        Route::get('/absensi/visitor', 'PosSecurityController@absensiVisitor')->name('pos-security.absensi.visitor');
+        Route::get('/kartu/kartu-aktif', [PosSecurityController::class, 'kartuAktif'])->name('pos-security.kartu-aktif');
+        Route::get('/kartu/kartu-aktif/detail/{nomor_kartu}', [PosSecurityController::class, 'kartuAktifDetail'])->name('pos-security.kartu-aktif.detail');
 
-        Route::get('/formulir/cek-kendaraan', 'PosSecurityController@formCekKendaraan')->name('pos-security.formulir.cek.kendaraan');
+        Route::get('/history/supplier', [PosSecurityController::class, 'historySupplier']);
+        Route::get('/history/tamu', [PosSecurityController::class, 'historyVendor']);
     });
 });

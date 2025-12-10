@@ -175,6 +175,7 @@ define('DOMPDF_FONT_HEIGHT_RATIO', 0.75);
                         </tr>
                     </tbody>
                 </table>
+
                 <div style="margin: 20px 0">
                     <table style="width: 258px; border-collapse: collapse; margin: 0 auto; border: 0 !important;">
                         <tbody>
@@ -382,47 +383,52 @@ define('DOMPDF_FONT_HEIGHT_RATIO', 0.75);
                             </tr>
                         </tbody>
                     </table>
-                    <div class="page_break">
-                        <table class="table table-bordered"
-                            style="width: 100%; border-collapse: collapse; font-size: 12px;">
-                            <tbody>
-                                <tr>
-                                    <td colspan="3"
-                                        style="text-align: center; font-weight: bold; border: 1px solid; padding: 0 !important; padding-left: 5px !important; padding-right: 5px !important; line-height: 16px;">
-                                        <p style="margin-top: 10px; margin-bottom: 10px;">DOKUMENTASI</p>
-                                    </td>
-                                </tr>
-                                @foreach ($item->dokumentasibais->sortBy('id') as $result)
+
+                    @if ($item->dokumentasibais && $item->dokumentasibais->count() > 0)
+                        <div class="page_break">
+                            <table class="table table-bordered"
+                                style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                                <tbody>
                                     <tr>
-                                        <td
-                                            style="font-size: 13px; text-align: center; border: 1px solid; padding: 0 !important; padding-left: 5px !important; padding-right: 5px !important; line-height: 16px;">
-                                            <p>{{ $loop->iteration }}.</p>
-                                        </td>
-                                        <td
-                                            style="font-size: 13px; border: 1px solid; padding: 0 !important; padding-left: 5px !important; padding-right: 5px !important; line-height: 16px;">
-                                            <div
-                                                style="display: flex; flex-direction: column; margin-bottom: 20px; margin-top: 35px; text-align: center; gap: 5px;">
-                                                @foreach (explode(',', $result->foto_introgasi) as $image)
-                                                    <img src="data:image/jpg;base64,{{ base64_encode(file_get_contents('./master_introgasi_gambar/' . $image)) }}"
-                                                        style="width: 200px; height: 150px; padding-right: 50px; padding-left: 50px;"><br><br>
-                                                @endforeach
-                                            </div>
-                                        </td>
-                                        <td
-                                            style="border: 1px solid; padding: 0 !important; padding-left: 5px !important; padding-right: 5px !important; line-height: 16px;">
-                                            <p style="font-size: 13px; margin-top: -100px; margin-left: 5px;">Keterangan
-                                                :<br>
-                                                <span>Dokumentasi {{ $result->keterangan_introgasi }}</span>
-                                            </p>
+                                        <td colspan="3"
+                                            style="text-align: center; font-weight: bold; border: 1px solid; padding: 0 !important; padding-left: 5px !important; padding-right: 5px !important; line-height: 16px;">
+                                            <p style="margin-top: 10px; margin-bottom: 10px;">DOKUMENTASI</p>
                                         </td>
                                     </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-                    <p
-                        style="margin-right: 5px; font-weight: bold; line-height: 10px; font-size: 12px; text-align:right;">
-                        FRM/HGA/04/000/016-02</p>
+                                    @foreach ($item->dokumentasibais->sortBy('id') as $result)
+                                        <tr>
+                                            <td
+                                                style="font-size: 13px; text-align: center; border: 1px solid; padding: 0 !important; padding-left: 5px !important; padding-right: 5px !important; line-height: 16px;">
+                                                <p>{{ $loop->iteration }}.</p>
+                                            </td>
+                                            <td
+                                                style="font-size: 13px; border: 1px solid; padding: 0 !important; padding-left: 5px !important; padding-right: 5px !important; line-height: 16px;">
+                                                <div
+                                                    style="display: flex; flex-direction: column; margin-bottom: 20px; margin-top: 35px; text-align: center; gap: 5px;">
+                                                    @foreach (explode(',', $result->foto_introgasi) as $image)
+                                                        <img src="data:image/jpg;base64,{{ base64_encode(file_get_contents('./master_introgasi_gambar/' . $image)) }}"
+                                                            style="width: 200px; height: auto; padding-right: 50px; padding-left: 50px;"><br><br>
+                                                    @endforeach
+                                                </div>
+                                            </td>
+                                            <td
+                                                style="border: 1px solid; padding: 0 !important; padding-left: 5px !important; padding-right: 5px !important; line-height: 16px;">
+                                                <p style="font-size: 13px; margin-top: -100px; margin-left: 5px;">
+                                                    Keterangan
+                                                    :<br>
+                                                    <span>Dokumentasi {{ $result->keterangan_introgasi }}</span>
+                                                </p>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                        <p
+                            style="margin-right: 5px; font-weight: bold; line-height: 10px; font-size: 12px; text-align:right;">
+                            FRM/HGA/04/000/016-02
+                        </p>
+                    @endif
 
                     {{-- Hasil Lama --}}
                     {{-- <p style="font-size: 13px; text-align: justify;">--------------- Demikian berita acara introgasi ini dibuat berdasarkan tugas dan tanggung jawab yang diterima saat ini, kemudian ditutup dam ditanda tangani pada, hari, tanggal, bulan dan tahun tersebut di atas. --------------------------------------</p>

@@ -32,7 +32,7 @@ define('DOMPDF_FONT_HEIGHT_RATIO', 0.75);
             font-size: 12px
         }
 
-        #kolomttd td {
+        #dokumentasiTable td {
             border: solid rgb(0, 0, 0) 1px !important;
             text-align: center;
         }
@@ -139,22 +139,23 @@ define('DOMPDF_FONT_HEIGHT_RATIO', 0.75);
                             style="margin-left: 20px;">Demikian berita acara ini saya buat dengan sebenar-benarnya dan
                             dapat dipertanggung jawabkan kepada pimpinan PT. Bumi Alam Segar</span></p>
                 </div>
-                <table id="kolomttd" class="table table-bordered"
-                    style="width: 100%; margin-top: 20px; page-break-inside: avoid;">
+                <table id="dokumentasiTable" class="table table-bordered"
+                    style="width: 100%; margin-top: 20px; page-break-inside: avoid; table-layout: fixed;">
                     <tbody>
                         <tr>
-                            <td style="text-align: center">Dokumentasi Kejadian</td>
-                            <td style="text-align: center">Dokumentasi Proses BAI</td>
+                            <td style="text-align: center; width: 50%;">Dokumentasi Kejadian</td>
+                            <td style="text-align: center; width: 50%;">Dokumentasi Proses BAI</td>
                         </tr>
                         <tr>
-                            <td style="text-align: center;">
+                            <td style="text-align: center; width: 50%;">
                                 <img src="data:image/jpg;base64,{{ base64_encode(file_get_contents('./baioneimage-halosecurity/' . $item->bai_oneimage)) }}"
-                                    style="width: 200px; height: auto; margin-top:5px;"><br><br>
+                                    style="max-width: 100%; max-height: 150px; object-fit: contain; margin-top:5px;"
+                                    alt="Dokumentasi Kejadian">
                             </td>
-                            <td style="text-align: center;">
-                                <img style="width: 200px; height: auto; margin-top:5px;"
+                            <td style="text-align: center; width: 50%;">
+                                <img style="max-width: 100%; max-height: 150px; object-fit: contain; margin-top:5px;"
                                     src="data:image/jpg;base64,{{ base64_encode(file_get_contents('./webcam-halosecurity/' . $item->image)) }}"
-                                    alt="Kop Surat">
+                                    alt="Gambar Dokumentasi Proses BAI">
                             </td>
                         </tr>
                     </tbody>

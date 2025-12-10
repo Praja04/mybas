@@ -30,6 +30,8 @@ class DeleteBaIntrogasi extends Mailable
      */
     public function build()
     {
-        return $this->subject('(Halo Security) Delete Berita Acara Introgasi')->view('mail.halo-security.delete-ba-introgasi');
+        return $this
+            ->subject('(Halo Security) - Terdapat Data Berita Acara Introgasi yang Dihapus')
+            ->view('mail.halo-security.delete-ba-introgasi');
     }
 }

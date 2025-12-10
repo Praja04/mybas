@@ -30,6 +30,8 @@ class DeleteLaporanKejadian extends Mailable
      */
     public function build()
     {
-        return $this->subject('(Halo Security) Delete Berita Acara Laporan Kejadian')->view('mail.halo-security.delete-laporan-kejadian');
+        return $this
+            ->subject('(Halo Security) Terdapat Data Berita Acara Laporan Kejadian yang Dihapus')
+            ->view('mail.halo-security.delete-laporan-kejadian');
     }
 }

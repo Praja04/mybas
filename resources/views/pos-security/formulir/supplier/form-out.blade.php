@@ -26,7 +26,7 @@
                                 <i class="bi bi-arrow-clockwise"></i> Refresh halaman
                             </button>
                         </div> --}}
-                        <div class="col-md-4">
+                        <div class="col-md-2">
                             <!-- Biar label ini sejajar dengan input di kolom lain -->
                             <label class="form-label d-none d-md-block">&nbsp;</label>
 
@@ -56,10 +56,10 @@
                     </h4>
 
                     <!-- Row Pertama -->
-                    <div class="row g-4 mb-4">
+                    <div class="row g-3 mb-4">
                         <!-- Informasi Pengunjung -->
-                        <div class="col-md-4">
-                            <div class="card border-0 shadow-sm rounded-4 h-100">
+                        <div class="col-md-3 col-6">
+                            <div class="card bg-light border-0 shadow-sm rounded-4 h-100">
                                 <div class="card-body">
                                     <h6 class="text-muted mb-3">
                                         <i class="fas fa-user me-2 text-primary"></i>Informasi Transporter
@@ -77,8 +77,8 @@
                         </div>
 
                         <!-- Status Kunjungan -->
-                        <div class="col-md-4">
-                            <div class="card border-0 shadow-sm rounded-4 h-100">
+                        <div class="col-md-3 col-6">
+                            <div class="card bg-light border-0 shadow-sm rounded-4 h-100">
                                 <div class="card-body">
                                     <h6 class="text-muted mb-3">
                                         <i class="fas fa-clock me-2 text-danger"></i>Status Kunjungan
@@ -98,22 +98,48 @@
                             </div>
                         </div>
 
+                        {{-- Status Cek Kendaraan --}}
+                        {{-- todo: ganti id&name --}}
+                        <div class="col-md-3 col-6">
+                            <div class="card bg-light border-0 shadow-sm rounded-4 h-100">
+                                <div class="card-body">
+                                    <h6 class="text-muted mb-3">
+                                        <i class="fas fa-clock text-danger"></i>Status Pengecekan Kendaraan
+                                    </h6>
+                                    <ul class="list-unstyled mb-0 small">
+                                        <li><strong>Nama Petugas:</strong> <span id="visitorGateIdOut">-</span></li>
+                                        <li><strong>Jenis Muatan:</strong> <span id="visitorGateLineIdOut">-</span></li>
+                                        <li><strong>Jenis Truk:</strong> <span id="visitorGateLineIdOut">-</span></li>
+                                        <li><strong>Jam Pengecekan Masuk:</strong> <span id="visitorTimeIn">-</span>
+                                            <span id="visitorTimeIn"></span>
+                                        </li>
+                                        <li><strong>Jam Pengecekan Keluar:</strong> <span id="visitorTimeOut">-</span>
+                                            <span id="visitorTimeOut"></span>
+                                        </li>
+                                        <li><strong>Status:</strong>
+                                            <span id="visitorCardStatus" class="badge bg-warning text-dark">-</span>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Foto KTP -->
-                        <div class="col-md-4">
-                            <div class="card border-0 shadow-sm rounded-4 h-100 text-center">
+                        <div class="col-md-3 col-6">
+                            <div class="card bg-light bg-light border-0 shadow-sm rounded-4 h-100 text-center">
                                 <div class="card-body">
                                     <h6 class="text-muted mb-3">
                                         <i class="fas fa-id-card me-2 text-success"></i>Foto KTP/SIM
                                     </h6>
                                     <img id="visitorKTPImage" src="" alt="Foto KTP"
-                                        class="img-fluid rounded shadow-sm" style="max-width: 200px;">
+                                        class="img-fluid rounded shadow-sm w-100">
                                 </div>
                             </div>
                         </div>
                     </div>
 
                     <!-- Row Kedua: Foto Selfie -->
-                    <div class="card border-0 shadow-sm rounded-4 mb-4">
+                    <div class="card bg-light border-0 shadow-sm rounded-4 mb-4">
                         <div class="card-body">
                             <h6 class="text-muted mb-3">
                                 <i class="fas fa-camera me-2 text-info"></i>Foto Selfie
@@ -134,8 +160,8 @@
                 </div>
 
                 <!-- Modal Preview Image -->
-                <div class="modal fade" id="imagePreviewModal" tabindex="-1" aria-labelledby="imagePreviewModalLabel"
-                    aria-hidden="true">
+                <div class="modal fade" id="imagePreviewModal" tabindex="-1"
+                    aria-labelledby="imagePreviewModalLabel" aria-hidden="true">
                     <div class="modal-dialog modal-dialog-centered modal-lg">
                         <div class="modal-content">
                             <div class="modal-body text-center p-0">

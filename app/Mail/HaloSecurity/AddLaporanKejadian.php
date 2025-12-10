@@ -32,6 +32,8 @@ class AddLaporanKejadian extends Mailable
      */
     public function build()
     {
-        return $this->subject('(Halo Security) New Berita Acara Laporan Kejadian')->view('mail.halo-security.add-laporan-kejadian');
+        return $this
+            ->subject('(Halo Security) Terdapat Data Baru - Berita Acara Laporan Kejadian')
+            ->view('mail.halo-security.add-laporan-kejadian');
     }
 }

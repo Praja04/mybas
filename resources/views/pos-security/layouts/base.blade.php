@@ -2,14 +2,14 @@
 
 $menus = [
     [
-        'label' => '',
+        'label' => 'Formulir',
         'menu' => [
-            [
-                'path' => '/',
-                'label' => 'Kembali ke MyBAS',
-                'icon' => 'mdi-arrow-left',
-                'submenu' => [],
-            ],
+            // [
+            //     'path' => '/',
+            //     'label' => 'Kembali ke MyBAS',
+            //     'icon' => 'mdi-arrow-left',
+            //     'submenu' => [],
+            // ],
             [
                 'path' => 'pos-security/formulir',
                 'label' => 'Formulir Security',
@@ -40,7 +40,7 @@ $menus = [
                 'submenu' => [],
             ],
             [
-                'path' => 'pos-security/absensi/security',
+                'path' => 'pos-security/absensi/gate',
                 'label' => 'Absensi Tapping Security',
                 'icon' => 'mdi-barcode-scan',
                 'submenu' => [],
@@ -57,31 +57,16 @@ $menus = [
         'label' => 'Riwayat',
         'menu' => [
             [
-                'path' => 'sidebarPortalSecureParking',
-                'label' => 'Portal Secure Parking',
-                'icon' => 'mdi-car-key',
-                'submenu' => [
-                    [
-                        'path' => 'pos-security/history/supplier/smu',
-                        'label' => 'Supplier',
-                    ],
-                    [
-                        'path' => 'pos-security/history/vendor/smu',
-                        'label' => 'Vendor/Tamu',
-                    ],
-                ],
-            ],
-            [
                 'path' => 'sidebarDaftarTamuBAS',
                 'label' => 'Daftar Tamu PT BAS',
                 'icon' => 'mdi-account-group-outline',
                 'submenu' => [
                     [
-                        'path' => 'pos-security/history/supplier/pas',
+                        'path' => 'pos-security/history/supplier',
                         'label' => 'Supplier',
                     ],
                     [
-                        'path' => 'pos-security/history/vendor/pas',
+                        'path' => 'pos-security/history/tamu',
                         'label' => 'Vendor/Tamu',
                     ],
                 ],
@@ -94,28 +79,28 @@ $menus = [
             ],
         ],
     ],
-    [
-        'label' => 'Report',
-        'menu' => [
-            [
-                'path' => 'sidebarKartu',
-                'label' => 'Kartu',
-                'icon' => 'mdi-card-account-details-outline',
-                'submenu' => [
-                    [
-                        'path' => 'pos-security/kartu-aktif',
-                        'label' => 'List Kartu Aktif',
-                    ],
-                ],
-            ],
-            [
-                'path' => 'pos-security/blacklist',
-                'label' => 'Blacklist Tamu',
-                'icon' => 'mdi-account-cancel-outline',
-                'submenu' => [],
-            ],
-        ],
-    ],
+    // [
+    //     'label' => 'Report',
+    //     'menu' => [
+    //         [
+    //             'path' => 'sidebarKartu',
+    //             'label' => 'Kartu',
+    //             'icon' => 'mdi-card-account-details-outline',
+    //             'submenu' => [
+    //                 [
+    //                     'path' => 'pos-security/kartu/kartu-aktif',
+    //                     'label' => 'List Kartu Aktif',
+    //                 ],
+    //             ],
+    //         ],
+    //         [
+    //             'path' => 'pos-security/blacklist',
+    //             'label' => 'Blacklist Tamu',
+    //             'icon' => 'mdi-account-cancel-outline',
+    //             'submenu' => [],
+    //         ],
+    //     ],
+    // ],
     [
         'label' => 'Bantuan',
         'menu' => [
@@ -147,7 +132,9 @@ $menus = [
     </x-slot>
 
     <x-slot name="scripts">
-        {{-- @include('pos-security.routes.ajax') --}}
+        @include('pos-security.routes.ajax')
+        @include('pos-security.routes.datatable')
+
         @stack('scripts')
     </x-slot>
 </x-templates.velzon-hs.base>
