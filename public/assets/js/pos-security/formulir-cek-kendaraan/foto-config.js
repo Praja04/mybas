@@ -15,6 +15,22 @@ window.fotoConfig = {
         "Kolong Belakang",
         "Temuan Barang Mencurigakan",
     ],
+    "LAINNYA LIQUID": [
+        "Kondisi Segel Atas",
+        "Kondisi Segel Samping",
+        "Kondisi Segel Belakang",
+        "Kondisi Kabin Dashboard",
+        "Kondisi Kabin Laci Dashboard",
+        "Kondisi Kabin Bawah Jok",
+        "Kondisi Kabin Belakang Jok",
+        "Kondisi Atap Kabin",
+        "Kolong Mobil Truck Sebelah Kanan",
+        "Kolong Mobil Truck Sebelah Kiri",
+        "Kolong Mobil Truck Belakang",
+        "Kotak Toolkit dan Dongkrak",
+        "Kolong Belakang",
+        "Temuan Barang Mencurigakan",
+    ],
     "BONGKAR MATERIAL": [
         "Kabin Depan Mobil",
         "Kondisi Dalam Bak Truck",
@@ -40,7 +56,7 @@ window.fotoConfig = {
         "Kondisi Dalam Kendaraan/Bak Kendaraan",
         "Temuan Barang Mencurigakan",
     ],
-    LAINNYA: [
+    "LAINNYA NONLIQUID": [
         "Surat Jalan/Pembelian Barang",
         "Kondisi Dalam Kendaraan/Bak Kendaraan",
         "Temuan Barang Mencurigakan",

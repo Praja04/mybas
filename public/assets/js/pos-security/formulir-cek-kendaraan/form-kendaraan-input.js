@@ -198,7 +198,7 @@ $(document).ready(function () {
                 text: "Truk Muat Gula Cair",
             },
             {
-                value: "LAINNYA",
+                value: "LAINNYA LIQUID",
                 text: "Lainnya",
             },
         ],
@@ -224,7 +224,7 @@ $(document).ready(function () {
                 text: "Mobil Pengangkut Sampah",
             },
             {
-                value: "LAINNYA",
+                value: "LAINNYA NONLIQUID",
                 text: "Lainnya",
             },
         ],
@@ -323,7 +323,7 @@ $(document).ready(function () {
         }, 150);
 
         // render other truck type field
-        if (value === "LAINNYA") {
+        if (value === "LAINNYA LIQUID" || value === "LAINNYA NONLIQUID") {
             $otherTruckContainer.slideDown();
             $otherTruckInput.prop("required", true);
         } else {
@@ -381,11 +381,6 @@ $("#searchVisitorData").on("click", function () {
             if (res.success) {
                 const data = res.data;
 
-                const namaKernet =
-                    data.nama_kernet && data.nama_kernet.trim() !== ""
-                        ? data.nama_kernet
-                        : "Tidak Ada Kernet";
-
                 // set tanggal & jam otomatis saat data ditemukan
                 const now = new Date();
                 const yyyy = now.getFullYear();
@@ -406,12 +401,13 @@ $("#searchVisitorData").on("click", function () {
 
                 // autofill
                 $("#nama-supir").val(data.namavisitor).prop("disabled", false);
-                $("#nama-kernet").val(namaKernet).prop("disabled", false);
                 $("#company").val(data.namacomp).prop("disabled", false);
                 $("#nomor-polisi").val(data.nopol).prop("disabled", false);
-                $("#createdby").val(data.createdby || "system");
+                $("#createdby").val("system");
                 $("#tgl_periksa").val(`${yyyy}-${mm}-${dd}`);
                 $("#jam_periksa").val(`${hh}:${min}`);
+                $("#trnvisitorid").val(data.trnvisitorid);
+                console.log(data.trnvisitorid);
             } else {
                 $("#cekKendaraanForm").hide();
 
