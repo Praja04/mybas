@@ -3,6 +3,7 @@
         <div class="col-lg-12">
             <div class="card p-5 shadow-sm form-container">
 
+                {{-- Header --}}
                 <div class="text-end mb-4 mt-3">
                     <h2 class="fw-bold text-primary">
                         <i class="fas fa-user-plus me-2"></i>
@@ -18,46 +19,25 @@
                     method="POST" enctype="multipart/form-data" id="vendorform">
                     @csrf
 
-                    <div class="d-flex flex-column flex-md-row gap-2 justify-content-start mb-4">
-                        <button type="button" class="btn btn-sm d-flex align-items-center gap-2 btn-outline-primary"
-                            onclick="location.reload()">
-                            <i class="mdi mdi-refresh"></i> Refresh halaman
-                        </button>
-
-                        <!-- Reset Button -->
-                        <button type="button"
-                            class="btn btn-outline-secondary px-4 py-2 d-flex align-items-center gap-2"
-                            onclick="resetForm()" id="resetBtn" data-bs-toggle="tooltip" data-bs-placement="top"
-                            title="Kosongkan semua isian dan foto">
-                            <i class="fas fa-rotate-left"></i>
-                            <span>Reset Form</span>
-                        </button>
-
-                        <!-- Submit Button -->
-                        <button type="submit" class="btn btn-primary px-4 py-2 d-flex align-items-center gap-2"
-                            id="submitBtn" data-bs-toggle="tooltip" data-bs-placement="top"
-                            title="Simpan data pengunjung ke sistem">
-                            <i class="fas fa-paper-plane"></i>
-                            <span>Simpan Data</span>
-                        </button>
-
-                    </div>
-
+                    {{-- Input Field --}}
                     <div class="row g-4">
                         <div class="col-lg-6">
                             <div class="mb-3">
-                                <label class="form-label fw-semibold">Nama Vendor / Tamu / Transporter</label>
+                                <label class="form-label fw-semibold">Nama Vendor / Tamu / Transporter <span
+                                        class="text-danger">*</span></label>
                                 <input type="text" name="namavisitor" class="form-control"
                                     placeholder="Contoh: John Doe" required>
                             </div>
                             <div class="mb-3">
-                                <label class="form-label fw-semibold">Nama Perusahaan / Instansi</label>
+                                <label class="form-label fw-semibold">Nama Perusahaan / Instansi <span
+                                        class="text-danger">*</span></label>
                                 <input type="text" name="namacomp" class="form-control"
                                     placeholder="Contoh: PT Maju Jaya" required>
                             </div>
 
                             <div class="mb-3">
-                                <label class="form-label fw-semibold">Tanggal Lahir</label>
+                                <label class="form-label fw-semibold">Tanggal Lahir <span
+                                        class="text-danger">*</span></label>
                                 <input type="text" class="form-control flatpickr-single" name="tgllahir"
                                     id="tglLahir" placeholder="Pilih tanggal lahir">
                             </div>
@@ -66,7 +46,7 @@
                                 <label class="form-label fw-semibold">Jenis Kunjungan ( Vendor / Tamu / Transporter)
                                     <span class="text-danger">*</span></label>
                                 <select class="form-select mb-3" name="jenis" id="jenisSelect" required>
-                                    <option value="">-- Pilih Jenis --</option>
+                                    <option value="" disabled selected>-- Pilih Jenis --</option>
                                     <option value="vendor">Vendor</option>
                                     <option value="tamu">Tamu</option>
                                     <option value="transporter">Transporter</option>
@@ -74,17 +54,16 @@
                             </div>
 
                             <div class="mb-3" id="purposeGroup" style="display: none;">
-                                <label class="form-label fw-semibold">Tujuan <span class="text-danger">*</span></label>
+                                <label class="form-label fw-semibold">Tujuan </label>
                                 <select class="form-select" name="purpose" id="purposeSelect" required>
-                                    <option value="">-- Pilih Tujuan --</option>
+                                    <option value="" disabled selected>-- Pilih Tujuan --</option>
                                     <option value="BONGKAR">BONGKAR</option>
                                     <option value="MUAT">MUAT</option>
                                 </select>
                             </div>
 
                             <div class="mb-3" id="nopolGroup" style="display: none;">
-                                <label class="form-label fw-semibold">Nomor Polisi <span
-                                        class="text-danger">*</span></label>
+                                <label class="form-label fw-semibold">Nomor Polisi </label>
                                 <input type="text" class="form-control" name="nopol" id="nopolInput"
                                     placeholder="Contoh: B 1234 CD">
                             </div>
@@ -96,28 +75,32 @@
                                     placeholder="Masukkan nomor identitas">
                             </div>
 
-                            <div class="mb-3">
-                                <label class="form-label fw-semibold">Jumlah Orang</label>
+                            <div class="mb-3" style="display: none;">
+                                <label class="form-label fw-semibold">Jumlah Orang <span
+                                        class="text-danger">*</span></label>
                                 <input type="number" name="sumpeople" class="form-control" value="1"
-                                    min="1" max="10" placeholder="Contoh: 1" required>
+                                    min="1" placeholder="Contoh: 1" required readonly>
                             </div>
 
                             <div class="mb-3">
-                                <label class="form-label fw-semibold">Keperluan</label>
+                                <label class="form-label fw-semibold">Keperluan <span
+                                        class="text-danger">*</span></label>
                                 <input type="text" name="keperluan" class="form-control"
                                     placeholder="Contoh: Meeting, Pengiriman Barang">
                             </div>
 
                             <div class="mb-3">
-                                <label class="form-label fw-semibold">Nama PIC</label>
+                                <label class="form-label fw-semibold">Nama PIC <span
+                                        class="text-danger">*</span></label>
                                 <input type="text" name="host" class="form-control"
                                     placeholder="Contoh: Budi Santoso">
                             </div>
 
                             <div class="mb-3">
-                                <label class="form-label fw-semibold">Departemen</label>
+                                <label class="form-label fw-semibold">Departemen <span
+                                        class="text-danger">*</span></label>
                                 <select name="hostdeptid" class="form-select assign-departement-ga w-100">
-                                    <option value="">-- Pilih Departemen --</option>
+                                    <option value="" disabled selected>-- Pilih Departemen --</option>
                                     @foreach ($departments as $dept)
                                         <option value="{{ $dept->id }}">{{ $dept->name }}</option>
                                     @endforeach
@@ -126,7 +109,8 @@
                             </div>
 
                             <div class="mb-3">
-                                <label class="form-label fw-semibold">Nomor Kartu ID</label>
+                                <label class="form-label fw-semibold">Nomor Kartu ID <span
+                                        class="text-danger">*</span></label>
                                 <input type="text" class="form-control" name="rfid" required
                                     placeholder="Scan atau masukkan nomor kartu RFID">
                                 <small class="text-muted d-block mt-1">
@@ -161,7 +145,7 @@
                                 {{-- FOTO DIRI --}}
                                 <div class="col-md-6 col-12 d-flex flex-column align-items-center mb-4">
                                     <label class="form-label fw-semibold mb-2 text-center">Foto Diri (bisa lebih dari
-                                        1)</label>
+                                        1) <span class="text-danger">*</span></label>
 
                                     {{-- Preview Gallery --}}
                                     <div id="selfiePreview"
@@ -249,6 +233,35 @@
                             </div>
                         </div>
                     </div>
+
+                    {{-- Button --}}
+                    <div class="d-flex flex-column flex-md-row gap-2 justify-content-start mb-4">
+                        <button type="button"
+                            class="btn btn-outline-primary px-4 py-2 d-flex align-items-center gap-2"
+                            onclick="location.reload()">
+                            <i class="mdi mdi-refresh"></i>
+                            <span>Refresh Halaman</span>
+                        </button>
+
+                        <!-- Reset Button -->
+                        <button type="button"
+                            class="btn btn-outline-secondary px-4 py-2 d-flex align-items-center gap-2"
+                            onclick="resetForm()" id="resetBtn" data-bs-toggle="tooltip" data-bs-placement="top"
+                            title="Kosongkan semua isian dan foto">
+                            <i class="mdi mdi-eraser"></i>
+                            <span>Reset Form</span>
+                        </button>
+
+                        <!-- Submit Button -->
+                        <button type="submit" class="btn btn-primary px-4 py-2 d-flex align-items-center gap-2"
+                            id="submitBtn" data-bs-toggle="tooltip" data-bs-placement="top"
+                            title="Simpan data pengunjung ke sistem">
+                            <i class="mdi mdi-content-save"></i>
+                            <span>Simpan Data</span>
+                        </button>
+
+                    </div>
+
                 </form>
             </div>
         </div>
