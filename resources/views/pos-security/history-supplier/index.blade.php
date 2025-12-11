@@ -1,5 +1,7 @@
 @extends('pos-security.layouts.base')
 
+@section('title', 'Riwayat Supplier')
+
 @section('content')
     <div class="container-fluid">
         {{-- @include('pos-security.history-supplier.components.filter-supplier') --}}

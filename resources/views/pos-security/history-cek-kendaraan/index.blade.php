@@ -1,5 +1,7 @@
 @extends('pos-security.layouts.base')
 
+@section('title', 'Riwayat Pengecekan Kendaraan')
+
 @section('content')
     <div class="container-fluid">
         @include('pos-security.history-cek-kendaraan.components.modal-detail')

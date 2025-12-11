@@ -1,5 +1,7 @@
 @extends('pos-security.layouts.base')
 
+@section('title', 'Data Security')
+
 @section('content')
     {{-- TABLE --}}
     <div class="container-fluid">

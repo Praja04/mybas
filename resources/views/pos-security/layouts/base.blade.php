@@ -108,17 +108,17 @@ $menus = [
     //         ],
     //     ],
     // ],
-    [
-        'label' => 'Bantuan',
-        'menu' => [
-            [
-                'path' => 'sidebarBantuan',
-                'label' => 'Bantuan',
-                'icon' => 'mdi-help-circle-outline',
-                'submenu' => [],
-            ],
-        ],
-    ],
+    // [
+    //     'label' => 'Bantuan',
+    //     'menu' => [
+    //         [
+    //             'path' => 'sidebarBantuan',
+    //             'label' => 'Bantuan',
+    //             'icon' => 'mdi-help-circle-outline',
+    //             'submenu' => [],
+    //         ],
+    //     ],
+    // ],
 ];
 
 ?>

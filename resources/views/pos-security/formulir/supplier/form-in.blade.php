@@ -36,7 +36,7 @@
                             </div>
 
                             <div class="mb-3">
-                                <label class="form-label fw-semibold" for="keterangan">Keterangan Pengunjung<span
+                                <label class="form-label fw-semibold" for="keterangan">Keterangan Pengunjung <span
                                         class="text-danger">*</span></label>
                                 {{-- <input type="text" class="form-control" name="namakernet" id="nama-kernet"
                                     placeholder="Opsional, jika ada"> --}}

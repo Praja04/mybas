@@ -1,5 +1,7 @@
 @extends('pos-security.layouts.base')
 
+@section('title', 'Absensi Tapping Security')
+
 @section('content')
     <div class="container-fluid">
 
