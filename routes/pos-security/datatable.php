@@ -8,6 +8,7 @@ use App\Http\Controllers\PosSecurity\Datatable\History\HistorySupplierDatatable;
 use App\Http\Controllers\PosSecurity\Datatable\History\HistoryVendorDatatable;
 use App\Http\Controllers\PosSecurity\Datatable\KartuAktif\KartuAktifDatatable;
 use App\Http\Controllers\PosSecurity\Datatable\KartuAktif\KartuAktifDetailDatatable;
+use App\Http\Controllers\PosSecurity\Datatable\Security\SecurityDatatable;
 use Illuminate\Support\Facades\Route;
 
 // Route::group(['middleware' => ['secure.auth', 'secure.auth.rules', 'access_log']], function () {
@@ -51,6 +52,13 @@ Route::prefix('kartu')->group(function () {
         ->name("datatable.pos-security.kartu-aktif.index");
     Route::get('/kartu-aktif/detail', [KartuAktifDetailDatatable::class, 'index'])
         ->name("datatable.pos-security.kartu-aktif.detail.index");
+});
+
+Route::prefix('master')->group(function () {
+    Route::prefix('security')->group(function () {
+        Route::get('/', [SecurityDatatable::class, 'index'])
+            ->name("datatable.pos-security.master.security.index");
+    });
 });
 // });
 // });

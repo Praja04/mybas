@@ -6,6 +6,7 @@ use App\Http\Controllers\PosSecurity\Ajax\Dashboard\DashboardAjax;
 use App\Http\Controllers\PosSecurity\Ajax\Formulir\CekKendaraanFormAjax;
 use App\Http\Controllers\PosSecurity\Ajax\Formulir\SupplierFormAjax;
 use App\Http\Controllers\PosSecurity\Ajax\Formulir\TamuFormAjax;
+use App\Http\Controllers\PosSecurity\Ajax\Security\SecurityFormAjax;
 use Illuminate\Support\Facades\Route;
 
 // transaksi vendor / tamu
@@ -31,6 +32,16 @@ Route::get('/blacklist/show', [BlacklistAjax::class, 'show'])->name('ajax.pos-se
 
 Route::post('/dashboard/filter', [DashboardAjax::class, 'filter'])->name('ajax.pos-security.dashboard.filter');
 Route::post('/dashboard/statistik', [DashboardAjax::class, 'statistikPerusahaanDepartemen'])->name('ajax.pos-security.dashboard.statistik');
+
+Route::prefix('master')->group(function () {
+    Route::prefix('security')->group(function () {
+        Route::post('/', [SecurityFormAjax::class, 'store'])->name("ajax.pos-security.master.security.store");
+        Route::get('/edit/{id}', [SecurityFormAjax::class, 'edit'])->name('ajax.pos-security.master.security.edit');
+        Route::put('/update/{id}', [SecurityFormAjax::class, 'update'])->name('ajax.pos-security.master.security.update');
+        Route::delete('/delete/{id}', [SecurityFormAjax::class, 'delete'])->name('ajax.pos-security.master.security.delete');
+    });
+});
+
 
 // Route::group(['middleware' => ['secure.auth', 'secure.auth.rules', 'access_log']], function () {
 //   Route::prefix('ajax')->group(function () {

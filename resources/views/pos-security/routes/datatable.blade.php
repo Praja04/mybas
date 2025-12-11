@@ -10,6 +10,8 @@
 
     var API_DATATABLE_ABSENSI_LOGS = "{{ route('datatable.pos-security.absensi.log.index') }}";
     var API_DATATABLE_ABSENSI_LOG_GATE = "{{ route('datatable.pos-security.absensi.log.gate.index') }}";
+
+    var API_DATATABLE_SECURITY = "{{ route('datatable.pos-security.master.security.index') }}";
 </script>
 
 {{-- <script>

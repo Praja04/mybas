@@ -66,7 +66,6 @@ class PosSecurityController extends Controller
 
     public function historySupplier()
     {
-        // return view("ga.module.sistem-tracking.pages.history.supplier-pas");
         return view("pos-security.history-supplier.index");
     }
 
@@ -80,13 +79,8 @@ class PosSecurityController extends Controller
         return view("pos-security.history-cek-kendaraan.index");
     }
 
-    // public function supplier_smu()
-    // {
-    //     return view("ga.module.sistem-tracking.pages.history.supplier-smu");
-    // }
-
-    // public function vendor_smu()
-    // {
-    //     return view("ga.module.sistem-tracking.pages.history.vendor-smu");
-    // }
+    public function dataSecurity()
+    {
+        return view("pos-security.master.security.index");
+    }
 }

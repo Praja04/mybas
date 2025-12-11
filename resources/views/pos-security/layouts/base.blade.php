@@ -22,6 +22,13 @@ $menus = [
                 'icon' => 'mdi-camera-rear',
                 'submenu' => [],
             ],
+            // GA only
+            [
+                'path' => 'pos-security/master/security',
+                'label' => 'Data Security',
+                'icon' => 'mdi-human-male',
+                'submenu' => [],
+            ],
         ],
     ],
     [
