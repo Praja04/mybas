@@ -165,6 +165,20 @@ class TamuFormAjax extends Controller
         // ]);
 
         if ($visitor) {
+            // Cek apakah sudah cek kendaraan jika jenis kunjungannya transporter kecil
+            if (!empty($visitor->nopol)) {
+
+                $cekKendaraan = DB::table('ga_cek_kendaraan')
+                    ->where('trnvisitorid', $visitor->trnvisitorid)
+                    ->first();
+
+                if (!$cekKendaraan) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Tamu ini menggunakan kendaraan dan belum melakukan pengecekan kendaraan.'
+                    ]);
+                }
+            }
             // Cek apakah sudah keluar
             if (!is_null($visitor->dateout)) {
                 // Format tanggal & waktu jadi format yang lebih ramah user
