@@ -79,10 +79,6 @@ $(document).ready(function () {
             error: function (xhr) {
                 let message = "Terjadi kesalahan. Silakan coba lagi.";
 
-                if (xhr.responseJSON && xhr.responseJSON.message) {
-                    message = xhr.responseJSON.message;
-                }
-
                 Swal.fire({
                     icon: "error",
                     title: "Gagal!",

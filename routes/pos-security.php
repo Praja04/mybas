@@ -24,5 +24,12 @@ Route::prefix('pos-security')->group(function () {
 
         Route::get('/history/supplier', [PosSecurityController::class, 'historySupplier']);
         Route::get('/history/tamu', [PosSecurityController::class, 'historyVendor']);
+        Route::get('/history/kendaraan', [PosSecurityController::class, 'historyCekKendaraan']);
+
+        Route::prefix('master')->group(function () {
+            Route::prefix('security')->group(function () {
+                Route::get('/', [PosSecurityController::class, 'dataSecurity']);
+            });
+        });
     });
 });

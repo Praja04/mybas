@@ -50,7 +50,7 @@ function searchVisitorData(keyword) {
                 $("#visitorDateIn").text(data.datein || "-");
                 $("#visitorTimeIn").text(data.timein || "-");
                 $("#visitorDateOut").text(data.dateout || "-");
-                $("#visitorTimeOut").text(data.timeout || "-");
+                $("#visitorTimeOut").text(data.timeout || "");
 
                 // Status kartu
                 let statusKartu = "-";

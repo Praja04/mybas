@@ -6,11 +6,17 @@
     var API_FORM_SEARCH_SUPPLIER = '{{ route('ajax.pos-security.visitor-transaksi.search') }}';
 
     var API_FORM_SEARCH_KENDARAAN = '{{ route('ajax.pos-security.cek-kendaraan.search') }}';
+    var API_CEK_KENDARAAN_SHOW = '{{ route('ajax.pos-security.cek-kendaraan.show') }}';
 
     var API_BLACKLIST_SHOW = '{{ route('ajax.pos-security.blacklist.show') }}';
 
     var API_DASHBOARD_FILTER = '{{ route('ajax.pos-security.dashboard.filter') }}';
     var API_DASHBOARD_FILTER_STATISTIK = '{{ route('ajax.pos-security.dashboard.statistik') }}';
+
+    var API_FORM_CREATE_SECURITY = '{{ route('ajax.pos-security.master.security.store') }}';
+    var API_FORM_DELETE_SECURITY = '{{ route('ajax.pos-security.master.security.delete', ':id') }}';
+    var API_FORM_EDIT_SECURITY = '{{ route('ajax.pos-security.master.security.edit', ':id') }}';
+    var API_FORM_UPDATE_SECURITY = '{{ route('ajax.pos-security.master.security.update', ':id') }}';
 </script>
 
 {{-- <script>

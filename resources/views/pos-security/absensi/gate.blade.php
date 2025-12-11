@@ -3,7 +3,7 @@
 @section('content')
     <div class="container-fluid">
 
-        @include('pos-security.absensi.components.filter')
+        {{-- @include('pos-security.absensi.components.filter') --}}
 
         <!-- Modal -->
         <div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
@@ -57,10 +57,10 @@
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <div>
-                            <h5 class="card-title mb-0">Record Log Akses Tamu oleh Security (POS 1 & POS 2)</h5>
+                            <h5 class="card-title mb-0">Record Tapping Tamu oleh Security</h5>
                         </div>
                         <button type="button" class="btn btn-sm btn-outline-primary" onclick="hotReload()">
-                            <i class="bi bi-arrow-clockwise"></i> Refresh
+                            <i class="mdi mdi-refresh"></i> Refresh
                         </button>
                     </div>
                     <div class="card-body">

@@ -1,6 +1,7 @@
 <script>
     var API_DATATABLE_HISTORY_SUPPLIER = "{{ route('datatable.pos-security.history.visitor.supplier') }}";
     var API_DATATABLE_HISTORY_VENDOR = "{{ route('datatable.pos-security.history.visitor.vendor') }}";
+    var API_DATATABLE_HISTORY_KENDARAAN = "{{ route('datatable.pos-security.history.visitor.kendaraan') }}";
 
     var API_DATATABLE_BLACKLIST_SUPPLIER = "{{ route('datatable.pos-security.blacklist.supplier.pas') }}";
 
@@ -9,6 +10,8 @@
 
     var API_DATATABLE_ABSENSI_LOGS = "{{ route('datatable.pos-security.absensi.log.index') }}";
     var API_DATATABLE_ABSENSI_LOG_GATE = "{{ route('datatable.pos-security.absensi.log.gate.index') }}";
+
+    var API_DATATABLE_SECURITY = "{{ route('datatable.pos-security.master.security.index') }}";
 </script>
 
 {{-- <script>

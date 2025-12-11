@@ -24,42 +24,27 @@
                     @csrf
                     <input type="hidden" name="createdby" id="createdby">
 
-                    <div class="d-flex flex-column flex-md-row gap-2 justify-content-start mb-4">
-                        <button type="button" class="btn btn-sm d-flex align-items-center gap-2 btn-outline-primary"
-                            onclick="location.reload()">
-                            <i class="mdi mdi-refresh"></i> Refresh halaman
-                        </button>
-                        <!-- Reset Button -->
-                        <button type="button"
-                            class="btn btn-outline-secondary px-4 py-2 d-flex align-items-center gap-2"
-                            onclick="resetForm()" id="resetBtn" data-bs-toggle="tooltip" data-bs-placement="top"
-                            title="Kosongkan semua isian dan foto">
-                            <i class="fas fa-rotate-left"></i>
-                            <span>Reset Form</span>
-                        </button>
-
-                        <!-- Submit Button -->
-                        <button type="submit" class="btn btn-primary px-4 py-2 d-flex align-items-center gap-2"
-                            id="submitBtn" data-bs-toggle="tooltip" data-bs-placement="top"
-                            title="Simpan data pengunjung ke sistem">
-                            <i class="fas fa-paper-plane"></i>
-                            <span>Simpan Data</span>
-                        </button>
-                    </div>
-
+                    {{-- Input Field --}}
                     <div class="row">
                         <div class="col-lg-6">
+
                             <div class="mb-3">
-                                <label class="form-label fw-semibold" for="namavisitor">Nama Supir <span
+                                <label class="form-label fw-semibold" for="namavisitor">Nama Supir / Kernet <span
                                         class="text-danger">*</span></label>
                                 <input type="text" class="form-control" name="namavisitor" id="namavisitor" required
-                                    placeholder="Masukkan nama visitor">
+                                    placeholder="Masukkan nama supir">
                             </div>
 
                             <div class="mb-3">
-                                <label class="form-label fw-semibold" for="nama-kernet">Nama Kernet (Opsional)</label>
-                                <input type="text" class="form-control" name="namakernet" id="nama-kernet"
-                                    placeholder="Opsional, jika ada">
+                                <label class="form-label fw-semibold" for="keterangan">Keterangan Pengunjung<span
+                                        class="text-danger">*</span></label>
+                                {{-- <input type="text" class="form-control" name="namakernet" id="nama-kernet"
+                                    placeholder="Opsional, jika ada"> --}}
+                                <select name="keterangan" id="keterangan" class="form-select" required>
+                                    <option value="" selected disabled> -- Pilih Keterangan --</option>
+                                    <option value="supir">Supir</option>
+                                    <option value="kernet">Kernet</option>
+                                </select>
                             </div>
 
                             <div class="mb-3">
@@ -77,9 +62,10 @@
                             </div>
 
                             <div class="mb-3">
-                                <label class="form-label fw-semibold" for="tglLahir">Tanggal Lahir</label>
+                                <label class="form-label fw-semibold" for="tglLahir">Tanggal Lahir <span
+                                        class="text-danger">*</span></label>
                                 <input type="text" class="form-control flatpickr-single" name="tgllahir"
-                                    id="tglLahir" placeholder="Pilih tanggal lahir">
+                                    id="tglLahir" placeholder="Pilih tanggal lahir" required>
                             </div>
 
                             <div class="mb-3">
@@ -98,18 +84,18 @@
                                     placeholder="Contoh: B 1234 CD">
                             </div>
 
-                            <div class="mb-3">
-                                <label class="form-label fw-semibold" for="sumpeople">Jumlah Orang (Maks. 2) <span
+                            <div class="mb-3" style="display: none;">
+                                <label class="form-label fw-semibold" for="sumpeople">Jumlah Orang <span
                                         class="text-danger">*</span></label>
                                 <input type="number" class="form-control" id="sumpeople" name="sumpeople"
-                                    min="1" max="2" value="1"
-                                    placeholder="Jumlah orang dalam kendaraan" required>
+                                    value="1" readonly placeholder="Jumlah orang dalam kendaraan" required>
                             </div>
 
                             <div class="mb-3">
-                                <label class="form-label fw-semibold" for="nohpdriver">No HP Driver</label>
+                                <label class="form-label fw-semibold" for="nohpdriver">Nomor HP <span
+                                        class="text-danger">*</span></label>
                                 <input type="text" class="form-control" id=nohpdriver name="nohpdriver"
-                                    placeholder="Contoh: 081234567890">
+                                    placeholder="Contoh: 081234567890" required>
                             </div>
 
                             <div class="mb-3">
@@ -146,8 +132,7 @@
                                 {{-- FOTO DIRI --}}
                                 <div class="col-md-6 col-12 d-flex flex-column align-items-center mb-4">
                                     <label class="form-label fw-semibold mb-2 text-center">Foto Diri (bisa lebih dari
-                                        1)</label>
-
+                                        1) <span class="text-danger">*</span></label>
                                     {{-- Preview Gallery --}}
                                     <div id="selfiePreview"
                                         class="d-flex flex-wrap gap-2 justify-content-center align-items-start mb-2"
@@ -230,8 +215,33 @@
                                 </div>
                             </div>
                         </div>
-
                     </div>
+
+                    {{-- Button --}}
+                    <div class="d-flex flex-column flex-md-row gap-2 justify-content-start mb-4">
+                        <button type="button"
+                            class="btn btn-outline-primary px-4 py-2 d-flex align-items-center gap-2"
+                            onclick="location.reload()">
+                            <i class="mdi mdi-refresh"></i>
+                            <span>Refresh Halaman</span>
+                        </button>
+
+                        <button type="button"
+                            class="btn btn-outline-secondary px-4 py-2 d-flex align-items-center gap-2"
+                            onclick="resetForm()" id="resetBtn" data-bs-toggle="tooltip" data-bs-placement="top"
+                            title="Kosongkan semua isian dan foto">
+                            <i class="mdi mdi-eraser"></i>
+                            <span>Reset Form</span>
+                        </button>
+
+                        <button type="submit" class="btn btn-primary px-4 py-2 d-flex align-items-center gap-2"
+                            id="submitBtn" data-bs-toggle="tooltip" data-bs-placement="top"
+                            title="Simpan data pengunjung ke sistem">
+                            <i class="mdi mdi-content-save"></i>
+                            <span>Simpan Data</span>
+                        </button>
+                    </div>
+
                 </form>
             </div>
         </div>

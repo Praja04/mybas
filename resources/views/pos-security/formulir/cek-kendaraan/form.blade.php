@@ -7,7 +7,7 @@
                 {{-- Header --}}
                 <div class="mb-4">
                     <h2 class="fw-bold text-primary">
-                        Form Pengecekan Kendaraan (Masuk)
+                        Form Pengecekan Kendaraan
                     </h2>
 
                     <p class="text-muted mb-0">Silakan isi data kendaraan yang akan masuk ke area PT Bumi Alam Segar
@@ -38,7 +38,7 @@
                             <div class="d-grid gap-2 d-md-flex justify-content-md-between">
                                 <button type="button" class="btn btn-primary w-100 w-md-auto" id="searchVisitorData"
                                     data-bs-toggle="tooltip" data-bs-placement="top"
-                                    title="Cari data pengunjung berdasarkan ID atau Nomor Kartu">
+                                    title="Cari data kendaraan berdasarkan nomor polisi kendaraan">
                                     <i class="mdi mdi-account-search"></i>
                                     Cari
                                 </button>
@@ -62,31 +62,7 @@
                     @csrf
                     {{-- <input type="hidden" name="createdby" id="createdby"> --}}
 
-                    <div class="d-flex flex-column flex-md-row gap-2 justify-content-start mb-4">
-
-                        {{-- <button type="button" class="btn btn-outline-primary px-4 py-2 d-flex align-items-center gap-2"
-                            onclick="location.reload()">
-                            <i class="mdi mdi-refresh"></i>
-                            <span>Refresh Halaman</span>
-                        </button> --}}
-
-                        <button type="button"
-                            class="btn btn-outline-secondary px-4 py-2 d-flex align-items-center gap-2"
-                            onclick="resetFormButton()" id="resetBtn" data-bs-toggle="tooltip" data-bs-placement="top"
-                            title="Kosongkan semua isian dan foto">
-                            <i class="mdi mdi-eraser"></i>
-                            <span>Reset Form</span>
-                        </button>
-
-                        <!-- Submit Button -->
-                        <button type="submit" class="btn btn-primary px-4 py-2 d-flex align-items-center gap-2"
-                            id="submitBtn" data-bs-toggle="tooltip" data-bs-placement="top"
-                            title="Simpan data pengunjung ke sistem">
-                            <i class="mdi mdi-content-save"></i>
-                            <span>Simpan Data</span>
-                        </button>
-
-                    </div>
+                    <input type="hidden" name="trnvisitorid" id="trnvisitorid">
 
                     {{-- Input --}}
                     <div class="row mt-4">
@@ -104,11 +80,11 @@
                                     required placeholder="Nama supir" readonly>
                             </div>
 
-                            <div class="mb-3">
-                                <label class="form-label fw-semibold" for="nama-kernet">Nama Kernet (Jika Ada)</label>
+                            {{-- <div class="mb-3">
+                                <label class="form-label fw-semibold" for="nama-kernet">Nama Kernet (Jika ada)</label>
                                 <input type="text" class="form-control bg-light" name="nama_kernet" id="nama-kernet"
                                     required placeholder="Nama kernet" readonly>
-                            </div>
+                            </div> --}}
 
                             <div class="mb-3">
                                 <label class="form-label fw-semibold" for="company">Nama Perusahaan <span
@@ -127,15 +103,15 @@
                             <div class="mb-3">
                                 <label class="form-label fw-semibold" for="tgl_periksa">Tanggal Pemeriksaan
                                     <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control bg-light" name="tgl_periksa"
-                                    id="tgl_periksa" placeholder="yyyy-mm-dd" readonly>
+                                <input type="text" class="form-control bg-light" name="tgl_periksa" id="tgl_periksa"
+                                    placeholder="yyyy-mm-dd" readonly>
                             </div>
 
                             <div class="mb-3">
                                 <label class="form-label fw-semibold" for="jam_periksa">Jam Pemeriksaan <span
                                         class="text-danger">*</span></label>
-                                <input type="time" class="form-control bg-light" name="jam_periksa"
-                                    id="jam_periksa" placeholder="HH:MM" readonly>
+                                <input type="time" class="form-control bg-light" name="jam_periksa" id="jam_periksa"
+                                    placeholder="HH:MM" readonly>
                             </div>
                         </div>
 
@@ -186,6 +162,34 @@
                     <div class="row">
                         <div id="fotoSection" class="row mt-3"></div>
                     </div>
+
+                    {{-- Button --}}
+                    <div class="d-flex flex-column flex-md-row gap-2 justify-content-start mb-4">
+
+                        {{-- <button type="button" class="btn btn-outline-primary px-4 py-2 d-flex align-items-center gap-2"
+                            onclick="location.reload()">
+                            <i class="mdi mdi-refresh"></i>
+                            <span>Refresh Halaman</span>
+                        </button> --}}
+
+                        <button type="button"
+                            class="btn btn-outline-secondary px-4 py-2 d-flex align-items-center gap-2"
+                            onclick="resetFormButton()" id="resetBtn" data-bs-toggle="tooltip"
+                            data-bs-placement="top" title="Kosongkan semua isian dan foto">
+                            <i class="mdi mdi-eraser"></i>
+                            <span>Reset Form</span>
+                        </button>
+
+                        <!-- Submit Button -->
+                        <button type="submit" class="btn btn-primary px-4 py-2 d-flex align-items-center gap-2"
+                            id="submitBtn" data-bs-toggle="tooltip" data-bs-placement="top"
+                            title="Simpan data pengecekan ke sistem">
+                            <i class="mdi mdi-content-save"></i>
+                            <span>Simpan Data</span>
+                        </button>
+
+                    </div>
+
                 </form>
             </div>
         </div>

@@ -33,16 +33,17 @@
 
                             <div class="d-grid gap-2 d-md-flex justify-content-md-between">
                                 <!-- Tombol Cari Data Pengunjung -->
-                                <button type="button" class="btn btn-outline-primary w-100 w-md-auto"
-                                    id="searchVisitorData" data-bs-toggle="tooltip" data-bs-placement="top"
+                                <button type="button" class="btn btn-primary w-100 w-md-auto" id="searchVisitorData"
+                                    data-bs-toggle="tooltip" data-bs-placement="top"
                                     title="Cari data pengunjung berdasarkan ID atau Nomor Kartu">
-                                    <i class="fas fa-search me-2"></i> Cari Data Pengunjung
+                                    <i class="mdi mdi-account-search"></i>
+                                    Cari Data Pengunjung
                                 </button>
 
                                 <!-- Tombol Refresh -->
                                 <button type="button" class="btn btn-outline-primary w-100 w-md-auto"
                                     onclick="hotReload()">
-                                    <i class="bi bi-arrow-clockwise"></i> Refresh halaman
+                                    <i class="mdi mdi-refresh"></i> Refresh halaman
                                 </button>
                             </div>
                         </div>
@@ -59,49 +60,48 @@
                     <!-- Row Pertama -->
                     <div class="row g-3 mb-4">
                         <!-- Informasi Pengunjung -->
-                        <div class="col-lg-3 col-6">
+                        <div class="col-lg-4 col-6">
                             <div class="card bg-light border-0 shadow-sm rounded-4 h-100">
                                 <div class="card-body">
                                     <h6 class="text-muted mb-3">
-                                        <i class="fas fa-user text-primary"></i>Informasi Transporter
+                                        <i class="fas fa-user text-primary"></i>Informasi Tamu
                                     </h6>
                                     <ul class="list-unstyled mb-0 small">
-                                        <li><strong>Nama:</strong> <span id="visitorName">-</span></li>
-                                        <li><strong>Perusahaan:</strong> <span id="visitorCompany">-</span></li>
-                                        <li><strong>No Kartu:</strong> <span id="visitorCard">-</span></li>
-                                        <li><strong>No KTP/SIM:</strong> <span id="visitorKTP">-</span></li>
-                                        <li><strong>No Polisi:</strong> <span id="visitorNopol">-</span></li>
-                                        <li><strong>Jumlah Orang:</strong> <span id="visitorSumPeople">-</span></li>
+                                        <li><strong>Nama:</strong> <span id="visitorName"></span></li>
+                                        <li><strong>Perusahaan:</strong> <span id="visitorCompany"></span></li>
+                                        <li><strong>No Kartu:</strong> <span id="visitorCard"></span></li>
+                                        <li><strong>No KTP/SIM:</strong> <span id="visitorKTP"></span></li>
+                                        <li><strong>No Polisi:</strong> <span id="visitorNopol"></span></li>
+                                        <li><strong>Jumlah Orang:</strong> <span id="visitorSumPeople"></span></li>
                                     </ul>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Status Kunjungan -->
-                        <div class="col-lg-3 col-6">
+                        <div class="col-lg-4 col-6">
                             <div class="card bg-light border-0 shadow-sm rounded-4 h-100">
                                 <div class="card-body">
                                     <h6 class="text-muted mb-3">
                                         <i class="fas fa-clock text-danger"></i>Status Kunjungan
                                     </h6>
                                     <ul class="list-unstyled mb-0 small">
-                                        <li><strong>Masuk:</strong> <span id="visitorDateIn">-</span> <span
+                                        <li><strong>Masuk:</strong> <span id="visitorDateIn"></span> <span
                                                 id="visitorTimeIn"></span></li>
-                                        <li><strong>Keluar:</strong> <span id="visitorDateOut">-</span> <span
+                                        <li><strong>Keluar:</strong> <span id="visitorDateOut"></span> <span
                                                 id="visitorTimeOut"></span></li>
                                         <li><strong>Status Kartu:</strong>
-                                            <span id="visitorCardStatus" class="badge bg-warning text-dark">-</span>
+                                            <span id="visitorCardStatus" class="badge bg-warning text-dark"></span>
                                         </li>
-                                        <li><strong>Gate ID:</strong> <span id="visitorGateIdOut">-</span></li>
-                                        <li><strong>Gate Line:</strong> <span id="visitorGateLineIdOut">-</span></li>
+                                        <li><strong>Gate ID:</strong> <span id="visitorGateIdOut"></span></li>
+                                        <li><strong>Gate Line:</strong> <span id="visitorGateLineIdOut"></span></li>
                                     </ul>
                                 </div>
                             </div>
                         </div>
 
                         {{-- Status Cek Kendaraan --}}
-                        {{-- todo: change id&name, conditional rendering --}}
-                        <div class="col-lg-3 col-6">
+                        {{-- <div class="col-lg-4 col-6">
                             <div class="card bg-light border-0 shadow-sm rounded-4 h-100">
                                 <div class="card-body">
                                     <h6 class="text-muted mb-3">
@@ -114,19 +114,13 @@
                                         <li><strong>Jam Pengecekan Masuk:</strong> <span id="visitorTimeIn">-</span>
                                             <span id="visitorTimeIn"></span>
                                         </li>
-                                        <li><strong>Jam Pengecekan Keluar:</strong> <span id="visitorTimeOut">-</span>
-                                            <span id="visitorTimeOut"></span>
-                                        </li>
-                                        <li><strong>Status:</strong>
-                                            <span id="visitorCardStatus" class="badge bg-warning text-dark">-</span>
-                                        </li>
                                     </ul>
                                 </div>
                             </div>
-                        </div>
+                        </div> --}}
 
                         <!-- Foto KTP -->
-                        <div class="col-lg-3 col-6">
+                        <div class="col-lg-4 col-12">
                             <div class="card bg-light border-0 shadow-sm rounded-4 h-100 text-center">
                                 <div class="card-body">
                                     <h6 class="text-muted mb-3">
@@ -161,8 +155,8 @@
                 </div>
 
                 <!-- Modal Preview Image -->
-                <div class="modal fade" id="imagePreviewModal" tabindex="-1"
-                    aria-labelledby="imagePreviewModalLabel" aria-hidden="true">
+                <div class="modal fade" id="imagePreviewModal" tabindex="-1" aria-labelledby="imagePreviewModalLabel"
+                    aria-hidden="true">
                     <div class="modal-dialog modal-dialog-centered modal-lg">
                         <div class="modal-content">
                             <div class="modal-body text-center p-0">

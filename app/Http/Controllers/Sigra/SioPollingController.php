@@ -35,13 +35,25 @@ class SioPollingController extends Controller
         try {
             $now = Carbon::now();
 
-            if ($now->dayOfWeek !== Carbon::MONDAY || $now->hour !== 8) {
+            // if ($now->dayOfWeek !== Carbon::MONDAY || $now->hour !== 8) {
+            if ($now->dayOfWeek !== Carbon::THURSDAY || $now->hour !== 10) { // TESTING ONLY
                 return response()->json([
                     'success' => false,
                     'message' => 'Belum waktunya polling SIO',
                     'server_time' => $now->format('Y-m-d H:i:s')
                 ], 403);
             }
+
+            // lock agar 1x kirim per hari
+            // $cacheKey = 'sio_polling_sent_' . $now->format('Y-m-d');
+
+            // if (cache()->has($cacheKey)) {
+            //     return response()->json([
+            //         'success' => false,
+            //         'message' => 'Polling hari ini sudah dijalankan. Email tidak dikirim ulang.',
+            //         'server_time' => $now->format('Y-m-d H:i:s')
+            //     ], 200);
+            // }
 
             $certificates = [];
 
@@ -78,6 +90,8 @@ class SioPollingController extends Controller
 
             if (!empty($certificates)) {
                 $this->sendEmail($certificates);
+
+                // cache()->put($cacheKey, true, now()->endOfDay());
 
                 return response()->json([
                     'success' => true,

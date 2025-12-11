@@ -5,7 +5,7 @@ window.truckOptions = {
             text: "Truk Muat Gula Cair",
         },
         {
-            value: "LAINNYA",
+            value: "LAINNYA LIQUID",
             text: "Lainnya",
         },
     ],
@@ -31,7 +31,7 @@ window.truckOptions = {
             text: "Mobil Pengangkut Sampah",
         },
         {
-            value: "LAINNYA",
+            value: "LAINNYA NONLIQUID",
             text: "Lainnya",
         },
     ],

@@ -174,6 +174,9 @@ class HistorySupplierDatatable extends Controller
             ->editColumn('NOHPDRIVER', function ($item) {
                 return $item->NOHPDRIVER ?: '-';
             })
+            ->editColumn('KETERANGAN', function ($item) {
+                return $item->KETERANGAN ?: '-';
+            })
             ->addColumn('action', function ($item) {
                 // return '
                 // <div class="dropdown d-inline-block">
@@ -220,18 +223,18 @@ class HistorySupplierDatatable extends Controller
                                     <i class="ri-eye-fill align-bottom me-2 text-muted"></i>View Detail
                                 </a>
                             </li>
-                            <li>
-                                <a href="#!" class="dropdown-item text-danger" onclick="triggerBlacklistVisitor(\'' . $item->trnvisitorid . '\')">
-                                    <i class="ri-close-circle-fill align-bottom me-2 text-muted"></i>Block Visitor
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
-                ';
+                            </ul>
+                            </div>
+                            ';
+                // <li>
+                //     <a href="#!" class="dropdown-item text-danger" onclick="triggerBlacklistVisitor(\'' . $item->trnvisitorid . '\')">
+                //         <i class="ri-close-circle-fill align-bottom me-2 text-muted"></i>Block Visitor
+                //     </a>
+                // </li>
             })
 
 
-            ->rawColumns(['photo_visitor', 'img_visitor', 'namacomp', 'waktu_masuk', 'waktu_keluar', 'namavisitor', 'action'])
+            ->rawColumns(['photo_visitor', 'img_visitor', 'namacomp', 'waktu_masuk', 'waktu_keluar', 'namavisitor', 'action', 'keterangan'])
             ->make(true);
     }
 }

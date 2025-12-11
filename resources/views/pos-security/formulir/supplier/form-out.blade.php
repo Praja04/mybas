@@ -11,38 +11,27 @@
                                 Visitor ID / Nomor Kartu
                             </label>
                             <input type="text" class="form-control form-control-lg text-center" id="qrcode_input"
-                                name="qrcode_input" placeholder="Ketik Visitor ID atau Nomor Kartu">
+                                name="qrcode_input" placeholder="Ketik nomor kartu atau scan kartu">
                         </div>
 
-                        <!-- Tombol Cari Data -->
-                        {{-- <div class="col-md-4">
-                            <label class="form-label d-none d-md-block">&nbsp;</label> <!-- biar sejajar -->
-                            <button type="button" class="btn btn-outline-primary w-100" id="searchVisitorData"
-                                data-bs-toggle="tooltip" data-bs-placement="top"
-                                title="Cari data pengunjung berdasarkan ID atau Nomor Kartu">
-                                <i class="fas fa-search me-2"></i> Cari Data Pengunjung
-                            </button>
-                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="hotReload()">
-                                <i class="bi bi-arrow-clockwise"></i> Refresh halaman
-                            </button>
-                        </div> --}}
-                        <div class="col-md-2">
+                        <div class="col-md-4">
                             <!-- Biar label ini sejajar dengan input di kolom lain -->
                             <label class="form-label d-none d-md-block">&nbsp;</label>
 
                             <!-- Wrapper tombol -->
                             <div class="d-grid gap-2 d-md-flex justify-content-md-between">
                                 <!-- Tombol Cari Data -->
-                                <button type="button" class="btn btn-outline-primary w-100" id="searchVisitorData"
+                                <button type="button" class="btn btn-primary w-100" id="searchVisitorData"
                                     data-bs-toggle="tooltip" data-bs-placement="top"
                                     title="Cari data pengunjung berdasarkan ID atau Nomor Kartu">
-                                    <i class="fas fa-search me-2"></i> Cari Data Pengunjung
+                                    <i class="mdi mdi-account-search"></i>
+                                    Cari Data Pengunjung
                                 </button>
 
                                 <!-- Tombol Refresh -->
                                 <button type="button" class="btn btn-outline-primary w-100 w-md-auto"
                                     onclick="hotReload()">
-                                    <i class="bi bi-arrow-clockwise"></i> Refresh Halaman
+                                    <i class="mdi mdi-refresh"></i> Refresh Halaman
                                 </button>
                             </div>
                         </div>
@@ -58,74 +47,68 @@
                     <!-- Row Pertama -->
                     <div class="row g-3 mb-4">
                         <!-- Informasi Pengunjung -->
-                        <div class="col-md-3 col-6">
+                        <div class="col-md-4 col-6">
                             <div class="card bg-light border-0 shadow-sm rounded-4 h-100">
                                 <div class="card-body">
                                     <h6 class="text-muted mb-3">
-                                        <i class="fas fa-user me-2 text-primary"></i>Informasi Transporter
+                                        Informasi Transporter
                                     </h6>
                                     <ul class="list-unstyled mb-0 small">
-                                        <li><strong>Nama:</strong> <span id="visitorName">-</span></li>
-                                        <li><strong>Perusahaan:</strong> <span id="visitorCompany">-</span></li>
-                                        <li><strong>No Kartu:</strong> <span id="visitorCard">-</span></li>
-                                        <li><strong>No KTP/SIM:</strong> <span id="visitorKTP">-</span></li>
-                                        <li><strong>No Polisi:</strong> <span id="visitorNopol">-</span></li>
-                                        <li><strong>Jumlah Orang:</strong> <span id="visitorSumPeople">-</span></li>
+                                        <li><strong>Nama Supir/Kernet:</strong> <span id="visitorName"></span></li>
+                                        <li><strong>Sebagai Apa:</strong> <span id="visitorKeterangan"></span></li>
+                                        <li><strong>Perusahaan:</strong> <span id="visitorCompany"></span></li>
+                                        <li><strong>No Kartu:</strong> <span id="visitorCard"></span></li>
+                                        <li><strong>No KTP/SIM:</strong> <span id="visitorKTP"></span></li>
+                                        <li><strong>No Polisi:</strong> <span id="visitorNopol"></span></li>
+                                        <li><strong>Jumlah Orang:</strong> <span id="visitorSumPeople"></span></li>
                                     </ul>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Status Kunjungan -->
-                        <div class="col-md-3 col-6">
+                        <div class="col-md-4 col-6">
                             <div class="card bg-light border-0 shadow-sm rounded-4 h-100">
                                 <div class="card-body">
                                     <h6 class="text-muted mb-3">
-                                        <i class="fas fa-clock me-2 text-danger"></i>Status Kunjungan
+                                        Status Kunjungan
                                     </h6>
                                     <ul class="list-unstyled mb-0 small">
-                                        <li><strong>Masuk:</strong> <span id="visitorDateIn">-</span> <span
-                                                id="visitorTimeIn">-</span></li>
-                                        <li><strong>Keluar:</strong> <span id="visitorDateOut">-</span> <span
-                                                id="visitorTimeOut">-</span></li>
+                                        <li><strong>Masuk:</strong> <span id="visitorDateIn"></span> <span
+                                                id="visitorTimeIn"></span></li>
+                                        <li><strong>Keluar:</strong> <span id="visitorDateOut"></span> <span
+                                                id="visitorTimeOut"></span></li>
                                         <li><strong>Status Kartu:</strong>
-                                            <span id="visitorCardStatus" class="badge bg-warning text-dark">-</span>
+                                            <span id="visitorCardStatus" class="badge bg-warning text-dark"></span>
                                         </li>
-                                        <li><strong>Gate ID:</strong> <span id="visitorGateIdOut">-</span></li>
-                                        <li><strong>Gate Line:</strong> <span id="visitorGateLineIdOut">-</span></li>
+                                        <li><strong>Gate ID:</strong> <span id="visitorGateIdOut"></span></li>
+                                        <li><strong>Gate Line:</strong> <span id="visitorGateLineIdOut"></span></li>
                                     </ul>
                                 </div>
                             </div>
                         </div>
 
                         {{-- Status Cek Kendaraan --}}
-                        {{-- todo: ganti id&name --}}
-                        <div class="col-md-3 col-6">
+                        {{-- <div class="col-md-3 col-6">
                             <div class="card bg-light border-0 shadow-sm rounded-4 h-100">
                                 <div class="card-body">
                                     <h6 class="text-muted mb-3">
                                         <i class="fas fa-clock text-danger"></i>Status Pengecekan Kendaraan
                                     </h6>
                                     <ul class="list-unstyled mb-0 small">
-                                        <li><strong>Nama Petugas:</strong> <span id="visitorGateIdOut">-</span></li>
-                                        <li><strong>Jenis Muatan:</strong> <span id="visitorGateLineIdOut">-</span></li>
-                                        <li><strong>Jenis Truk:</strong> <span id="visitorGateLineIdOut">-</span></li>
-                                        <li><strong>Jam Pengecekan Masuk:</strong> <span id="visitorTimeIn">-</span>
-                                            <span id="visitorTimeIn"></span>
-                                        </li>
-                                        <li><strong>Jam Pengecekan Keluar:</strong> <span id="visitorTimeOut">-</span>
-                                            <span id="visitorTimeOut"></span>
-                                        </li>
-                                        <li><strong>Status:</strong>
-                                            <span id="visitorCardStatus" class="badge bg-warning text-dark">-</span>
+                                        <li><strong>Nama Petugas:</strong> <span id="visitorNamaPetugas"></span></li>
+                                        <li><strong>Jenis Muatan:</strong> <span id="visitorJenisMuatan"></span></li>
+                                        <li><strong>Jenis Truk:</strong> <span id="visitorJenisTruk"></span></li>
+                                        <li><strong>Jam Pengecekan Masuk:</strong> <span id="visitorCheckDate"></span>
+                                            <span id="visitorCheckTime"></span>
                                         </li>
                                     </ul>
                                 </div>
                             </div>
                         </div>
-
+ --}}
                         <!-- Foto KTP -->
-                        <div class="col-md-3 col-6">
+                        <div class="col-md-4 col-12">
                             <div class="card bg-light bg-light border-0 shadow-sm rounded-4 h-100 text-center">
                                 <div class="card-body">
                                     <h6 class="text-muted mb-3">
@@ -160,8 +143,8 @@
                 </div>
 
                 <!-- Modal Preview Image -->
-                <div class="modal fade" id="imagePreviewModal" tabindex="-1"
-                    aria-labelledby="imagePreviewModalLabel" aria-hidden="true">
+                <div class="modal fade" id="imagePreviewModal" tabindex="-1" aria-labelledby="imagePreviewModalLabel"
+                    aria-hidden="true">
                     <div class="modal-dialog modal-dialog-centered modal-lg">
                         <div class="modal-content">
                             <div class="modal-body text-center p-0">

@@ -6,6 +6,7 @@
 /public/self_service_images
 /public/shortcut_images
 /public/cateringbas
+/public/storage
 /storage
 /vendor
 .env
@@ -18,4 +19,3 @@ npm-debug.log
 yarn-error.log
 .idea/workspace.xml
 .idea/workspace.xml
-

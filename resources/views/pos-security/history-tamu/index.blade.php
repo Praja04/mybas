@@ -3,7 +3,7 @@
 @section('content')
     <div class="container-fluid">
 
-        @include('pos-security.history-tamu.components.filter-vendor')
+        {{-- @include('pos-security.history-tamu.components.filter-vendor') --}}
 
         {{-- Visitor History Table --}}
         <div class="row">
@@ -11,11 +11,11 @@
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <div>
-                            <h5 class="card-title mb-0">History Daftar Vendor / Tamu / Transporter di Portal BAS</h5>
+                            <h5 class="card-title mb-0">History Daftar Vendor / Tamu / Transporter</h5>
                             <span>selama 7 hari terakhir</span>
                         </div>
                         <button type="button" class="btn btn-sm btn-outline-primary" onclick="hotReload()">
-                            <i class="bi bi-arrow-clockwise"></i> Refresh
+                            <i class="mdi mdi-refresh"></i> Refresh
                         </button>
                     </div>
                     <div class="card-body">
@@ -27,7 +27,7 @@
                                         <th>Perusahaan</th> <!-- namacomp -->
                                         <th>Nama Pengunjung</th> <!-- host -->
                                         <th>Tanggal Lahir</th> <!-- host -->
-                                        <th>Nama PPIC</th> <!-- host -->
+                                        <th>Nama PIC</th> <!-- host -->
                                         <th>Jumlah Orang</th> <!-- host -->
                                         <th>Keperluan</th> <!-- host -->
                                         <th>Departemen</th> <!-- hostdeptid -->

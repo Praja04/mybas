@@ -22,17 +22,24 @@ $menus = [
                 'icon' => 'mdi-camera-rear',
                 'submenu' => [],
             ],
+            // GA only
+            [
+                'path' => 'pos-security/master/security',
+                'label' => 'Data Security',
+                'icon' => 'mdi-human-male',
+                'submenu' => [],
+            ],
         ],
     ],
     [
         'label' => 'Dashboard',
         'menu' => [
-            [
-                'path' => 'pos-security/dashboard',
-                'label' => 'Dashboard',
-                'icon' => 'mdi-view-dashboard',
-                'submenu' => [],
-            ],
+            // [
+            //     'path' => 'pos-security/dashboard',
+            //     'label' => 'Dashboard',
+            //     'icon' => 'mdi-view-dashboard',
+            //     'submenu' => [],
+            // ],
             [
                 'path' => 'pos-security/absensi/visitor',
                 'label' => 'Absensi Tapping Pengunjung',
