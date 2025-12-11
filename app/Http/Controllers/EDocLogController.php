@@ -649,4 +649,29 @@ class EDocLogController extends Controller
         Session::flash('info', 'Berhasil mengembalikan barang/dokumen');
         return back();
     }
+
+    public function deleteKedatangan($id)
+    {
+        try {
+            $delete = DB::table('edoc_kedatangan')->where('id_barang', $id)->delete();
+
+            if (!$delete) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Data tidak ditemukan'
+                ]);
+            }
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Data berhasil dihapus'
+            ]);
+        } catch (\Exception $e) {
+
+            return response()->json([
+                'status' => false,
+                'message' => 'Gagal menghapus data: ' . $e->getMessage()
+            ]);
+        }
+    }
 }

@@ -268,18 +268,16 @@ class SupplierFormAjax extends Controller
             ->orderBy('createdon', 'desc')
             ->first();
 
-
-
-        if ($visitor) {
+        if (!$visitor) {
             return response()->json([
-                'success' => true,
-                'data' => $visitor
+                'success' => false,
+                'message' => 'Data visitor tidak ditemukan atau sudah keluar.'
             ]);
         }
 
         return response()->json([
-            'success' => false,
-            'message' => 'Data visitor tidak ditemukan atau sudah keluar.'
+            'success' => true,
+            'data' => $visitor
         ]);
     }
 
@@ -292,7 +290,7 @@ class SupplierFormAjax extends Controller
         // Validasi tetap sama
         $validator = Validator::make($request->all(), [
             'namavisitor'       => 'required|string|max:100',
-            'namakernet'        => 'nullable|string|max:100',
+            'keterangan'        => 'required|string|max:100',
             'nomorktp'          => 'required|string|max:100',
             'tgllahir'          => 'required|nullable|date|before_or_equal:today',
             'namacomp'          => 'required|string|max:100',
@@ -396,7 +394,7 @@ class SupplierFormAjax extends Controller
             $supplier_data = [
                 'trnvisitorid'       => $trnVisitorId,
                 'namavisitor'        => $normalized_nama,
-                'nama_kernet'        => strtoupper($request->namakernet),
+                'keterangan'        => strtoupper($request->keterangan),
                 'no_ktp_sim'         => strtoupper($request->nomorktp),
                 'no_kartu'           => strtoupper($request->rfid),
                 'namacomp'           => strtoupper($request->namacomp),

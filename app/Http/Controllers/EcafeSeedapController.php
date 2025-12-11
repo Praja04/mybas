@@ -52,6 +52,7 @@ class EcafeSeedapController extends Controller
 
         $rfid = (int) $request->rfid;
         $isCheckOnly = $request->has('cek') && $request->cek;
+        $dbError = false;
 
         // --- ambil data user dari database SMU ---
         try {
