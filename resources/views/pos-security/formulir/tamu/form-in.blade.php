@@ -102,7 +102,7 @@
                                 <select name="hostdeptid" class="form-select assign-departement-ga w-100">
                                     <option value="" disabled selected>-- Pilih Departemen --</option>
                                     @foreach ($departments as $dept)
-                                        <option value="{{ $dept->id }}">{{ $dept->name }}</option>
+                                        <option value="{{ $dept->name }}">{{ $dept->name }}</option>
                                     @endforeach
 
                                 </select>

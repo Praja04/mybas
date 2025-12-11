@@ -5,7 +5,7 @@
 @section('content')
     <div class="container-fluid">
 
-        @include('pos-security.absensi.components.filter')
+        {{-- @include('pos-security.absensi.components.filter') --}}
 
         <!-- Modal -->
         <div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
@@ -28,7 +28,7 @@
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <div>
-                            <h5 class="card-title mb-0">Record Log Absensi Tamu POS 1 dan POS 2</span>
+                            <h5 class="card-title mb-0">Record Tapping Tamu </span>
                         </div>
                         <button type="button" class="btn btn-sm btn-outline-primary" onclick="hotReload()">
                             <i class="ri-refresh-line"></i> Refresh

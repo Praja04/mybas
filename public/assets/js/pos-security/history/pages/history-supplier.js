@@ -17,6 +17,10 @@ export class ContentDatatable {
                         name: "namavisitor",
                     },
                     {
+                        data: "keterangan",
+                        name: "keterangan",
+                    },
+                    {
                         data: "namacomp",
                         name: "namacomp",
                     },
@@ -44,10 +48,10 @@ export class ContentDatatable {
                         data: "waktu_keluar",
                         name: "waktu_keluar",
                     },
-                    {
-                        data: "createdby",
-                        name: "createdby",
-                    },
+                    // {
+                    //     data: "createdby",
+                    //     name: "createdby",
+                    // },
                     {
                         data: "action",
                         name: "action",
@@ -55,7 +59,7 @@ export class ContentDatatable {
                 ],
             },
             dataSend: {},
-            excludeSearchColumns: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+            excludeSearchColumns: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
             // columnVisibility: {
             //     small: [0, 1, 6], // Show only columns 1 and 7 on small screens
             //     medium: [0, 1, 2, 3, 7], // Show all columns on medium screens

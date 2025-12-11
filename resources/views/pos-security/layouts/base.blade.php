@@ -27,12 +27,12 @@ $menus = [
     [
         'label' => 'Dashboard',
         'menu' => [
-            [
-                'path' => 'pos-security/dashboard',
-                'label' => 'Dashboard',
-                'icon' => 'mdi-view-dashboard',
-                'submenu' => [],
-            ],
+            // [
+            //     'path' => 'pos-security/dashboard',
+            //     'label' => 'Dashboard',
+            //     'icon' => 'mdi-view-dashboard',
+            //     'submenu' => [],
+            // ],
             [
                 'path' => 'pos-security/absensi/visitor',
                 'label' => 'Absensi Tapping Pengunjung',

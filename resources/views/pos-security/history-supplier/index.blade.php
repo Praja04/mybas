@@ -2,7 +2,7 @@
 
 @section('content')
     <div class="container-fluid">
-        @include('pos-security.history-supplier.components.filter-supplier')
+        {{-- @include('pos-security.history-supplier.components.filter-supplier') --}}
         @include('pos-security.history-supplier.components.modal-detail')
         @include('pos-security.history-supplier.components.modal-lapor-kartu')
         @include('pos-security.history-supplier.components.modal-blacklist')
@@ -13,11 +13,11 @@
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <div>
-                            <h5 class="card-title mb-0">History Transporter</h5>
+                            <h5 class="card-title mb-0">History Transporter/Supplier</h5>
                             <span>selama 7 hari terakhir</span>
                         </div>
                         <button type="button" class="btn btn-sm btn-outline-primary" onclick="location.reload()">
-                            <i class="bi bi-arrow-clockwise"></i> Refresh
+                            <i class="mdi mdi-refresh"></i> Refresh
                         </button>
                     </div>
 
@@ -27,17 +27,18 @@
                                 <thead>
                                     <tr>
                                         <th>No</th>
-                                        <th>Nama Visitor</th>
+                                        <th>Nama Supir/Kernet</th>
+                                        <th>Keterangan</th>
                                         <th>Perusahaan</th>
                                         <th>No. Polisi</th>
                                         <th>No. Kartu</th>
-                                        <th>Foto Vendor/Tamu</th>
+                                        <th>Foto Tamu</th>
                                         <th>Foto Identitas</th>
                                         <th>Waktu Masuk</th>
                                         <th>Waktu Keluar</th>
                                         {{-- <th>Tanggal Keluar </th>
                                             <th>Jam Keluar</th> --}}
-                                        <th>Dibuat Oleh</th>
+                                        {{-- <th>Dibuat Oleh</th> --}}
                                         <th>Aksi</th>
                                     </tr>
                                 </thead>
