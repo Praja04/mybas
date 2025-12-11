@@ -49,8 +49,19 @@ class CekKendaraanFormAjax extends Controller
             ]);
         }
 
-        // todo
         // validasi apakah sudah cek kendaraan pada kedatangan saat ini
+        $alreadyChecked = DB::table('ga_cek_kendaraan')
+            ->where('nomor_polisi', $visitor->nopol)
+            // ->whereDate('datein', $visitor->datein)
+            ->whereDate('datein', today())
+            ->exists();
+
+        if ($alreadyChecked) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Kendaraan ini sudah melakukan cek kendaraan pada kedatangan saat ini.'
+            ]);
+        }
 
         return response()->json([
             'success' => true,
@@ -95,18 +106,30 @@ class CekKendaraanFormAjax extends Controller
         }
 
         try {
-            // validasi apakah sudah cek kendaraan pada kedatangan saat ini
-            $cekAktif = DB::table('ga_cek_kendaraan')
-                ->where('nomor_polisi', $request->nomor_polisi)
+            // get visitor
+            $visitor = DB::table('ga_visitor_transaction')
                 ->where('trnvisitorid', $request->trnvisitorid)
-                // ->where('datein', now())
-                ->exists();
+                ->first();
 
-            if ($cekAktif) {
+            if (!$visitor) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Kendaraan ini sudah melakukan cek masuk.'
-                ], 409);
+                    'message' => 'Data visitor tidak ditemukan.'
+                ], 422);
+            }
+
+            // validasi apakah sudah cek kendaraan pada kedatangan saat ini
+            $sudahPernahCek = DB::table('ga_cek_kendaraan')
+                ->where('nomor_polisi', strtoupper($request->nomor_polisi))
+                // ->whereDate('datein', $visitor->datein)
+                ->whereDate('datein', today())
+                ->exists();
+
+            if ($sudahPernahCek) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Kendaraan ini sudah dilakukan cek kendaraan pada kedatangan saat ini.'
+                ]);
             }
 
             $now = now();
