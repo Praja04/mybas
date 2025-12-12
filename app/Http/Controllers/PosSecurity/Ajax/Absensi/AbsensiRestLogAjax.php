@@ -7,16 +7,21 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use App\Models\PosSecurity\Absensi\AbsensiRestLog;
+use App\Models\PosSecurity\Absensi\GateAccessLog;
+use App\Models\PosSecurity\GaDataSecurity;
 use Illuminate\Support\Facades\Validator;
 use App\Models\PosSecurity\GaVisitorTransaction;
 use App\Models\PosSecurity\GaVisitorVendorTransaction;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
 
 class AbsensiRestLogAjax extends Controller
 {
     public function search(Request $request)
     {
         $now = Carbon::now();
+        $keyword = $request->input('keyword');
 
         $validator = Validator::make($request->all(), [
             'keyword' => 'required|string|max:50',
@@ -29,13 +34,106 @@ class AbsensiRestLogAjax extends Controller
             ], 422);
         }
 
-        $keyword = $request->input('keyword');
-        $visitorData = $this->findVisitor($keyword);
+        // Cek apakah kartu adalah kartu security
+        $securityResult = $this->cari_security($keyword);
 
+        if ($securityResult && !empty($securityResult['data_detail'])) {
+
+            $security = $securityResult['data_detail'];
+            $fotoUrl = $security['foto_path'];
+
+            $pendingKey = "pending_visitors";
+            $pending = Cache::get($pendingKey, []);
+
+            $validVisitors = collect($pending)
+                ->filter(fn($v) => $now->diffInMinutes($v['tapped_at']) < 5) // hanya visitor yang berlaku <= 5 menit
+                ->pluck('visitor');
+
+            $formattedData = [
+                'trnvisitorid' => 'SEC-' . $security['nik'],
+                'nama'         => $security['nama'],
+                'perusahaan'   => 'INTERNAL - SECURITY',
+                'jenis_kunjungan' => 'PETUGAS SECURITY',
+                'no_polisi'    => '-',
+                'keperluan'    => 'Verifikasi Akses Gerbang & Pembukaan Gerbang',
+                'foto_url'     => $fotoUrl,
+                'status_display' => 'AKTIF',
+                'source'       => 'security',
+                'source_detail' => [
+                    'nik'            => $security['nik'],
+                    'nama'           => $security['nama'],
+                    'no_kartu'       => $security['idcard'],
+                    'dept'           => 'SECURITY',
+                    'plant'          => '1001',
+                    'gate'           => 'POS01',
+                    'created_at'     => now()->format('Y-m-d H:i:s'),
+                ],
+            ];
+
+            if ($validVisitors->isNotEmpty()) {
+                foreach ($validVisitors as $v) {
+                    GateAccessLog::create([
+                        'nik'          => $security['nik'],
+                        'nama'         => $security['nama'],
+                        'dept'         => 'SECURITY',
+                        'id_card'      => $security['idcard'],
+                        'visitor_trn'  => $v->trnvisitorid,
+                        'visitor_nama' => $v->namavisitor, // data tamu
+                        'gate'         => 'POS01',
+                        'foto_url'     => $fotoUrl,
+                        'waktu'        => now(),
+                    ]);
+                }
+                Cache::forget($pendingKey); // clear setelah diproses
+            } else {
+                // Security scan tanpa visitor
+                GateAccessLog::create([
+                    'nik'          => $security['nik'],
+                    'nama'         => $security['nama'],
+                    'dept'         => 'SECURITY',
+                    'id_card'      => $security['idcard'],
+                    'visitor_trn'  => null,
+                    'visitor_nama' => null,
+                    'gate'         => 'POS01',
+                    'foto_url'     => $fotoUrl,
+                    'waktu'        => now(),
+                ]);
+            }
+
+            return response()->json([
+                'success' => true,
+                'type'    => 'security',
+                'message' => 'Data petugas security ditemukan',
+                'data'    => $formattedData,
+            ]);
+        }
+        // Cek ketika ada visitor pending valid tapi kartu yang tap bukan security
+        $pendingKey = "pending_visitors";
+        $pending = Cache::get($pendingKey, []);
+
+        if (empty($pending)) {
+            $validPending = collect([]);
+        } else {
+            $validPending = collect($pending)
+                ->filter(fn($v) => isset($v['visitor']) && $now->diffInMinutes($v['tapped_at']) < 5);
+        }
+
+        // Jika visitor pending dan kartu ini bukan security → tolak
+        if ($validPending->isNotEmpty()) {
+            if (!$securityResult || empty($securityResult['data_detail'])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Anda bukan petugas security atau security sudah tidak aktif',
+                ], 403);
+            }
+        }
+
+        // Cek apakah kartu adalah kartu visitor
+        $visitorData = $this->findVisitor($keyword);
         if (!$visitorData) {
             return response()->json([
                 'success' => false,
-                'message' => 'Kartu tidak ditemukan atau kunjungan selesai.',
+                'message' => 'Kartu tidak ditemukan atau tamu sudah mengembalikan kartu.',
             ]);
         }
 
@@ -43,21 +141,131 @@ class AbsensiRestLogAjax extends Controller
 
 
         if ((int)$visitor->kartu_dikembalikan === 1) {
-            // $this->catatLogGagal($visitor, $sourceOrigin, 'Kartu sudah dikembalikan');
-            // $data = $this->formatVisitorData($visitor, $sourceOrigin, null, null);
-            $data['status_kartu'] = 'dikembalikan';
-            $data['status_display'] = 'Kartu Sudah Dikembalikan';
-
             return response()->json([
                 'success' => false,
                 'message' => 'Kartu sudah dikembalikan atau kunjungan selesai.',
-                'data' => null,
             ]);
+        }
+
+        // if ($this->isGloballyBlacklisted($visitor)) {
+        //     $this->logBlacklist($visitor->trnvisitorid, $now);
+        //     return response()->json([
+        //         'success' => false,
+        //         'message' => 'Akses diblokir: identitas berada dalam daftar hitam.',
+        //     ]);
+        // }
+
+        // Masukkan visitor ke cache pending
+        $alreadyExists = false;
+
+        foreach ($pending as &$entry) {
+            if ($entry['visitor']->trnvisitorid === $visitor->trnvisitorid) {
+                if ($now->diffInSeconds($entry['tapped_at']) < 5) {
+                    // jangan simpan cache dulu
+                    Cache::forget('pending_visitors');
+
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Tapping terlalu cepat, silakan tunggu beberapa 5 detik.',
+                    ]);
+                }
+                $entry['tapped_at'] = $now;
+                $alreadyExists = true;
+                break;
+            }
+        }
+
+        if (!$alreadyExists) {
+            $pending[] = [
+                'visitor'   => $visitor,
+                'tapped_at' => $now,
+            ];
+        }
+
+        // Simpan cache hanya jika visitor benar-benar valid dan masuk queue
+        if (!empty($pending)) {
+            Cache::put($pendingKey, $pending, 300); // 5 menit
         }
 
         return DB::transaction(function () use ($visitor, $sourceOrigin, $now) {
             return $this->handleAbsensi($visitor, $sourceOrigin, $now);
         }, 3);
+    }
+
+    public function cari_security($id_card)
+    {
+        if (empty($id_card)) {
+            return [
+                'data' => [
+                    'pesan' => 'ID Card kosong / scanner error',
+                    'notif' => 'failed',
+                    'status' => 'error'
+                ],
+                'data_detail' => null,
+                'raw_data' => null
+            ];
+        }
+
+        try {
+            $security = GaDataSecurity::where('nomor_kartu', $id_card)
+                ->where('status', 'active')
+                ->first();
+
+            if (!$security) {
+                return [
+                    'data' => [
+                        'pesan' => 'Kartu tidak terdaftar sebagai security',
+                        'notif' => 'failed',
+                        'status' => 'not-found'
+                    ],
+                    'data_detail' => null,
+                    'raw_data' => null
+                ];
+            }
+
+            $fotoUrl = $security->foto ? asset('storage/' . $security->foto) : asset('assets/media/images/no-image.jpg');
+
+            $dataDetail = [
+                'nik'       => $security->nik,
+                'nama'      => $security->nama_security,
+                'idcard'    => $security->nomor_kartu,
+                'foto_path' => $fotoUrl,
+            ];
+
+            $rawData = [
+                'nik'        => $security->nik,
+                'nama'       => $security->nama_security,
+                'dept'       => 'SECURITY',
+                'id_card'    => $security->nomor_kartu,
+                'foto_path'  => $fotoUrl,
+                'absen_time' => now()->format('Y-m-d H:i:s'),
+                'notif'      => 'success',
+                'status'     => 'berhasil',
+                'pesan'      => 'Security ditemukan',
+            ];
+
+            return [
+                'data'        => [
+                    'pesan' => 'Security ditemukan',
+                    'notif' => 'success',
+                    'status' => 'berhasil'
+                ],
+                'data_detail' => $dataDetail,
+                'raw_data'    => $rawData
+            ];
+        } catch (\Exception $e) {
+            Log::error('Error cari_security(): ' . $e->getMessage());
+
+            return [
+                'data' => [
+                    'pesan' => 'Kesalahan sistem saat mengambil data security',
+                    'notif' => 'error',
+                    'status' => 'error'
+                ],
+                'data_detail' => null,
+                'raw_data' => null
+            ];
+        }
     }
 
     protected function findVisitor($keyword)
@@ -231,8 +439,10 @@ class AbsensiRestLogAjax extends Controller
         $wait = $gracePeriod - $diff;
 
         if ($diff < $gracePeriod) {
+            Cache::forget('pending_visitors');
+
             return response()->json([
-                'success' => true,
+                'success' => false,
                 'message' => "Kamu sudah absen, silahkan tunggu {$wait} detik untuk absen lagi.",
                 'data' => $this->formatVisitorData($visitor, $sourceOrigin, $lastLog->activity_type, $statusText),
             ]);
