@@ -66,25 +66,24 @@
                         </button>
                     </div>
                     <div class="card-body">
-                        <table class="ga-security-gate-datatables table table-bordered table-hover nowrap align-middle"
+                        <table
+                            class="ga-security-gate-datatables table table-bordered table-hover nowrap align-middle table-responsive"
                             style="width:100%">
                             <thead>
                                 <tr>
                                     <th>No</th>
                                     <th>Security</th>
                                     <th>NIK Security</th>
-                                    <th>Gate</th>
                                     <th>Nama Tamu</th>
                                     <th>Perusahaan</th>
                                     <th>Tujuan</th>
                                     <th>No Identitas</th>
                                     <th>Plat Nomor</th>
-                                    <th>Plant</th>
                                     <th>Waktu Akses</th>
                                     <th>Aktivitas</th>
                                     <th>Foto Diri Tamu</th>
                                     <th>Foto Gate (Security)</th>
-                                    <th>Aksi</th>
+                                    {{-- <th>Aksi</th> --}}
                                 </tr>
                             </thead>
                             <tbody>

@@ -42,12 +42,12 @@
                                         <th>No</th>
                                         <th>Nama Tamu</th>
                                         <th>Perusahaan</th>
-                                        <th>Host</th>
                                         <th>Tujuan</th>
                                         <th>No Kartu</th>
                                         <th>No Identitas</th>
+                                        <th>Host</th>
                                         <th>Plat Nomor</th>
-                                        <th>Pos</th>
+                                        <th>Jenis Tamu</th>
                                         <th>Waktu Scan</th>
                                         <th>Aktivitas</th>
                                         <th>Kartu Dikembalikan</th>

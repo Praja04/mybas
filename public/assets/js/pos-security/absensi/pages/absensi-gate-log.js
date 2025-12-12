@@ -23,10 +23,6 @@ export class ContentDatatable {
                         name: "NIK Security",
                     },
                     {
-                        data: "gate",
-                        name: "Gate",
-                    },
-                    {
                         data: "visitor_nama",
                         name: "Nama Tamu",
                     },
@@ -47,37 +43,41 @@ export class ContentDatatable {
                         name: "Plat Nomor",
                     },
                     {
-                        data: "plant",
-                        name: "Plant",
-                    },
-                    {
                         data: "waktu",
                         name: "Waktu Akses",
+                        orderable: false,
+                        searchable: false,
                     },
                     {
                         data: "activity_type",
                         name: "Aktivitas",
+                        orderable: false,
+                        searchable: false,
                     },
                     {
                         data: "photo_visitor",
-                        name: "Foto Diri Tamu",
+                        name: "Foto Tamu",
+                        orderable: false,
+                        searchable: false,
                     },
                     {
                         data: "photo_gate",
-                        name: "Foto Gate (Security)",
+                        name: "Foto Security",
+                        orderable: false,
+                        searchable: false,
                     },
-                    {
-                        data: "action",
-                        name: "Aksi",
-                    },
+                    // {
+                    //     data: "action",
+                    //     name: "Aksi",
+                    //     orderable: false,
+                    //     searchable: false,
+                    // },
                 ],
             },
             dataSend: {
                 data: {}, // akan diisi filter
             },
-            excludeSearchColumns: [
-                0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13,
-            ],
+            excludeSearchColumns: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
             // ❌ Hapus excludeSearchColumns jika tidak digunakan
             // Karena DataTables.js otomatis handle searchable: false
         };

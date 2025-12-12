@@ -22,17 +22,21 @@ $menus = [
                 'icon' => 'mdi-camera-rear',
                 'submenu' => [],
             ],
-            // GA only
+        ],
+    ],
+    [
+        'label' => 'Display',
+        'menu' => [
             [
-                'path' => 'pos-security/master/security',
-                'label' => 'Data Security',
-                'icon' => 'mdi-human-male',
+                'path' => 'pos-security/absensi/display',
+                'label' => 'Display Tapping',
+                'icon' => 'mdi-monitor',
                 'submenu' => [],
             ],
         ],
     ],
     [
-        'label' => 'Dashboard',
+        'label' => 'Data',
         'menu' => [
             // [
             //     'path' => 'pos-security/dashboard',
@@ -53,17 +57,6 @@ $menus = [
                 'submenu' => [],
             ],
             [
-                'path' => 'pos-security/absensi/display',
-                'label' => 'Display Tapping',
-                'icon' => 'mdi-monitor',
-                'submenu' => [],
-            ],
-        ],
-    ],
-    [
-        'label' => 'Riwayat',
-        'menu' => [
-            [
                 'path' => 'sidebarDaftarTamuBAS',
                 'label' => 'Daftar Tamu PT BAS',
                 'icon' => 'mdi-account-group-outline',
@@ -82,6 +75,13 @@ $menus = [
                 'path' => 'pos-security/history/kendaraan',
                 'label' => 'Riwayat Pengecekan Kendaraan',
                 'icon' => 'mdi-truck',
+                'submenu' => [],
+            ],
+            [
+                'path' => 'pos-security/master/security',
+                'label' => 'Data Security',
+                'icon' => 'mdi-human-male',
+                'permission' => 'pos-security_data_security',
                 'submenu' => [],
             ],
         ],

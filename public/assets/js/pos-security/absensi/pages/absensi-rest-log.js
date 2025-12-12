@@ -23,10 +23,6 @@ export class ContentDatatable {
                         name: "Perusahaan",
                     },
                     {
-                        data: "host",
-                        name: "Host",
-                    },
-                    {
                         data: "purpose",
                         name: "Tujuan",
                     },
@@ -39,12 +35,18 @@ export class ContentDatatable {
                         name: "No Identitas",
                     },
                     {
+                        data: "host",
+                        name: "Host",
+                    },
+                    {
                         data: "nopol",
                         name: "Plat Nomor",
                     },
                     {
-                        data: "pos_asal",
-                        name: "POS",
+                        data: "jenis_tamu",
+                        name: "Jenis Tamu",
+                        orderable: false,
+                        searchable: false,
                     },
                     {
                         data: "scan_time",
@@ -53,18 +55,26 @@ export class ContentDatatable {
                     {
                         data: "activity_type",
                         name: "Aktivitas",
+                        orderable: false,
+                        searchable: false,
                     },
                     {
                         data: "kartu_dikembalikan",
                         name: "Kartu Dikembalikan",
+                        orderable: false,
+                        searchable: false,
                     },
                     {
                         data: "photo_visitor",
                         name: "Foto Diri",
+                        orderable: false,
+                        searchable: false,
                     },
                     {
                         data: "img_visitor",
                         name: "Foto Identitas",
+                        orderable: false,
+                        searchable: false,
                     },
                 ],
             },

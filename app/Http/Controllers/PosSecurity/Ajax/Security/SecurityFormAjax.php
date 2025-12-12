@@ -18,7 +18,7 @@ class SecurityFormAjax extends Controller
                 'nik' => 'required|string|max:150|unique:ga_data_security,nik',
                 'nama_security' => 'required|string|max:50',
                 'nomor_kartu' => 'required|string|max:50|unique:ga_data_security,nomor_kartu',
-                'foto' => 'nullable|image|max:1024',
+                'foto' => 'required|image|max:1024',
             ], [
                 'nik.unique' => 'NIK sudah terdaftar.',
                 'nomor_kartu.unique' => 'Nomor kartu sudah terdaftar.',
