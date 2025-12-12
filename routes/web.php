@@ -206,6 +206,16 @@ Route::group(['middleware' => ['auth', 'rules', 'access_log']], function () {
     Route::post('/sigra/sio/set-status', 'Sigra\SioController@setStatus');
     Route::get('/sigra/sio/export-sio', 'Sigra\SioController@exportSio')->name('sigra.export.sio');
 
+    Route::get('/sigra/email', 'Sigra\EmailPenerimaController@index');
+    Route::get('/sigra/email/get-all', 'Sigra\EmailPenerimaController@getAll')->name('sigra.email.penerima.getAll');
+    Route::post('/sigra/email/create', 'Sigra\EmailPenerimaController@store')->name('sigra.email.penerima.store');
+    Route::get('/sigra/email/{id}', 'Sigra\EmailPenerimaController@show')->name('sigra.email.penerima.show');
+    Route::post('/sigra/email/update/{id}', 'Sigra\EmailPenerimaController@update')->name('sigra.email.penerima.update');
+    Route::post('/sigra/email/toggle/{id}', 'Sigra\EmailPenerimaController@toggle')->name('sigra.email.penerima.toggle');
+    Route::delete('/sigra/email/delete/{id}', 'Sigra\EmailPenerimaController@destroy')->name('sigra.email.penerima.delete');
+
+
+
 
     // balikin ke attachmentcontroller kalo mau store ke google
     Route::post('/attachment/upload', 'LocalAttachmentController@upload')->name('attachment.upload');
