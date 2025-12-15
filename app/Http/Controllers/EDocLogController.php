@@ -658,19 +658,44 @@ class EDocLogController extends Controller
             if (!$delete) {
                 return response()->json([
                     'status' => false,
-                    'message' => 'Data tidak ditemukan'
+                    'message' => 'Data kedatangan tidak ditemukan'
                 ]);
             }
 
             return response()->json([
                 'status' => true,
-                'message' => 'Data berhasil dihapus'
+                'message' => 'Data kedatangan berhasil dihapus'
             ]);
         } catch (\Exception $e) {
 
             return response()->json([
                 'status' => false,
-                'message' => 'Gagal menghapus data: ' . $e->getMessage()
+                'message' => 'Gagal menghapus data kedatangan edoc: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    public function deletePengiriman($id)
+    {
+        try {
+            $delete = DB::table('edoc_pengiriman')->where('id_barang', $id)->delete();
+
+            if (!$delete) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Data pengiriman tidak ditemukan'
+                ]);
+            }
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Data pengiriman berhasil dihapus'
+            ]);
+        } catch (\Exception $e) {
+
+            return response()->json([
+                'status' => false,
+                'message' => 'Gagal menghapus data pengiriman edoc: ' . $e->getMessage()
             ]);
         }
     }
