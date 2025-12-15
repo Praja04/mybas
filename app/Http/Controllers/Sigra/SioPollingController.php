@@ -72,7 +72,7 @@ class SioPollingController extends Controller
                 if ($sertifikasi) {
                     $selisih_hari = $this->expired($sertifikasi->tanggal_habis);
 
-                    if ($selisih_hari <= 45 && $selisih_hari >= -60) {
+                    if ($selisih_hari <= 60 && $selisih_hari >= -60) {
                         $sertifikasi->perusahaan = $data->perusahaan->nama_perusahaan ?? '-';
                         $sertifikasi->nama_perizinan = $data->nama_perizinan;
                         $sertifikasi->nama_karyawan = $data->nama_karyawan;

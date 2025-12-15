@@ -36,7 +36,7 @@
                                 <div class="d-flex align-items-center mb-1">
                                     <span class="label label-inline label-outline-warning mr-2"
                                         style="width: 25px; text-align:center;">-</span>
-                                    <span>= Akan segera habis masa berlakunya (kurang dari 45 hari)</span>
+                                    <span>= Akan segera habis masa berlakunya (kurang dari 60 hari)</span>
                                 </div>
                                 <div class="d-flex align-items-center mb-1">
                                     <span class="label label-inline label-outline-danger mr-2"
