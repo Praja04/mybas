@@ -49,11 +49,20 @@ class CekKendaraanFormAjax extends Controller
             ]);
         }
 
+        // cek apakah visitor sudah keluar
+        if ($visitor->kartu_dikembalikan == 1) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Kendaraan sudah keluar, cek kendaraan tidak dapat dilakukan.'
+            ]);
+        }
+
         // validasi apakah sudah cek kendaraan pada kedatangan saat ini
         $alreadyChecked = DB::table('ga_cek_kendaraan')
             ->where('nomor_polisi', $visitor->nopol)
             // ->whereDate('datein', $visitor->datein)
-            ->whereDate('datein', today())
+            // ->whereDate('datein', today())
+            ->where('datein', '>=', now()->subHours(24))
             ->exists();
 
         if ($alreadyChecked) {
@@ -106,32 +115,6 @@ class CekKendaraanFormAjax extends Controller
         }
 
         try {
-            // get visitor
-            $visitor = DB::table('ga_visitor_transaction')
-                ->where('trnvisitorid', $request->trnvisitorid)
-                ->first();
-
-            if (!$visitor) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Data visitor tidak ditemukan.'
-                ], 422);
-            }
-
-            // validasi apakah sudah cek kendaraan pada kedatangan saat ini
-            $sudahPernahCek = DB::table('ga_cek_kendaraan')
-                ->where('nomor_polisi', strtoupper($request->nomor_polisi))
-                // ->whereDate('datein', $visitor->datein)
-                ->whereDate('datein', today())
-                ->exists();
-
-            if ($sudahPernahCek) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Kendaraan ini sudah dilakukan cek kendaraan pada kedatangan saat ini.'
-                ]);
-            }
-
             $now = now();
             $trnCekId = 'CK-' . $now->format('YmdHis');
 

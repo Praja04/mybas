@@ -237,7 +237,7 @@
 <body>
     <div class="top-bar">
         <div class="d-flex align-items-center">
-            <a href="{{ route('pos-security.dashboard') }}" target="_blank">
+            <a href="{{ route('pos-security.formulir') }}" target="_blank">
                 <img src="{{ asset('assets/media/logos/bas_logo.jpg') }}" alt="Logo" height="40" />
             </a>
             <span class="ms-3">Monitoring Absen Tamu/Izin Keluar</span>
