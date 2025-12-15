@@ -36,7 +36,7 @@ $menus = [
         ],
     ],
     [
-        'label' => 'Data',
+        'label' => 'Riwayat',
         'menu' => [
             // [
             //     'path' => 'pos-security/dashboard',
@@ -46,19 +46,19 @@ $menus = [
             // ],
             [
                 'path' => 'pos-security/absensi/visitor',
-                'label' => 'Absensi Tapping Pengunjung',
+                'label' => 'Riwayat Tapping Pengunjung',
                 'icon' => 'mdi-barcode-scan',
                 'submenu' => [],
             ],
             [
                 'path' => 'pos-security/absensi/gate',
-                'label' => 'Absensi Tapping Security',
+                'label' => 'Riwayat Tapping Security',
                 'icon' => 'mdi-barcode-scan',
                 'submenu' => [],
             ],
             [
-                'path' => 'sidebarDaftarTamuBAS',
-                'label' => 'Daftar Tamu PT BAS',
+                'path' => 'sidebarRiwayatTamuBAS',
+                'label' => 'Riwayat Tamu PT BAS',
                 'icon' => 'mdi-account-group-outline',
                 'submenu' => [
                     [
@@ -77,6 +77,11 @@ $menus = [
                 'icon' => 'mdi-truck',
                 'submenu' => [],
             ],
+        ],
+    ],
+    [
+        'label' => 'Data',
+        'menu' => [
             [
                 'path' => 'pos-security/master/security',
                 'label' => 'Data Security',
@@ -84,30 +89,26 @@ $menus = [
                 'permission' => 'pos-security_data_security',
                 'submenu' => [],
             ],
+
+            //         [
+            //             'path' => 'sidebarKartu',
+            //             'label' => 'Kartu',
+            //             'icon' => 'mdi-card-account-details-outline',
+            //             'submenu' => [
+            //                 [
+            //                     'path' => 'pos-security/kartu/kartu-aktif',
+            //                     'label' => 'List Kartu Aktif',
+            //                 ],
+            //             ],
+            //         ],
+            //         [
+            //             'path' => 'pos-security/blacklist',
+            //             'label' => 'Blacklist Tamu',
+            //             'icon' => 'mdi-account-cancel-outline',
+            //             'submenu' => [],
+            //         ],
         ],
     ],
-    // [
-    //     'label' => 'Report',
-    //     'menu' => [
-    //         [
-    //             'path' => 'sidebarKartu',
-    //             'label' => 'Kartu',
-    //             'icon' => 'mdi-card-account-details-outline',
-    //             'submenu' => [
-    //                 [
-    //                     'path' => 'pos-security/kartu/kartu-aktif',
-    //                     'label' => 'List Kartu Aktif',
-    //                 ],
-    //             ],
-    //         ],
-    //         [
-    //             'path' => 'pos-security/blacklist',
-    //             'label' => 'Blacklist Tamu',
-    //             'icon' => 'mdi-account-cancel-outline',
-    //             'submenu' => [],
-    //         ],
-    //     ],
-    // ],
     // [
     //     'label' => 'Bantuan',
     //     'menu' => [

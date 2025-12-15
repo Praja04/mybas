@@ -718,10 +718,11 @@ require base_path('routes/halo-security.php');
 require base_path('routes/kedatangan-beras.php');
 require base_path('routes/kedatangan-lauk.php');
 require base_path('routes/pengecekan-boiler.php');
+
+// POS Security
 require base_path('routes/pos-security.php');
 require base_path('routes/pos-security/ajax.php');
 require base_path('routes/pos-security/datatable.php');
-require base_path('routes/pos-security/web.php');
 
 // local only
 require base_path('routes/mail-testing.php');

@@ -125,23 +125,36 @@ class SecurityFormAjax extends Controller
     }
 
 
-    public function delete($id)
+    public function toggle($id)
     {
         try {
-            $security = GaDataSecurity::findOrFail($id);
+            $security = GaDataSecurity::find($id);
 
-            $security->update([
-                'status' => 'inactive'
-            ]);
+            if (!$security) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Data security tidak ditemukan.'
+                ], 404);
+            }
+
+            // Toggle status (active <-> inactive)
+            $security->status = $security->status === 'active'
+                ? 'inactive'
+                : 'active';
+
+            $security->save();
 
             return response()->json([
                 'success' => true,
-                'message' => 'Data security berhasil di-nonaktifkan.'
+                'message' => $security->status === 'active'
+                    ? 'Security berhasil diaktifkan kembali.'
+                    : 'Security berhasil dinonaktifkan.'
             ]);
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal menonaktifkan security: ' . $e->getMessage()
+                'message' => 'Terjadi kesalahan server.',
+                'error'   => $e->getMessage()
             ], 500);
         }
     }
