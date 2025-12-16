@@ -2,8 +2,7 @@
 
 $menus = [
     [
-        'title' => '',
-        'visible' => false, 
+        'label' => '',
         'menu' => [
             [
                 'path' => '5r-system',
@@ -14,7 +13,7 @@ $menus = [
         ],
     ],
     [
-        'title' => 'Master',
+        'label' => 'Master Data',
         'menu' => [
             [
                 'path' => '5r-system/master-department',
@@ -26,6 +25,13 @@ $menus = [
             [
                 'path' => '5r-system/master-group',
                 'label' => 'Master Group',
+                'icon' => 'mdi-folder-table',
+                'permission' => '5r_organizer',
+                'submenu' => [],
+            ],
+            [
+                'path' => '5r-system/master-area',
+                'label' => 'Master Area',
                 'icon' => 'mdi-folder-table',
                 'permission' => '5r_organizer',
                 'submenu' => [],
@@ -68,7 +74,7 @@ $menus = [
         ],
     ],
     [
-        'title' => 'Penilaian',
+        'label' => 'Penilaian',
         'menu' => [
             [
                 'path' => '5r-system/penilaian',
@@ -94,7 +100,7 @@ $menus = [
         ],
     ],
     [
-        'title' => 'Report',
+        'label' => 'Report',
         'menu' => [
             [
                 'path' => '5r-system/report/management',
@@ -114,10 +120,9 @@ $menus = [
     ],
 ];
 
-
 ?>
 
-<x-templates.velzon.base nameIcon="" menus="{!! json_encode($menus) !!}">
+<x-templates.velzon-hs.base nameIcon="" menus="{!! json_encode($menus) !!}">
 
     <x-slot name="title">
         @yield('title', '') 5R System
@@ -135,4 +140,4 @@ $menus = [
     <x-slot name="scripts">
         @stack('scripts')
     </x-slot>
-</x-templates.velzon.base>
+</x-templates.velzon-hs.base>
