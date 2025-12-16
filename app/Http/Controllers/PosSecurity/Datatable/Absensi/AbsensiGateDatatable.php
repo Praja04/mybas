@@ -167,17 +167,17 @@ class AbsensiGateDatatable extends Controller
             })
 
             // 🛠 Aksi (opsional: detail modal)
-            ->addColumn('action', function ($item) {
-                return '
-                    <div class="text-center">
-                        <button class="btn btn-sm btn-soft-info" 
-                                onclick="openSecurityAccessDetail(' . $item->security_log_id . ')" 
-                                title="Lihat Detail">
-                            <i class="ri-eye-fill"></i>
-                        </button>
-                    </div>
-                ';
-            })
+            // ->addColumn('action', function ($item) {
+            //     return '
+            //         <div class="text-center">
+            //             <button class="btn btn-sm btn-soft-info" 
+            //                     onclick="openSecurityAccessDetail(' . $item->security_log_id . ')" 
+            //                     title="Lihat Detail">
+            //                 <i class="ri-eye-fill"></i>
+            //             </button>
+            //         </div>
+            //     ';
+            // })
 
             // 🧩 Tentukan kolom yang boleh HTML
             ->rawColumns([
@@ -192,7 +192,7 @@ class AbsensiGateDatatable extends Controller
                 'activity_type',
                 'photo_visitor',
                 'photo_gate',
-                'action'
+                // 'action'
             ])
             ->make(true);
     }

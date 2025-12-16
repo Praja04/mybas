@@ -1,5 +1,7 @@
 @extends('pos-security.layouts.base')
 
+@section('title', 'Riwayat Vendor/Tamu')
+
 @section('content')
     <div class="container-fluid">
 

@@ -11,6 +11,8 @@ export class ContentDatatable {
                     {
                         data: "DT_RowIndex",
                         name: "DT_RowIndex",
+                        orderable: false,
+                        searchable: false,
                     },
                     {
                         data: "namavisitor",
@@ -35,26 +37,32 @@ export class ContentDatatable {
                     {
                         data: "photo_visitor",
                         name: "photo_visitor",
+                        orderable: false,
+                        searchable: false,
                     },
                     {
                         data: "img_visitor",
                         name: "img_visitor",
+                        orderable: false,
+                        searchable: false,
                     },
                     {
                         data: "waktu_masuk",
                         name: "waktu_masuk",
+                        orderable: false,
+                        searchable: false,
                     },
                     {
                         data: "waktu_keluar",
                         name: "waktu_keluar",
+                        orderable: false,
+                        searchable: false,
                     },
-                    // {
-                    //     data: "createdby",
-                    //     name: "createdby",
-                    // },
                     {
                         data: "action",
                         name: "action",
+                        orderable: false,
+                        searchable: false,
                     },
                 ],
             },

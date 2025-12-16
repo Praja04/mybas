@@ -43,45 +43,69 @@ $(document).ready(function () {
             processData: false,
             contentType: false,
             success: function (response) {
-                Swal.fire({
-                    icon: "success",
-                    title: "Berhasil!",
-                    text: response.message || "Data berhasil disimpan.",
-                    timer: 2000,
-                    showConfirmButton: false,
-                });
+                if (response.success) {
+                    Swal.fire({
+                        icon: "success",
+                        title: "Berhasil!",
+                        text: response.message || "Data berhasil disimpan.",
+                        timer: 2000,
+                        showConfirmButton: false,
+                    });
 
-                console.log(response);
+                    $("#formAlert")
+                        .stop(true)
+                        .hide()
+                        .removeClass("alert-danger alert-success")
+                        .addClass("alert-success")
+                        .html(response.message)
+                        .fadeIn();
+
+                    setTimeout(function () {
+                        $("#formAlert")
+                            .fadeOut()
+                            .removeClass("alert-success alert-danger")
+                            .html("");
+                    }, 2000);
+
+                    $("#cekKendaraanForm")[0].reset();
+                    $("#cekKendaraanForm").hide();
+                    resetForm();
+
+                    $("#submitBtn")
+                        .prop("disabled", false)
+                        .html('<i class="fas fa-save me-2"></i>Simpan Data');
+
+                    return;
+                }
+
+                // res.success === false
+                Swal.fire({
+                    icon: "warning",
+                    title: "Gagal!",
+                    text: response.message || "Terjadi kesalahan.",
+                });
 
                 $("#formAlert")
                     .stop(true)
                     .hide()
-                    .removeClass("alert-danger alert-success")
-                    .addClass("alert-success")
-                    .html(response.message)
+                    .removeClass("alert-success alert-danger")
+                    .addClass("alert-danger")
+                    .html(response.message || "Terjadi kesalahan.")
                     .fadeIn();
-
-                setTimeout(function () {
-                    $("#formAlert")
-                        .fadeOut()
-                        .removeClass("alert-success alert-danger")
-                        .html("");
-                }, 2000);
-
-                $("#cekKendaraanForm")[0].reset();
-                $("#cekKendaraanForm").hide();
-                resetForm();
 
                 $("#submitBtn")
                     .prop("disabled", false)
                     .html('<i class="fas fa-save me-2"></i>Simpan Data');
             },
+
             error: function (xhr) {
+                console.log(xhr.responseJSON?.message);
+
                 let message = "Terjadi kesalahan. Silakan coba lagi.";
 
                 Swal.fire({
                     icon: "error",
-                    title: "Gagal!",
+                    title: "Error!",
                     text: message,
                 });
 

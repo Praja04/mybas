@@ -1,6 +1,6 @@
 @extends('pos-security.layouts.base')
 
-@section('title', 'Dashboard')
+@section('title', 'Formulir Security')
 
 @push('styles')
     <style>

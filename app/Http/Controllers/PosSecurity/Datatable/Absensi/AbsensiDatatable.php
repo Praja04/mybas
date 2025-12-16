@@ -90,12 +90,12 @@ class AbsensiDatatable extends Controller
             ->editColumn('purpose', fn($item) => e($item->purpose ?? '-'))
             ->editColumn('nopol', fn($item) => e($item->nopol ?? '-'))
             ->editColumn('plant', fn($item) => e($item->plant ?? '-'))
-            ->addColumn('pos_asal', function ($item) {
+            ->addColumn('jenis_tamu', function ($item) {
                 switch ($item->source_origin) {
                     case 'ga_visitor_transactions':
-                        return '<span class="badge bg-primary">Pos 1</span>';
+                        return '<span class="badge bg-primary">SUPPLIER/TRANSPORTER</span>';
                     case 'ga_visitor_vendor_transactions':
-                        return '<span class="badge bg-success">Pos 2</span>';
+                        return '<span class="badge bg-success">TAMU/VENDOR</span>';
                     default:
                         return '<span class="badge bg-secondary">' . e(ucwords(str_replace('ga_', '', str_replace('_', ' ', $item->source_origin)))) . '</span>';
                 }
@@ -189,7 +189,7 @@ class AbsensiDatatable extends Controller
                     </ul>
                 </div>';
             })
-            ->rawColumns(['pos_asal', 'activity_type', 'kartu_dikembalikan', 'photo_visitor', 'img_visitor', 'action'])
+            ->rawColumns(['jenis_tamu', 'activity_type', 'kartu_dikembalikan', 'photo_visitor', 'img_visitor', 'action'])
             ->make(true);
     }
 }

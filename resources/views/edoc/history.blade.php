@@ -101,27 +101,29 @@
                                     </div>
                                     <div class="row">
                                         <div class="col-sm-12">
-                                            <table id="table-kedatangan" class="table table-bordered table-hover">
-                                                <thead>
-                                                    <tr class="text-center">
-                                                        <th>No</th>
-                                                        <th>#</th>
-                                                        <th>DEPT PENERIMA</th>
-                                                        <th>NAMA PENERIMA</th>
-                                                        <th>NAMA PT PENGIRIM</th>
-                                                        <th>TANGGAL KEDATANGAN</th>
-                                                        <th>JENIS</th>
-                                                        <th>KETERANGAN</th>
-                                                        <th>DIBUAT</th>
-                                                        <th>STATUS</th>
-                                                        @if (in_array('security', $permissions))
-                                                            <th>AKSI</th>
-                                                        @endif
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                </tbody>
-                                            </table>
+                                            <div class="table-responsive">
+                                                <table id="table-kedatangan" class="table table-bordered table-hover">
+                                                    <thead>
+                                                        <tr class="text-center">
+                                                            <th>No</th>
+                                                            <th>#</th>
+                                                            <th>DEPT PENERIMA</th>
+                                                            <th>NAMA PENERIMA</th>
+                                                            <th>NAMA PT PENGIRIM</th>
+                                                            <th>TANGGAL KEDATANGAN</th>
+                                                            <th>JENIS</th>
+                                                            <th>KETERANGAN</th>
+                                                            <th>DIBUAT</th>
+                                                            <th>STATUS</th>
+                                                            @if (in_array('security', $permissions))
+                                                                <th>AKSI</th>
+                                                            @endif
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                    </tbody>
+                                                </table>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -129,53 +131,69 @@
                                 {{-- PENGIRIMAN TABLE --}}
                                 <div class="tab-pane fade" id="kt_tab_pane_2_3" role="tabpanel"
                                     aria-labelledby="kt_tab_pane_2_3">
-                                    <table id="table-pengiriman" class="table table-bordered">
-                                        <thead>
-                                            <tr class="text-center">
-                                                <th>No</th>
-                                                <th>#</th>
-                                                <th>DEPT PENERIMA</th>
-                                                <th>NAMA PENERIMA</th>
-                                                <th>NAMA PT PENGIRIM</th>
-                                                <th>TANGGAL PENGIRIMAN</th>
-                                                <th>JENIS</th>
-                                                <th>KETERANGAN</th>
-                                                <th>DIBUAT</th>
-                                                <th>STATUS</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            @foreach ($pengiriman as $edoc)
-                                                <tr>
-                                                    <td class="text-center">{{ $loop->iteration }}</td>
-                                                    <td class="text-center">
-                                                        <a href="javascript:void(0)"
-                                                            onclick="detailPengiriman('{{ $edoc->id }}')"
-                                                            class="btn btn-dark"><i class="fas fa-eye"></i>
-                                                        </a>
-                                                    </td>
-                                                    <td class="text-center">{{ $edoc->dept_pengirim }}</td>
-                                                    <td class="text-center">{{ $edoc->nama_penerima }}</td>
-                                                    <td class="text-center">{{ $edoc->nama_pt_penerima }}</td>
-                                                    <td class="text-center">
-                                                        {{ Carbon\carbon::parse($edoc->tanggal_pengiriman)->locale('id')->translatedFormat('d F Y') }}
-                                                    </td>
-                                                    <td class="text-center">{{ $edoc->jenis }}</td>
-                                                    <td class="text-center">{{ $edoc->keterangan }}</td>
-                                                    <td class="text-center">
-                                                        {{ Carbon\carbon::parse($edoc->created_at)->locale('id')->translatedFormat('d F Y H:i') }}
-                                                    </td>
-                                                    <td class="text-center">
-                                                        @if ($edoc->status == 1)
-                                                            <span class="badge badge-warning">Proses</span>
-                                                        @else
-                                                            <span class="badge badge-info"> Selesai</span>
-                                                        @endif
-                                                    </td>
+                                    <div class="table-responsive">
+                                        <table id="table-pengiriman" class="table table-bordered">
+                                            <thead>
+                                                <tr class="text-center">
+                                                    <th>No</th>
+                                                    <th>#</th>
+                                                    <th>DEPT PENERIMA</th>
+                                                    <th>NAMA PENERIMA</th>
+                                                    <th>NAMA PT PENGIRIM</th>
+                                                    <th>TANGGAL PENGIRIMAN</th>
+                                                    <th>JENIS</th>
+                                                    <th>KETERANGAN</th>
+                                                    <th>DIBUAT</th>
+                                                    <th>STATUS</th>
+                                                    {{-- role: administrator
+                                                     --}}
+                                                    @if (in_array('master_user', $permissions))
+                                                        <th>AKSI</th>
+                                                    @endif
                                                 </tr>
-                                            @endforeach
-                                        </tbody>
-                                    </table>
+                                            </thead>
+                                            <tbody>
+                                                @foreach ($pengiriman as $edoc)
+                                                    <tr>
+                                                        <td class="text-center">{{ $loop->iteration }}</td>
+                                                        <td class="text-center">
+                                                            <a href="javascript:void(0)"
+                                                                onclick="detailPengiriman('{{ $edoc->id }}')"
+                                                                class="btn btn-dark"><i class="fas fa-eye"></i>
+                                                            </a>
+                                                        </td>
+                                                        <td class="text-center">{{ $edoc->dept_pengirim }}</td>
+                                                        <td class="text-center">{{ $edoc->nama_penerima }}</td>
+                                                        <td class="text-center">{{ $edoc->nama_pt_penerima }}</td>
+                                                        <td class="text-center">
+                                                            {{ Carbon\carbon::parse($edoc->tanggal_pengiriman)->locale('id')->translatedFormat('d F Y') }}
+                                                        </td>
+                                                        <td class="text-center">{{ $edoc->jenis }}</td>
+                                                        <td class="text-center">{{ $edoc->keterangan }}</td>
+                                                        <td class="text-center">
+                                                            {{ Carbon\carbon::parse($edoc->created_at)->locale('id')->translatedFormat('d F Y H:i') }}
+                                                        </td>
+                                                        <td class="text-center">
+                                                            @if ($edoc->status == 1)
+                                                                <span class="badge badge-warning">Proses</span>
+                                                            @else
+                                                                <span class="badge badge-info"> Selesai</span>
+                                                            @endif
+                                                        </td>
+                                                        @if (in_array('master_user', $permissions))
+                                                            <td class="text-center">
+                                                                <button
+                                                                    onclick="deletePengiriman('{{ $edoc->id_barang }}')"
+                                                                    class="btn btn-danger btn-sm">
+                                                                    <i class="las la-trash"></i> Hapus
+                                                                </button>
+                                                            </td>
+                                                        @endif
+                                                    </tr>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -302,6 +320,18 @@
 
 @push('scripts')
     <script type="text/javascript">
+        $(document).ready(function() {
+            const params = new URLSearchParams(window.location.search);
+            const tab = params.get("tab");
+
+            if (tab === "pengiriman") {
+                $('a[href="#kt_tab_pane_2_3"]').tab('show');
+            } else {
+                $('a[href="#kt_tab_pane_1_3"]').tab('show');
+            }
+        });
+
+
         function returnBarang(id_barang, dept) {
             $('#id_barang_return').val(id_barang)
             $('#dept_return').val(dept)
@@ -313,6 +343,77 @@
             $('#dept_penerima_baru').val(dept)
             $('#modalChangeDept').modal('show')
         }
+
+        function deletePengiriman(id) {
+            Swal.fire({
+                title: "Hapus Data Pengiriman?",
+                text: "Data ini akan dihapus permanen!",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonText: "Ya, hapus!",
+                cancelButtonText: "Batal"
+            }).then((result) => {
+                if (!result.isConfirmed) return;
+
+                $.ajax({
+                    url: "{{ url('edoc/delete/pengiriman') }}/" + id,
+                    type: "DELETE",
+                    data: {
+                        _token: "{{ csrf_token() }}"
+                    },
+                    success: function(res) {
+                        if (res.status) {
+                            Swal.fire("Berhasil", res.message, "success");
+                            location.reload();
+                        } else {
+                            Swal.fire("Error", res.message, "error");
+                        }
+                    },
+                    error: function() {
+                        Swal.fire("Error", "Terjadi kesalahan pada server", "error");
+                    }
+                });
+            });
+        }
+
+        function deleteKedatangan(id) {
+            Swal.fire({
+                title: "Hapus Data?",
+                text: "Data ini akan dihapus permanen!",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonText: "Ya, hapus!",
+                cancelButtonText: "Batal"
+            }).then((result) => {
+                if (result.isConfirmed) {
+
+                    $.ajax({
+                        url: "{{ url('edoc/delete/kedatangan') }}/" + id,
+                        type: "DELETE",
+                        data: {
+                            _token: "{{ csrf_token() }}"
+                        },
+                        success: function(res) {
+                            if (res.status) {
+                                Swal.fire({
+                                    icon: "success",
+                                    title: "Berhasil",
+                                    text: res.message,
+                                });
+
+                                $('#table-kedatangan').DataTable().ajax.reload(null, false);
+                            } else {
+                                Swal.fire("Error", res.message, "error");
+                            }
+                        },
+                        error: function(err) {
+                            Swal.fire("Error", "Terjadi kesalahan pada server", "error");
+                        }
+                    });
+                }
+            });
+        }
+
 
         var initTooltip = function(el) {
             var theme = el.data('theme') ? `tooltip-${el.data('theme')}` : '';
@@ -417,30 +518,50 @@
                         searchable: false,
                         orderable: false,
                         render: function(data, type, row) {
+
+                            let html = "";
+
                             // belum diambil
                             if (row.status == 1) {
-                                return `<a 
-                                            href="javascript:void(0)" 
-                                            onClick="changeDepartment('${row.id_barang}', '${row.dept_penerima}')" 
-                                            data-toggle="tooltip" 
-                                            title="Ganti department penerima" 
-                                            class="btn btn-dark btn-sm"
-                                            >
-                                                <i class="las la-edit"></i>Ganti departemen
-                                        </a>`
-                            }
-                            // sudah diambil
-                            return `<a 
-                                        href="javascript:void(0)" 
+                                html += `
+                                    <a href="javascript:void(0)" 
+                                        onClick="changeDepartment('${row.id_barang}', '${row.dept_penerima}')" 
+                                        data-toggle="tooltip"
+                                        title="Ganti Department Penerima"
+                                        class="btn btn-dark btn-sm">
+                                            <i class="las la-edit"></i> Ganti Departemen
+                                    </a>
+                                `;
+                            } else {
+                                html += `
+                                    <a href="javascript:void(0)" 
                                         onClick="returnBarang('${row.id_barang}', '${row.dept_penerima}')" 
-                                        data-toggle="tooltip" 
-                                        title="Return Barang / Dokumen" 
+                                        data-toggle="tooltip"
+                                        title="Return Barang / Dokumen"
                                         class="btn btn-primary btn-sm">
                                             <i class="las la-undo-alt"></i> Return Barang
-                                    </a>`
+                                    </a>
+                                `;
+                            }
+
+                            @if (in_array('master_user', $permissions))
+                                // tombol delete khusus administrator
+                                html += `
+                                    <a href="javascript:void(0)"
+                                        onClick="deleteKedatangan('${row.id_barang}')"
+                                        data-toggle="tooltip"
+                                        title="Hapus data"
+                                        class="btn btn-danger btn-sm ms-1 mt-2 ">
+                                            <i class="las la-trash"></i> Hapus
+                                    </a>
+                                `;
+                            @endif
+
+                            return html;
                         }
                     },
                 @endif
+
             ]
         })
 
@@ -487,11 +608,11 @@
                                  ${
                                     response.data.data.updated_by
                                     ? `<b>${response.data.data.updated_by}</b> Mengambil Barang/Dokumen
-                                                                                                                                                                                                                                    
-                                                                                                                                                                                                                                        <br>Bukti Foto:<hr>
-                                                                                                                                                                                                                                        ${response.data.data.foto 
-                                                                                                                                                                                                                                            ? `<img src="{{ url('e-doc/pengambilan') }}/${response.data.data.foto}" width="100%">`
-                                                                                                                                                                                                                                            : '<i>Tidak ada foto</i>'}`
+                                                                                                                                                                                                                                                                                                                                                                        
+                                                                                                                                                                                                                                                                                                                                                                            <br>Bukti Foto:<hr>
+                                                                                                                                                                                                                                                                                                                                                                            ${response.data.data.foto 
+                                                                                                                                                                                                                                                                                                                                                                                ? `<img src="{{ url('e-doc/pengambilan') }}/${response.data.data.foto}" width="100%">`
+                                                                                                                                                                                                                                                                                                                                                                                : '<i>Tidak ada foto</i>'}`
                                             
                                     : '<span class="text-muted">Belum Diambil</span>'
                                 }

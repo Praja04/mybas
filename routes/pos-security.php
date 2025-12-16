@@ -15,20 +15,18 @@ Route::prefix('pos-security')->group(function () {
         Route::get('/absensi/gate', [PosSecurityController::class, 'absensiGate'])->name('pos-security.absensi.gate');
         Route::get('/absensi/display', [PosSecurityController::class, 'display'])->name('pos-security.absensi.display');
 
-        Route::get('/dashboard', [PosSecurityController::class, 'dashboard'])->name('pos-security.dashboard');
+        Route::get('/history/supplier', [PosSecurityController::class, 'historySupplier'])->name('pos-security.history.supplier');
+        Route::get('/history/tamu', [PosSecurityController::class, 'historyVendor'])->name('pos-security.history.vendor');
+        Route::get('/history/kendaraan', [PosSecurityController::class, 'historyCekKendaraan'])->name('pos-security.history.cek-kendaraan');
 
-        Route::get('/blacklist', [PosSecurityController::class, 'blacklist'])->name('pos-security.blacklist');
-
-        Route::get('/kartu/kartu-aktif', [PosSecurityController::class, 'kartuAktif'])->name('pos-security.kartu-aktif');
-        Route::get('/kartu/kartu-aktif/detail/{nomor_kartu}', [PosSecurityController::class, 'kartuAktifDetail'])->name('pos-security.kartu-aktif.detail');
-
-        Route::get('/history/supplier', [PosSecurityController::class, 'historySupplier']);
-        Route::get('/history/tamu', [PosSecurityController::class, 'historyVendor']);
-        Route::get('/history/kendaraan', [PosSecurityController::class, 'historyCekKendaraan']);
+        // Route::get('/dashboard', [PosSecurityController::class, 'dashboard'])->name('pos-security.dashboard');
+        // Route::get('/blacklist', [PosSecurityController::class, 'blacklist'])->name('pos-security.blacklist');
+        // Route::get('/kartu/kartu-aktif', [PosSecurityController::class, 'kartuAktif'])->name('pos-security.kartu-aktif');
+        // Route::get('/kartu/kartu-aktif/detail/{nomor_kartu}', [PosSecurityController::class, 'kartuAktifDetail'])->name('pos-security.kartu-aktif.detail');
 
         Route::prefix('master')->group(function () {
             Route::prefix('security')->group(function () {
-                Route::get('/', [PosSecurityController::class, 'dataSecurity']);
+                Route::get('/', [PosSecurityController::class, 'dataSecurity'])->name('pos-security.data.security');
             });
         });
     });

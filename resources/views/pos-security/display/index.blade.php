@@ -237,7 +237,7 @@
 <body>
     <div class="top-bar">
         <div class="d-flex align-items-center">
-            <a href="{{ route('pos-security.dashboard') }}" target="_blank">
+            <a href="{{ route('pos-security.formulir') }}" target="_blank">
                 <img src="{{ asset('assets/media/logos/bas_logo.jpg') }}" alt="Logo" height="40" />
             </a>
             <span class="ms-3">Monitoring Absen Tamu/Izin Keluar</span>
@@ -350,9 +350,23 @@
                         _token: csrfToken
                     })
                 })
-                .then(response => {
+                .then(async response => {
+                    const data = await response.json();
+
+                    if (response.status === 403 || response.status === 422) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: response.status === 403 ? 'Akses Ditolak' : 'Data Tidak Valid',
+                            text: data.message || 'Terjadi kesalahan.',
+                            timer: 2000,
+                            showConfirmButton: false
+                        });
+
+                        throw new Error('Stop execution');
+                    }
+
                     if (!response.ok) throw new Error('Network response was not ok');
-                    return response.json();
+                    return data;
                 })
                 .then(data => {
                     if (data.success) {
@@ -384,13 +398,13 @@
                         }
 
                         // Tampilkan Swal sukses
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Berhasil',
-                            text: data.message,
-                            timer: 2000,
-                            showConfirmButton: false
-                        });
+                        // Swal.fire({
+                        //     icon: 'success',
+                        //     title: 'Berhasil',
+                        //     text: data.message,
+                        //     timer: 2000,
+                        //     showConfirmButton: false
+                        // });
                     } else {
                         Swal.fire({
                             icon: 'error',
@@ -401,7 +415,9 @@
                         });
                     }
                 })
-                .catch(() => {
+                .catch(err => {
+                    if (err.message === 'Stop execution') return;
+
                     const statusKartuEl = document.getElementById('status-kartu');
                     statusKartuEl.className = 'red';
                     statusKartuEl.textContent = 'ERROR';

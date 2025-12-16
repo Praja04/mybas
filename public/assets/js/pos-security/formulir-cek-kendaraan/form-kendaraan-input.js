@@ -407,13 +407,12 @@ $("#searchVisitorData").on("click", function () {
                 $("#tgl_periksa").val(`${yyyy}-${mm}-${dd}`);
                 $("#jam_periksa").val(`${hh}:${min}`);
                 $("#trnvisitorid").val(data.trnvisitorid);
-                console.log(data.trnvisitorid);
             } else {
                 $("#cekKendaraanForm").hide();
 
                 Swal.fire({
                     icon: "warning",
-                    title: "Tidak Ditemukan",
+                    title: "Gagal",
                     text: res.message,
                 });
             }

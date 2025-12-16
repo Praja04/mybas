@@ -14,7 +14,7 @@
     var API_DASHBOARD_FILTER_STATISTIK = '{{ route('ajax.pos-security.dashboard.statistik') }}';
 
     var API_FORM_CREATE_SECURITY = '{{ route('ajax.pos-security.master.security.store') }}';
-    var API_FORM_DELETE_SECURITY = '{{ route('ajax.pos-security.master.security.delete', ':id') }}';
+    var API_FORM_TOGGLE_SECURITY = '{{ route('ajax.pos-security.master.security.toggle', ':id') }}';
     var API_FORM_EDIT_SECURITY = '{{ route('ajax.pos-security.master.security.edit', ':id') }}';
     var API_FORM_UPDATE_SECURITY = '{{ route('ajax.pos-security.master.security.update', ':id') }}';
 </script>

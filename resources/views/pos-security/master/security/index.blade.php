@@ -1,5 +1,7 @@
 @extends('pos-security.layouts.base')
 
+@section('title', 'Data Security')
+
 @section('content')
     {{-- TABLE --}}
     <div class="container-fluid">
@@ -69,12 +71,12 @@
                         <div class="mb-3">
                             <label>Nomor Kartu <span class="text-danger">*</span></label>
                             <input type="text" name="nomor_kartu" class="form-control" required
-                                placeholder="Masukkan nomor kartu">
+                                placeholder="Masukkan/scan nomor kartu">
                         </div>
 
                         <div class="mb-3">
-                            <label>Foto (Max. 1MB)</label>
-                            <input type="file" name="foto" class="form-control" accept="image/*">
+                            <label>Foto (Max. 1MB) <span class="text-danger">*</span></label>
+                            <input type="file" name="foto" class="form-control" accept="image/*" required>
                         </div>
                     </div>
 
@@ -153,6 +155,4 @@
 @push('scripts')
     <script type="module" src="{{ asset('assets/js/pos-security/master/security/data-security-table.js') }}"></script>
     <script src="{{ asset('assets/js/pos-security/master/security/data-security.js') }}"></script>
-
-    {{-- <script src="{{ asset('assets/js/pos-security/history/pages/history-cek-kendaraan-modal.js') }}"></script> --}}
 @endpush

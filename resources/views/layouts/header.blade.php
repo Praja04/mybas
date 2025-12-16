@@ -887,6 +887,16 @@
                                                 </a>
                                             </li>
                                         @endif
+                                        @if (in_array('sigra_email_penerima', $permissions))
+                                            <li class="menu-item" aria-haspopup="true">
+                                                <a href="{{ url('/sigra/email') }}" class="menu-link">
+                                                    <i class="menu-bullet menu-bullet-line">
+                                                        <span></span>
+                                                    </i>
+                                                    <span class="menu-text">Email Penerima</span>
+                                                </a>
+                                            </li>
+                                        @endif
                                         {{-- @if (in_array('sigra_sni_mi_instan', $permissions))
                                             <li class="menu-item" aria-haspopup="true">
                                                 <a href="{{ url('/sigra/sni-mi-instan') }}" class="menu-link">
@@ -952,7 +962,7 @@
                                         @endif
                                         @if (in_array('pos-security', $permissions))
                                             <li class="menu-item" aria-haspopup="true">
-                                                <a href="{{ url('/pos-security/dashboard') }}" class="menu-link">
+                                                <a href="{{ url('/pos-security/formulir') }}" class="menu-link">
                                                     <i class="menu-bullet menu-bullet-line">
                                                         <span></span>
                                                     </i>

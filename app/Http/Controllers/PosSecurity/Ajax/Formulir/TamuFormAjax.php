@@ -128,7 +128,7 @@ class TamuFormAjax extends Controller
         }
     }
 
-    // caru tamu
+    // cari tamu
     public function search(Request $request)
     {
         $keyword = $request->input('keyword');
@@ -169,8 +169,9 @@ class TamuFormAjax extends Controller
             if (!empty($visitor->nopol)) {
 
                 $cekKendaraan = DB::table('ga_cek_kendaraan')
-                    ->where('trnvisitorid', $visitor->trnvisitorid)
-                    ->first();
+                    ->where('nomor_polisi', $visitor->nopol)
+                    ->whereDate('datein', $visitor->datein)
+                    ->exists();
 
                 if (!$cekKendaraan) {
                     return response()->json([
@@ -374,14 +375,26 @@ class TamuFormAjax extends Controller
 
             DB::transaction(function () use ($visitorData, &$isNewRecord, &$isUpdated, &$isCardInUse) {
 
-                // Cek apakah kartu RFID masih digunakan oleh visitor lain (belum diserahkan kembali)
-                $kartuMasihDipakai = GaVisitorVendorTransaction::where('no_kartu', $visitorData['no_kartu'])
+                // Cek apakah kartu masih dipakai oleh vendor/tamu lain
+                $dipakaiVendor = GaVisitorVendorTransaction::where('no_kartu', $visitorData['no_kartu'])
                     ->where(function ($q) {
                         $q->whereNull('kartu_dikembalikan')
                             ->orWhere('kartu_dikembalikan', false)
                             ->orWhereNull('dateout');
                     })
                     ->exists();
+
+                // Cek apakah kartu masih dipakai oleh supplier/transporter lain
+                $dipakaiSupplier = GaVisitorTransaction::where('no_kartu', $visitorData['no_kartu'])
+                    ->where(function ($q) {
+                        $q->whereNull('kartu_dikembalikan')
+                            ->orWhere('kartu_dikembalikan', false)
+                            ->orWhereNull('dateout');
+                    })
+                    ->exists();
+
+                // Jika dipakai di salah satu tabel → kartu sedang digunakan
+                $kartuMasihDipakai = $dipakaiVendor || $dipakaiSupplier;
 
                 if ($kartuMasihDipakai) {
                     $isCardInUse = true;
@@ -410,29 +423,30 @@ class TamuFormAjax extends Controller
                 }
             });
 
-            $kartuDipakaiOleh = GaVisitorVendorTransaction::where('no_kartu', $visitorData['no_kartu'])
-                ->where(function ($q) {
-                    $q->whereNull('kartu_dikembalikan')
-                        ->orWhere('kartu_dikembalikan', false)
-                        ->orWhereNull('dateout');
-                })
-                ->orderByDesc('id')
-                ->first();
+            // $kartuDipakaiOleh = GaVisitorVendorTransaction::where('no_kartu', $visitorData['no_kartu'])
+            //     ->where(function ($q) {
+            //         $q->whereNull('kartu_dikembalikan')
+            //             ->orWhere('kartu_dikembalikan', false)
+            //             ->orWhereNull('dateout');
+            //     })
+            //     ->orderByDesc('id')
+            //     ->first();
 
             if ($isCardInUse) {
-                $namaVisitor = $kartuDipakaiOleh->namavisitor ?? '-';
-                $noKartu     = $kartuDipakaiOleh->no_kartu ?? '-';
-                $noKtp       = $kartuDipakaiOleh->no_ktp_sim ?? '-';
-                $dateIn      = $kartuDipakaiOleh->datein ?? '-';
-                $timeIn      = $kartuDipakaiOleh->timein ?? '-';
+                // $namaVisitor = $kartuDipakaiOleh->namavisitor ?? '-';
+                // $noKartu     = $kartuDipakaiOleh->no_kartu ?? '-';
+                // $noKtp       = $kartuDipakaiOleh->no_ktp_sim ?? '-';
+                // $dateIn      = $kartuDipakaiOleh->datein ?? '-';
+                // $timeIn      = $kartuDipakaiOleh->timein ?? '-';
 
-                $message  = "Nomor kartu {$noKartu} saat ini masih digunakan oleh {$namaVisitor} ";
-                $message .= "(Nomor KTP: {$noKtp}) sejak {$dateIn} pukul {$timeIn}. ";
-                $message .= "Silakan pastikan kartu sudah di-*tap out* atau dikembalikan. ";
-                $message .= "Periksa status kartu melalui menu *Pos 2 - OUT*, lalu coba lagi.";
+                // $message  = "Nomor kartu {$noKartu} saat ini masih digunakan oleh {$namaVisitor} ";
+                // $message .= "(Nomor KTP: {$noKtp}) sejak {$dateIn} pukul {$timeIn}. ";
+                // $message .= "Silakan pastikan kartu sudah dikembalikan. ";
+                // $message .= "Periksa status kartu melalui menu *OUT*, lalu coba lagi.";
 
                 return response()->json([
-                    'message' => $message,
+                    // 'message' => $message,
+                    'message' => 'Nomor kartu ini masih digunakan oleh visitor lain. Silakan gunakan kartu yang lain.'
                 ], 400);
             }
 

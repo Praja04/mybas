@@ -22,36 +22,11 @@ $menus = [
                 'icon' => 'mdi-camera-rear',
                 'submenu' => [],
             ],
-            // GA only
-            [
-                'path' => 'pos-security/master/security',
-                'label' => 'Data Security',
-                'icon' => 'mdi-human-male',
-                'submenu' => [],
-            ],
         ],
     ],
     [
-        'label' => 'Dashboard',
+        'label' => 'Display',
         'menu' => [
-            // [
-            //     'path' => 'pos-security/dashboard',
-            //     'label' => 'Dashboard',
-            //     'icon' => 'mdi-view-dashboard',
-            //     'submenu' => [],
-            // ],
-            [
-                'path' => 'pos-security/absensi/visitor',
-                'label' => 'Absensi Tapping Pengunjung',
-                'icon' => 'mdi-barcode-scan',
-                'submenu' => [],
-            ],
-            [
-                'path' => 'pos-security/absensi/gate',
-                'label' => 'Absensi Tapping Security',
-                'icon' => 'mdi-barcode-scan',
-                'submenu' => [],
-            ],
             [
                 'path' => 'pos-security/absensi/display',
                 'label' => 'Display Tapping',
@@ -63,9 +38,27 @@ $menus = [
     [
         'label' => 'Riwayat',
         'menu' => [
+            // [
+            //     'path' => 'pos-security/dashboard',
+            //     'label' => 'Dashboard',
+            //     'icon' => 'mdi-view-dashboard',
+            //     'submenu' => [],
+            // ],
             [
-                'path' => 'sidebarDaftarTamuBAS',
-                'label' => 'Daftar Tamu PT BAS',
+                'path' => 'pos-security/absensi/visitor',
+                'label' => 'Riwayat Tapping Pengunjung',
+                'icon' => 'mdi-barcode-scan',
+                'submenu' => [],
+            ],
+            [
+                'path' => 'pos-security/absensi/gate',
+                'label' => 'Riwayat Tapping Security',
+                'icon' => 'mdi-barcode-scan',
+                'submenu' => [],
+            ],
+            [
+                'path' => 'sidebarRiwayatTamuBAS',
+                'label' => 'Riwayat Tamu PT BAS',
                 'icon' => 'mdi-account-group-outline',
                 'submenu' => [
                     [
@@ -86,39 +79,47 @@ $menus = [
             ],
         ],
     ],
+    [
+        'label' => 'Data',
+        'menu' => [
+            [
+                'path' => 'pos-security/master/security',
+                'label' => 'Data Security',
+                'icon' => 'mdi-human-male',
+                'permission' => 'pos-security_data_security',
+                'submenu' => [],
+            ],
+
+            //         [
+            //             'path' => 'sidebarKartu',
+            //             'label' => 'Kartu',
+            //             'icon' => 'mdi-card-account-details-outline',
+            //             'submenu' => [
+            //                 [
+            //                     'path' => 'pos-security/kartu/kartu-aktif',
+            //                     'label' => 'List Kartu Aktif',
+            //                 ],
+            //             ],
+            //         ],
+            //         [
+            //             'path' => 'pos-security/blacklist',
+            //             'label' => 'Blacklist Tamu',
+            //             'icon' => 'mdi-account-cancel-outline',
+            //             'submenu' => [],
+            //         ],
+        ],
+    ],
     // [
-    //     'label' => 'Report',
+    //     'label' => 'Bantuan',
     //     'menu' => [
     //         [
-    //             'path' => 'sidebarKartu',
-    //             'label' => 'Kartu',
-    //             'icon' => 'mdi-card-account-details-outline',
-    //             'submenu' => [
-    //                 [
-    //                     'path' => 'pos-security/kartu/kartu-aktif',
-    //                     'label' => 'List Kartu Aktif',
-    //                 ],
-    //             ],
-    //         ],
-    //         [
-    //             'path' => 'pos-security/blacklist',
-    //             'label' => 'Blacklist Tamu',
-    //             'icon' => 'mdi-account-cancel-outline',
+    //             'path' => 'sidebarBantuan',
+    //             'label' => 'Bantuan',
+    //             'icon' => 'mdi-help-circle-outline',
     //             'submenu' => [],
     //         ],
     //     ],
     // ],
-    [
-        'label' => 'Bantuan',
-        'menu' => [
-            [
-                'path' => 'sidebarBantuan',
-                'label' => 'Bantuan',
-                'icon' => 'mdi-help-circle-outline',
-                'submenu' => [],
-            ],
-        ],
-    ],
 ];
 
 ?>

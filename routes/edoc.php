@@ -41,5 +41,8 @@ Route::prefix('/edoc')->group(function () {
         Route::get('remainder', function () {
             return view('mail.edoc.edoc_remainder');
         });
+
+        Route::delete('/delete/kedatangan/{id}', 'EDocLogController@deleteKedatangan');
+        Route::delete('/delete/pengiriman/{id}', 'EDocLogController@deletePengiriman');
     });
 });

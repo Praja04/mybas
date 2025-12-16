@@ -18,21 +18,21 @@ window.openEditSecurityModal = function (id) {
     });
 };
 
-window.deleteSecurity = function (id) {
+window.toggleSecurity = function (id) {
     Swal.fire({
-        title: "Yakin ingin menonaktifkan?",
-        text: "Data yang sudah dinonaktifkan tidak dapat dikembalikan!",
+        title: "Konfirmasi",
+        text: "Apakah Anda yakin ingin mengubah status security ini?",
         icon: "warning",
         showCancelButton: true,
         confirmButtonText: "Ya",
         cancelButtonText: "Batal",
     }).then((result) => {
         if (result.isConfirmed) {
-            let url = API_FORM_DELETE_SECURITY.replace(":id", id);
+            let url = API_FORM_TOGGLE_SECURITY.replace(":id", id);
 
             $.ajax({
                 url,
-                method: "DELETE",
+                method: "POST",
                 // data: {
                 //     _token: CSRF_TOKEN,
                 // },
@@ -52,7 +52,7 @@ window.deleteSecurity = function (id) {
 
                     Swal.fire(
                         "Error",
-                        "Terjadi kesalahan saat menonaktifkan security",
+                        "Terjadi kesalahan saat mengubah status security",
                         "error"
                     );
                 },

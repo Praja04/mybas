@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use App\Models\PosSecurity\GaVisitorTransaction;
+use App\Models\PosSecurity\GaVisitorVendorTransaction;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
@@ -275,6 +276,19 @@ class SupplierFormAjax extends Controller
             ]);
         }
 
+        // validasi apakah kendaraan sudah dilakukan cek kendaraan
+        $alreadyChecked = DB::table('ga_cek_kendaraan')
+            ->where('nomor_polisi', $visitor->nopol)
+            ->whereDate('datein', $visitor->datein)
+            ->exists();
+
+        if (!$alreadyChecked) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Kendaraan belum dilakukan cek kendaraan. Tidak dapat diproses keluar.'
+            ]);
+        }
+
         return response()->json([
             'success' => true,
             'data' => $visitor
@@ -401,7 +415,7 @@ class SupplierFormAjax extends Controller
                 'purpose'            => $request->purpose,
                 'nopol'              => strtoupper($request->nopol),
                 'gateidin'           => 'POS01',
-                'gatelineidin'       => 'JGB02',
+                'gatelineidin'       => 'JGB01',
                 'datein'             => $now->format('Y-m-d'),
                 'timein'             => $now->format('H:i:s'),
                 'createdby'          => 'system',
@@ -424,13 +438,26 @@ class SupplierFormAjax extends Controller
             $isCardInUse   = false;
 
             DB::transaction(function () use ($supplier_data, &$isNewRecord, &$isUpdated, &$isCardInUse) {
-                $kartuMasihDipakai = GaVisitorTransaction::where('no_kartu', $supplier_data['no_kartu'])
+                // Cek apakah kartu masih dipakai oleh supplier/transporter lain
+                $dipakaiSupplier = GaVisitorTransaction::where('no_kartu', $supplier_data['no_kartu'])
                     ->where(function ($q) {
                         $q->whereNull('kartu_dikembalikan')
                             ->orWhere('kartu_dikembalikan', false)
                             ->orWhereNull('dateout');
                     })
                     ->exists();
+
+                // Cek apakah kartu masih dipakai oleh vendor/tamu lain
+                $dipakaiVendor = GaVisitorVendorTransaction::where('no_kartu', $supplier_data['no_kartu'])
+                    ->where(function ($q) {
+                        $q->whereNull('kartu_dikembalikan')
+                            ->orWhere('kartu_dikembalikan', false)
+                            ->orWhereNull('dateout');
+                    })
+                    ->exists();
+
+                // Jika dipakai di salah satu tabel → kartu sedang digunakan
+                $kartuMasihDipakai = $dipakaiVendor || $dipakaiSupplier;
 
                 if ($kartuMasihDipakai) {
                     $isCardInUse = true;
