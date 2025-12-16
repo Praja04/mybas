@@ -5,50 +5,63 @@
 @section('content')
 
     <div class="container-fluid">
+        <h3>Master Area</h3>
+        <p class="text-muted">Kelola area berdasarkan departemen.</p>
+
+        <div id="alert-area" class="alert alert-info">
+            Silakan pilih <strong>Department</strong> terlebih dahulu untuk menampilkan data Area.
+        </div>
+
         <div class="card">
             <div class="card-body">
-                <div class="row">
-
-                    <div class="col-md-3">
-                        <h3 style="margin-bottom: 13px">AREA</h3>
-                        <div class="card border">
-
-                            <div class="card-body">
-                                <h6>Pilih Department</h6>
-                                <select name="department" id="filter_department" class="form-control">
-                                    <option value="" selected disabled>-- Pilih Department --</option>
-                                    @foreach ($department as $dept)
-                                        <option value="{{ $dept->id_department }}">{{ $dept->nama_department }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
+                <div class="row align-items-end g-3">
+                    <div class="col-md-9">
+                        <div>
+                            <label for="filter-department">Pilih Department <span class="text-danger">*</span></label>
+                            <select name="department" id="filter_department" class="form-control">
+                                <option value="" selected disabled>-- Pilih Department --</option>
+                                @foreach ($department as $dept)
+                                    <option value="{{ $dept->id_department }}">{{ $dept->nama_department }}</option>
+                                @endforeach
+                            </select>
                         </div>
+                    </div>
+                    <div class="col-md-3">
+                        <button type="button" id="btn-pilih-department" class="btn btn-primary waves-effect w-100">
+                            <i class="mdi mdi-magnify"></i>
+                            Pilih
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
 
+        <div class="card d-none" id="area-table-wrapper">
+            <div class="card-body">
+                <div class="row mb-4 align-items-end">
+                    <div class="col-lg-10 col-md-6">
+                        <h5 id="area-title">Area Departemen</h5>
+                    </div>
+                    <div class="col-lg-2 col-md-6 justify-content-end">
                         <button type="button" class="btn btn-primary waves-effect btn-block w-100" data-bs-toggle="modal"
                             data-bs-target="#modalCreateGroup">
                             <i class="mdi mdi-plus"></i>
-                            Tambah AREA
+                            Tambah Area
                         </button>
                     </div>
-
-                    <div class="col-md-9">
-                        <div id="alert-area" class="alert alert-info">
-                            Silakan pilih <strong>Department</strong> terlebih dahulu untuk menampilkan data Area.
-                        </div>
-
-                        <div class="table-responsive">
-                            <table class="table table-hover table-striped" id="table-group">
-                                <thead>
-                                    <tr style="background-color: #a80000; color: #fff">
-                                        <th style="width: 220px">NAMA AREA</th>
-                                        <th style="width: 400px">AKSI</th>
-                                    </tr>
-                                </thead>
-                            </table>
-                        </div>
-                    </div>
-
                 </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped w-100" id="table-group">
+                        <thead>
+                            <tr>
+                                <th style="width: 70%">NAMA AREA</th>
+                                <th style="width: 30%">AKSI</th>
+                            </tr>
+                        </thead>
+                    </table>
+                </div>
+
             </div>
         </div>
     </div>
@@ -131,6 +144,8 @@
                 }
             },
             deferLoading: 0,
+            autoWidth: false,
+            responsive: true,
             columns: [{
                     data: 'nama_area',
                     name: 'nama_area'
@@ -223,18 +238,30 @@
         }
 
 
-        $('#filter_department').on('change', function() {
-            var department = $(this).val();
+        $('#btn-pilih-department').on('click', function() {
+            let department = $('#filter_department').val();
 
             if (!department) {
-                $('#alert-department').show();
-                table.clear().draw();
+                Swal.fire(
+                    'Perhatian',
+                    'Silakan pilih Department terlebih dahulu',
+                    'info'
+                );
                 return;
             }
 
-            $('#alert-department').hide();
-            table.ajax.url("{{ route('5r-system.master-area.data') }}?department=" + department).load();
+            let deptName = $('#filter_department option:selected').text();
+            $('#area-title').text('Area Departemen ' + deptName);
+
+            // Hide alert
+            $('#alert-area').hide();
+
+            // Show table
+            $('#area-table-wrapper').removeClass('d-none');
+
+            table.ajax.reload();
         });
+
 
         $('#formCreateGroup').on('submit', function(e) {
             e.preventDefault()
