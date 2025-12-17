@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Sigra;
 
+use App\AuthGroup;
 use App\Department;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
@@ -11,6 +12,7 @@ use App\Exports\SIOExport;
 use App\Models\Sigra\SIOSertifikasi;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Models\LocalAttachment;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 
 class SioController extends Controller
@@ -20,14 +22,20 @@ class SioController extends Controller
         $departments = Department::where('status', '1')->get();
 
         $perusahaan = Perusahaan::all();
+
+        $flags = $this->sioAccessFlags();
+
         return view('sigra.sio', [
             'perusahaan' => $perusahaan,
-            'departments' => $departments
+            'departments' => $departments,
+            'sioFlags'    => $flags,
         ]);
     }
 
     public function tambahPerizinan(Request $request)
     {
+        $this->abortIfReadonly();
+
         $request->validate([
             'perusahaan' => 'required|integer|exists:sigra_perusahaan,id',
             'nama_perizinan' => 'required|string|max:150',
@@ -54,6 +62,8 @@ class SioController extends Controller
 
     public function getAll()
     {
+        $flags = $this->sioAccessFlags();
+
         $sertifikasi_sio = [];
         $sioList = SIO::with('department')->where('status', '!=', 'deleted')->get();
 
@@ -85,6 +95,11 @@ class SioController extends Controller
             $selesai = $sio->tanggal_selesai_ikatan_dinas ? date('Y', strtotime($sio->tanggal_selesai_ikatan_dinas)) : null;
             $ikatan_dinas = $mulai && $selesai ? "$mulai - $selesai" : '-';
 
+            $harga = '-';
+            if ($sertifikasi && !$flags['hide_price']) {
+                $harga = number_format($sertifikasi->harga, 0, ',', '.');
+            }
+
             $array = [
                 $key + 1,
                 $sio->perusahaan->nama_perusahaan,
@@ -101,10 +116,9 @@ class SioController extends Controller
                 '<span class="label label-inline label-' . $label_status . '">' . $sio->status . '</span>',
                 $sertifikasi ? $this->formatTanggal($sertifikasi->tanggal_terbit) : '-',
                 $sertifikasi ? '<span class="label label-inline label-outline-' . $expired . '">' . $this->formatTanggal($sertifikasi->tanggal_habis) . '</span>' : '-',
-                $sertifikasi ? number_format($sertifikasi->harga, 0, ',', '.') : '-',
+                $sertifikasi ? $harga : '-',
                 $sertifikasi ? $sertifikasi->keterangan : '-',
-                '<a onClick="edit(\'' . $sio->id . '\')" title="Edit" href="javascript:" class="fa fa-edit text-hover-dark mr-2"></a>
-                <a onClick="deleteItem(\'' . $sio->id . '\')" title="Hapus" href="javascript:" class="fa fa-trash text-hover-dark"></a>'
+                $this->actionButtons($sio),
             ];
             $sertifikasi_sio[] = $array;
         }
@@ -119,6 +133,8 @@ class SioController extends Controller
 
     public function buatSertifikat(Request $request)
     {
+        $this->abortIfReadonly();
+
         $request->validate([
             'sio_id' => 'required|integer|exists:sigra_sio,id',
             'nomor_izin' => 'required|string|max:50',
@@ -151,17 +167,28 @@ class SioController extends Controller
 
     public function getSertifikat($id)
     {
-        $sertifikasi = SIOSertifikasi::with('attachments') // eager load
+        $flags = $this->sioAccessFlags();
+
+        $sertifikasi = SIOSertifikasi::with('attachments')
             ->where('id_sio', $id)
             ->where('status', '!=', 'deleted')
             ->orderByDesc('tanggal_habis')
             ->get();
 
-        return response()->json(['success' => 1, 'data' => $sertifikasi], 200);
+        return response()->json([
+            'success' => 1,
+            'data' => $sertifikasi,
+            'permissions' => [
+                'readonly' => $flags['readonly'],
+                'hide_price' => $flags['hide_price'],
+            ],
+        ]);
     }
 
     public function ubahSertifikat(Request $request)
     {
+        $this->abortIfReadonly();
+
         $request->validate([
             'sio_id' => 'required|integer|exists:sigra_sio,id',
             'nomor_izin' => 'required|string|max:50',
@@ -196,12 +223,18 @@ class SioController extends Controller
 
     public function getAttachments($id)
     {
+        $flags = $this->sioAccessFlags();
+
         $sertifikasi = SIOSertifikasi::find($id);
         $attachments = LocalAttachment::where('transaction_id', $sertifikasi->transaction_id)->get();
         return response()->json([
             'success' => 1,
             'message' => 'Get attachments succeed',
-            'data' => $attachments
+            'data' => $attachments,
+            'permissions' => [
+                'readonly' => $flags['readonly'],
+            ],
+
         ]);
     }
 
@@ -214,6 +247,8 @@ class SioController extends Controller
 
     public function update(Request $request)
     {
+        $this->abortIfReadonly();
+
         $data = SIO::find($request->id);
 
         if (!$data) {
@@ -247,6 +282,8 @@ class SioController extends Controller
 
     public function deletePerizinan($id)
     {
+        $this->abortIfReadonly();
+
         $data = SIO::find($id);
         $data->status = 'deleted';
         $data->save();
@@ -255,6 +292,8 @@ class SioController extends Controller
 
     public function deleteSertifikasi($id)
     {
+        $this->abortIfReadonly();
+
         // soft delete
         $data = SIOSertifikasi::find($id);
         if (!$data) {
@@ -327,6 +366,8 @@ class SioController extends Controller
 
     public function setStatus(Request $request)
     {
+        $this->abortIfReadonly();
+
         $data = SIO::find($request->id);
         $data->status = $request->status;
         $data->save();
@@ -336,5 +377,51 @@ class SioController extends Controller
     public function exportSio()
     {
         return Excel::download(new SIOExport, 'SIO.xls');
+    }
+
+    // Helper check permission
+    private function hasPermission($permission)
+    {
+        $permissions = AuthGroup::find(Auth::user()->auth_group_id)
+            ->permissions()
+            ->pluck('codename')
+            ->toArray();
+
+        return in_array($permission, $permissions);
+    }
+
+    // Helper flag readonly & hide price
+    private function sioAccessFlags()
+    {
+        $isReadonly = $this->hasPermission('sigra_sio_readonly');
+        $hasHidePrice = $this->hasPermission('sigra_sio_readonly_hide_price');
+
+        if ($hasHidePrice && !$isReadonly) {
+            $isReadonly = true;
+        }
+        return [
+            'readonly'   => $isReadonly,
+            'hide_price' => $isReadonly && $hasHidePrice,
+        ];
+    }
+
+    // Action button (edit & delete)
+    private function actionButtons($sio)
+    {
+        if ($this->sioAccessFlags()['readonly']) {
+            return '';
+        }
+
+        return '
+            <a onClick="edit(\'' . $sio->id . '\')" class="fa fa-edit mr-2"></a>
+            <a onClick="deleteItem(\'' . $sio->id . '\')" class="fa fa-trash"></a>
+        ';
+    }
+
+    private function abortIfReadonly(): void
+    {
+        if ($this->sioAccessFlags()['readonly']) {
+            abort(403, 'Readonly access');
+        }
     }
 }
