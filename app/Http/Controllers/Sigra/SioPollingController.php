@@ -36,7 +36,10 @@ class SioPollingController extends Controller
             $now = Carbon::now();
 
             // if ($now->dayOfWeek !== Carbon::MONDAY || $now->hour !== 8) {
-            if ($now->dayOfWeek !== Carbon::THURSDAY || $now->hour !== 10) { // TESTING ONLY
+            if (
+                $now->dayOfWeek !== Carbon::WEDNESDAY ||
+                ($now->hour !== 15 && $now->hour !== 16)
+            ) { // TESTING ONLY
                 return response()->json([
                     'success' => false,
                     'message' => 'Belum waktunya polling SIO',
@@ -72,7 +75,7 @@ class SioPollingController extends Controller
                 if ($sertifikasi) {
                     $selisih_hari = $this->expired($sertifikasi->tanggal_habis);
 
-                    if ($selisih_hari <= 45 && $selisih_hari >= -60) {
+                    if ($selisih_hari <= 60 && $selisih_hari >= -60) {
                         $sertifikasi->perusahaan = $data->perusahaan->nama_perusahaan ?? '-';
                         $sertifikasi->nama_perizinan = $data->nama_perizinan;
                         $sertifikasi->nama_karyawan = $data->nama_karyawan;

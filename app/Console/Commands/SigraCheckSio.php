@@ -76,8 +76,8 @@ class SigraCheckSio extends Command
             if ($sertifikasi != null) {
                 $selisih_hari = $this->expired($sertifikasi->tanggal_habis);
 
-                // condition: akan expired <= 45 hari, atau sudah expired tapi belum lebih dari 60 hari
-                if ($selisih_hari <= 45 && $selisih_hari >= -60) {
+                // condition: akan expired <= 60 hari, atau sudah expired tapi belum lebih dari 60 hari
+                if ($selisih_hari <= 60 && $selisih_hari >= -60) {
                     $sertifikasi->perusahaan = $data->perusahaan->nama_perusahaan;
                     $sertifikasi->nama_perizinan = $data->nama_perizinan;
                     $sertifikasi->nama_karyawan = $data->nama_karyawan;

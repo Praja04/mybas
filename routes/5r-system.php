@@ -5,13 +5,33 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('5r-system')->group(function () {
     Route::group(['middleware' => ['auth', 'access_log', 'rules']], function () {
+        // Dashboard
         Route::get('/', 'System5R\DashboardController@index')->name('5r-system.dashboard');
+
+        // Master Group
         Route::get('/master-group', 'System5R\MasterGroupController@index')->name('5r-system.master-group');
         Route::get('/master-group/data', 'System5R\MasterGroupController@data')->name('5r-system.master-group.data');
         Route::post('/master-group/store', 'System5R\MasterGroupController@store')->name('5r-system.master-group.store');
         Route::get('/master-group/by-department/{id_department}', 'System5R\MasterGroupController@byDepartment')->name('5r-system.master-group.by-department');
         Route::post('/master-group/nonaktifkan', 'System5R\MasterGroupController@nonaktifkan')->name('5r-system.master-group.nonaktifkan');
 
+        // Master Area
+        Route::get('/master-area', 'System5R\MasterAreaController@index')->name('5r-system.master-area');
+        Route::get('/master-area/data', 'System5R\MasterAreaController@getAll')->name('5r-system.master-area.data');
+        Route::get('/master-area/by-department/{id_department}', 'System5R\MasterAreaController@getByDepartment')->name('5r-system.master-area.by-department');
+        Route::post('/master-area/store', 'System5R\MasterAreaController@store')->name('5r-system.master-area.store');
+        Route::get('/master-area/edit/{id_area}', 'System5R\MasterAreaController@edit')->name('5r-system.master-area.edit');
+        Route::post('/master-area/update', 'System5R\MasterAreaController@update')->name('5r-system.master-area.update');
+        Route::post('/master-area/nonaktifkan', 'System5R\MasterAreaController@nonaktifkan')->name('5r-system.master-area.nonaktifkan');
+        Route::post('/master-area/delete', 'System5R\MasterAreaController@delete')->name('5r-system.master-area.delete');
+
+
+
+
+
+
+
+        // Master Pertanyaan
         Route::get('/master-pertanyaan', 'System5R\MasterPertanyaanController@index')->name('5r-system.master-pertanyaan');
         Route::get('/master-pertanyaan/data', 'System5R\MasterPertanyaanController@data')->name('5r-system.master-pertanyaan.data');
         Route::post('/master-pertanyaan/store', 'System5R\MasterPertanyaanController@store')->name('5r-system.master-pertanyaan.store');
@@ -122,6 +142,5 @@ Route::prefix('5r-system')->group(function () {
         Route::post('/schedule-juri/add-jadwal', 'System5R\ScheduleJuriController@addJadwal');
         Route::post('/schedule-juri/add-periode', 'System5R\ScheduleJuriController@addPeriode');
         Route::get('/report/pendamping', 'System5R\Report\CommitteeController@pendamping')->name('5r-system.report.pendamping');
-
     });
 });

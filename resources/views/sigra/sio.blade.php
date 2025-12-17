@@ -20,8 +20,10 @@
                             </h3>
                         </div>
                         <div class="card-toolbar">
-                            <a href="javascript:" class="btn btn-primary font-weight-bolder"
-                                onClick="showModalCreateNew()"><i class="fa fa-plus-circle"></i> Tambah Perizinan</a>
+                            @if (!$sioFlags['readonly'])
+                                <a href="javascript:" class="btn btn-primary font-weight-bolder"
+                                    onClick="showModalCreateNew()"><i class="fa fa-plus-circle"></i> Tambah Perizinan</a>
+                            @endif
                         </div>
                     </div>
                     <div class="card-body">
@@ -36,7 +38,7 @@
                                 <div class="d-flex align-items-center mb-1">
                                     <span class="label label-inline label-outline-warning mr-2"
                                         style="width: 25px; text-align:center;">-</span>
-                                    <span>= Akan segera habis masa berlakunya (kurang dari 45 hari)</span>
+                                    <span>= Akan segera habis masa berlakunya (kurang dari 60 hari)</span>
                                 </div>
                                 <div class="d-flex align-items-center mb-1">
                                     <span class="label label-inline label-outline-danger mr-2"
@@ -60,9 +62,13 @@
                                     <th>STATUS</th>
                                     <th>TANGGAL TERBIT</th>
                                     <th>TANGGAL EXPIRED</th>
-                                    <th>HARGA</th>
+                                    @if (!$sioFlags['hide_price'])
+                                        <th>HARGA</th>
+                                    @endif
                                     <th>REMARKS</th>
-                                    <th width="5%"><i class="fa fa-tools text-dark-75"></i></th>
+                                    @if (!$sioFlags['readonly'])
+                                        <th width="5%"><i class="fa fa-tools text-dark-75"></i></th>
+                                    @endif
                                 </tr>
                             </thead>
                             <tbody>
@@ -76,24 +82,32 @@
         <!--end::Dashboard-->
     </div>
 
+    {{-- Detail Modal --}}
     <div class="modal fade" id="sertifikasi-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalSizeSm"
         aria-hidden="true">
         <div class="modal-dialog modal-xl" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="exampleModalLabel">
-                        <span id="sio-title"></span> <input id="perizinan-status" data-size="small" data-switch="true"
-                            type="checkbox" checked="checked" data-on-text="Active...." data-handle-width="50"
-                            data-off-text="Inactive" data-on-color="success" />
-                    </h5>
+                    <div class="modal-title" id="exampleModalLabel">
+                        <span id="sio-title"></span>
+
+                        @if (!$sioFlags['readonly'])
+                            <input id="perizinan-status" data-size="small" data-switch="true" type="checkbox"
+                                checked="checked" data-on-text="Active...." data-handle-width="50" data-off-text="Inactive"
+                                data-on-color="success" />
+                        @endif
+
+                    </div>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                         <i aria-hidden="true" class="ki ki-close"></i>
                     </button>
                 </div>
                 <div class="modal-body">
-                    <a href="javascript:" class="btn btn-primary font-weight-bolder" onClick="openCreateSertifikat()"><i
-                            class="fa fa-plus-circle"></i> Tambah SIO</a>
-                    <hr>
+                    @if (!$sioFlags['readonly'])
+                        <a href="javascript:" class="btn btn-primary font-weight-bolder" onClick="openCreateSertifikat()"><i
+                                class="fa fa-plus-circle"></i> Tambah SIO</a>
+                        <hr>
+                    @endif
                     <div id="container-create-sertifikat" class="hide">
                         <div class="card card-custom border border-black" data-card="true">
                             <div class="card-header">
@@ -206,7 +220,9 @@
                                 <tr>
                                     <th>#</th>
                                     <th>NOMOR IZIN</th>
-                                    <th>HARGA</th>
+                                    @if (!$sioFlags['hide_price'])
+                                        <th>HARGA</th>
+                                    @endif
                                     <th>TANGGAL TERBIT</th>
                                     <th>TANGGAL EXPIRED</th>
                                     <th>REMARKS</th>
@@ -234,9 +250,9 @@
                     </button>
                 </div>
                 <div class="modal-body">
-                    <button type="button" class="btn btn-secondary btn-sm" id="delete-all-attachments">
+                    {{-- <button type="button" class="btn btn-secondary btn-sm" id="delete-all-attachments">
                         <i class="fa fa-trash"></i> Hapus Semua
-                    </button>
+                    </button> --}}
                     <table class="table table-hover table-dark" id="table-attachments">
                         <thead>
                             <tr>
@@ -874,6 +890,10 @@
                 success: function(response) {
                     table.html('');
 
+                    const isReadonly =
+                        permissions.includes('sigra_sio_readonly') ||
+                        permissions.includes('sigra_sio_readonly_hide_price');
+
                     if (response.data.length > 0) {
                         // set transaction_id to modal
                         const transactionId = response.data[0].transaction_id;
@@ -882,14 +902,24 @@
                         $deleteAllBtn.show();
 
                         $.each(response.data, function(key, val) {
+                            let deleteBtn = '';
+                            if (!isReadonly) {
+                                deleteBtn = `
+                                    <a href="javascript:" title="Delete"
+                                    onClick="deleteAttachment('${val.id}')"
+                                    class="mx-3 text-danger">
+                                        <i class="fa fa-trash"></i>
+                                    </a>
+                                `;
+                            }
+
                             var row = `
                                 <tr>
                                     <td>${key + 1}</td>
                                     <td>${val.original_file_name}</td>
                                     <td class="d-flex justify-content-center align-items-center">
-                                        <a href="javascript:" title="Delete" onClick="deleteAttachment('${val.id}')" class="mx-3 text-danger">
-                                            <i class="fa fa-trash"></i>
-                                        </a>
+                                        ${deleteBtn}
+
                                         <a href="javascript:" title="Download" onClick="downloadAttachment('${val.id}')" class="mx-3 text-success">
                                             <i class="fa fa-download"></i>
                                         </a>
@@ -957,8 +987,11 @@
                 dataType: 'JSON',
                 type: 'GET',
                 success: function(response) {
-                    console.log(response);
                     table.html('');
+
+                    const isReadonly = response.permissions.readonly;
+                    const hidePrice = response.permissions.hide_price;
+
                     if (!response.data || response.data.length === 0) {
                         var row = '' +
                             '<tr>' +
@@ -970,37 +1003,50 @@
                         var count = val.attachments.length;
                         var tanggal_habis = val.tanggal_habis == null ? '-' : formatTanggalIndonesia(val
                             .tanggal_habis);
+
+                        let hargaTd = '';
+
+                        if (!hidePrice) {
+                            hargaTd = `<td>${val.harga}</td>`;
+                        }
+
+                        let actionButtons = `
+                            <a title="Tampilkan attachment"
+                            onClick="showDocuments(${val.id})"
+                            href="javascript:"
+                            class="mr-10 position-relative text-hover-dark mr-1">
+                                <span id="attachment-count-${val.transaction_id}"
+                                    style="z-index: 99; position: absolute; right: -30px; top: -9px"
+                                    class="label label-rounded label-light-dark label-sm mr-2">
+                                    ${count}
+                                </span>
+                                <span style="z-index: 100; position: absolute">
+                                    <i class="fa fa-folder-open"></i>
+                                </span>
+                            </a>
+                        `;
+
+                        if (!isReadonly) {
+                            actionButtons += `
+                                <a title="Edit" onClick="editSertifikasi(${val.id})" href="javascript:" class="text-hover-dark mr-1">
+                                    <i class="fa fa-edit"></i>
+                                </a>
+
+                                <a title="Hapus" onClick="deleteSertifikasi(${val.id})" href="javascript:" class="text-hover-dark">
+                                    <i class="fa fa-trash"></i>
+                                </a>
+                            `;
+                        }
+
                         var row = `
                             <tr>
                                 <td>${key + 1}</td>
                                 <td>${val.nomor_izin}</td>
-                                <td>${val.harga}</td>
+                                ${hargaTd}
                                 <td>${formatTanggalIndonesia(val.tanggal_terbit)}</td>
                                 <td>${tanggal_habis}</td>
                                 <td>${val.keterangan ?? "-"}</td>
-                                <td>
-                                    <a title="Tampilkan attachment"
-                                    onClick="showDocuments(${val.id})"
-                                    href="javascript:"
-                                    class="mr-10 position-relative text-hover-dark mr-1">
-                                        <span id="attachment-count-${val.transaction_id}"
-                                            style="z-index: 99; position: absolute; right: -30px; top: -9px"
-                                            class="label label-rounded label-light-dark label-sm mr-2">
-                                            ${count}
-                                        </span>
-                                        <span style="z-index: 100; position: absolute">
-                                            <i class="fa fa-folder-open"></i>
-                                        </span>
-                                    </a>
-                                    <a title="Edit" onClick="editSertifikasi(${val.id})"
-                                    href="javascript:" class="text-hover-dark mr-1">
-                                    <i class="fa fa-edit"></i>
-                                    </a>
-                                    <a title="Hapus" onClick="deleteSertifikasi(${val.id})"
-                                    href="javascript:" class="text-hover-dark">
-                                    <i class="fa fa-trash"></i>
-                                    </a>
-                                </td>
+                                <td>${actionButtons}</td>
                             </tr>`;
                         table.append(row);
                     });
@@ -1496,6 +1542,28 @@
             resetEditIkatanDinasValidation();
             $('#tanggal-mulai-ikatan-dinas').val('');
             $('#tanggal-selesai-ikatan-dinas').val('');
+        });
+    </script>
+    <script>
+        const permissions = @json($permissions);
+
+        const isReadOnly = permissions.includes('sigra_sio_readonly');
+        const hidePrice = isReadOnly && permissions.includes('sigra_sio_readonly_hide_price');
+
+        if (hidePrice) {
+            sio_table.column(11).visible(false);
+        }
+    </script>
+    <script>
+        $(document).ajaxError(function(event, xhr) {
+            if (xhr.status === 403) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Akses Ditolak',
+                    text: 'Anda tidak memiliki izin untuk melakukan aksi ini.',
+                    confirmButtonText: 'OK'
+                });
+            }
         });
     </script>
 @endpush
