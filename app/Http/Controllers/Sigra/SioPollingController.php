@@ -36,7 +36,10 @@ class SioPollingController extends Controller
             $now = Carbon::now();
 
             // if ($now->dayOfWeek !== Carbon::MONDAY || $now->hour !== 8) {
-            if ($now->dayOfWeek !== Carbon::THURSDAY || $now->hour !== 10) { // TESTING ONLY
+            if (
+                $now->dayOfWeek !== Carbon::WEDNESDAY ||
+                ($now->hour !== 15 && $now->hour !== 16)
+            ) { // TESTING ONLY
                 return response()->json([
                     'success' => false,
                     'message' => 'Belum waktunya polling SIO',
