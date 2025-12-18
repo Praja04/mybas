@@ -27,7 +27,7 @@ $(document).ready(function () {
 
         $("#submitBtn")
             .prop("disabled", true)
-            .html('<i class="fas fa-spinner fa-spin me-2"></i>Menyimpan...');
+            .html('<i class="mdi mdi-loading"></i>Menyimpan...');
 
         $("#formAlert")
             .hide()
@@ -67,18 +67,47 @@ $(document).ready(function () {
                             .html("");
                     }, 2000);
 
+                    document
+                        .querySelectorAll('[id^="preview-"]')
+                        .forEach((el) => {
+                            el.innerHTML = "";
+                        });
+
+                    document
+                        .querySelectorAll('input[name^="photos"]')
+                        .forEach((input) => {
+                            input.value = "";
+                        });
+
+                    // reset kamera
+                    if (typeof resetCameraModal === "function") {
+                        resetCameraModal();
+                    }
+
+                    // reset state kamera
+                    if (typeof setActivePhotoKey === "function") {
+                        setActivePhotoKey(null);
+                    }
+
+                    // reset form
+                    $("#muatanType").val("").trigger("change");
+                    $("#truckTypeContainer").hide();
+                    $("#fotoSection").html("");
+                    $("#nopol-search").val("");
+
                     $("#cekKendaraanForm")[0].reset();
                     $("#cekKendaraanForm").hide();
-                    resetForm();
 
                     $("#submitBtn")
                         .prop("disabled", false)
-                        .html('<i class="fas fa-save me-2"></i>Simpan Data');
+                        .html(
+                            '<i class="mdi mdi-content-save"></i>Simpan Data'
+                        );
 
                     return;
                 }
 
-                // res.success === false
+                // if res.success === false
                 Swal.fire({
                     icon: "warning",
                     title: "Gagal!",
@@ -95,7 +124,7 @@ $(document).ready(function () {
 
                 $("#submitBtn")
                     .prop("disabled", false)
-                    .html('<i class="fas fa-save me-2"></i>Simpan Data');
+                    .html('<i class="mdi mdi-content-save"></i>Simpan Data');
             },
 
             error: function (xhr) {
@@ -119,76 +148,8 @@ $(document).ready(function () {
 
                 $("#submitBtn")
                     .prop("disabled", false)
-                    .html('<i class="fas fa-save me-2"></i>Simpan Data');
+                    .html('<i class="mdi mdi-content-save"></i>Simpan Data');
             },
         });
     });
 });
-
-function resetForm() {
-    document.querySelectorAll('[id^="preview-"]').forEach((el) => {
-        el.innerHTML = "";
-    });
-
-    document.querySelectorAll('input[name^="photos"]').forEach((input) => {
-        input.value = "";
-    });
-
-    resetCameraModal();
-
-    $("#muatanType").val("").trigger("change");
-    $("#truckType")
-        .empty()
-        .append(
-            '<option value="" disabled selected>-- Pilih Jenis Truk --</option>'
-        );
-    $("#truckTypeContainer").hide();
-    $("#fotoSection").html("");
-    $("#nopol-search").val("");
-
-    activePhotoKey = null;
-}
-
-function resetFormButton() {
-    // save autofilled
-    const namaSupir = $("#nama-supir").val();
-    const company = $("#company").val();
-    const nomorPolisi = $("#nomor-polisi").val();
-    const createdby = $("#createdby").val();
-
-    const now = new Date();
-    const yyyy = now.getFullYear();
-    const mm = String(now.getMonth() + 1).padStart(2, "0");
-    const dd = String(now.getDate()).padStart(2, "0");
-    const hh = String(now.getHours()).padStart(2, "0");
-    const min = String(now.getMinutes()).padStart(2, "0");
-
-    $("#cekKendaraanForm")[0].reset();
-
-    $("#nama-supir").val(namaSupir);
-    $("#company").val(company);
-    $("#nomor-polisi").val(nomorPolisi);
-    $("#tgl_periksa").val(`${yyyy}-${mm}-${dd}`);
-    $("#jam_periksa").val(`${hh}:${min}`);
-    if (createdby !== null) {
-        $("#createdby").val(createdby);
-    }
-
-    if (typeof resetForm === "function") {
-        resetForm(); // reset photo
-    }
-
-    resetForm();
-
-    Swal.fire({
-        icon: "success",
-        title: "Form berhasil direset",
-        text: "Semua data dan foto sudah dibersihkan.",
-    });
-
-    $("#formAlert")
-        .stop(true)
-        .hide()
-        .removeClass("alert-success alert-danger")
-        .html("");
-}

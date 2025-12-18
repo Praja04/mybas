@@ -278,7 +278,7 @@ class CekKendaraanFormAjax extends Controller
                 return response()->json([
                     'success' => false,
                     'message' => 'Kendaraan sudah keluar pada kunjungan saat ini'
-                ], 400);
+                ], 409);
             }
 
             $photoPaths = [];

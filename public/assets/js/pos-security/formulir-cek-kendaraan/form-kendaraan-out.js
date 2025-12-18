@@ -1,16 +1,20 @@
 (() => {
     const videoOut = document.getElementById("videoOut");
-    const canvas = document.getElementById("canvasOut");
+    const canvasOut = document.getElementById("canvasOut");
     const captureBtn = document.getElementById("captureBtnOut");
     const retakeBtn = document.getElementById("retakeBtnOut");
     const saveBtn = document.getElementById("saveBtnOut");
     const startCamera = document.getElementById("startCameraOut");
-    const capturedImage = document.getElementById("capturedImageOut");
-    const capturedImageContainer = document.getElementById(
+    const capturedImageOut = document.getElementById("capturedImageOut");
+    const capturedImageContainerOut = document.getElementById(
         "capturedImageContainerOut"
     );
 
     let activePhotoKey = null;
+
+    // window.setActivePhotoKey = function (value) {
+    //     activePhotoKey = value;
+    // };
 
     function toggleElements(elements = []) {
         elements.forEach(({ el, show }) => {
@@ -47,18 +51,18 @@
     }
 
     function captureImage() {
-        if (!videoOut || !canvas) return;
+        if (!videoOut || !canvasOut) return;
 
-        const context = canvas.getContext("2d");
-        canvas.width = videoOut.videoWidth;
-        canvas.height = videoOut.videoHeight;
+        const context = canvasOut.getContext("2d");
+        canvasOut.width = videoOut.videoWidth;
+        canvasOut.height = videoOut.videoHeight;
         context.drawImage(videoOut, 0, 0);
 
-        const dataURL = canvas.toDataURL("image/jpeg", 0.8);
+        const dataURL = canvasOut.toDataURL("image/jpeg", 0.8);
 
-        if (capturedImage) capturedImage.src = dataURL;
-        if (capturedImageContainer)
-            capturedImageContainer.style.display = "block";
+        if (capturedImageOut) capturedImageOut.src = dataURL;
+        if (capturedImageContainerOut)
+            capturedImageContainerOut.style.display = "block";
 
         toggleElements([
             { el: videoOut, show: false },
@@ -71,8 +75,8 @@
     }
 
     function retakePhoto() {
-        if (capturedImageContainer)
-            capturedImageContainer.style.display = "none";
+        if (capturedImageContainerOut)
+            capturedImageContainerOut.style.display = "none";
 
         toggleElements([
             { el: videoOut, show: true },
@@ -103,12 +107,14 @@
             return;
         }
 
-        const imgData = canvas.toDataURL("image/jpeg", 0.8);
+        const imgData = canvasOut.toDataURL("image/jpeg", 0.8);
 
-        const input = document.getElementById(`input-${activePhotoKey}`);
+        const input = document.getElementById(`input-out-${activePhotoKey}`);
         input.value = imgData;
 
-        const previewBox = document.getElementById(`preview-${activePhotoKey}`);
+        const previewBox = document.getElementById(
+            `preview-out-${activePhotoKey}`
+        );
 
         previewBox.innerHTML = `
         <div class="position-relative">
@@ -124,7 +130,7 @@
         const modal = bootstrap.Modal.getInstance(
             document.getElementById("myModalOut")
         );
-        modal.hide();
+        if (modal) modal.hide();
 
         Swal.fire({
             icon: "success",
@@ -133,12 +139,12 @@
         });
     }
 
-    function resetCameraModal() {
+    window.resetCameraModal = function () {
         stopStream();
 
-        if (capturedImage) capturedImage.src = "";
-        if (capturedImageContainer)
-            capturedImageContainer.style.display = "none";
+        if (capturedImageOut) capturedImageOut.src = "";
+        if (capturedImageContainerOut)
+            capturedImageContainerOut.style.display = "none";
 
         toggleElements([
             { el: startCamera, show: true },
@@ -147,13 +153,13 @@
             { el: saveBtn, show: false },
         ]);
 
-        if (video) video.style.display = "none";
+        if (videoOut) videoOut.style.display = "none";
 
-        if (canvas) {
-            const ctx = canvas.getContext("2d");
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        if (canvasOut) {
+            const ctx = canvasOut.getContext("2d");
+            ctx.clearRect(0, 0, canvasOut.width, canvasOut.height);
         }
-    }
+    };
 
     function renderFotoSectionOut(truckType) {
         const $fotoSection = $("#fotoSectionOut");
@@ -183,7 +189,7 @@
                         </label>
 
                         <div class="preview-container d-flex flex-wrap gap-2 justify-content-center mb-3"
-                            id="preview-${key}"
+                            id="preview-out-${key}"
                             style="width: 100%; min-height: 180px; background:#f8f9fa; padding:10px; border-radius:6px; border:1px solid #dee2e6;">
                         </div>
 
@@ -197,7 +203,7 @@
 
                         <input type="hidden"
                             name="photos[${key}]"
-                            id="input-${key}"
+                            id="input-out-${key}"
                             ${requiredAttr}>
                     </div>
                 </div>
@@ -284,9 +290,7 @@
             beforeSend: function () {
                 $("#searchVisitorDataOut")
                     .prop("disabled", true)
-                    .html(
-                        '<i class="fas fa-spinner fa-spin me-2"></i>Mencari...'
-                    );
+                    .html('<i class="mdi mdi-loading"></i>Mencari...');
             },
             success: function (res) {
                 if (res.success) {
@@ -390,12 +394,13 @@
     // slot handler
     $(document).on("click", ".open-camera", function () {
         activePhotoKey = $(this).data("key");
+        // setActivePhotoKey($(this).data("key"));
     });
 
     $(document).on("click", ".remove-photo", function () {
         const key = $(this).data("key");
 
-        $(`#preview-${key}`).html("");
-        $(`#input-${key}`).val("");
+        $(`#preview-out-${key}`).html("");
+        $(`#input-out-${key}`).val("");
     });
 })();

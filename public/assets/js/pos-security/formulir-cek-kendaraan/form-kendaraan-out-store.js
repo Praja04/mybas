@@ -9,7 +9,7 @@ $(document).ready(function () {
         $("#fotoSectionOut input[required]").each(function () {
             if (!$(this).val()) {
                 valid = false;
-                const key = $(this).attr("id").replace("input-", "");
+                const key = $(this).attr("id").replace("input-out-", "");
                 firstEmptyLabel = key.replace(/_/g, " ");
                 return false;
             }
@@ -67,9 +67,31 @@ $(document).ready(function () {
                             .html("");
                     }, 2000);
 
+                    document
+                        .querySelectorAll('[id^="preview-out-"]')
+                        .forEach((el) => {
+                            el.innerHTML = "";
+                        });
+
+                    $("#cekKendaraanFormOut")
+                        .find('input[name^="photos"]')
+                        .val("");
+
+                    // reset kamera
+                    if (typeof resetCameraModal === "function") {
+                        resetCameraModal();
+                    }
+
+                    // reset state kamera
+                    if (typeof setActivePhotoKey === "function") {
+                        setActivePhotoKey(null);
+                    }
+
+                    $("#fotoSectionOut").html("");
+                    $("#nopol-search-out").val("");
+
                     $("#cekKendaraanFormOut")[0].reset();
                     $("#cekKendaraanFormOut").hide();
-                    resetForm();
 
                     $("#submitBtnOut")
                         .prop("disabled", false)

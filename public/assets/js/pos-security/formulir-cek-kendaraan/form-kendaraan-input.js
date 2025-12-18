@@ -12,6 +12,10 @@
 
     let activePhotoKey = null;
 
+    window.setActivePhotoKey = function (value) {
+        activePhotoKey = value;
+    };
+
     function toggleElements(elements = []) {
         elements.forEach(({ el, show }) => {
             if (el) el.style.display = show ? "inline-block" : "none";
@@ -133,7 +137,7 @@
         });
     }
 
-    function resetCameraModal() {
+    window.resetCameraModal = function () {
         stopStream();
 
         if (capturedImage) capturedImage.src = "";
@@ -153,7 +157,7 @@
             const ctx = canvas.getContext("2d");
             ctx.clearRect(0, 0, canvas.width, canvas.height);
         }
-    }
+    };
 
     document.addEventListener("DOMContentLoaded", function () {
         // autofocus ketika baru dibuka
@@ -383,9 +387,7 @@
             beforeSend: function () {
                 $("#searchVisitorData")
                     .prop("disabled", true)
-                    .html(
-                        '<i class="fas fa-spinner fa-spin me-2"></i>Mencari...'
-                    );
+                    .html('<i class="mdi mdi-loading me-2"></i>Mencari...');
             },
             success: function (res) {
                 if (res.success) {
@@ -407,6 +409,13 @@
 
                     // show form view
                     $("#cekKendaraanForm").show();
+
+                    $("#submitBtn")
+                        .prop("disabled", false)
+                        .html(
+                            '<i class="mdi mdi-content-save"></i>Simpan Data'
+                        );
+
                     const target = document.getElementById(
                         "section-pemeriksaan"
                     );
@@ -443,7 +452,11 @@
             error: function (xhr) {
                 let msg = "Terjadi kesalahan saat mencari data";
 
-                if (xhr.status === 422 || xhr.status === 409) {
+                if (
+                    xhr.status === 422 ||
+                    xhr.status === 409 ||
+                    xhr.status === 404
+                ) {
                     msg = xhr.responseJSON.message;
                 }
 
@@ -465,7 +478,8 @@
 
     // slot handler
     $(document).on("click", ".open-camera", function () {
-        activePhotoKey = $(this).data("key");
+        // activePhotoKey = $(this).data("key");
+        setActivePhotoKey($(this).data("key"));
     });
 
     $(document).on("click", ".remove-photo", function () {
