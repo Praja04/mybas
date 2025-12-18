@@ -11,6 +11,8 @@ export class ContentDatatable {
                     {
                         data: "DT_RowIndex",
                         name: "DT_RowIndex",
+                        orderable: false,
+                        searchable: false,
                     },
                     {
                         data: "nomor_polisi",
@@ -31,14 +33,20 @@ export class ContentDatatable {
                     {
                         data: "waktu_pemeriksaan",
                         name: "waktu_pemeriksaan",
+                        orderable: false,
+                        searchable: false,
                     },
                     {
                         data: "jenis",
                         name: "jenis",
+                        orderable: false,
+                        searchable: false,
                     },
                     {
                         data: "action",
                         name: "action",
+                        orderable: false,
+                        searchable: false,
                     },
                 ],
             },

@@ -277,17 +277,17 @@ class SupplierFormAjax extends Controller
         }
 
         // validasi apakah kendaraan sudah dilakukan cek kendaraan
-        $alreadyChecked = DB::table('ga_cek_kendaraan')
-            ->where('nomor_polisi', $visitor->nopol)
-            ->whereDate('datein', $visitor->datein)
-            ->exists();
+        // $alreadyChecked = DB::table('ga_cek_kendaraan')
+        //     ->where('nomor_polisi', $visitor->nopol)
+        //     ->whereDate('datein', $visitor->datein)
+        //     ->exists();
 
-        if (!$alreadyChecked) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Kendaraan belum dilakukan cek kendaraan. Tidak dapat diproses keluar.'
-            ]);
-        }
+        // if (!$alreadyChecked) {
+        //     return response()->json([
+        //         'success' => false,
+        //         'message' => 'Kendaraan belum dilakukan cek kendaraan. Tidak dapat diproses keluar.'
+        //     ]);
+        // }
 
         return response()->json([
             'success' => true,

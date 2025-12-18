@@ -1,0 +1,132 @@
+// form ajax
+$(document).ready(function () {
+    $("#cekKendaraanFormOut").on("submit", function (e) {
+        e.preventDefault();
+
+        let valid = true;
+        let firstEmptyLabel = "";
+
+        $("#fotoSectionOut input[required]").each(function () {
+            if (!$(this).val()) {
+                valid = false;
+                const key = $(this).attr("id").replace("input-", "");
+                firstEmptyLabel = key.replace(/_/g, " ");
+                return false;
+            }
+        });
+
+        if (!valid) {
+            Swal.fire({
+                icon: "error",
+                title: "Gagal!",
+                text: `Foto ${firstEmptyLabel} wajib diisi.`,
+            });
+            e.preventDefault();
+            return false;
+        }
+
+        $("#submitBtnOut")
+            .prop("disabled", true)
+            .html('<i class="mdi mdi-spin me-2"></i>Menyimpan...');
+
+        $("#formAlertOut")
+            .hide()
+            .removeClass("alert-success alert-danger")
+            .html("");
+
+        var formData = new FormData(this);
+
+        $.ajax({
+            url: $(this).attr("action"),
+            method: "POST",
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function (response) {
+                if (response.success) {
+                    Swal.fire({
+                        icon: "success",
+                        title: "Berhasil!",
+                        text: response.message || "Data berhasil disimpan.",
+                        timer: 2000,
+                        showConfirmButton: false,
+                    });
+
+                    $("#formAlertOut")
+                        .stop(true)
+                        .hide()
+                        .removeClass("alert-danger alert-success")
+                        .addClass("alert-success")
+                        .html(response.message)
+                        .fadeIn();
+
+                    setTimeout(function () {
+                        $("#formAlertOut")
+                            .fadeOut()
+                            .removeClass("alert-success alert-danger")
+                            .html("");
+                    }, 2000);
+
+                    $("#cekKendaraanFormOut")[0].reset();
+                    $("#cekKendaraanFormOut").hide();
+                    resetForm();
+
+                    $("#submitBtnOut")
+                        .prop("disabled", false)
+                        .html(
+                            '<i class="mdi mdi-content-save me-2"></i>Simpan Data'
+                        );
+
+                    return;
+                }
+
+                // res.success === false
+                Swal.fire({
+                    icon: "warning",
+                    title: "Gagal!",
+                    text: response.message || "Terjadi kesalahan.",
+                });
+
+                $("#formAlertOut")
+                    .stop(true)
+                    .hide()
+                    .removeClass("alert-success alert-danger")
+                    .addClass("alert-danger")
+                    .html(response.message || "Terjadi kesalahan.")
+                    .fadeIn();
+
+                $("#submitBtnOut")
+                    .prop("disabled", false)
+                    .html(
+                        '<i class="mdi mdi-content-save me-2"></i>Simpan Data'
+                    );
+            },
+
+            error: function (xhr) {
+                console.log(xhr.responseJSON?.message);
+
+                let message = "Terjadi kesalahan. Silakan coba lagi.";
+
+                Swal.fire({
+                    icon: "error",
+                    title: "Error!",
+                    text: message,
+                });
+
+                $("#formAlertOut")
+                    .stop(true)
+                    .hide()
+                    .removeClass("alert-success alert-danger")
+                    .addClass("alert-danger")
+                    .html(message)
+                    .fadeIn();
+
+                $("#submitBtnOut")
+                    .prop("disabled", false)
+                    .html(
+                        '<i class="mdi mdi-content-save me-2"></i>Simpan Data'
+                    );
+            },
+        });
+    });
+});
