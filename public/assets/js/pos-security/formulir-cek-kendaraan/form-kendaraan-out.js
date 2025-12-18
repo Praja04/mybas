@@ -291,7 +291,10 @@
             success: function (res) {
                 if (res.success) {
                     const data = res.data;
-                    const checkedIn = new Date(data.checked_in_at);
+
+                    const checkedIn = new Date(
+                        data.cek_kendaraan.checked_in_at
+                    );
 
                     // show form view
                     $("#cekKendaraanFormOut").show();
@@ -333,24 +336,26 @@
                         durationText = `${minutes} menit lalu`;
                     }
 
-                    $("#trncekid").val(data.trncekid);
+                    $("#trncekid").val(data.cek_kendaraan.trncekid);
 
                     // card
-                    $("#card-nama-supir-out").text(data.namavisitor);
-                    $("#card-perusahaan-out").text(data.namacomp);
-                    $("#card-nopol-out").text(data.nopol);
+                    $("#card-nama-supir-out").text(data.visitor.namavisitor);
+                    $("#card-perusahaan-out").text(data.visitor.namacomp);
+                    $("#card-nopol-out").text(data.visitor.nopol);
                     $("#card-waktu-masuk").text(
                         `${formattedDate} (${durationText})`
                     );
-                    $("#card-jenis-muatan").text(data.muatan_type);
+                    $("#card-jenis-muatan").text(
+                        data.cek_kendaraan.muatan_type
+                    );
                     $("#card-jenis-truk").text(
-                        data.truck_type +
-                            (data.truck_type_other
-                                ? ` (${data.truck_type_other})`
+                        data.cek_kendaraan.truck_type +
+                            (data.cek_kendaraan.truck_type_other
+                                ? ` (${data.cek_kendaraan.truck_type_other})`
                                 : "")
                     );
 
-                    renderFotoSectionOut(data.truck_type);
+                    renderFotoSectionOut(data.cek_kendaraan.truck_type);
                 } else {
                     $("#cekKendaraanFormOut").hide();
 

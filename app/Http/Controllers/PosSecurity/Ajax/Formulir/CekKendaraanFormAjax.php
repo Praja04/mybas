@@ -53,20 +53,21 @@ class CekKendaraanFormAjax extends Controller
         if ($visitor->kartu_dikembalikan == 1) {
             return response()->json([
                 'success' => false,
-                'message' => 'Kendaraan sudah keluar, cek kendaraan tidak dapat dilakukan.'
+                'message' => 'Tamu sudah mengambalikan kartu, tidak dapat cek kendaraan.'
             ], 409);
         }
 
-        // validasi apakah sudah cek kendaraan pada kedatangan saat ini
+        // validasi apakah sudah cek kendaraan pada kedatangan ini
         $alreadyChecked = DB::table('ga_cek_kendaraan')
             ->where('nomor_polisi', $visitor->nopol)
-            ->where('checked_in_at', '>=', now()->subHours(24))
+            // ->where('checked_in_at', '>=', now()->subHours(24))
+            ->where('checked_in_at', '>=', $visitor->created_at)
             ->exists();
 
         if ($alreadyChecked) {
             return response()->json([
                 'success' => false,
-                'message' => 'Kendaraan ini sudah melakukan cek kendaraan pada kedatangan saat ini.'
+                'message' => 'Kendaraan ini sudah melakukan cek kendaraan pada kedatangan ini.'
             ], 409);
         }
 
@@ -87,68 +88,18 @@ class CekKendaraanFormAjax extends Controller
             ], 422);
         }
 
-        // cari kendaraan yang masih ada di area di table supplier
-        $visitor = DB::table('ga_visitor_transaction as v')
-            ->leftJoinSub(
-                DB::table('ga_cek_kendaraan')
-                    ->select(
-                        'trncekid',
-                        'nomor_polisi',
-                        'muatan_type',
-                        'truck_type',
-                        'truck_type_other',
-                        'checked_in_at',
-                        'checked_out_at'
-                    )
-                    ->whereRaw("REPLACE(UPPER(nomor_polisi),' ','') = ?", [$keyword])
-                    ->orderBy('created_at', 'desc')
-                    ->limit(1),
-                'ck',
-                function ($join) {
-                    $join->on(
-                        DB::raw("REPLACE(UPPER(v.nopol),' ','')"),
-                        '=',
-                        DB::raw("REPLACE(UPPER(ck.nomor_polisi),' ','')")
-                    );
-                }
-            )
-            ->whereRaw("REPLACE(UPPER(v.nopol),' ','') = ?", [$keyword])
-            ->where('v.keterangan', 'SUPIR')
-            ->orderBy('v.created_at', 'desc')
+        $visitor = DB::table('ga_visitor_transaction')
+            ->whereRaw("REPLACE(UPPER(nopol),' ','') = ?", [$keyword])
+            ->where('keterangan', 'SUPIR')
+            ->orderBy('created_at', 'desc')
             ->first();
 
-
-        // jika tidak ada -> cari di table vendor
         if (!$visitor) {
-            $visitor = DB::table('ga_visitor_vendor as v')
-                ->leftJoinSub(
-                    DB::table('ga_cek_kendaraan')
-                        ->select(
-                            'trncekid',
-                            'nomor_polisi',
-                            'muatan_type',
-                            'truck_type',
-                            'truck_type_other',
-                            'checked_in_at',
-                            'checked_out_at'
-                        )
-                        ->whereRaw("REPLACE(UPPER(nomor_polisi),' ','') = ?", [$keyword])
-                        ->orderBy('created_at', 'desc')
-                        ->limit(1),
-                    'ck',
-                    function ($join) {
-                        $join->on(
-                            DB::raw("REPLACE(UPPER(v.nopol),' ','')"),
-                            '=',
-                            DB::raw("REPLACE(UPPER(ck.nomor_polisi),' ','')")
-                        );
-                    }
-                )
-                ->whereRaw("REPLACE(UPPER(v.nopol),' ','') = ?", [$keyword])
-                ->orderBy('v.created_at', 'desc')
+            $visitor = DB::table('ga_visitor_vendor')
+                ->whereRaw("REPLACE(UPPER(nopol),' ','') = ?", [$keyword])
+                ->orderBy('created_at', 'desc')
                 ->first();
         }
-
 
         if (!$visitor) {
             return response()->json([
@@ -157,33 +108,42 @@ class CekKendaraanFormAjax extends Controller
             ], 404);
         }
 
-        if (is_null($visitor->checked_in_at)) {
+        if ($visitor->kartu_dikembalikan == 1) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tamu sudah mengembalikan kartu.'
+            ], 409);
+        }
+
+        $cekKendaraan = DB::table('ga_cek_kendaraan')
+            ->whereRaw("REPLACE(UPPER(nomor_polisi),' ','') = ?", [$keyword])
+            ->where('checked_in_at', '>=', $visitor->created_at)
+            ->orderBy('checked_in_at', 'desc')
+            ->first();
+
+        if (!$cekKendaraan) {
             return response()->json([
                 'success' => false,
                 'message' => 'Kendaraan belum melakukan pengecekan masuk.'
             ], 409);
         }
 
-        if ($visitor->checked_out_at) {
+        if ($cekKendaraan->checked_out_at) {
             return response()->json([
                 'success' => false,
-                'message' => 'Kendaraan sudah melakukan pengecekan keluar'
-            ], 409);
-        }
-
-        // cek apakah visitor sudah keluar
-        if ($visitor->kartu_dikembalikan == 1) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Kendaraan sudah keluar, cek kendaraan tidak dapat dilakukan.'
+                'message' => 'Kendaraan sudah melakukan pengecekan keluar.'
             ], 409);
         }
 
         return response()->json([
             'success' => true,
-            'data' => $visitor
+            'data' => [
+                'visitor' => $visitor,
+                'cek_kendaraan' => $cekKendaraan
+            ]
         ]);
     }
+
 
     // in
     public function store(Request $request)
@@ -257,7 +217,7 @@ class CekKendaraanFormAjax extends Controller
                 'nama_petugas_masuk'  => strtoupper($request->nama_petugas),
                 'muatan_type'   => $request->muatan_type,
                 'truck_type'    => $request->truck_type,
-                'truck_type_other' => $request->otherTruckType,
+                'truck_type_other' => strtoupper($request->otherTruckType),
                 'foto_in'       => json_encode($photoPaths),
                 'checked_in_at'    => now(),
                 'created_at'    => now(),
