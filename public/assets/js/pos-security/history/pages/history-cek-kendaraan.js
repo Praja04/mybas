@@ -17,28 +17,42 @@ export class ContentDatatable {
                     {
                         data: "nomor_polisi",
                         name: "nomor_polisi",
+                        orderable: false,
+                        searchable: false,
                     },
                     {
                         data: "nama_supir",
                         name: "nama_supir",
+                        orderable: false,
+                        searchable: false,
                     },
                     {
                         data: "company",
                         name: "company",
+                        orderable: false,
+                        searchable: false,
                     },
                     {
-                        data: "nama_petugas",
-                        name: "nama_petugas",
+                        data: "waktu",
+                        name: "waktu",
+                        orderable: false,
+                        searchable: false,
                     },
                     {
-                        data: "waktu_pemeriksaan",
-                        name: "waktu_pemeriksaan",
+                        data: "durasi",
+                        name: "durasi",
                         orderable: false,
                         searchable: false,
                     },
                     {
                         data: "jenis",
                         name: "jenis",
+                        orderable: false,
+                        searchable: false,
+                    },
+                    {
+                        data: "status",
+                        name: "status",
                         orderable: false,
                         searchable: false,
                     },
@@ -51,7 +65,6 @@ export class ContentDatatable {
                 ],
             },
             dataSend: {},
-            excludeSearchColumns: [0],
         };
     }
 

@@ -30,9 +30,10 @@
                                         <th>Nomor Polisi</th>
                                         <th>Nama Supir</th>
                                         <th>Nama Perusahaan</th>
-                                        <th>Nama Petugas</th>
-                                        <th>Waktu Pemeriksaan</th>
+                                        <th>Waktu</th>
+                                        <th>Durasi</th>
                                         <th>Jenis Truk</th>
+                                        <th>Status</th>
                                         <th>Aksi</th>
                                     </tr>
                                 </thead>
