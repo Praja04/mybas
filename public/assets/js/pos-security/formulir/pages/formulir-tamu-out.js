@@ -18,6 +18,8 @@ function onScanError(errorMessage) {
 }
 
 function searchVisitorData(keyword) {
+    $("#returnCard").removeData("trnvisitorid");
+
     $.ajax({
         // url: API_FORM_SEARCH_TAMU,
         url: "/search-vendor-tamu",
@@ -36,6 +38,12 @@ function searchVisitorData(keyword) {
 
             if (response.success) {
                 const data = response.data;
+
+                console.log(
+                    "trnvisitorid from search result: ",
+                    data.trnvisitorid
+                );
+
                 qrcodeInput.value = ""; // 🔁 Reset
                 qrcodeInput.focus(); // 👁️ Fokus ulang ke input
 
@@ -265,6 +273,7 @@ document.addEventListener("DOMContentLoaded", function () {
 // Tombol Kartu Dikembalikan
 $("#returnCard").on("click", function () {
     const trnvisitorid = $(this).data("trnvisitorid");
+    console.log("returnCard trnvisitorid: ", trnvisitorid);
 
     if (!trnvisitorid) {
         Swal.fire("Error", "Visitor ID tidak ditemukan!", "error");

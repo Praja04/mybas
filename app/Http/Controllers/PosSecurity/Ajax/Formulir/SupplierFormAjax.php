@@ -244,46 +244,73 @@ class SupplierFormAjax extends Controller
                 $query->where('trnvisitorid', $keyword)
                     ->orWhere('no_kartu', $keyword);
             })
+            ->whereNull('dateout')
             ->where(function ($q) {
-                $q->whereNull('dateout')  // belum keluar
-                    ->orWhere('kartu_dikembalikan', true); // atau sudah dikembalikan
+                $q->whereNull('kartu_dikembalikan')
+                    ->orWhere('kartu_dikembalikan', false);
             })
             ->orderBy('createdon', 'desc')
             ->first();
 
-        if (!$visitor) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Data pengunjung tidak ditemukan atau sudah keluar.'
-            ]);
-        }
+        if ($visitor) {
+            // cek apakah sudah keluar
+            // if (!is_null($visitor->dateout)) {
+            //     $tanggalMasuk = Carbon::parse($visitor->datein)->translatedFormat('d F Y');
+            //     $jamMasuk = $visitor->timein ?? '-';
 
-        // validasi apakah kendaraan sudah dilakukan cek kendaraan
-        $cekKendaraan = DB::table('ga_cek_kendaraan')
-            ->where('nomor_polisi', $visitor->nopol)
-            ->where('checked_in_at', '>=', $visitor->createdon)
-            ->orderBy('checked_in_at', 'desc')
-            ->first();
+            //     $tanggalKeluar = Carbon::parse($visitor->dateout)->translatedFormat('d F Y');
+            //     $jamKeluar = $visitor->timeout ?? '-';
 
-        // belum pernah cek kendaraan sama sekali pada kedatangan ini
-        if (!$cekKendaraan) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Kendaraan belum melakukan cek kendaraan masuk & keluar pada kedatangan ini.'
-            ]);
-        }
+            //     return response()->json([
+            //         'success' => false,
+            //         'message' => 'Visitor atas nama ' . ($visitor->namavisitor ?? '-') .
+            //             ' telah keluar pada tanggal ' . $tanggalKeluar . ' pukul ' . $jamKeluar . ' WIB. ' .
+            //             'Kartu dengan nomor ' . ($visitor->no_kartu ?? '-') . ' sebelumnya digunakan untuk kunjungan pada tanggal ' .
+            //             $tanggalMasuk . ' pukul ' . $jamMasuk . ' WIB. ' .
+            //             'Kartu ini sekarang sudah bisa digunakan kembali.',
+            //     ]);
+            // }
 
-        // sudah cek masuk tapi belum cek keluar
-        if ($cekKendaraan->checked_in_at && is_null($cekKendaraan->checked_out_at)) {
+            // Jika kartu belum dikembalikan atau masih aktif → valid
+            // if (is_null($visitor->kartu_dikembalikan) || $visitor->kartu_dikembalikan == false) {
+            //     return response()->json([
+            //         'success' => true,
+            //         'data' => $visitor
+            //     ]);
+            // }
+
+            // validasi apakah kendaraan sudah dilakukan cek kendaraan
+            $cekKendaraan = DB::table('ga_cek_kendaraan')
+                ->where('nomor_polisi', $visitor->nopol)
+                ->where('checked_in_at', '>=', $visitor->createdon)
+                ->orderBy('checked_in_at', 'desc')
+                ->first();
+
+            // belum pernah cek kendaraan sama sekali pada kedatangan ini
+            if (!$cekKendaraan) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Kendaraan belum melakukan cek kendaraan masuk & keluar pada kedatangan ini.'
+                ]);
+            }
+
+            // sudah cek masuk tapi belum cek keluar
+            if ($cekKendaraan->checked_in_at && is_null($cekKendaraan->checked_out_at)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Kendaraan belum melakukan cek keluar.'
+                ]);
+            }
+
             return response()->json([
-                'success' => false,
-                'message' => 'Kendaraan belum melakukan cek keluar.'
+                'success' => true,
+                'data' => $visitor
             ]);
         }
 
         return response()->json([
-            'success' => true,
-            'data' => $visitor
+            'success' => false,
+            'message' => 'Data pengunjung tidak ditemukan atau sudah keluar.'
         ]);
     }
 
