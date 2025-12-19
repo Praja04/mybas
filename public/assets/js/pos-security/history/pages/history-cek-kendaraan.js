@@ -21,14 +21,14 @@ export class ContentDatatable {
                         searchable: false,
                     },
                     {
-                        data: "nama_supir",
-                        name: "nama_supir",
+                        data: "namavisitor",
+                        name: "namavisitor",
                         orderable: false,
                         searchable: false,
                     },
                     {
-                        data: "company",
-                        name: "company",
+                        data: "namacomp",
+                        name: "namacomp",
                         orderable: false,
                         searchable: false,
                     },

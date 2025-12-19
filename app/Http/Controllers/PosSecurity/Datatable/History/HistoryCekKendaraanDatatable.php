@@ -17,51 +17,78 @@ class HistoryCekKendaraanDatatable extends Controller
         return $this->DrawTable($query);
     }
 
-    // hanya cek yang SUDAH CEK
-    private function rawData($request)
-    {
-        $query = GaCekKendaraan::query();
-
-        // Batasi ke 7 hari terakhir
-        $sevenDaysAgo = Carbon::now()->subDays(7);
-        $query->where('created_at', '>=', $sevenDaysAgo);
-
-        $query->orderBy('created_at', 'desc');
-
-        return $query->limit(300)->get();
-    }
-
+    // hanya tampil yang sudah pernah cek
     // private function rawData($request)
     // {
+    //     $query = GaCekKendaraan::query();
+
+    //     // Batasi ke 7 hari terakhir
     //     $sevenDaysAgo = Carbon::now()->subDays(7);
+    //     $query->where('created_at', '>=', $sevenDaysAgo);
 
-    //     $query = DB::table('ga_visitor_transaction as v')
-    //         ->leftJoin('ga_cek_kendaraan as c', function ($join) use ($sevenDaysAgo) {
-    //             $join->on('c.nomor_polisi', '=', 'v.nopol')
-    //                 ->on('c.trnvisitorid', '=', 'v.trnvisitorid')
-    //                 ->where('c.created_at', '>=', $sevenDaysAgo);
-    //         })
-    //         ->where('v.created_at', '>=', $sevenDaysAgo)
-    //         ->select([
-    //             'v.trnvisitorid',
-    //             'v.nopol as nomor_polisi',
-    //             'v.nama_supir',
-    //             'v.company',
+    //     $query->orderBy('created_at', 'desc');
 
-    //             'c.trncekid',
-    //             'c.truck_type',
-    //             'c.muatan_type',
-    //             'c.checked_in_at',
-    //             'c.checked_out_at',
-    //             'c.created_at as cek_created_at',
-    //         ])
-    //         ->orderByRaw('COALESCE(c.created_at, v.created_at) DESC')
-    //         ->limit(300)
-    //         ->get();
-
-    //     return $query;
+    //     return $query->limit(300)->get();
     // }
 
+    private function rawData($request)
+    {
+        $sevenDaysAgo = Carbon::now()->subDays(7);
+
+        // visitor TRANSACTION
+        $transaction = DB::table('ga_visitor_transaction')
+            ->select([
+                'trnvisitorid',
+                'nopol',
+                'namavisitor',
+                'namacomp',
+                DB::raw("'transaction' as source"),
+                'created_at',
+            ])
+            ->where('created_at', '>=', $sevenDaysAgo);
+
+        // visitor VENDOR
+        $vendor = DB::table('ga_visitor_vendor')
+            ->select([
+                'trnvisitorid',
+                'nopol',
+                'namavisitor',
+                'namacomp',
+                DB::raw("'vendor' as source"),
+                'created_at',
+            ])
+            ->where('created_at', '>=', $sevenDaysAgo);
+
+        // UNION visitor
+        $visitors = DB::query()->fromSub(
+            $transaction->unionAll($vendor),
+            'v'
+        );
+
+        // LEFT JOIN cek kendaraan
+        return DB::query()
+            ->fromSub($visitors, 'v')
+            ->leftJoin('ga_cek_kendaraan as c', function ($join) use ($sevenDaysAgo) {
+                $join->on('c.trnvisitorid', '=', 'v.trnvisitorid')
+                    ->where('c.created_at', '>=', $sevenDaysAgo);
+            })
+            ->select([
+                'v.trnvisitorid',
+                'v.nopol as nomor_polisi',
+                'v.namavisitor',
+                'v.namacomp',
+                'v.source',
+
+                'c.trncekid',
+                'c.truck_type',
+                'c.muatan_type',
+                'c.checked_in_at',
+                'c.checked_out_at',
+                'c.created_at as cek_created_at',
+            ])
+            ->orderByRaw('IFNULL(c.created_at, v.created_at) DESC')
+            ->limit(300);
+    }
 
     private function DrawTable($query)
     {
@@ -85,12 +112,6 @@ class HistoryCekKendaraanDatatable extends Controller
             ->editColumn('nomor_polisi', function ($item) {
                 return '<strong>' . ($item->nomor_polisi ?: '-') . '</strong>';
             })
-            ->editColumn('nama_supir', function ($item) {
-                return $item->nama_supir ?: '-';
-            })
-            ->editColumn('company', function ($item) {
-                return $item->company ?: '-';
-            })
             // ->addColumn('action', function ($item) {
             //     return '
             //         <a href="#" class="dropdown-item" onclick="openCekKendaraanActionModal(\'' . $item->trncekid . '\')">
@@ -108,12 +129,7 @@ class HistoryCekKendaraanDatatable extends Controller
                         ';
                 }
 
-                return '
-                        <a href="#" class="dropdown-item"
-                        onclick="openCreateCekKendaraanModal(\'' . $item->trnvisitorid . '\')">
-                            <i class="ri-add-fill align-bottom me-2 text-muted"></i>Mulai Cek
-                        </a>
-                    ';
+                return '-';
             })
             ->addColumn('waktu', function ($item) {
                 if (!$item->checked_in_at) {
@@ -166,7 +182,7 @@ class HistoryCekKendaraanDatatable extends Controller
 
                 // 1. Belum cek kendaraan
                 if (empty($item->checked_in_at)) {
-                    return '<span class="badge bg-danger">Belum Cek</span>';
+                    return '<span class="badge bg-danger">Belum Cek Kendaraan</span>';
                 }
 
                 // 2. Sudah cek tapi belum keluar
