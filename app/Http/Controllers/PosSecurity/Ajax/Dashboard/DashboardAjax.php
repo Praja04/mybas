@@ -9,184 +9,133 @@ use App\Http\Controllers\Controller;
 
 class DashboardAjax extends Controller
 {
-
-    public function filter(Request $request)
+    public function filter()
     {
         try {
-            // Ambil parameter dari form data (POST)
-            $jenisKartu = $request->input('jenis_kartu', '');
-            $pos = $request->input('pos', '');
+            $query = $this->baseQuery();
 
-            // Tentukan tabel berdasarkan POS
-            $table = $this->getTableName($pos);
+            $kartuAktif = (clone $query)
+                ->where('kartu_dikembalikan', 0)
+                ->where(function ($q) {
+                    $q->whereNull('kartu_hilang')
+                        ->orWhere('kartu_hilang', 0);
+                })
+                ->count();
 
-            // Query dasar
-            $query = DB::table($table);
+            $belumDikembalikan = (clone $query)
+                ->where('kartu_dikembalikan', 0)
+                ->count();
 
-            // Filter berdasarkan jenis kartu (beda logika untuk tiap tabel)
-            if (!empty($jenisKartu)) {
-                if ($table === 'ga_visitor_vendor') {
-                    // Tabel vendor: filter berdasarkan kolom 'type'
-                    $query->where('type', $jenisKartu);
-                } else {
-                    // Tabel transaction: khusus untuk Transporter (BONGKAR/MUAT)
-                    if ($jenisKartu === 'Transporter') {
-                        // Filter untuk transporter berdasarkan purpose
-                        $query->where(function ($q) {
-                            $q->where('purpose', 'like', '%BONGKAR%')
-                                ->orWhere('purpose', 'like', '%MUAT%');
-                        });
-                    } else {
-                        // Jika memilih Vendor atau Tamu, tidak ada data karena 
-                        // tabel transaction hanya untuk Transporter
-                        $query->whereRaw('1 = 0'); // Query yang tidak akan mengembalikan hasil
-                    }
-                }
-            }
+            $sudahDikembalikan = (clone $query)
+                ->where('kartu_dikembalikan', 1)
+                ->count();
 
-            // Hitung statistik berdasarkan query yang sudah difilter
-            $stats = $this->calculateStats($query, $table);
+            $totalPengunjung = (clone $query)->count();
 
-            // Format response - GANTI KARTU HILANG MENJADI SUDAH DIKEMBALIKAN
-            $data = [
+            return response()->json([
                 [
                     'icon' => 'bi-person-check',
                     'label' => 'Kartu Aktif',
-                    'value' => $stats['kartu_aktif'],
-                    'color' => 'primary'
+                    'value' => $kartuAktif,
+                    'color' => 'primary',
                 ],
                 [
                     'icon' => 'bi-clock-history',
                     'label' => 'Belum Dikembalikan',
-                    'value' => $stats['belum_dikembalikan'],
-                    'color' => 'warning'
+                    'value' => $belumDikembalikan,
+                    'color' => 'warning',
                 ],
                 [
                     'icon' => 'bi-check-circle',
                     'label' => 'Sudah Dikembalikan',
-                    'value' => $stats['kartu_hilang'], // GANTI NAMA LABEL SAJA
-                    'color' => 'success'
+                    'value' => $sudahDikembalikan,
+                    'color' => 'success',
                 ],
                 [
                     'icon' => 'bi-people',
                     'label' => 'Total Pengunjung',
-                    'value' => $stats['total_pengunjung'],
-                    'color' => 'info'
-                ]
-            ];
-
-            return response()->json($data);
+                    'value' => $totalPengunjung,
+                    'color' => 'info',
+                ],
+            ]);
         } catch (\Exception $e) {
             Log::error('Dashboard filter error: ' . $e->getMessage());
-            return response()->json(['error' => $e->getMessage()], 500);
+            return response()->json(['error' => 'Internal server error'], 500);
         }
     }
 
-    private function getTableName($pos)
-    {
-        // Normalisasi input POS: trim dan hapus spasi
-        $normalizedPos = str_replace(' ', '', strtolower(trim($pos ?? '')));
-
-        if ($normalizedPos === 'pos2') {
-            return 'ga_visitor_vendor';
-        }
-
-        // Default to POS 1
-        return 'ga_visitor_transaction';
-    }
-
-    private function calculateStats($query, $table)
-    {
-        // Buat query terpisah untuk setiap perhitungan
-        $kartuAktifQuery = clone $query;
-        $belumDikembalikanQuery = clone $query;
-        $sudahDikembalikanQuery = clone $query; // GANTI NAMA VARIABLE
-        $totalQuery = clone $query;
-
-        if ($table === 'ga_visitor_vendor') {
-            // Untuk tabel vendor
-            $kartuAktif = $kartuAktifQuery
-                ->where('kartu_dikembalikan', 0)  // Belum dikembalikan
-                ->where('kartu_hilang', 0)        // Tidak hilang
-                ->count();
-
-            $belumDikembalikan = $belumDikembalikanQuery
-                ->where('kartu_dikembalikan', 0)  // Belum dikembalikan
-                ->count();
-
-            $sudahDikembalikan = $sudahDikembalikanQuery // GANTI NAMA VARIABLE
-                ->where('kartu_dikembalikan', 1)  // SUDAH DIKEMBALIKAN
-                ->count();
-        } else {
-            // Untuk tabel transaction
-            $kartuAktif = $kartuAktifQuery
-                ->where('kartu_dikembalikan', 0)  // Belum dikembalikan
-                ->whereNull('tanggal_lapor_hilang') // Tidak hilang
-                ->count();
-
-            $belumDikembalikan = $belumDikembalikanQuery
-                ->where('kartu_dikembalikan', 0)  // Belum dikembalikan
-                ->count();
-
-            $sudahDikembalikan = $sudahDikembalikanQuery // GANTI NAMA VARIABLE
-                ->where('kartu_dikembalikan', 1)  // SUDAH DIKEMBALIKAN
-                ->count();
-        }
-
-        $totalPengunjung = $totalQuery->count();
-
-        return [
-            'kartu_aktif' => $kartuAktif,
-            'belum_dikembalikan' => $belumDikembalikan,
-            'kartu_hilang' => $sudahDikembalikan, // GANTI NAMA KEY
-            'total_pengunjung' => $totalPengunjung
-        ];
-    }
-
-    // filter departemen
     public function statistikPerusahaanDepartemen(Request $request)
     {
         try {
             $periode = $request->input('periode', 'all');
-            $jenisKartu = $request->input('jenis_kartu', '');
-            $pos = $request->input('pos', 'POS 1');
 
-            // Tentukan tabel berdasarkan POS
-            $table = $this->getTableName($pos);
-
-            // Query dasar dengan periode
-            $query = $this->applyPeriodeFilter(DB::table($table), $periode);
-
-            // Filter berdasarkan jenis kartu
-            if (!empty($jenisKartu)) {
-                if ($table === 'ga_visitor_vendor') {
-                    $query->where('type', $jenisKartu);
-                } else {
-                    if ($jenisKartu === 'Transporter') {
-                        $query->where(function ($q) {
-                            $q->where('purpose', 'like', '%BONGKAR%')
-                                ->orWhere('purpose', 'like', '%MUAT%');
-                        });
-                    } else {
-                        $query->whereRaw('1 = 0');
-                    }
-                }
-            }
-
-            // Hitung perusahaan teratas
-            $perusahaan = $this->getPerusahaanTeratas($query, $table);
-
-            // Hitung departemen favorit (berdasarkan hostdeptid)
-            $departemen = $this->getDepartemenFavorit($query, $table);
+            $query = $this->applyPeriodeFilter(
+                $this->baseQuery(),
+                $periode
+            );
 
             return response()->json([
-                'perusahaan' => $perusahaan,
-                'departemen' => $departemen
+                'perusahaan' => $this->perusahaanTeratas($query),
+                'departemen' => $this->departemenFavorit($query),
             ]);
         } catch (\Exception $e) {
-            Log::error('Statistik perusahaan departemen error: ' . $e->getMessage());
-            return response()->json(['error' => $e->getMessage()], 500);
+            Log::error('Statistik error: ' . $e->getMessage());
+            return response()->json(['error' => 'Internal server error'], 500);
         }
+    }
+
+    private function baseQuery()
+    {
+        $transaction = DB::table('ga_visitor_transaction')
+            ->select([
+                'id',
+                'namacomp',
+                'hostdeptid',
+                'kartu_dikembalikan',
+                DB::raw('NULL as kartu_hilang'),
+                DB::raw("'transaction' as source"),
+                'created_at',
+            ]);
+
+        $vendor = DB::table('ga_visitor_vendor')
+            ->select([
+                'id',
+                'namacomp',
+                'hostdeptid',
+                'kartu_dikembalikan',
+                'kartu_hilang',
+                DB::raw("'vendor' as source"),
+                'created_at',
+            ]);
+
+        return DB::query()->fromSub(
+            $transaction->unionAll($vendor),
+            'visitors'
+        );
+    }
+
+    private function perusahaanTeratas($query)
+    {
+        return (clone $query)
+            ->select('namacomp as nama', DB::raw('COUNT(*) as jumlah'))
+            ->whereNotNull('namacomp')
+            ->where('namacomp', '!=', '')
+            ->groupBy('namacomp')
+            ->orderByDesc('jumlah')
+            ->limit(5)
+            ->get();
+    }
+
+    private function departemenFavorit($query)
+    {
+        return (clone $query)
+            ->select('hostdeptid as nama', DB::raw('COUNT(*) as jumlah'))
+            ->whereNotNull('hostdeptid')
+            ->where('hostdeptid', '!=', '')
+            ->groupBy('hostdeptid')
+            ->orderByDesc('jumlah')
+            ->limit(5)
+            ->get();
     }
 
     private function applyPeriodeFilter($query, $periode)
@@ -196,46 +145,21 @@ class DashboardAjax extends Controller
         switch ($periode) {
             case 'today':
                 return $query->whereDate('created_at', $now->toDateString());
+
             case 'this_week':
                 return $query->whereBetween('created_at', [
-                    $now->startOfWeek()->toDateString(),
-                    $now->endOfWeek()->toDateString()
+                    $now->copy()->startOfWeek()->startOfDay(),
+                    $now->copy()->endOfWeek()->endOfDay(),
                 ]);
+
             case 'this_month':
-                return $query->whereMonth('created_at', $now->month)
-                    ->whereYear('created_at', $now->year);
+                return $query->whereBetween('created_at', [
+                    $now->copy()->startOfMonth()->startOfDay(),
+                    $now->copy()->endOfMonth()->endOfDay(),
+                ]);
+
             default:
-                return $query; // Semua waktu
+                return $query;
         }
-    }
-
-    private function getPerusahaanTeratas($query, $table)
-    {
-        $perusahaanQuery = clone $query;
-
-        return $perusahaanQuery
-            ->select('namacomp as nama', DB::raw('COUNT(*) as jumlah'))
-            ->whereNotNull('namacomp')
-            ->where('namacomp', '!=', '')
-            ->groupBy('namacomp')
-            ->orderBy('jumlah', 'desc')
-            ->limit(5)
-            ->get()
-            ->toArray();
-    }
-
-    private function getDepartemenFavorit($query, $table)
-    {
-        $departemenQuery = clone $query;
-
-        return $departemenQuery
-            ->select('hostdeptid as nama', DB::raw('COUNT(*) as jumlah'))
-            ->whereNotNull('hostdeptid')
-            ->where('hostdeptid', '!=', '')
-            ->groupBy('hostdeptid')
-            ->orderBy('jumlah', 'desc')
-            ->limit(5)
-            ->get()
-            ->toArray();
     }
 }
