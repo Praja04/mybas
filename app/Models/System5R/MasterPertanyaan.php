@@ -16,5 +16,10 @@ class MasterPertanyaan extends Model
     {
         return $this->belongsTo(MasterGroup::class, 'id_group');
     }
+
+    public function temuan()
+    {
+        return $this->hasMany(Temuan::class, 'id_pertanyaan', 'id_pertanyaan');
+    }
 }
 

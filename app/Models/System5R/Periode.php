@@ -16,4 +16,9 @@ class Periode extends Model
     {
         return $this->belongsTo(Jadwal::class, 'id_jadwal', 'id_jadwal');
     }
+
+    public function temuan()
+    {
+        return $this->hasMany(Temuan::class, 'id_periode', 'id_periode');
+    }
 }

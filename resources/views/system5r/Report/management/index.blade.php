@@ -384,7 +384,7 @@
                             fotoNameArray.forEach(function(fotoName) {
                                 foto += `
                                     <div class="d-flex mb-1">
-                                        <img src="{{ asset('images/5r') }}/${fotoName}" alt="Foto" style="width: 300px" />
+                                        <img src="{{ asset('images/5r/temuan/') }}/${fotoName}" alt="Foto" style="width: 300px" />
                                     </div>`;
                             });
                         } else {
