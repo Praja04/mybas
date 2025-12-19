@@ -178,6 +178,8 @@ class CekKendaraanFormAjax extends Controller
         try {
             $now = now();
             $trnCekId = 'CK-' . $now->format('YmdHis');
+            $otherTruckType = trim((string) $request->otherTruckType);
+
 
             $photoPaths = [];
 
@@ -196,16 +198,27 @@ class CekKendaraanFormAjax extends Controller
                     if ($imageData === false) continue;
 
                     $nopolClean = preg_replace('/[^A-Za-z0-9]/', '', strtoupper($request->nomor_polisi));
-                    //todo
-                    $status = 'MASUK';
-                    $timestamp = now()->format('Ymd_His');
-                    $fileName = $nopolClean . '_' . $status . '_' . $key . '_' . $timestamp . '.' . $extension;
 
-                    $path = 'cek-kendaraan/' . now()->format('Y-m-d') . '/' . $fileName;
+                    $tanggal   = now()->format('Y-m-d');
+                    $status    = 'MASUK';
+                    $timestamp = now()->format('Ymd_His');
+
+                    $label = preg_replace('/[^A-Za-z0-9_-]/', '_', $key);
+
+                    $fileName = $timestamp . '.' . $extension;
+
+                    $path = implode('/', [
+                        'cek-kendaraan',
+                        $tanggal,
+                        $status,
+                        $nopolClean,
+                        $label,
+                        $fileName
+                    ]);
 
                     Storage::disk('public')->put($path, $imageData);
 
-                    $photoPaths[$key] = $path;
+                    $photoPaths[$key][] = $path;
                 }
             }
 
@@ -217,7 +230,9 @@ class CekKendaraanFormAjax extends Controller
                 'nama_petugas_masuk'  => strtoupper($request->nama_petugas),
                 'muatan_type'   => $request->muatan_type,
                 'truck_type'    => $request->truck_type,
-                'truck_type_other' => strtoupper($request->otherTruckType),
+                'truck_type_other' => $otherTruckType !== ''
+                    ? strtoupper($otherTruckType)
+                    : null,
                 'foto_in'       => json_encode($photoPaths),
                 'checked_in_at'    => now(),
                 'created_at'    => now(),
@@ -283,29 +298,45 @@ class CekKendaraanFormAjax extends Controller
 
             $photoPaths = [];
 
-            foreach ($request->photos as $key => $base64Image) {
-                if (!$base64Image) continue;
+            if ($request->has('photos')) {
+                foreach ($request->photos as $key => $base64Image) {
+                    if (!$base64Image) continue;
 
-                if (!preg_match('/^data:image\/(\w+);base64,/', $base64Image, $type)) {
-                    continue;
+                    if (!preg_match('/^data:image\/(\w+);base64,/', $base64Image, $type)) {
+                        continue;
+                    }
+
+                    $extension = strtolower($type[1]);
+                    $imageData = base64_decode(
+                        substr($base64Image, strpos($base64Image, ',') + 1)
+                    );
+
+                    if ($imageData === false) continue;
+
+                    $nopolClean = preg_replace('/[^A-Za-z0-9]/', '', strtoupper($cek->nomor_polisi));
+
+                    $tanggal   = now()->format('Y-m-d');
+                    $status    = 'KELUAR';
+                    $timestamp = now()->format('Ymd_His');
+
+                    $label = preg_replace('/[^A-Za-z0-9_-]/', '_', $key);
+
+
+                    $fileName = $timestamp . '.' . $extension;
+
+                    $path = implode('/', [
+                        'cek-kendaraan',
+                        $tanggal,
+                        $status,
+                        $nopolClean,
+                        $label,
+                        $fileName
+                    ]);
+
+                    Storage::disk('public')->put($path, $imageData);
+
+                    $photoPaths[$key][] = $path;
                 }
-
-                $extension = strtolower($type[1]);
-                $imageData = base64_decode(
-                    substr($base64Image, strpos($base64Image, ',') + 1)
-                );
-
-                if ($imageData === false) continue;
-
-                $nopolClean = preg_replace('/[^A-Za-z0-9]/', '', strtoupper($cek->nomor_polisi));
-                $timestamp = now()->format('Ymd_His');
-
-                $fileName = "{$nopolClean}_KELUAR_{$key}_{$timestamp}.{$extension}";
-                $path = 'cek-kendaraan/' . now()->format('Y-m-d') . '/' . $fileName;
-
-                Storage::disk('public')->put($path, $imageData);
-
-                $photoPaths[$key] = $path;
             }
 
             $updateData = [

@@ -40,6 +40,8 @@ function onScanError(errorMessage) {
     alert("Terjadi kesalahan saat memindai: " + errorMessage);
 }
 function searchVisitorData(keyword) {
+    $("#returnCard").removeData("trnvisitorid");
+
     console.log("Keyword pencarian:", keyword);
 
     $.ajax({
@@ -55,6 +57,11 @@ function searchVisitorData(keyword) {
         },
         success: function (response) {
             if (response.success) {
+                console.log(
+                    "trnvisitorid from search result: ",
+                    response.data.trnvisitorid
+                );
+
                 document
                     .getElementById("returnCard")
                     .setAttribute(
@@ -295,6 +302,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
 $("#returnCard").on("click", function () {
     const trnvisitorid = $(this).data("trnvisitorid");
+    console.log("returnCard trnvisitorid: ", trnvisitorid);
 
     if (!trnvisitorid) {
         Swal.fire("Error", "Visitor ID tidak ditemukan!", "error");

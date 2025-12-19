@@ -205,25 +205,25 @@
         const options = {
             LIQUID: [
                 {
-                    value: "MUAT GULA CAIR",
+                    value: "TRUK MUAT GULA CAIR",
                     text: "Truk Muat Gula Cair",
                 },
                 {
-                    value: "LAINNYA LIQUID",
+                    value: "LAINNYA (LIQUID)",
                     text: "Lainnya",
                 },
             ],
             NONLIQUID: [
                 {
-                    value: "BONGKAR MATERIAL",
+                    value: "TRUK BONGKAR MATERIAL",
                     text: "Truck Bongkar Material",
                 },
                 {
-                    value: "MUAT FINISH GOOD",
+                    value: "TRUK MUAT FINISH GOOD",
                     text: "Truck Muat Finish Good (WFG)",
                 },
                 {
-                    value: "SPAREPART",
+                    value: "MOBIL SPAREPART",
                     text: "Mobil Sparepart/Bahan Bangunan",
                 },
                 {
@@ -235,7 +235,7 @@
                     text: "Mobil Pengangkut Sampah",
                 },
                 {
-                    value: "LAINNYA NONLIQUID",
+                    value: "LAINNYA (NONLIQUID)",
                     text: "Lainnya",
                 },
             ],
@@ -260,7 +260,8 @@
 
             $otherTruckContainer.slideUp();
             $otherTruckInput.prop("required", false);
-            $otherTruckInput.val("");
+            $otherTruckInput.val(null);
+            $otherTruckInput.removeAttr("name");
 
             if (selected && options[selected]) {
                 $truckContainer.slideDown();
@@ -335,9 +336,13 @@
             // }, 150);
 
             // render other truck type field
-            if (value === "LAINNYA LIQUID" || value === "LAINNYA NONLIQUID") {
+            if (
+                value === "LAINNYA (LIQUID)" ||
+                value === "LAINNYA (NONLIQUID)"
+            ) {
                 $otherTruckContainer.slideDown();
                 $otherTruckInput.prop("required", true);
+                $otherTruckInput.attr("name", "otherTruckType");
             } else {
                 $otherTruckContainer.slideUp();
                 $otherTruckInput.prop("required", false);

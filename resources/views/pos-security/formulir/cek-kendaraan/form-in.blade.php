@@ -118,7 +118,7 @@
                             <div class="mb-3">
                                 <label class="form-label fw-semibold" for="muatanType">Jenis Muatan <span
                                         class="text-danger">*</span></label>
-                                <select required class="form-select" id="muatanType" name="muatan_type" required>
+                                <select class="form-select" id="muatanType" name="muatan_type" required>
                                     <option value="" disabled selected>-- Pilih Jenis Muatan --</option>
                                     <option value="LIQUID">LIQUID</option>
                                     <option value="NONLIQUID">NONLIQUID</option>
