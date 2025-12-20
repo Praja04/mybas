@@ -110,9 +110,6 @@ class PenilaianController extends Controller
                     ->pluck('foto')
                     ->toArray();
 
-                // Gabungkan semua foto menjadi string dengan separator koma
-                !empty($temuanList) ? implode(',', $temuanList) : null;
-
                 // Foto dari upload langsung (jika ada)
                 $fotoPenilaian = [];
                 if ($request->image != null && array_key_exists($id_pertanyaan, $request->image)) {
@@ -122,28 +119,27 @@ class PenilaianController extends Controller
                         $imageName = uniqid() . '.jpg';
                         $fotoPenilaian[] = $imageName;
 
-                        // Store to public folder
                         \File::put('images/5r/' . $imageName, base64_decode($image));
                     }
                 }
 
                 // Gabungkan foto dari temuan dan foto upload langsung
-                $allFotos = array_merge(
-                    $temuanList,
-                    $fotoPenilaian
-                );
-
+                $allFotos = array_merge($temuanList, $fotoPenilaian);
                 $imageNames = count($allFotos) > 0 ? implode(',', $allFotos) : null;
 
-                $arrayData = [
+                // Create jawaban record
+                $jawaban = Jawaban::create([
                     'id_jawaban_group' => $jawabanGroup->id_jawaban_group,
                     'id_pertanyaan' => $id_pertanyaan,
                     'nilai' => $nilai,
                     'foto' => $imageNames,
                     'keterangan' => $request->keterangan[$id_pertanyaan]
-                ];
+                ]);
 
-                Jawaban::create($arrayData);
+                Temuan::where('id_pertanyaan', $id_pertanyaan)
+                    ->where('id_periode', $id_periode)
+                    ->whereNull('id_jawaban')
+                    ->update(['id_jawaban' => $jawaban->id]);
             }
 
             DB::commit();
@@ -239,9 +235,7 @@ class PenilaianController extends Controller
             $id_periode = $request->id_periode;
 
             $query = Temuan::where('id_pertanyaan', $id_pertanyaan)
-                ->with('area')
-                ->with('pertanyaan')
-                ->with('periode')
+                ->with(['area', 'pertanyaan', 'periode', 'jawaban'])
                 ->orderBy('created_at', 'desc');
 
             if ($id_periode) {

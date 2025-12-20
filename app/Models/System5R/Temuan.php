@@ -13,6 +13,7 @@ class Temuan extends Model
    protected $fillable = [
       'id_temuan',
       'id_pertanyaan',
+      'id_jawaban',
       'id_periode',
       'id_area',
       'foto',
@@ -34,5 +35,10 @@ class Temuan extends Model
    public function pertanyaan()
    {
       return $this->belongsTo(MasterPertanyaan::class, 'id_pertanyaan', 'id_pertanyaan');
+   }
+
+   public function jawaban()
+   {
+      return $this->belongsTo(Jawaban::class, 'id_jawaban', 'id_jawaban');
    }
 }
