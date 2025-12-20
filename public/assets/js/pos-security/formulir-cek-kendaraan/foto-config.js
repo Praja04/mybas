@@ -1,5 +1,5 @@
 window.fotoConfig = {
-    "MUAT GULA CAIR": [
+    "TRUK MUAT GULA CAIR": [
         "Kondisi Segel Atas",
         "Kondisi Segel Samping",
         "Kondisi Segel Belakang",
@@ -15,7 +15,7 @@ window.fotoConfig = {
         "Kolong Belakang",
         "Temuan Barang Mencurigakan",
     ],
-    "LAINNYA LIQUID": [
+    "LAINNYA (LIQUID)": [
         "Kondisi Segel Atas",
         "Kondisi Segel Samping",
         "Kondisi Segel Belakang",
@@ -31,34 +31,34 @@ window.fotoConfig = {
         "Kolong Belakang",
         "Temuan Barang Mencurigakan",
     ],
-    "BONGKAR MATERIAL": [
+    "TRUK BONGKAR MATERIAL": [
         "Kabin Depan Mobil",
         "Kondisi Dalam Bak Truck",
         "Temuan Barang Mencurigakan",
     ],
-    "MUAT FINISH GOOD": [
+    "TRUK MUAT FINISH GOOD": [
         "Kabin Depan Mobil",
         "Kondisi Bak Truck",
         "Temuan Barang Mencurigakan",
     ],
-    SPAREPART: [
-        "Surat Jalan/Pembelian Barang",
-        "Kondisi Dalam Kendaraan/Bak Kendaraan",
+    "MOBIL SPAREPART": [
+        "Surat Jalan atau Pembelian Barang",
+        "Kondisi Dalam Kendaraan atau Bak Kendaraan",
         "Temuan Barang Mencurigakan",
     ],
     "MOBIL VENDOR": [
-        "Surat Jalan/Pembelian Barang",
-        "Kondisi Dalam Kendaraan/Bak Kendaraan",
+        "Surat Jalan atau Pembelian Barang",
+        "Kondisi Dalam Kendaraan atau Bak Kendaraan",
         "Temuan Barang Mencurigakan",
     ],
     "MOBIL PENGANGKUT SAMPAH": [
-        "Surat Jalan/Pembelian Barang",
-        "Kondisi Dalam Kendaraan/Bak Kendaraan",
+        "Surat Jalan atau Pembelian Barang",
+        "Kondisi Dalam Kendaraan atau Bak Kendaraan",
         "Temuan Barang Mencurigakan",
     ],
-    "LAINNYA NONLIQUID": [
-        "Surat Jalan/Pembelian Barang",
-        "Kondisi Dalam Kendaraan/Bak Kendaraan",
+    "LAINNYA (NONLIQUID)": [
+        "Surat Jalan atau Pembelian Barang",
+        "Kondisi Dalam Kendaraan atau Bak Kendaraan",
         "Temuan Barang Mencurigakan",
     ],
 };

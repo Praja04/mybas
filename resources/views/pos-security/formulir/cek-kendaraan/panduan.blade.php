@@ -72,3 +72,37 @@
 
     </div>
 </div>
+
+{{-- Card IN - OUT --}}
+<div class="col-xl-12">
+    <!-- Custom Tabs with Card Style -->
+    <div class="mb-3 row align-items-stretch g-3">
+        <!-- Tab Buttons -->
+        <div class="col-auto d-flex flex-wrap gap-2" id="formTabs-pos1" role="tablist">
+            <button class="tab-card active" id="cek-kendaraan-in-tab" data-bs-toggle="tab"
+                data-bs-target="#cek-kendaraan-in" type="button" role="tab" aria-controls="cek-kendaraan-in"
+                aria-selected="true">
+                MASUK (IN) </button>
+            <button class="tab-card" id="cek-kendaraan-out-tab" data-bs-toggle="tab" data-bs-target="#cek-kendaraan-out"
+                type="button" role="tab" aria-controls="cek-kendaraan-out" aria-selected="false">
+                KELUAR (OUT) </button>
+        </div>
+
+        <!-- Info Card -->
+        <div class="col">
+            <div class="card overflow-hidden h-100">
+                <div class="card-body bg-marketplace d-flex flex-column justify-content-between">
+                    <div>
+                        <h4 class="fs-18 lh-base mb-0">Formulir Pengecekan Kendaraan
+                        </h4>
+                    </div>
+                    <div class="mt-3">
+                        <a href="#!" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#panduanModal">
+                            <i class="mdi mdi-information-outline"></i> Panduan Pengisian
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

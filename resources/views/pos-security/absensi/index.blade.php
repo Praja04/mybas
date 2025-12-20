@@ -45,7 +45,7 @@
                                         <th>Tujuan</th>
                                         <th>No Kartu</th>
                                         <th>No Identitas</th>
-                                        <th>Host</th>
+                                        <th>Nama PIC</th>
                                         <th>Plat Nomor</th>
                                         <th>Jenis Tamu</th>
                                         <th>Waktu Scan</th>

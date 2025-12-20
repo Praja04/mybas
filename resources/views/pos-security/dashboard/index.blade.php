@@ -2,62 +2,45 @@
 
 @section('title', 'Dashboard')
 
+{{-- Initial render --}}
+@php
+    $data = [
+        [
+            'icon' => 'bi-person-check',
+            'label' => 'Kartu Aktif',
+            'value' => '#',
+            'color' => 'primary',
+        ],
+        [
+            'icon' => 'bi-clock-history',
+            'label' => 'Belum Dikembalikan',
+            'value' => '#',
+            'color' => 'warning',
+        ],
+        [
+            'icon' => 'bi-check-circle',
+            'label' => 'Sudah Dikembalikan',
+            'value' => '#',
+            'color' => 'success',
+        ],
+        [
+            'icon' => 'bi-people',
+            'label' => 'Total Pengunjung',
+            'value' => '#',
+            'color' => 'info',
+        ],
+    ];
+@endphp
+
 @section('content')
     <div class="container-fluid">
         <h5 class="mb-3">Dashboard Akses Pengunjung</h5>
 
         {{-- Filter --}}
-        <div class="card mb-4">
-            <div class="card-body row g-3">
-                <div class="col-md-4 col-12">
-                    <label class="form-label">Jenis Kartu</label>
-                    <select id="jenis_kartu" class="form-select">
-                        <option value="">Semua</option>
-                        <option value="Vendor">Vendor</option>
-                        <option value="Tamu">Tamu</option>
-                        <option value="Transporter">Transporter</option>
-                    </select>
-                </div>
-                <div class="col-md-4 col-12">
-                    <label class="form-label">POS</label>
-                    <select id="pos" class="form-select">
-                        <option value="POS 1">POS 1</option>
-                        <option value="POS 2">POS 2</option>
-                    </select>
-                </div>
-                <div class="col-md-4 col-12 d-flex flex-column flex-md-row gap-2 align-items-md-end">
-                    <button id="btn-filter" class="btn btn-primary w-100 d-flex align-items-center justify-content-center"
-                        type="submit">
-                        <i class="bi bi-funnel me-1"></i> Filter
-                    </button>
-                    <button type="button"
-                        class="btn btn-outline-primary w-100 d-flex align-items-center justify-content-center"
-                        onclick="hotReload()">
-                        <i class="bi bi-arrow-clockwise me-1"></i> Refresh halaman
-                    </button>
-                </div>
-            </div>
-        </div>
+        {{-- @include('pos-security.dashboard.components.filter') --}}
+
         {{-- Info Kartu --}}
         <div class="row g-4" id="dashboard-cards">
-            @php
-                $data = [
-                    ['icon' => 'bi-person-check', 'label' => 'Kartu Aktif', 'value' => '#', 'color' => 'primary'],
-                    [
-                        'icon' => 'bi-clock-history',
-                        'label' => 'Belum Dikembalikan',
-                        'value' => '#',
-                        'color' => 'warning',
-                    ],
-                    [
-                        'icon' => 'bi-check-circle', // GANTI ICON
-                        'label' => 'Sudah Dikembalikan', // GANTI LABEL
-                        'value' => '#', // GANTI VALUE
-                        'color' => 'success', // GANTI WARNA
-                    ],
-                    ['icon' => 'bi-people', 'label' => 'Total Pengunjung', 'value' => '#', 'color' => 'info'], // info untuk total
-                ];
-            @endphp
             @foreach ($data as $item)
                 <div class="col-md-3">
                     <div class="card dashboard-card h-100 border-0 shadow-sm rounded-4">
@@ -152,7 +135,7 @@
                             <option value="this_month">Bulan Ini</option>
                             <option value="all" selected>Semua Waktu</option>
                         </select>
-                        <select id="jenis_kartu_statistik_select" class="form-select form-select-sm" style="width: auto;">
+                        {{-- <select id="jenis_kartu_statistik_select" class="form-select form-select-sm" style="width: auto;">
                             <option value="">Semua Jenis Kartu</option>
                             <option value="Vendor">Vendor</option>
                             <option value="Tamu">Tamu</option>
@@ -160,8 +143,8 @@
                         </select>
                         <select id="pos_statistik_select" class="form-select form-select-sm" style="width: auto;">
                             <option value="POS 1">POS 1</option>
-                            <option value="POS 2" selected>POS 2</option> {{-- DEFAULT POS 2 --}}
-                        </select>
+                            <option value="POS 2" selected>POS 2</option>
+                        </select> --}}
                     </div>
                 </div>
             </div>
@@ -242,7 +225,8 @@
             }
         });
     </script> --}}
-    <script>
+    {{-- DO NOT DELETE: for apply filter --}}
+    {{-- <script>
         $(document).ready(function() {
             $('#btn-filter').on('click', function() {
                 const jenisKartu = $('#jenis_kartu').val();
@@ -312,30 +296,71 @@
                 });
             }
         });
-    </script>
+    </script> --}}
+
+    {{-- DASHBOARD CARDS --}}
     <script>
-        function hotReload() {
-            const url = window.location.origin + window.location.pathname + '?_=' + Date.now();
-            window.location.replace(url);
-        }
         $(document).ready(function() {
-            // Filter statistik perusahaan & departemen
-            $('#periode_statistik_select, #jenis_kartu_statistik_select, #pos_statistik_select').on('change',
-                function() {
-                    loadStatistikPerusahaanDepartemen();
-                });
-
-            // Set default POS ke POS 2
-            $('#pos_statistik_select').val('POS 2');
-
-            // Load pertama kali dengan POS 2
-            loadStatistikPerusahaanDepartemen();
+            loadDashboardCards();
         });
 
-        function loadStatistikPerusahaanDepartemen() {
+        function loadDashboardCards() {
+            $.ajax({
+                url: API_DASHBOARD_FILTER,
+                method: 'POST',
+                data: {
+                    _token: $('meta[name="csrf-token"]').attr('content')
+                },
+                success: function(response) {
+                    renderDashboardCards(response);
+                },
+                error: function(xhr) {
+                    console.error('Dashboard load error:', xhr.responseText);
+                }
+            });
+        }
+
+        function renderDashboardCards(data) {
+            const container = $('#dashboard-cards');
+            container.empty();
+
+            data.forEach(function(item) {
+                const cardHtml = `
+                <div class="col-md-3">
+                    <div class="card dashboard-card h-100 border-0 shadow-sm rounded-4">
+                        <div class="card-body text-start d-flex align-items-center gap-3">
+                            <div class="icon-wrapper bg-${item.color}-subtle text-${item.color}">
+                                <i class="bi ${item.icon} fs-4"></i>
+                            </div>
+                            <div>
+                                <small class="text-muted">${item.label}</small>
+                                <h4 class="fw-semibold mb-0">${item.value}</h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+                container.append(cardHtml);
+            });
+        }
+    </script>
+
+    {{-- STATISTIK PERUSAHAAN & DEPT --}}
+    <script>
+        $(document).ready(function() {
+            // $('#periode_statistik_select, #jenis_kartu_statistik_select, #pos_statistik_select').on('change',
+            $('#periode_statistik_select').on('change',
+                function() {
+                    loadStatistik();
+                });
+
+            loadStatistik();
+        });
+
+        function loadStatistik() {
             const periode = $('#periode_statistik_select').val() || 'all';
-            const jenisKartu = $('#jenis_kartu_statistik_select').val() || '';
-            const pos = $('#pos_statistik_select').val() || 'POS 2'; // Default POS 2
+            // const jenisKartu = $('#jenis_kartu_statistik_select').val() || '';
+            // const pos = $('#pos_statistik_select').val() || '';
 
             // Tampilkan loading indicator
             $('#perusahaan_teratas_container').html(
@@ -349,11 +374,13 @@
                 data: {
                     _token: $('meta[name="csrf-token"]').attr('content'),
                     periode: periode,
-                    jenis_kartu: jenisKartu,
-                    pos: pos
+                    // jenis_kartu: jenisKartu,
+                    // pos: pos
                 },
                 success: function(response) {
-                    renderStatistikPerusahaanDepartemen(response);
+                    // renderStatistikPerusahaanDepartemen(response);
+                    renderPerusahaan(response.perusahaan);
+                    renderDepartemen(response.departemen);
                 },
                 error: function(xhr, status, error) {
                     console.log('Error loading statistik:', error);
@@ -365,42 +392,49 @@
             });
         }
 
-        function renderStatistikPerusahaanDepartemen(data) {
-            // Render perusahaan teratas
-            const perusahaanList = $('#perusahaan_teratas_container');
-            perusahaanList.empty();
+        function renderPerusahaan(data) {
+            const container = $('#perusahaan_teratas_container');
+            container.empty();
 
-            if (data.perusahaan && Array.isArray(data.perusahaan) && data.perusahaan.length > 0) {
-                data.perusahaan.forEach(function(item) {
-                    const listItem = `
-                <li class="list-group-item d-flex justify-content-between">
-                    <span>${item.nama || '-'}</span>
-                    <span class="badge bg-primary rounded-pill">${item.jumlah}x</span>
-                </li>
-            `;
-                    perusahaanList.append(listItem);
-                });
-            } else {
-                perusahaanList.append('<li class="list-group-item text-center text-muted">Tidak ada data</li>');
+            if (!data || data.length === 0) {
+                container.html('<li class="list-group-item text-muted text-center">Tidak ada data</li>');
+                return;
             }
 
-            // Render departemen favorit
-            const departemenList = $('#departemen_favorit_container');
-            departemenList.empty();
+            $.each(data, function(_, item) {
+                container.append(`
+            <li class="list-group-item d-flex justify-content-between">
+                <span>${item.nama || '-'}</span>
+                <span class="badge bg-primary rounded-pill">${item.jumlah}x</span>
+            </li>
+        `);
+            });
+        }
 
-            if (data.departemen && Array.isArray(data.departemen) && data.departemen.length > 0) {
-                data.departemen.forEach(function(item) {
-                    const listItem = `
-                <li class="list-group-item d-flex justify-content-between">
-                    <span>${item.nama || '-'}</span>
-                    <span class="badge bg-success rounded-pill">${item.jumlah}x</span>
-                </li>
-            `;
-                    departemenList.append(listItem);
-                });
-            } else {
-                departemenList.append('<li class="list-group-item text-center text-muted">Tidak ada data</li>');
+        function renderDepartemen(data) {
+            const container = $('#departemen_favorit_container');
+            container.empty();
+
+            if (!data || data.length === 0) {
+                container.html('<li class="list-group-item text-muted text-center">Tidak ada data</li>');
+                return;
             }
+
+            $.each(data, function(_, item) {
+                container.append(`
+            <li class="list-group-item d-flex justify-content-between">
+                <span>${item.nama || '-'}</span>
+                <span class="badge bg-success rounded-pill">${item.jumlah}x</span>
+            </li>
+        `);
+            });
+        }
+    </script>
+
+    <script>
+        function hotReload() {
+            const url = window.location.origin + window.location.pathname + '?_=' + Date.now();
+            window.location.replace(url);
         }
     </script>
 @endpush
