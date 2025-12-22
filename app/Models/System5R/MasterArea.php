@@ -16,4 +16,9 @@ class MasterArea extends Model
     {
         return $this->belongsTo(MasterDepartment::class, 'id_department', 'id_department');
     }
+
+    public function temuan()
+    {
+        return $this->hasMany(Temuan::class, 'id_area', 'id_area');
+    }
 }

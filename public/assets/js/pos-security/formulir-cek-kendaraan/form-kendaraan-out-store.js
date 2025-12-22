@@ -1,15 +1,15 @@
 // form ajax
 $(document).ready(function () {
-    $("#cekKendaraanForm").on("submit", function (e) {
+    $("#cekKendaraanFormOut").on("submit", function (e) {
         e.preventDefault();
 
         let valid = true;
         let firstEmptyLabel = "";
 
-        $("#fotoSection input[required]").each(function () {
+        $("#fotoSectionOut input[required]").each(function () {
             if (!$(this).val()) {
                 valid = false;
-                const key = $(this).attr("id").replace("input-", "");
+                const key = $(this).attr("id").replace("input-out-", "");
                 firstEmptyLabel = key.replace(/_/g, " ");
                 return false;
             }
@@ -25,11 +25,11 @@ $(document).ready(function () {
             return false;
         }
 
-        $("#submitBtn")
+        $("#submitBtnOut")
             .prop("disabled", true)
-            .html('<i class="mdi mdi-loading"></i>Menyimpan...');
+            .html('<i class="mdi mdi-spin me-2"></i>Menyimpan...');
 
-        $("#formAlert")
+        $("#formAlertOut")
             .hide()
             .removeClass("alert-success alert-danger")
             .html("");
@@ -52,7 +52,7 @@ $(document).ready(function () {
                         showConfirmButton: false,
                     });
 
-                    $("#formAlert")
+                    $("#formAlertOut")
                         .stop(true)
                         .hide()
                         .removeClass("alert-danger alert-success")
@@ -61,23 +61,21 @@ $(document).ready(function () {
                         .fadeIn();
 
                     setTimeout(function () {
-                        $("#formAlert")
+                        $("#formAlertOut")
                             .fadeOut()
                             .removeClass("alert-success alert-danger")
                             .html("");
                     }, 2000);
 
                     document
-                        .querySelectorAll('[id^="preview-"]')
+                        .querySelectorAll('[id^="preview-out-"]')
                         .forEach((el) => {
                             el.innerHTML = "";
                         });
 
-                    document
-                        .querySelectorAll('input[name^="photos"]')
-                        .forEach((input) => {
-                            input.value = "";
-                        });
+                    $("#cekKendaraanFormOut")
+                        .find('input[name^="photos"]')
+                        .val("");
 
                     // reset kamera
                     if (typeof resetCameraModal === "function") {
@@ -89,32 +87,29 @@ $(document).ready(function () {
                         setActivePhotoKey(null);
                     }
 
-                    // reset form
-                    $("#muatanType").val("").trigger("change");
-                    $("#truckTypeContainer").hide();
-                    $("#fotoSection").html("");
-                    $("#nopol-search").val("");
+                    $("#fotoSectionOut").html("");
+                    $("#nopol-search-out").val("");
 
-                    $("#cekKendaraanForm")[0].reset();
-                    $("#cekKendaraanForm").hide();
+                    $("#cekKendaraanFormOut")[0].reset();
+                    $("#cekKendaraanFormOut").hide();
 
-                    $("#submitBtn")
+                    $("#submitBtnOut")
                         .prop("disabled", false)
                         .html(
-                            '<i class="mdi mdi-content-save"></i>Simpan Data'
+                            '<i class="mdi mdi-content-save me-2"></i>Simpan Data'
                         );
 
                     return;
                 }
 
-                // if res.success === false
+                // res.success === false
                 Swal.fire({
                     icon: "warning",
                     title: "Gagal!",
                     text: response.message || "Terjadi kesalahan.",
                 });
 
-                $("#formAlert")
+                $("#formAlertOut")
                     .stop(true)
                     .hide()
                     .removeClass("alert-success alert-danger")
@@ -122,9 +117,11 @@ $(document).ready(function () {
                     .html(response.message || "Terjadi kesalahan.")
                     .fadeIn();
 
-                $("#submitBtn")
+                $("#submitBtnOut")
                     .prop("disabled", false)
-                    .html('<i class="mdi mdi-content-save"></i>Simpan Data');
+                    .html(
+                        '<i class="mdi mdi-content-save me-2"></i>Simpan Data'
+                    );
             },
 
             error: function (xhr) {
@@ -138,7 +135,7 @@ $(document).ready(function () {
                     text: message,
                 });
 
-                $("#formAlert")
+                $("#formAlertOut")
                     .stop(true)
                     .hide()
                     .removeClass("alert-success alert-danger")
@@ -146,9 +143,11 @@ $(document).ready(function () {
                     .html(message)
                     .fadeIn();
 
-                $("#submitBtn")
+                $("#submitBtnOut")
                     .prop("disabled", false)
-                    .html('<i class="mdi mdi-content-save"></i>Simpan Data');
+                    .html(
+                        '<i class="mdi mdi-content-save me-2"></i>Simpan Data'
+                    );
             },
         });
     });

@@ -9,7 +9,7 @@
         <p class="text-muted">Kelola area berdasarkan departemen.</p>
 
         <div id="alert-area" class="alert alert-info">
-            Silakan pilih <strong>Department</strong> terlebih dahulu untuk menampilkan data Area.
+            Silakan pilih <strong>Departemen</strong> terlebih dahulu untuk menampilkan data Area.
         </div>
 
         <div class="card">
@@ -17,9 +17,9 @@
                 <div class="row align-items-end g-3">
                     <div class="col-md-9">
                         <div>
-                            <label for="filter-department">Pilih Department <span class="text-danger">*</span></label>
+                            <label for="filter-department">Pilih Departemen <span class="text-danger">*</span></label>
                             <select name="department" id="filter_department" class="form-control">
-                                <option value="" selected disabled>-- Pilih Department --</option>
+                                <option value="" selected disabled>-- Pilih Departemen --</option>
                                 @foreach ($department as $dept)
                                     <option value="{{ $dept->id_department }}">{{ $dept->nama_department }}</option>
                                 @endforeach
@@ -80,9 +80,9 @@
                 <div class="modal-body">
                     <form action="{{ route('5r-system.master-area.store') }}" method="POST" id="formCreateGroup">
                         <div class="form-group mb-3">
-                            <label for="">Department <span class="text-danger">*</span></label>
-                            <select required name="id_department" id="filter_department" class="form-control">
-                                <option value="" disabled selected>-- Pilih Department --</option>
+                            <label for="">Departemen <span class="text-danger">*</span></label>
+                            <select required name="id_department" id="create_department" class="form-control">
+                                <option value="" disabled selected>-- Pilih Departemen --</option>
                                 @foreach ($department as $dept)
                                     <option value="{{ $dept->id_department }}">{{ $dept->nama_department }}</option>
                                 @endforeach
@@ -244,7 +244,7 @@
             if (!department) {
                 Swal.fire(
                     'Perhatian',
-                    'Silakan pilih Department terlebih dahulu',
+                    'Silakan pilih Departemen terlebih dahulu',
                     'info'
                 );
                 return;
@@ -337,6 +337,21 @@
                     Swal.fire('Error', 'Terjadi kesalahan saat edit data area', 'error');
                 }
             });
+        });
+
+        $('#filter_department').on('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                $('#btn-pilih-department').click();
+            }
+        });
+
+        $('#modalCreateGroup').on('show.bs.modal', function() {
+            let selectedDepartment = $('#filter_department').val();
+
+            if (selectedDepartment) {
+                $('#create_department').val(selectedDepartment);
+            }
         });
     </script>
 @endpush

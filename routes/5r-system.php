@@ -133,6 +133,14 @@ Route::prefix('5r-system')->group(function () {
 
         Route::post('do-submit', 'System5R\PenilaianController@doSubmit')->name('5r-system.do-submit');
 
+        Route::post('save-temuan', 'System5R\PenilaianController@saveTemuan')->name('5r-system.save-temuan');
+        Route::get('get-list-temuan', 'System5R\PenilaianController@getListTemuan')->name('5r-system.get-list-temuan');
+        Route::delete('delete-temuan', 'System5R\PenilaianController@deleteTemuan')->name('5r-system.delete-temuan');
+
+        Route::post('save-draft', 'System5R\PenilaianController@saveDraft')->name('5r-system.save-draft');
+        Route::get('load-draft', 'System5R\PenilaianController@loadDraft')->name('5r-system.load-draft');
+        Route::delete('delete-draft', 'System5R\PenilaianController@deleteDraft')->name('5r-system.delete-draft');
+
         Route::get('validate-credentials-comittee/{id_group}', 'System5R\PenilaianController@validateCredentials')->name('5r-system.validate-comittee');
 
         Route::get('get-periode-by-id-jadwal/{id_jadwal}', 'System5R\PenilaianController@getPeriode');

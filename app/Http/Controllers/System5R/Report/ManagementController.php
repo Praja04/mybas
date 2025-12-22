@@ -123,7 +123,7 @@ class ManagementController extends Controller
         }
 
         $data = Jawaban::where('id_jawaban_group', $group->id_jawaban_group)
-            ->with('pertanyaan')
+            ->with(['pertanyaan', 'temuan.area'])
             ->get()
             ->groupBy('pertanyaan.jenis');
 

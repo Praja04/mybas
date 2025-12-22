@@ -45,8 +45,17 @@
 
 @section('content')
     <div class="container-fluid">
+        {{-- panduan dan menu tabs --}}
         @include('pos-security.formulir.cek-kendaraan.panduan')
 
-        @include('pos-security.formulir.cek-kendaraan.form')
+        <div class="tab-content" id="formTabsContent">
+            {{-- @include('pos-security.formulir.cek-kendaraan.form') --}}
+
+            {{-- IN KENDARAAN --}}
+            @include('pos-security.formulir.cek-kendaraan.form-in')
+
+            {{-- OUT KENDARAAN --}}
+            @include('pos-security.formulir.cek-kendaraan.form-out')
+        </div>
     </div>
 @endsection

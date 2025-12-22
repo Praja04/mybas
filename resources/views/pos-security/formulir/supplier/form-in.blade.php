@@ -32,7 +32,7 @@
                                 <label class="form-label fw-semibold" for="namavisitor">Nama Supir / Kernet <span
                                         class="text-danger">*</span></label>
                                 <input type="text" class="form-control" name="namavisitor" id="namavisitor" required
-                                    placeholder="Masukkan nama supir">
+                                    placeholder="Masukkan nama supir/kernet">
                             </div>
 
                             <div class="mb-3">

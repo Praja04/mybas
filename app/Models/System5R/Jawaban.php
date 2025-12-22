@@ -13,4 +13,9 @@ class Jawaban extends Model
     {
         return $this->belongsTo(MasterPertanyaan::class, 'id_pertanyaan');
     }
+
+    public function temuan()
+    {
+        return $this->hasMany(Temuan::class, 'id_jawaban');
+    }
 }
