@@ -29,7 +29,8 @@ class Kernel extends ConsoleKernel
         $schedule->command('sigra:check-kontrak-vendor')->mondays()->at('07:00');
         $schedule->command('sigra:check-legalitas')->mondays()->at('07:00');
         $schedule->command('sigra:check-operasional')->mondays()->at('07:00');
-        $schedule->command('sigra:check-sio')->mondays()->at('07:00');
+        // $schedule->command('sigra:check-sio')->mondays()->at('07:00');
+        $schedule->command('sigra:check-sio')->everyMinute(); // testing
     }
 
     /**
