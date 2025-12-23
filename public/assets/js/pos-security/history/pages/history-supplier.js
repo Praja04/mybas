@@ -17,22 +17,32 @@ export class ContentDatatable {
                     {
                         data: "namavisitor",
                         name: "namavisitor",
+                        orderable: true,
+                        searchable: true,
                     },
                     {
                         data: "keterangan",
                         name: "keterangan",
+                        orderable: false,
+                        searchable: false,
                     },
                     {
                         data: "namacomp",
                         name: "namacomp",
+                        orderable: true,
+                        searchable: true,
                     },
                     {
                         data: "nopol",
                         name: "nopol",
+                        orderable: true,
+                        searchable: true,
                     },
                     {
                         data: "no_kartu",
                         name: "no_kartu",
+                        orderable: true,
+                        searchable: true,
                     },
                     {
                         data: "photo_visitor",
@@ -67,17 +77,7 @@ export class ContentDatatable {
                 ],
             },
             dataSend: {},
-            excludeSearchColumns: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
-            // columnVisibility: {
-            //     small: [0, 1, 6], // Show only columns 1 and 7 on small screens
-            //     medium: [0, 1, 2, 3, 7], // Show all columns on medium screens
-            //     large: [0, 1, 2, 3, 4, 5, 6], // Show all columns on large screens
-            // },
-            // // Kolom yang harus menggunakan Select2
-            // select2Columns: [4], // Misalnya kolom status pakai Select2
-
-            // // Kolom yang harus berisi checkbox
-            // checkboxColumns: [7], // Misalnya kolom action berisi checkbox
+            excludeSearchColumns: [0, 2, 6, 7, 8, 9, 10],
         };
     }
 

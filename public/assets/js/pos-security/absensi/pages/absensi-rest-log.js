@@ -17,10 +17,14 @@ export class ContentDatatable {
                     {
                         data: "nama",
                         name: "nama",
+                        orderable: true,
+                        searchable: true,
                     },
                     {
                         data: "namacomp",
                         name: "namacomp",
+                        orderable: true,
+                        searchable: true,
                     },
                     {
                         data: "purpose",
@@ -31,10 +35,14 @@ export class ContentDatatable {
                     {
                         data: "no_kartu",
                         name: "no_kartu",
+                        orderable: true,
+                        searchable: true,
                     },
                     {
                         data: "no_ktp_sim",
                         name: "no_ktp_sim",
+                        orderable: true,
+                        searchable: true,
                     },
                     {
                         data: "host",
@@ -45,6 +53,8 @@ export class ContentDatatable {
                     {
                         data: "nopol",
                         name: "nopol",
+                        orderable: true,
+                        searchable: true,
                     },
                     {
                         data: "jenis_tamu",

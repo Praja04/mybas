@@ -16,53 +16,67 @@ export class ContentDatatable {
                     },
                     {
                         data: "security_nama",
-                        name: "Security",
+                        name: "security_nama",
+                        orderable: true,
+                        searchable: true,
                     },
                     {
                         data: "security_nik",
-                        name: "NIK Security",
+                        name: "security_nik",
+                        orderable: true,
+                        searchable: true,
                     },
                     {
                         data: "visitor_nama",
-                        name: "Nama Tamu",
+                        name: "visitor_nama",
+                        orderable: true,
+                        searchable: true,
                     },
                     {
                         data: "visitor_company",
-                        name: "Perusahaan",
+                        name: "visitor_company",
+                        orderable: true,
+                        searchable: true,
                     },
                     {
                         data: "visitor_purpose",
-                        name: "Tujuan",
+                        name: "visitor_purpose",
+                        orderable: false,
+                        searchable: false,
                     },
                     {
                         data: "no_ktp_sim",
-                        name: "No Identitas",
+                        name: "no_ktp_sim",
+                        orderable: true,
+                        searchable: true,
                     },
                     {
                         data: "nopol",
-                        name: "Plat Nomor",
+                        name: "nopol",
+                        orderable: true,
+                        searchable: true,
                     },
                     {
                         data: "waktu",
-                        name: "Waktu Akses",
+                        name: "waktu",
                         orderable: false,
                         searchable: false,
                     },
                     {
                         data: "activity_type",
-                        name: "Aktivitas",
+                        name: "activity_type",
                         orderable: false,
                         searchable: false,
                     },
                     {
                         data: "photo_visitor",
-                        name: "Foto Tamu",
+                        name: "photo_visitor",
                         orderable: false,
                         searchable: false,
                     },
                     {
                         data: "photo_gate",
-                        name: "Foto Security",
+                        name: "photo_gate",
                         orderable: false,
                         searchable: false,
                     },
@@ -77,6 +91,8 @@ export class ContentDatatable {
             columnDefs: [
                 {
                     targets: 1, // Nama Security
+                    orderable: true,
+                    searchable: true,
                     responsivePriority: 1,
                 },
                 {
@@ -89,11 +105,9 @@ export class ContentDatatable {
                 },
             ],
             dataSend: {
-                data: {}, // akan diisi filter
+                data: {},
             },
-            excludeSearchColumns: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-            // ❌ Hapus excludeSearchColumns jika tidak digunakan
-            // Karena DataTables.js otomatis handle searchable: false
+            excludeSearchColumns: [0, 5, 8, 9, 10, 11],
         };
     }
 

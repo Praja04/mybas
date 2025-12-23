@@ -17,20 +17,20 @@ export class ContentDatatable {
                     {
                         data: "nomor_polisi",
                         name: "nomor_polisi",
-                        orderable: false,
-                        searchable: false,
+                        orderable: true,
+                        searchable: true,
                     },
                     {
                         data: "namavisitor",
                         name: "namavisitor",
-                        orderable: false,
-                        searchable: false,
+                        orderable: true,
+                        searchable: true,
                     },
                     {
                         data: "namacomp",
                         name: "namacomp",
-                        orderable: false,
-                        searchable: false,
+                        orderable: true,
+                        searchable: true,
                     },
                     {
                         data: "waktu",
@@ -80,6 +80,7 @@ export class ContentDatatable {
                 },
             ],
             dataSend: {},
+            excludeSearchColumns: [0, 4, 5, 6, 7, 8],
         };
     }
 
