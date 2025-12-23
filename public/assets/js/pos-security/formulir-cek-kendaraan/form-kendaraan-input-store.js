@@ -90,19 +90,28 @@ $(document).ready(function () {
                     }
 
                     // reset form
+                    $("#cekKendaraanForm")[0].reset();
+                    $("#fotoSection").html("");
                     $("#muatanType").val("").trigger("change");
                     $("#truckTypeContainer").hide();
-                    $("#fotoSection").html("");
-                    $("#nopol-search").val("");
-
-                    $("#cekKendaraanForm")[0].reset();
-                    $("#cekKendaraanForm").hide();
 
                     $("#submitBtn")
                         .prop("disabled", false)
                         .html(
                             '<i class="mdi mdi-content-save"></i>Simpan Data'
                         );
+
+                    $("#formWrapper").hide();
+                    $("#headerForm").hide();
+
+                    $("#tableWrapper").fadeIn();
+                    $("#headerTable").fadeIn();
+
+                    setStep("table");
+
+                    if (window.cekKendaraanInTable) {
+                        window.cekKendaraanInTable.ajax.reload(null, false);
+                    }
 
                     return;
                 }

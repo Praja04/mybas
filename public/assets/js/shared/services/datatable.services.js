@@ -5,6 +5,7 @@ export async function getDatatable(options) {
                 processing: true,
                 serverSide: true,
                 responsive: true,
+                language: options.language || {},
                 ajax: {
                     url: options.url,
                     type: options.method,
@@ -14,10 +15,15 @@ export async function getDatatable(options) {
                 },
                 columns: options.dataColumns.column,
                 columnDefs: [
-                    {
-                        targets: options.excludeSearchColumns,
-                        searchable: false,
-                    },
+                    ...(options.excludeSearchColumns
+                        ? [
+                              {
+                                  targets: options.excludeSearchColumns,
+                                  searchable: false,
+                              },
+                          ]
+                        : []),
+                    ...(options.columnDefs || []),
                 ],
             });
 
