@@ -74,6 +74,20 @@ export class ContentDatatable {
                     // },
                 ],
             },
+            columnDefs: [
+                {
+                    targets: 1, // Nama Security
+                    responsivePriority: 1,
+                },
+                {
+                    targets: 8, // Waktu Akses
+                    responsivePriority: 2,
+                },
+                {
+                    targets: 9, // Aktivitas
+                    responsivePriority: 3,
+                },
+            ],
             dataSend: {
                 data: {}, // akan diisi filter
             },

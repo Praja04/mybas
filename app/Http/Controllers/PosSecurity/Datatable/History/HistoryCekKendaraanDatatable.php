@@ -187,11 +187,11 @@ class HistoryCekKendaraanDatatable extends Controller
 
                 // 2. Sudah cek tapi belum keluar
                 if (!empty($item->checked_in_at) && empty($item->checked_out_at)) {
-                    return '<span class="badge bg-warning">Belum Keluar</span>';
+                    return '<span class="badge bg-warning">Belum Cek Keluar</span>';
                 }
 
                 // 3. Sudah keluar
-                return '<span class="badge bg-success">Sudah Keluar</span>';
+                return '<span class="badge bg-success">Sudah Cek Keluar</span>';
             })
             ->rawColumns(['nomor_polisi', 'jenis', 'action', 'durasi', 'waktu', 'status'])
             ->make(true);

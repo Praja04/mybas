@@ -16,73 +16,106 @@ export class ContentDatatable {
                     },
                     {
                         data: "nama",
-                        name: "Nama Tamu",
+                        name: "nama",
                     },
                     {
                         data: "namacomp",
-                        name: "Perusahaan",
+                        name: "namacomp",
                     },
                     {
                         data: "purpose",
-                        name: "Tujuan",
+                        name: "purpose",
+                        orderable: false,
+                        searchable: false,
                     },
                     {
                         data: "no_kartu",
-                        name: "No Kartu",
+                        name: "no_kartu",
                     },
                     {
                         data: "no_ktp_sim",
-                        name: "No Identitas",
+                        name: "no_ktp_sim",
                     },
                     {
                         data: "host",
-                        name: "Host",
+                        name: "host",
+                        orderable: false,
+                        searchable: false,
                     },
                     {
                         data: "nopol",
-                        name: "Plat Nomor",
+                        name: "nopol",
                     },
                     {
                         data: "jenis_tamu",
-                        name: "Jenis Tamu",
+                        name: "jenis_tamu",
                         orderable: false,
                         searchable: false,
                     },
                     {
                         data: "scan_time",
-                        name: "Waktu Scan",
+                        name: "scan_time",
+                        orderable: false,
+                        searchable: false,
                     },
                     {
                         data: "activity_type",
-                        name: "Aktivitas",
+                        name: "activity_type",
                         orderable: false,
                         searchable: false,
                     },
                     {
                         data: "kartu_dikembalikan",
-                        name: "Kartu Dikembalikan",
+                        name: "kartu_dikembalikan",
                         orderable: false,
                         searchable: false,
                     },
                     {
                         data: "photo_visitor",
-                        name: "Foto Diri",
+                        name: "photo_visitor",
                         orderable: false,
                         searchable: false,
                     },
                     {
                         data: "img_visitor",
-                        name: "Foto Identitas",
+                        name: "img_visitor",
                         orderable: false,
                         searchable: false,
                     },
                 ],
             },
+            columnDefs: [
+                {
+                    targets: 1, // Nama Tamu
+                    responsivePriority: 1,
+                },
+                {
+                    targets: 9, // Waktu Scan
+                    responsivePriority: 2,
+                },
+                {
+                    targets: 10, // Aktivitas
+                    responsivePriority: 3,
+                },
+                {
+                    targets: 8, // Jenis Tamu
+                    responsivePriority: 4,
+                },
+            ],
+
             dataSend: {
-                data: {}, // ✅ langsung inisialisasi struktur data
+                data: {},
             },
             excludeSearchColumns: [
-                0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13,
+                0, // No
+                3, // Tujuan
+                6, // Host
+                8, // Jenis Tamu
+                9, // Waktu Scan
+                10, // Aktivitas
+                11, // Kartu Dikembalikan
+                12, // Foto Diri
+                13, // Foto Identitas
             ],
         };
     }

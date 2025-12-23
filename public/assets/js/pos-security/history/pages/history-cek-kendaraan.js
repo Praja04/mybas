@@ -64,6 +64,21 @@ export class ContentDatatable {
                     },
                 ],
             },
+            // priority column
+            columnDefs: [
+                {
+                    targets: 1, // kolom Nomor Polisi
+                    responsivePriority: 1,
+                },
+                {
+                    targets: -2, // kolom Status
+                    responsivePriority: 2,
+                },
+                {
+                    targets: -1, // kolom Action
+                    responsivePriority: 3,
+                },
+            ],
             dataSend: {},
         };
     }
