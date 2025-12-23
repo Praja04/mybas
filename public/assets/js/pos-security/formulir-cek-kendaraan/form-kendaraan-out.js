@@ -235,13 +235,20 @@
         // label in modal
         $(document).on("click", '[data-bs-target="#myModalOut"]', function () {
             const $btn = $(this);
-            const labelText =
-                $btn
-                    .closest(".d-flex.flex-column")
-                    .find("label")
-                    .text()
-                    .trim() || "Foto";
-            $("#myModalLabelOut").text(`Foto ${labelText}`);
+            const rawLabel = $btn
+                .closest(".foto-slot")
+                .find("label")
+                .first()
+                .text()
+                .trim();
+
+            const labelText = rawLabel
+                .replace(/\*/g, "")
+                .replace(/Wajib/i, "")
+                .replace(/Opsional/i, "")
+                .trim();
+
+            $("#myModalLabelOut").text(`Foto ${labelText || "Foto"}`);
         });
 
         function scrollToFotoSection() {
