@@ -6,25 +6,25 @@
 @php
     $data = [
         [
-            'icon' => 'bi-person-check',
+            'icon' => 'mdi mdi-account-check',
             'label' => 'Kartu Aktif',
             'value' => '#',
             'color' => 'primary',
         ],
         [
-            'icon' => 'bi-clock-history',
+            'icon' => 'mdi mdi-clock-alert',
             'label' => 'Belum Dikembalikan',
             'value' => '#',
             'color' => 'warning',
         ],
         [
-            'icon' => 'bi-check-circle',
+            'icon' => 'mdi mdi-check-circle',
             'label' => 'Sudah Dikembalikan',
             'value' => '#',
             'color' => 'success',
         ],
         [
-            'icon' => 'bi-people',
+            'icon' => 'mdi mdi-account-group',
             'label' => 'Total Pengunjung',
             'value' => '#',
             'color' => 'info',

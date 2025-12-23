@@ -2,9 +2,9 @@
 <div class="tab-pane fade show active" id="cek-kendaraan-in" role="tabpanel">
     <div class="row justify-content-center">
         <div class="col-lg-12">
-            <div class="card p-5 shadow-sm form-container">
+            <div class="card p-4 p-lg-5 shadow-sm form-container">
 
-                <div class="d-flex justify-content-between align-items-center mb-4">
+                <div class="d-flex justify-content-between align-items-center">
                     <!-- HEADER TABLE -->
                     <div id="headerTable">
                         <h2 class="fw-bold text-primary">
@@ -29,6 +29,8 @@
                         <i class="mdi mdi-refresh"></i> Refresh
                     </button>
                 </div>
+
+                <div id="formAlert" class="alert mt-3" style="display: none;"></div>
 
                 <!-- STEPPER WRAPPER -->
                 <div class="d-flex justify-content-center mb-4">
@@ -67,8 +69,6 @@
                         </table>
                     </div>
                 </div>
-
-                <div id="formAlert" class="alert mt-3" style="display: none;"></div>
 
                 {{-- Main Form --}}
                 <div id="formWrapper" style="display: none;">
