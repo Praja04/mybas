@@ -39,6 +39,6 @@ class Temuan extends Model
 
    public function jawaban()
    {
-      return $this->belongsTo(Jawaban::class, 'id_jawaban', 'id_jawaban');
+      return $this->belongsTo(Jawaban::class, 'id_jawaban', 'id');
    }
 }
