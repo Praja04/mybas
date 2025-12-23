@@ -160,10 +160,6 @@
     };
 
     document.addEventListener("DOMContentLoaded", function () {
-        // autofocus ketika baru dibuka
-        const nopolInput = document.getElementById("nopol-search");
-        if (nopolInput) nopolInput.focus();
-
         const modalElement = document.getElementById("myModal");
         if (modalElement) {
             modalElement.addEventListener("shown.bs.modal", () => {
@@ -361,126 +357,6 @@
         }
     });
 
-    $("#nopol-search").on("keypress", function (e) {
-        if (e.which === 13) {
-            e.preventDefault();
-            $("#searchVisitorData").click();
-        }
-    });
-
-    // search data
-    $("#searchVisitorData").on("click", function () {
-        const keyword = $("#nopol-search").val().trim();
-
-        if (!keyword) {
-            Swal.fire({
-                icon: "error",
-                title: "Oops!",
-                text: "Nomor polisi wajib diisi",
-            });
-            return;
-        }
-
-        $.ajax({
-            // todo: change to var
-            // url: "{{ route('ajax.pos-security.cek-kendaraan.search') }}",
-            url: "/search-kendaraan-in",
-            type: "GET",
-            data: {
-                keyword: keyword,
-            },
-            beforeSend: function () {
-                $("#searchVisitorData")
-                    .prop("disabled", true)
-                    .html('<i class="mdi mdi-loading me-2"></i>Mencari...');
-            },
-            success: function (res) {
-                if (res.success) {
-                    const data = res.data;
-
-                    // set tanggal & jam otomatis saat data ditemukan
-                    const now = new Date();
-                    const yyyy = now.getFullYear();
-                    const mm = String(now.getMonth() + 1).padStart(2, "0");
-                    const dd = String(now.getDate()).padStart(2, "0");
-                    const hh = String(now.getHours()).padStart(2, "0");
-                    const min = String(now.getMinutes()).padStart(2, "0");
-
-                    const tanggalIndo = new Intl.DateTimeFormat("id-ID", {
-                        day: "2-digit",
-                        month: "long",
-                        year: "numeric",
-                    }).format(now);
-
-                    // show form view
-                    $("#cekKendaraanForm").show();
-
-                    $("#submitBtn")
-                        .prop("disabled", false)
-                        .html(
-                            '<i class="mdi mdi-content-save"></i>Simpan Data'
-                        );
-
-                    const target = document.getElementById(
-                        "section-pemeriksaan"
-                    );
-                    if (target) {
-                        target.scrollIntoView({
-                            behavior: "smooth",
-                            block: "start",
-                        });
-                    }
-
-                    // autofill
-                    $("#nama-supir").val(data.namavisitor);
-                    $("#company").val(data.namacomp);
-                    $("#nomor-polisi").val(data.nopol);
-                    $("#trnvisitorid").val(data.trnvisitorid);
-
-                    // card
-                    $("#card-nama-supir").text(data.namavisitor);
-                    $("#card-perusahaan").text(data.namacomp);
-                    $("#card-nopol").text(data.nopol);
-                    $("#card-tanggal-pemeriksaan").text(
-                        `${tanggalIndo} ${hh}:${min}`
-                    );
-                } else {
-                    $("#cekKendaraanForm").hide();
-
-                    Swal.fire({
-                        icon: "warning",
-                        title: "Gagal",
-                        text: res.message,
-                    });
-                }
-            },
-            error: function (xhr) {
-                let msg = "Terjadi kesalahan saat mencari data";
-
-                if (
-                    xhr.status === 422 ||
-                    xhr.status === 409 ||
-                    xhr.status === 404
-                ) {
-                    msg = xhr.responseJSON.message;
-                }
-
-                Swal.fire({
-                    icon: "error",
-                    title: "Oops!",
-                    text: msg,
-                });
-
-                $("#searchResult").hide();
-            },
-            complete: function () {
-                $("#searchVisitorData")
-                    .prop("disabled", false)
-                    .html('<i class="mdi mdi-account-search"></i> Cari');
-            },
-        });
-    });
-
     // slot handler
     $(document).on("click", ".open-camera", function () {
         // activePhotoKey = $(this).data("key");
@@ -493,4 +369,67 @@
         $(`#preview-${key}`).html("");
         $(`#input-${key}`).val("");
     });
+
+    window.setStep = function (step) {
+        $("#step-table, #step-form").removeClass("active done");
+
+        if (step === "table") {
+            $("#step-table").addClass("active");
+        }
+
+        if (step === "form") {
+            $("#step-table").addClass("done");
+            $("#step-form").addClass("active");
+        }
+    };
+
+    // default
+    setStep("table");
+
+    window.openMainForm = function (
+        trnvisitorid,
+        nomor_polisi,
+        nama_supir,
+        company
+    ) {
+        $("#tableWrapper").hide();
+        $("#headerTable").hide();
+
+        $("#formWrapper").fadeIn();
+        $("#headerForm").fadeIn();
+
+        $("#cekKendaraanForm")[0].reset();
+        $("#fotoSection").html("");
+        $("#truckTypeContainer").hide();
+        $("#otherTruckContainer").hide();
+
+        $("#trnvisitorid").val(trnvisitorid);
+        $("#nomor-polisi").val(nomor_polisi);
+        $("#nama-supir").val(nama_supir);
+        $("#company").val(company);
+
+        $("#card-nopol").text(nomor_polisi);
+        $("#card-nama-supir").text(nama_supir);
+        $("#card-perusahaan").text(company);
+
+        const target = document.getElementById("section-pemeriksaan");
+        if (target) {
+            target.scrollIntoView({
+                behavior: "smooth",
+                block: "start",
+            });
+        }
+
+        setStep("form");
+    };
+
+    window.backToTable = function () {
+        $("#formWrapper").hide();
+        $("#headerForm").hide();
+
+        $("#tableWrapper").fadeIn();
+        $("#headerTable").fadeIn();
+
+        setStep("table");
+    };
 })();

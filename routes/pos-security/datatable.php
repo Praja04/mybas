@@ -3,6 +3,8 @@
 use App\Http\Controllers\PosSecurity\Datatable\Absensi\AbsensiDatatable;
 use App\Http\Controllers\PosSecurity\Datatable\Absensi\AbsensiGateDatatable;
 use App\Http\Controllers\PosSecurity\Datatable\Blacklist\BlacklistDatatable;
+use App\Http\Controllers\PosSecurity\Datatable\FormCekKendaraan\FormInDatatable;
+use App\Http\Controllers\PosSecurity\Datatable\FormCekKendaraan\FormOutDatatable;
 use App\Http\Controllers\PosSecurity\Datatable\History\HistoryCekKendaraanDatatable;
 use App\Http\Controllers\PosSecurity\Datatable\History\HistorySupplierDatatable;
 use App\Http\Controllers\PosSecurity\Datatable\History\HistoryVendorDatatable;
@@ -35,6 +37,13 @@ Route::group(
                 ->name("datatable.pos-security.history.visitor.vendor");
             Route::get('/kendaraan', [HistoryCekKendaraanDatatable::class, 'index'])
                 ->name("datatable.pos-security.history.visitor.kendaraan");
+        });
+
+        Route::prefix('cek-kendaraan')->group(function () {
+            Route::get('/in', [FormInDatatable::class, 'index'])
+                ->name("datatable.pos-security.cek-kendaraan.in");
+            Route::get('/out', [FormOutDatatable::class, 'index'])
+                ->name("datatable.pos-security.cek-kendaraan.out");
         });
 
         Route::prefix('blacklist')->group(function () {

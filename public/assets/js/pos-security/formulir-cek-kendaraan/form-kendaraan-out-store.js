@@ -88,16 +88,25 @@ $(document).ready(function () {
                     }
 
                     $("#fotoSectionOut").html("");
-                    $("#nopol-search-out").val("");
-
                     $("#cekKendaraanFormOut")[0].reset();
-                    $("#cekKendaraanFormOut").hide();
 
                     $("#submitBtnOut")
                         .prop("disabled", false)
                         .html(
                             '<i class="mdi mdi-content-save me-2"></i>Simpan Data'
                         );
+
+                    $("#formWrapperOut").hide();
+                    $("#headerFormOut").hide();
+
+                    $("#tableWrapperOut").fadeIn();
+                    $("#headerTableOut").fadeIn();
+
+                    setStepOut("table");
+
+                    if (window.cekKendaraanOutTable) {
+                        window.cekKendaraanOutTable.ajax.reload(null, false);
+                    }
 
                     return;
                 }
