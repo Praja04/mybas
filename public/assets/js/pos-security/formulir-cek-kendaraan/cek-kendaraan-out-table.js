@@ -1,11 +1,17 @@
-import { getDatatable } from "../../../shared/services/datatable.services.js";
+import { getDatatable } from "../../shared/services/datatable.services.js";
 
-export class ContentDatatable {
+export class ContentDatatableOut {
     constructor() {
         this._datatable = {
-            className: ".ga-history-cek-kendaraan-datatables",
-            url: API_DATATABLE_HISTORY_KENDARAAN,
+            className: ".kendaraan-out-datatables",
+            url: API_DATATABLE_KENDARAAN_OUT,
             method: "GET",
+            language: {
+                emptyTable: "Semua kendaraan sudah dicek keluar",
+                zeroRecords: "Data kendaraan tidak ditemukan",
+                loadingRecords: "Memuat data...",
+                processing: "Loading...",
+            },
             dataColumns: {
                 column: [
                     {
@@ -16,39 +22,8 @@ export class ContentDatatable {
                     },
                     {
                         data: "nomor_polisi",
-                        name: "nomor_polisi",
-                        orderable: true,
-                        searchable: true,
-                    },
-                    {
-                        data: "namavisitor",
-                        name: "namavisitor",
-                        orderable: true,
-                        searchable: true,
-                    },
-                    {
-                        data: "namacomp",
-                        name: "namacomp",
-                        orderable: true,
-                        searchable: true,
-                    },
-                    {
-                        data: "waktu",
-                        name: "waktu",
+                        name: "v.nopol",
                         orderable: false,
-                        searchable: false,
-                    },
-                    {
-                        data: "durasi",
-                        name: "durasi",
-                        orderable: false,
-                        searchable: false,
-                    },
-                    {
-                        data: "jenis",
-                        name: "jenis",
-                        orderable: false,
-                        searchable: false,
                     },
                     {
                         data: "status",
@@ -64,23 +39,17 @@ export class ContentDatatable {
                     },
                 ],
             },
-            // priority column
             columnDefs: [
                 {
-                    targets: 1, // kolom Nomor Polisi
+                    targets: 1, // Nomor Polisi
                     responsivePriority: 1,
                 },
                 {
-                    targets: -2, // kolom Status
+                    targets: -1, // Action
                     responsivePriority: 2,
-                },
-                {
-                    targets: -1, // kolom Action
-                    responsivePriority: 3,
                 },
             ],
             dataSend: {},
-            excludeSearchColumns: [0, 4, 5, 6, 7, 8],
         };
     }
 
@@ -90,16 +59,16 @@ export class ContentDatatable {
                 // Extracting filename from URL
                 const url = new URL(this._datatable.url);
                 const filename = url.pathname.split("/").pop();
-                console.log("File name:", filename);
 
                 getDatatable(this._datatable)
-                    .then(() => {
-                        console.log("datatable content initialized");
+                    .then((dt) => {
+                        console.log("datatable out content initialized");
+                        window.cekKendaraanOutTable = dt;
                         resolve();
                     })
                     .catch((error) => {
                         console.error(
-                            "datatable content  initialization failed:",
+                            "datatable out content initialization failed:",
                             error
                         );
                         reject(error);
@@ -109,10 +78,10 @@ export class ContentDatatable {
     }
 }
 
-const contentDatatable = new ContentDatatable();
+const contentDatatableOut = new ContentDatatableOut();
 
 // Initial datatable load
-contentDatatable
+contentDatatableOut
     .initialize()
     .then(() => {
         console.log("All datatables initialized successfully");

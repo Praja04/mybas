@@ -213,10 +213,6 @@
         );
     }
     document.addEventListener("DOMContentLoaded", function () {
-        // autofocus ketika baru dibuka
-        const nopolInput = document.getElementById("nopol-search-out");
-        if (nopolInput) nopolInput.focus();
-
         const modalElement = document.getElementById("myModalOut");
         if (modalElement) {
             modalElement.addEventListener("shown.bs.modal", () => {
@@ -239,13 +235,20 @@
         // label in modal
         $(document).on("click", '[data-bs-target="#myModalOut"]', function () {
             const $btn = $(this);
-            const labelText =
-                $btn
-                    .closest(".d-flex.flex-column")
-                    .find("label")
-                    .text()
-                    .trim() || "Foto";
-            $("#myModalLabelOut").text(`Foto ${labelText}`);
+            const rawLabel = $btn
+                .closest(".foto-slot")
+                .find("label")
+                .first()
+                .text()
+                .trim();
+
+            const labelText = rawLabel
+                .replace(/\*/g, "")
+                .replace(/Wajib/i, "")
+                .replace(/Opsional/i, "")
+                .trim();
+
+            $("#myModalLabelOut").text(`Foto ${labelText || "Foto"}`);
         });
 
         function scrollToFotoSection() {
@@ -257,138 +260,6 @@
                 block: "start",
             });
         }
-    });
-
-    $("#nopol-search-out").on("keypress", function (e) {
-        if (e.which === 13) {
-            e.preventDefault();
-            $("#searchVisitorDataOut").click();
-        }
-    });
-
-    // search data
-    $("#searchVisitorDataOut").on("click", function () {
-        const keyword = $("#nopol-search-out").val().trim();
-
-        if (!keyword) {
-            Swal.fire({
-                icon: "error",
-                title: "Oops!",
-                text: "Nomor polisi wajib diisi",
-            });
-            return;
-        }
-
-        $.ajax({
-            // todo: change to var
-            // url: "{{ route('ajax.pos-security.cek-kendaraan.search') }}",
-            url: "/search-kendaraan-out",
-            type: "GET",
-            data: {
-                keyword: keyword,
-            },
-            beforeSend: function () {
-                $("#searchVisitorDataOut")
-                    .prop("disabled", true)
-                    .html('<i class="mdi mdi-loading"></i>Mencari...');
-            },
-            success: function (res) {
-                if (res.success) {
-                    const data = res.data;
-
-                    const checkedIn = new Date(
-                        data.cek_kendaraan.checked_in_at
-                    );
-
-                    // show form view
-                    $("#cekKendaraanFormOut").show();
-
-                    const target = document.getElementById(
-                        "section-pemeriksaan-out"
-                    );
-
-                    if (target) {
-                        target.scrollIntoView({
-                            behavior: "smooth",
-                            block: "start",
-                        });
-                    }
-
-                    const formattedDate = new Intl.DateTimeFormat("id-ID", {
-                        day: "2-digit",
-                        month: "long",
-                        year: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                        hour12: false,
-                    })
-                        .format(checkedIn)
-                        .replace(",", "");
-
-                    // hitung durasi
-                    const now = new Date();
-                    const diffMs = now - checkedIn;
-
-                    const totalMinutes = Math.floor(diffMs / 60000);
-                    const hours = Math.floor(totalMinutes / 60);
-                    const minutes = totalMinutes % 60;
-
-                    let durationText;
-                    if (hours > 0) {
-                        durationText = `${hours} jam ${minutes} menit lalu`;
-                    } else {
-                        durationText = `${minutes} menit lalu`;
-                    }
-
-                    $("#trncekid").val(data.cek_kendaraan.trncekid);
-
-                    // card
-                    $("#card-nama-supir-out").text(data.visitor.namavisitor);
-                    $("#card-perusahaan-out").text(data.visitor.namacomp);
-                    $("#card-nopol-out").text(data.visitor.nopol);
-                    $("#card-waktu-masuk").text(
-                        `${formattedDate} (${durationText})`
-                    );
-                    $("#card-jenis-muatan").text(
-                        data.cek_kendaraan.muatan_type
-                    );
-                    $("#card-jenis-truk").text(
-                        data.cek_kendaraan.truck_type +
-                            (data.cek_kendaraan.truck_type_other
-                                ? ` (${data.cek_kendaraan.truck_type_other})`
-                                : "")
-                    );
-
-                    renderFotoSectionOut(data.cek_kendaraan.truck_type);
-                } else {
-                    $("#cekKendaraanFormOut").hide();
-
-                    Swal.fire({
-                        icon: "warning",
-                        title: "Gagal",
-                        text: res.message,
-                    });
-                }
-            },
-            error: function (xhr) {
-                let message = "Terjadi kesalahan. Silakan coba lagi.";
-
-                if (xhr.responseJSON?.message) {
-                    message = xhr.responseJSON.message;
-                }
-
-                Swal.fire({
-                    icon: "error",
-                    title: "Gagal",
-                    text: message,
-                });
-            },
-            complete: function () {
-                $("#searchVisitorDataOut")
-                    .prop("disabled", false)
-                    .html('<i class="mdi mdi-account-search"></i> Cari');
-            },
-        });
     });
 
     // slot handler
@@ -403,4 +274,103 @@
         $(`#preview-out-${key}`).html("");
         $(`#input-out-${key}`).val("");
     });
+
+    window.setStepOut = function (step) {
+        $("#step-table-out, #step-form-out").removeClass("active done");
+
+        if (step === "table") {
+            $("#step-table-out").addClass("active");
+        }
+
+        if (step === "form") {
+            $("#step-table-out").addClass("done");
+            $("#step-form-out").addClass("active");
+        }
+    };
+
+    // default
+    setStepOut("table");
+
+    window.openFormOut = function (
+        trncekid,
+        nomor_polisi,
+        nama_supir,
+        company,
+        muatan_type,
+        truck_type,
+        truck_type_other,
+        checked_in_at
+    ) {
+        const checkedIn = new Date(checked_in_at);
+
+        const formattedDate = new Intl.DateTimeFormat("id-ID", {
+            day: "2-digit",
+            month: "long",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: false,
+        })
+            .format(checkedIn)
+            .replace(",", "");
+
+        // hitung durasi
+        const now = new Date();
+        const diffMs = now - checkedIn;
+
+        const totalMinutes = Math.floor(diffMs / 60000);
+        const hours = Math.floor(totalMinutes / 60);
+        const minutes = totalMinutes % 60;
+
+        let durationText;
+
+        if (hours > 0) {
+            durationText = `${hours} jam ${minutes} menit lalu`;
+        } else {
+            durationText = `${minutes} menit lalu`;
+        }
+
+        const target = document.getElementById("section-pemeriksaan-out");
+        if (target) {
+            target.scrollIntoView({
+                behavior: "smooth",
+                block: "start",
+            });
+
+            $("#tableWrapperOut").hide();
+            $("#headerTableOut").hide();
+
+            $("#formWrapperOut").fadeIn();
+            $("#headerFormOut").fadeIn();
+
+            setStepOut("form");
+
+            $("#cekKendaraanFormOut")[0].reset();
+            $("#fotoSectionOut").html("");
+
+            $("#trncekid").val(trncekid);
+
+            $("#card-nopol-out").text(nomor_polisi);
+            $("#card-nama-supir-out").text(nama_supir);
+            $("#card-perusahaan-out").text(company);
+
+            $("#card-waktu-masuk").text(`${formattedDate} (${durationText})`);
+            $("#card-jenis-muatan").text(muatan_type);
+            $("#card-jenis-truk").text(
+                truck_type + (truck_type_other ? ` (${truck_type_other})` : "")
+            );
+
+            renderFotoSectionOut(truck_type);
+        }
+    };
+
+    window.backToTableOut = function () {
+        $("#formWrapperOut").hide();
+        $("#headerFormOut").hide();
+
+        $("#tableWrapperOut").fadeIn();
+        $("#headerTableOut").fadeIn();
+
+        setStepOut("table");
+    };
 })();
