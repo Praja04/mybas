@@ -36,41 +36,45 @@
                         </dl>
                     </div>
 
-                    <!-- Informasi Masuk -->
-                    <div class="col-12">
-                        <h6 class="fw-bold border-bottom pb-2 mb-3">Informasi Masuk</h6>
-                        <dl class="row">
-                            <dt class="col-sm-5">Nama Petugas Masuk</dt>
-                            <dd class="col-sm-7" id="detailNamaPetugasMasuk"></dd>
+                    <div class="row">
 
-                            <dt class="col-sm-5">Waktu Masuk</dt>
-                            <dd class="col-sm-7" id="detailWaktuMasuk"></dd>
-                        </dl>
-                    </div>
+                        <!-- Informasi Masuk -->
+                        <div class="col-12 col-lg-6 mb-3">
+                            <h6 class="fw-bold border-bottom pb-2 mb-3">Informasi Masuk</h6>
+                            <dl class="row">
+                                <dt class="col-sm-5">Nama Petugas Masuk</dt>
+                                <dd class="col-sm-7" id="detailNamaPetugasMasuk"></dd>
 
-                    <!-- Informasi Keluar -->
-                    <div class="col-12">
-                        <h6 class="fw-bold border-bottom pb-2 mb-3">Informasi Keluar</h6>
-                        <dl class="row">
-                            <dt class="col-sm-5">Nama Petugas Keluar</dt>
-                            <dd class="col-sm-7" id="detailNamaPetugasKeluar"></dd>
+                                <dt class="col-sm-5">Waktu Masuk</dt>
+                                <dd class="col-sm-7" id="detailWaktuMasuk"></dd>
+                            </dl>
+                        </div>
 
-                            <dt class="col-sm-5">Waktu Keluar</dt>
-                            <dd class="col-sm-7" id="detailWaktuKeluar"></dd>
+                        <!-- Informasi Keluar -->
+                        <div class="col-12 col-lg-6 mb-3">
+                            <h6 class="fw-bold border-bottom pb-2 mb-3">Informasi Keluar</h6>
+                            <dl class="row">
+                                <dt class="col-sm-5">Nama Petugas Keluar</dt>
+                                <dd class="col-sm-7" id="detailNamaPetugasKeluar"></dd>
 
-                            <dt class="col-sm-5">Durasi</dt>
-                            <dd class="col-sm-7" id="detailDurasi"></dd>
-                        </dl>
+                                <dt class="col-sm-5">Waktu Keluar</dt>
+                                <dd class="col-sm-7" id="detailWaktuKeluar"></dd>
+
+                                <dt class="col-sm-5">Durasi</dt>
+                                <dd class="col-sm-7" id="detailDurasi"></dd>
+                            </dl>
+                        </div>
+
                     </div>
 
                     <div class="col-12">
                         <h6 class="fw-bold border-bottom pb-2 mb-3">
-                            Foto Hasil Pengecekan Kendaraan
+                            Foto Pengecekan Kendaraan (MASUK)
                         </h6>
                         <div class="row" id="detailFotoContainer"></div>
 
                         <h6 class="fw-bold border-bottom pb-2 mb-3">
-                            Foto Pengecekan Kendaraan Keluar
+                            Foto Pengecekan Kendaraan (kELUAR)
                         </h6>
                         <div class="row" id="detailFotoKeluarContainer"></div>
                     </div>
