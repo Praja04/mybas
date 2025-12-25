@@ -138,6 +138,16 @@ $(document).ready(function () {
 
                 let message = "Terjadi kesalahan. Silakan coba lagi.";
 
+                // 409: conflict
+                if (xhr.status === 409 && xhr.responseJSON?.message) {
+                    message = xhr.responseJSON.message;
+                }
+
+                // 404: not found
+                else if (xhr.status === 404 && xhr.responseJSON?.message) {
+                    message = xhr.responseJSON.message;
+                }
+
                 Swal.fire({
                     icon: "error",
                     title: "Error!",

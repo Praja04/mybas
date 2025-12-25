@@ -137,9 +137,17 @@ $(document).ready(function () {
             },
 
             error: function (xhr) {
-                console.log(xhr.responseJSON?.message);
+                console.log(
+                    "error store cek kendaraan: ",
+                    xhr.responseJSON?.message
+                );
 
                 let message = "Terjadi kesalahan. Silakan coba lagi.";
+
+                // 409: conflict
+                if (xhr.status === 409 && xhr.responseJSON?.message) {
+                    message = xhr.responseJSON.message;
+                }
 
                 Swal.fire({
                     icon: "error",
