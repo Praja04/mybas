@@ -125,7 +125,7 @@ function renderFoto(container, fotoJson) {
             .flat()
             .forEach((path) => {
                 const label = getLabelFromPath(path);
-                const imageUrl = `/storage/${path}`;
+                const imageUrl = `/${path}`;
 
                 container.append(`
                     <div class="col-md-6 col-lg-3 mb-3 text-center">

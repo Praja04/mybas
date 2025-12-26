@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use App\Models\PosSecurity\GaCekKendaraan;
 use App\Models\PosSecurity\GaVisitorTransaction;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
@@ -197,7 +198,7 @@ class CekKendaraanFormAjax extends Controller
             if ($request->has('photos')) {
                 $photoPaths = $this->saveBase64Images(
                     $request->photos,
-                    $request->nomor_polisi,
+                    $trnCekId,
                     'MASUK'
                 );
             }
@@ -344,7 +345,7 @@ class CekKendaraanFormAjax extends Controller
 
     private function saveBase64Images(
         $photos,
-        $nomorPolisi,
+        $trnCekId,
         $status // MASUK / KELUAR
     ): array {
         $photoPaths = [];
@@ -363,25 +364,29 @@ class CekKendaraanFormAjax extends Controller
 
             if ($imageData === false) continue;
 
-            $nopolClean = preg_replace('/[^A-Za-z0-9]/', '', strtoupper($nomorPolisi));
             $tanggal    = now()->format('Y-m-d');
             $timestamp  = now()->format('Ymd_His');
             $label      = preg_replace('/[^A-Za-z0-9_-]/', '_', $key);
 
             $fileName = $timestamp . '.' . $extension;
 
-            $path = implode('/', [
-                'cek-kendaraan',
+            $relativePath = implode('/', [
+                'uploads/pos-security/cek-kendaraan',
                 $tanggal,
                 $status,
-                $nopolClean,
-                $label,
-                $fileName
+                $trnCekId,
+                $label
             ]);
 
-            Storage::disk('public')->put($path, $imageData);
+            $fullPath = public_path($relativePath);
 
-            $photoPaths[$key][] = $path;
+            if (!File::exists($fullPath)) {
+                File::makeDirectory($fullPath, 0755, true);
+            }
+
+            File::put($fullPath . '/' . $fileName, $imageData);
+
+            $photoPaths[$key][] = $relativePath . '/' . $fileName;
         }
 
         return $photoPaths;

@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use App\Models\PosSecurity\GaVisitorTransaction;
 use App\Models\PosSecurity\GaVisitorVendorTransaction;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
@@ -176,7 +177,11 @@ class TamuFormAjax extends Controller
             // Cek apakah sudah cek kendaraan jika jenis kunjungannya transporter kecil
             if ($visitor->type === 'TRANSPORTER') {
                 $cekKendaraan = DB::table('ga_cek_kendaraan')
-                    ->where('nomor_polisi', $visitor->nopol)
+                    ->whereRaw("
+                            REPLACE(REPLACE(UPPER(nomor_polisi), ' ', ''), '-', '')
+                            =
+                            REPLACE(REPLACE(UPPER(?), ' ', ''), '-', '')
+                        ", [$visitor->nopol])
                     // ->where('checked_in_at', '>=', $visitor->createdon)
                     ->where('checked_in_at', '>=', now()->subHours(24))
                     ->orderBy('checked_in_at', 'desc')
@@ -321,7 +326,7 @@ class TamuFormAjax extends Controller
                 $ktpImagePath = $this->saveImageFromBase64(
                     $request->imgvisitorpathin,
                     $trnVisitorId . '_ktp',
-                    'ga/monitoring/tamu/ktp'
+                    'uploads/pos-security/tamu/ktp'
                 );
             }
 
@@ -333,7 +338,7 @@ class TamuFormAjax extends Controller
                     $path = $this->saveImageFromBase64(
                         $selfiePhoto,
                         $trnVisitorId . '_selfie_' . $index,
-                        'ga/monitoring/tamu/selfie'
+                        'uploads/pos-security/tamu/selfie'
                     );
                     $selfiePaths[] = $path;
                 }
@@ -505,13 +510,18 @@ class TamuFormAjax extends Controller
 
         // Folder + tanggal (misal pakai per hari)
         $datePath = now()->format('Y/m/d');
-        $savePath = "{$folder}/{$datePath}/{$fileName}";
+        $relativePath = "{$folder}/{$datePath}";
 
-        // Simpan ke storage public
-        Storage::disk('public')->put($savePath, $imageData);
+        $fullPath = public_path($relativePath);
+
+        if (!File::exists($fullPath)) {
+            File::makeDirectory($fullPath, 0755, true);
+        }
+
+        File::put($fullPath . '/' . $fileName, $imageData);
 
         // Return URL public
-        return url('/storage/' . $savePath);
+        return asset($relativePath . '/' . $fileName);
     }
 
 
