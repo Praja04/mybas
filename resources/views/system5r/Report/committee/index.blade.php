@@ -1,6 +1,6 @@
 @extends('system5r.layouts.base')
 
-@section('title', 'Report For Management')
+@section('title', 'Report For Committee')
 
 @push('styles')
     <style>
@@ -21,7 +21,7 @@
         {{-- HEADER --}}
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
-                <h3 class="mb-0">Report 5R Management</h3>
+                <h3 class="mb-0">Report 5R Committee</h3>
                 <small class="text-muted">
                     Ringkas • Rapi • Resik • Rawat • Rajin
                 </small>
@@ -83,7 +83,7 @@
             function loadReport(jadwalId) {
                 $('#report-container').html('<div class="text-center p-5">Loading...</div>');
 
-                $.post("{{ route('5r-system.report.management.data') }}", {
+                $.post("{{ route('5r-system.report.committee.data') }}", {
                     _token: "{{ csrf_token() }}",
                     jadwal_id: jadwalId
                 }, function(res) {
@@ -103,7 +103,7 @@
                         html += `
                         <div class="card shadow-sm mb-4">
                             <div class="card-body">
-                                <h4 class="mb-3 fw-bold">${ws.name}</h4>
+                                <h4 class="mb-3">${ws.name}</h4>
                                 ${buildTable(ws.departments)}
                             </div>
                         </div>`;
@@ -185,7 +185,7 @@
                                     <td>${i === 0 ? item.department : ''}</td>
                                     <td>${item.juri.length ? item.juri.join(', ') : '-'}</td>
                                     <td>${g.nama_group}</td>
-                                    <td>${i === 0 ? presentase + '%' : ''}</td>   
+                                     <td>${i === 0 ? presentase + '%' : ''}</td>   
                                     <td>${g.nilaiAkhir.toFixed(1)}</td>
                                     <td class="text-center">
                                         <div class="d-flex gap-1 justify-content-center">
@@ -208,7 +208,7 @@
 
                     html += `
                         <div class="mb-4">
-                            <h5 class="fw-medium text-primary mb-2">
+                            <h5 class="fw-bold text-primary mb-2">
                                 Periode ${namaPeriode}
                             </h5>
                             <table class="table table-hover align-middle">

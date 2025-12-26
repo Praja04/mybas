@@ -5,7 +5,7 @@ $menus = [
         'label' => '',
         'menu' => [
             [
-                'path' => '5r-system',
+                'path' => '5r-system/dashboard',
                 'label' => 'Dashboard',
                 'icon' => 'mdi-speedometer',
                 'submenu' => [],

@@ -22,4 +22,3 @@ class MasterPertanyaan extends Model
         return $this->hasMany(Temuan::class, 'id_pertanyaan', 'id_pertanyaan');
     }
 }
-
