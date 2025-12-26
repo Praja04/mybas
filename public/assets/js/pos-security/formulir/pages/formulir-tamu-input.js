@@ -149,7 +149,7 @@ function renderSelfiePreviews() {
         removeBtn.type = "button";
         removeBtn.className =
             "btn btn-danger btn-sm position-absolute top-0 end-0 remove-selfie-btn";
-        removeBtn.innerHTML = '<i class="fas fa-times"></i>';
+        removeBtn.innerHTML = '<i class="mdi mdi-close"></i>';
         removeBtn.onclick = () => removeSelfiePhoto(index);
 
         wrapper.appendChild(img);

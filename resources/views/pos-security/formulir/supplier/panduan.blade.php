@@ -10,13 +10,13 @@
                             <button class="nav-link active" id="formIn-tab" data-bs-toggle="tab"
                                 data-bs-target="#formIn" type="button" role="tab" aria-controls="formIn"
                                 aria-selected="true">
-                                <i class="fas fa-sign-in-alt me-2"></i>Visitor IN
+                                <i class="fas fa-sign-in-alt me-2"></i>Supplier IN
                             </button>
                         </li>
                         <li class="nav-item" role="presentation">
                             <button class="nav-link" id="formOut-tab" data-bs-toggle="tab" data-bs-target="#formOut"
                                 type="button" role="tab" aria-controls="formOut" aria-selected="false">
-                                <i class="fas fa-sign-out-alt me-2"></i>Visitor OUT
+                                <i class="fas fa-sign-out-alt me-2"></i>Supplier OUT
                             </button>
                         </li>
                     </ul>
@@ -32,10 +32,16 @@
                                     <h5 class="mb-3"><i class="mdi mdi-information-outline me-2"></i>Panduan Pengisian
                                         Formulir Supplier (IN)</h5>
                                     <ul class="mb-0 ps-3">
-                                        <li><strong>Nama Visitor</strong>: Isi dengan nama lengkap driver / sopir yang
+                                        <li><strong>Nama Supir / Kernet</strong>: Isi dengan nama lengkap supir atau
+                                            kernet yang
                                             membawa kendaraan.</li>
-                                        <li><strong>Nama Kernet</strong>: Jika ada kernet, isi nama lengkap kernet. Jika
-                                            tidak ada, tetap wajib diisi dengan tanda "-".</li>
+                                        <li><strong>Keterangan Pengunjung</strong>: Pilih peran dari
+                                            nama pengunjung yang diinput. Jika yang bersangkutan berperan sebagai supir,
+                                            pilih
+                                            <strong>Supir</strong>. Jika berperan sebagai kernet, pilih
+                                            <strong>Kernet</strong>.
+
+                                        </li>
                                         <li><strong>Nama Perusahaan</strong>: Isi nama perusahaan / supplier yang
                                             mengirimkan barang.</li>
                                         <li><strong>Tanggal Lahir</strong>: Masukkan tanggal lahir driver sesuai
@@ -45,17 +51,17 @@
                                             barang keluar, pilih <strong>BONGKAR</strong> jika membawa barang masuk.
                                         </li>
                                         <li><strong>Nomor Polisi</strong>: Isi dengan plat nomor kendaraan yang
-                                            digunakan (contoh: B1234ABC).</li>
-                                        <li><strong>Jumlah Orang</strong>: Isi jumlah total orang dalam kendaraan
-                                            (minimal 1, maksimal 10).</li>
+                                            digunakan (contoh: B 1234 AB). <strong>Nomor polisi ini akan digunakan untuk
+                                                proses
+                                                pengecekan kendaraan.
+                                            </strong></li>
                                         <li><strong>No HP Driver</strong>: Masukkan nomor handphone aktif driver
-                                            (opsional, jika ada).</li>
+                                        </li>
                                         <li><strong>Nomor Kartu ID (RFID)</strong>: Masukkan nomor kartu ID yang akan
                                             digunakan oleh driver.</li>
                                         <li><strong>Foto KTP / SIM</strong>: Wajib ambil foto KTP atau SIM yang masih
                                             berlaku milik driver.</li>
-                                        <li><strong>Foto Diri</strong>: Ambil foto selfie driver di lokasi (opsional,
-                                            jika tersedia).</li>
+                                        <li><strong>Foto Diri</strong>: Ambil foto selfie driver di lokasi.</li>
                                     </ul>
                                     <hr class="my-3">
                                     <p class="mb-0 text-muted">
@@ -83,26 +89,29 @@
                                         <li>Pastikan kartu yang discan benar dan sesuai dengan data saat
                                             <strong>check-in</strong>.
                                         </li>
-                                        <li>Setelah berhasil scan, data visitor akan muncul secara otomatis.</li>
-                                        <li>Periksa kembali data visitor yang ditampilkan, termasuk:
+                                        <li>Setelah berhasil scan, data pengunjung akan muncul secara otomatis.</li>
+                                        <li>Periksa kembali data pengunjung yang ditampilkan, termasuk:
                                             <ul class="mb-0 ps-3">
-                                                <li>Nama Visitor</li>
+                                                <li>Nama Supir/Kernet</li>
+                                                <li>Sebagai Apa (Supir/Kernet)</li>
                                                 <li>Nama Perusahaan</li>
-                                                <li>Nomor Polisi Kendaraan</li>
+                                                <li>Nomor Kartu</li>
                                                 <li>Nomor KTP / SIM</li>
+                                                <li>Nomor Polisi Kendaraan</li>
                                                 <li>Jumlah Orang</li>
                                                 <li>Tanggal & Waktu Masuk</li>
+                                                <li>Status Kartu</li>
                                                 <li>Foto KTP / SIM & Foto Diri</li>
                                             </ul>
                                         </li>
                                         <li>Jika data sudah sesuai, klik tombol <strong>"Kartu Dikembalikan"</strong>
-                                            untuk mengonfirmasi bahwa visitor telah keluar area dan kartu sudah
+                                            untuk mengonfirmasi bahwa pengunjung telah keluar area dan kartu sudah
                                             dikembalikan.</li>
                                     </ul>
                                     <hr class="my-3">
                                     <p class="mb-0 text-muted">
-                                        Pastikan proses pengembalian kartu dilakukan <strong>langsung saat visitor
-                                            keluar</strong>, untuk menjaga akurasi log keluar dan pengendalian akses.
+                                        Pastikan proses pengembalian kartu dilakukan <strong>langsung saat pengunjung
+                                            keluar</strong>, untuk menjaga akurasi data waktu keluar.
                                     </p>
                                 </div>
 
@@ -139,7 +148,7 @@
             <div class="card overflow-hidden h-100">
                 <div class="card-body bg-marketplace d-flex flex-column justify-content-between">
                     <div>
-                        <h4 class="fs-18 lh-base mb-0">Formulir Data Transporter
+                        <h4 class="fs-18 lh-base mb-0">Formulir Data Supplier/Transporter
                         </h4>
                     </div>
                     <div class="mt-3">
