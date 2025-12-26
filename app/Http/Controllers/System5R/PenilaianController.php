@@ -2,26 +2,28 @@
 
 namespace App\Http\Controllers\System5R;
 
-use App\Http\Controllers\Controller;
-use App\Models\System5R\GroupJuriAnggota;
-use App\Models\System5R\Jadwal;
-use App\Models\System5R\Jawaban;
-use App\Models\System5R\JawabanDraft;
-use App\Models\System5R\MasterGroup;
-use App\Models\System5R\MasterPertanyaan;
-use App\Models\System5R\JawabanGroup;
-use App\Models\System5R\MasterArea;
-use App\Models\System5R\MasterDepartment;
-use App\Models\System5R\MasterGroupJuriDepartment;
-use App\Models\System5R\Periode;
-use App\Models\System5R\Temuan;
+use PHPUnit\Util\Json;
 use Illuminate\Http\Request;
+use App\Models\System5R\Jadwal;
+use App\Models\System5R\Temuan;
+use App\Models\System5R\Jawaban;
+use App\Models\System5R\Periode;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Hash;
+use App\Models\System5R\MasterArea;
 use Illuminate\Support\Facades\Log;
+use App\Http\Controllers\Controller;
+use App\Models\System5R\MasterGroup;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
+use App\Models\System5R\JawabanDraft;
+use App\Models\System5R\JawabanGroup;
+use Illuminate\Support\Facades\Storage;
+use App\Models\System5R\MasterIncrement;
+use App\Models\System5R\GroupJuriAnggota;
+use App\Models\System5R\MasterDepartment;
+use App\Models\System5R\MasterPertanyaan;
 use Symfony\Component\HttpFoundation\Response;
+use App\Models\System5R\MasterGroupJuriDepartment;
 
 class PenilaianController extends Controller
 {
@@ -75,13 +77,58 @@ class PenilaianController extends Controller
                 ->get();
         }
 
-        $area = MasterArea::where('id_department', $department->pluck('id_department')->toArray())
-            ->where('is_active', 'Y')
-            ->get();
+        // $area = MasterArea::where('id_department', $department->pluck('id_department')->toArray())
+        //     ->where('is_active', 'Y')
+        //     ->get();
+
+        if (request()->filled('filter_department')) {
+            $area = MasterArea::where('id_department', request('filter_department'))
+                ->where('is_active', 'Y')
+                ->get();
+        } else {
+            $area = collect(); // kosongkan kalau belum pilih department
+        }
 
         $current_id_group = $id_group;
 
-        return view('system5r.penilaian.index', compact('isJuri', 'groupJuri', 'pertanyaan', 'jawabanGroup', 'department', 'area', 'jadwal', 'periode', 'current_id_group', 'groups'));
+        // Nilai Increment
+        $activePeriodeId = request('filter_periode');
+        $activeDepartment = request('filter_department');
+        $activeJadwal = request('filter_jadwal');
+
+
+        $incrementTerakhir = null;
+
+        if ($activePeriodeId && $activeDepartment && $activeJadwal) {
+
+            // Ambil created_at periode aktif
+            $periodeAktif = Periode::where('id_periode', $activePeriodeId)->first();
+
+            if ($periodeAktif) {
+                $incrementTerakhir = MasterIncrement::where('id_department', $activeDepartment)
+                    ->where('id_jadwal', $activeJadwal)
+                    ->where('created_at', '<', $periodeAktif->created_at) // INI KUNCI NYA
+                    ->orderBy('created_at', 'desc')
+                    ->first();
+            }
+        }
+
+        // dd($incrementTerakhir, $activePeriodeId, $activeDepartment, $activeJadwal);
+
+        // dd($area);
+        return view('system5r.penilaian.index', compact(
+            'isJuri',
+            'groupJuri',
+            'pertanyaan',
+            'jawabanGroup',
+            'department',
+            'area',
+            'jadwal',
+            'periode',
+            'current_id_group',
+            'groups',
+            'incrementTerakhir'
+        ));
     }
 
     public function doSubmit(Request $request)

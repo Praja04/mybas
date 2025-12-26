@@ -109,76 +109,75 @@
         @php
             $colors = ['#264653', '#2a9d8f', '#e9c46a', '#f4a261', '#e76f51'];
             $textColors = ['#fff', '#fff', '#000', '#000', '#000'];
-            $jawaban = $jawabanGroup ? $jawabanGroup->jawaban : collect();
+            $jenisList = ['RINGKAS', 'RAPI', 'RESIK', 'RAWAT', 'RAJIN'];
         @endphp
 
-        @foreach ($pertanyaan as $group)
-            <table style="width:100%; border-collapse:collapse; margin-bottom:25px;">
-                <tbody>
+        <table style="width:100%; border-collapse:collapse; margin-bottom:25px;">
+            <tbody>
 
-                    {{-- HEADER TABLE --}}
-                    <tr style="background:#a80000; color:#fff;">
-                        <th style="border:1px solid #000; width:60%; padding:5px;">PERTANYAAN</th>
-                        <th style="border:1px solid #000; width:40%; padding:5px;">NILAI & FOTO</th>
-                    </tr>
+                {{-- HEADER --}}
+                <tr style="background:#a80000; color:#fff;">
+                    <th style="border:1px solid #000; width:60%; padding:5px;">PERTANYAAN</th>
+                    <th style="border:1px solid #000; width:40%; padding:5px;">NILAI & FOTO</th>
+                </tr>
 
-                    @foreach (['RINGKAS', 'RAPI', 'RESIK', 'RAWAT', 'RAJIN'] as $idx => $jenis)
-                        @php
-                            $__pertanyaan = $group->pertanyaan->where('jenis', $jenis);
-                        @endphp
-
-                        {{-- ROW GROUP (AMAN PAGE BREAK) --}}
-                        <tr>
-                            <td colspan="2"
-                                style="
+                @foreach ($jenisList as $idx => $jenis)
+                    {{-- GROUP JENIS --}}
+                    <tr>
+                        <td colspan="2"
+                            style="
                             border:1px solid #000;
                             background:{{ $colors[$idx] }};
                             color:{{ $textColors[$idx] }};
                             font-weight:bold;
                             text-align:center;
                             padding:6px;
-                            page-break-inside:avoid;
                         ">
-                                {{ $jenis }}
+                            {{ $jenis }}
+                        </td>
+                    </tr>
+
+                    @if (!isset($data[$jenis]) || $data[$jenis]->isEmpty())
+                        <tr>
+                            <td colspan="2" style="border:1px solid #000; padding:6px; text-align:center;">
+                                <em>Tidak ada data</em>
                             </td>
                         </tr>
-
-                        @foreach ($__pertanyaan as $_pertanyaan)
-                            @php
-                                $__jawaban = $jawaban->where('id_pertanyaan', $_pertanyaan->id_pertanyaan)->first();
-                            @endphp
-
+                    @else
+                        @foreach ($data[$jenis] as $row)
                             <tr>
+                                {{-- PERTANYAAN --}}
                                 <td style="border:1px solid #000; padding:6px;">
                                     <strong>ITEM PERIKSA</strong><br>
-                                    {!! str_replace('||--||', '&', $_pertanyaan->item_periksa) !!}
+                                    {!! str_replace('||--||', '&', $row->pertanyaan->item_periksa) !!}
 
                                     <br><br>
 
                                     <strong>KETERANGAN</strong><br>
-                                    {!! str_replace('||--||', '&', $_pertanyaan->keterangan) !!}
+                                    {!! str_replace('||--||', '&', $row->pertanyaan->keterangan) !!}
                                 </td>
 
+                                {{-- NILAI + FOTO --}}
                                 <td style="border:1px solid #000; padding:6px;">
                                     <strong>Nilai:</strong>
-                                    {{ $__jawaban->nilai ?? '-' }}
+                                    {{ $row->nilai ?? '-' }}
 
                                     <br><br>
 
                                     <strong>Foto:</strong><br>
 
-                                    @if ($__jawaban && !empty($__jawaban->foto))
-                                        @foreach (explode(',', $__jawaban->foto) as $_foto)
-                                            @php
-                                                $path = public_path('images/5r/temuan/' . trim($_foto));
-                                            @endphp
+                                    @if ($row->temuan && $row->temuan->count())
+                                        @foreach ($row->temuan as $temuan)
+                                            @foreach (explode(',', $temuan->foto) as $_foto)
+                                                @php
+                                                    $path = public_path('images/5r/temuan/' . trim($_foto));
+                                                @endphp
 
-                                            @if (file_exists($path))
-                                                <img src="file://{{ $path }}"
-                                                    style="max-width:220px; margin-bottom:5px;">
-                                            @else
-                                                <em style="color:red;">Foto tidak ditemukan</em>
-                                            @endif
+                                                @if (file_exists($path))
+                                                    <img src="file://{{ $path }}"
+                                                        style="max-width:100px; margin:3px;">
+                                                @endif
+                                            @endforeach
                                         @endforeach
                                     @else
                                         <em>Tidak ada foto</em>
@@ -187,22 +186,18 @@
                                     <br><br>
 
                                     <strong>Keterangan:</strong><br>
-                                    {{ $__jawaban->keterangan ?? '-' }}
+                                    {{ $row->keterangan ?? '-' }}
                                 </td>
                             </tr>
                         @endforeach
-                    @endforeach
+                    @endif
+                @endforeach
 
-                </tbody>
-            </table>
-
-            @if (!$loop->last)
-                <div style="page-break-after: always;"></div>
-            @endif
-        @endforeach
-
+            </tbody>
+        </table>
 
     </body>
+
 
     <!--end::Body-->
 

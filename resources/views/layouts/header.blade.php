@@ -28,7 +28,7 @@
                         {{-- 5r system --}}
                         @if (in_array('5r_system', $permissions))
                             <li class="menu-item {{ request()->is('5r-system/*') ? 'menu-item-active' : '' }}">
-                                <a href="{{ url('/5r-system') }}" class="menu-link">
+                                <a href="{{ url('/5r-system/dashboard') }}" class="menu-link">
                                     <span class="menu-text">5R System</span>
                                 </a>
                             </li>

@@ -149,25 +149,31 @@ class ManagementController extends Controller
             abort(403, 'Invalid token');
         }
 
-        $jawabanGroup = JawabanGroup::where('id_periode', $id_periode)
-            ->where('id_group', $id_group)
-            ->first();
+        // 1️⃣ Ambil jawaban group (SAMA)
+        $group = JawabanGroup::where('id_group', $id_group)
+            ->where('id_periode', $id_periode)
+            ->firstOrFail();
 
-        $pertanyaan = MasterGroup::where('id_department', $id_department)
-            ->where('id_group', $id_group)
-            ->with('pertanyaan') // ⚠️ PENTING biar tidak N+1
-            ->get();
+        // 2️⃣ Ambil JAWABAN + PERTANYAAN + TEMUAN (SAMA PERSIS DETAIL)
+        $data = Jawaban::where('id_jawaban_group', $group->id_jawaban_group)
+            ->with([
+                'pertanyaan',
+                'temuan.area'
+            ])
+            ->get()
+            ->groupBy('pertanyaan.jenis'); // kalau mau sama persis
 
+        // 3️⃣ Info header PDF
         $info = [
-            'tahun' => Jadwal::findOrFail($id_jadwal)->tahun,
-            'periode' => Periode::findOrFail($id_periode)->nama_periode,
+            'tahun'      => Jadwal::findOrFail($id_jadwal)->tahun,
+            'periode'    => Periode::findOrFail($id_periode)->nama_periode,
             'department' => MasterDepartment::findOrFail($id_department)->nama_department,
-            'group' => MasterGroup::findOrFail($id_group)->nama_group,
+            'group'      => MasterGroup::findOrFail($id_group)->nama_group,
         ];
 
         $pdf = PDF::loadView(
             'system5r.report.management.download',
-            compact('info', 'jawabanGroup', 'pertanyaan')
+            compact('info', 'group', 'data')
         )
             ->setPaper('A4', 'portrait')
             ->setOptions([
