@@ -18,8 +18,6 @@ class FormInDatatable extends Controller
 
     private function rawData($request)
     {
-        $sevenDaysAgo = Carbon::now()->subDays(7);
-
         // visitor TRANSACTION
         $transaction = DB::table('ga_visitor_transaction')
             ->select([
@@ -30,7 +28,7 @@ class FormInDatatable extends Controller
                 DB::raw("'transaction' as source"),
                 'created_at',
             ])
-            ->where('created_at', '>=', $sevenDaysAgo);
+            ->where('keterangan', 'SUPIR');
 
         // visitor VENDOR
         $vendor = DB::table('ga_visitor_vendor')
@@ -42,7 +40,8 @@ class FormInDatatable extends Controller
                 DB::raw("'vendor' as source"),
                 'created_at',
             ])
-            ->where('created_at', '>=', $sevenDaysAgo);
+            ->whereNotNull('nopol')
+            ->where('nopol', '!=', '');
 
         // UNION visitor
         $visitors = DB::query()->fromSub(
@@ -53,9 +52,8 @@ class FormInDatatable extends Controller
         // LEFT JOIN cek kendaraan
         return DB::query()
             ->fromSub($visitors, 'v')
-            ->leftJoin('ga_cek_kendaraan as c', function ($join) use ($sevenDaysAgo) {
-                $join->on('c.trnvisitorid', '=', 'v.trnvisitorid')
-                    ->where('c.created_at', '>=', $sevenDaysAgo);
+            ->leftJoin('ga_cek_kendaraan as c', function ($join) {
+                $join->on('c.trnvisitorid', '=', 'v.trnvisitorid');
             })
             ->whereNull('c.trncekid') // tampilkan yang belum cek sama sekali
             ->select([

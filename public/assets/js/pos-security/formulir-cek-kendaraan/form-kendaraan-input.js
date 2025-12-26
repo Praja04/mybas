@@ -182,13 +182,20 @@
         // label in modal
         $(document).on("click", '[data-bs-target="#myModal"]', function () {
             const $btn = $(this);
-            const labelText =
-                $btn
-                    .closest(".d-flex.flex-column")
-                    .find("label")
-                    .text()
-                    .trim() || "Foto";
-            $("#myModalLabel").text(`Foto ${labelText}`);
+            const rawLabel = $btn
+                .closest(".foto-slot")
+                .find("label")
+                .first()
+                .text()
+                .trim();
+
+            const labelText = rawLabel
+                .replace(/\*/g, "")
+                .replace(/Wajib/i, "")
+                .replace(/Opsional/i, "")
+                .trim();
+
+            $("#myModalLabel").text(`Foto ${labelText || "Foto"}`);
         });
 
         const $muatan = $("#muatanType");

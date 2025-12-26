@@ -173,21 +173,12 @@ class TamuFormAjax extends Controller
                 ]);
             }
 
-
-            // Jika kartu belum dikembalikan atau masih aktif → valid
-            if (is_null($visitor->kartu_dikembalikan) || $visitor->kartu_dikembalikan == false) {
-                return response()->json([
-                    'success' => true,
-                    'data' => $visitor
-                ]);
-            }
-
             // Cek apakah sudah cek kendaraan jika jenis kunjungannya transporter kecil
-            if (!empty($visitor->nopol)) {
-
+            if ($visitor->type === 'TRANSPORTER') {
                 $cekKendaraan = DB::table('ga_cek_kendaraan')
                     ->where('nomor_polisi', $visitor->nopol)
-                    ->where('checked_in_at', '>=', $visitor->createdon)
+                    // ->where('checked_in_at', '>=', $visitor->createdon)
+                    ->where('checked_in_at', '>=', now()->subHours(24))
                     ->orderBy('checked_in_at', 'desc')
                     ->first();
 
@@ -203,9 +194,17 @@ class TamuFormAjax extends Controller
                 if ($cekKendaraan->checked_in_at && is_null($cekKendaraan->checked_out_at)) {
                     return response()->json([
                         'success' => false,
-                        'message' => 'Kendaraan belum melakukan cek keluar.'
+                        'message' => 'Tamu ini menggunakan kendaraan belum melakukan cek kendaraan keluar.'
                     ]);
                 }
+            }
+
+            // Jika kartu belum dikembalikan atau masih aktif → valid
+            if (is_null($visitor->kartu_dikembalikan) || $visitor->kartu_dikembalikan == false) {
+                return response()->json([
+                    'success' => true,
+                    'data' => $visitor
+                ]);
             }
 
             // Jika kartu sudah dikembalikan (tapi belum tap out?)
@@ -306,8 +305,8 @@ class TamuFormAjax extends Controller
             // Mapping purpose (jenis kunjungan) ke prefix ID visitor
             // Prefix ini digunakan sebagai bagian awal ID unik visitor
             $prefixMapping = [
-                'MUAT'    => 'BM',
-                'BONGKAR' => 'GB',
+                'MUAT'    => 'TMBM',
+                'BONGKAR' => 'TMGB',
                 'VENDOR'  => 'VN',
                 'TAMU'    => 'TM',
             ];

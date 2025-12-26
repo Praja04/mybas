@@ -33,19 +33,18 @@ class SioPollingController extends Controller
     public function checkSio()
     {
         try {
-            $now = Carbon::now();
+            // $now = Carbon::now();
 
-            // if ($now->dayOfWeek !== Carbon::MONDAY || $now->hour !== 8) {
-            if (
-                $now->dayOfWeek !== Carbon::WEDNESDAY ||
-                ($now->hour !== 15 && $now->hour !== 16)
-            ) { // TESTING ONLY
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Belum waktunya polling SIO',
-                    'server_time' => $now->format('Y-m-d H:i:s')
-                ], 403);
-            }
+            // if (
+            //     $now->dayOfWeek !== Carbon::WEDNESDAY ||
+            //     ($now->hour !== 15 && $now->hour !== 16)
+            // ) { 
+            //     return response()->json([
+            //         'success' => false,
+            //         'message' => 'Belum waktunya polling SIO',
+            //         'server_time' => $now->format('Y-m-d H:i:s')
+            //     ], 403);
+            // }
 
             // lock agar 1x kirim per hari
             // $cacheKey = 'sio_polling_sent_' . $now->format('Y-m-d');

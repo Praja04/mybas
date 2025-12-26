@@ -17,20 +17,20 @@ export class ContentDatatable {
                     {
                         data: "nomor_polisi",
                         name: "nomor_polisi",
-                        orderable: false,
-                        searchable: false,
+                        orderable: true,
+                        searchable: true,
                     },
                     {
                         data: "namavisitor",
                         name: "namavisitor",
-                        orderable: false,
-                        searchable: false,
+                        orderable: true,
+                        searchable: true,
                     },
                     {
                         data: "namacomp",
                         name: "namacomp",
-                        orderable: false,
-                        searchable: false,
+                        orderable: true,
+                        searchable: true,
                     },
                     {
                         data: "waktu",
@@ -64,7 +64,23 @@ export class ContentDatatable {
                     },
                 ],
             },
+            // priority column
+            columnDefs: [
+                {
+                    targets: 1, // kolom Nomor Polisi
+                    responsivePriority: 1,
+                },
+                {
+                    targets: -2, // kolom Status
+                    responsivePriority: 2,
+                },
+                {
+                    targets: -1, // kolom Action
+                    responsivePriority: 3,
+                },
+            ],
             dataSend: {},
+            excludeSearchColumns: [0, 4, 5, 6, 7, 8],
         };
     }
 

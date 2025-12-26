@@ -10,6 +10,7 @@ const capturedImageContainer = document.getElementById(
 );
 const selfieVideo = document.getElementById("selfieVideo");
 const selfieCanvas = document.getElementById("selfieCanvas");
+const selfieModal = document.getElementById("selfieModal");
 const captureSelfieBtn = document.getElementById("captureSelfieBtn");
 const retakeSelfieBtn = document.getElementById("retakeSelfieBtn");
 const saveSelfieBtn = document.getElementById("saveSelfieBtn");
@@ -30,7 +31,7 @@ let selfiePhotos = [];
 
 function stopSelfieStream() {
     if (selfieStream) {
-        selfieStream.getTracks().forEach(track => track.stop());
+        selfieStream.getTracks().forEach((track) => track.stop());
         selfieStream = null;
     }
 }
@@ -54,7 +55,7 @@ function startQrScanner() {
     const config = {
         fps: 10,
         qrbox: { width: 250, height: 250 },
-        supportedFormats: [Html5QrcodeSupportedFormats.QR_CODE]
+        supportedFormats: [Html5QrcodeSupportedFormats.QR_CODE],
     };
 
     html5QrCode
@@ -67,7 +68,7 @@ function startQrScanner() {
         .then(() => {
             isScannerRunning = true;
         })
-        .catch(err => {
+        .catch((err) => {
             console.error("Tidak dapat mengakses kamera:", err);
             alert(
                 "Gagal akses kamera. Pastikan izin diberikan dan perangkat memiliki kamera."
@@ -103,7 +104,7 @@ function stopQrStream() {
                 html5QrCode.clear();
                 isScannerRunning = false;
             })
-            .catch(err => {
+            .catch((err) => {
                 console.error("Gagal menghentikan scanner:", err);
             });
     }
@@ -112,14 +113,14 @@ function stopQrStream() {
 async function startSelfieWebcam() {
     try {
         selfieStream = await navigator.mediaDevices.getUserMedia({
-            video: { width: 320, height: 240, facingMode: "user" }
+            video: { width: 320, height: 240, facingMode: "user" },
         });
         selfieVideo.srcObject = selfieStream;
         selfieVideo.style.display = "block";
         toggleElements([
             { el: startSelfieBtn, show: false },
             { el: captureSelfieBtn, show: true },
-            { el: retakeSelfieBtn, show: false }
+            { el: retakeSelfieBtn, show: false },
         ]);
     } catch (err) {
         alert("Gagal mengakses kamera: " + err.message);
@@ -145,7 +146,7 @@ function captureSelfiePhoto() {
         { el: selfieVideo, show: false },
         { el: captureSelfieBtn, show: false },
         { el: retakeSelfieBtn, show: true },
-        { el: saveSelfieBtn, show: true }
+        { el: saveSelfieBtn, show: true },
     ]);
 
     stopSelfieStream();
@@ -162,7 +163,7 @@ function retakeSelfiePhoto() {
         { el: selfieVideo, show: true },
         { el: captureSelfieBtn, show: true },
         { el: retakeSelfieBtn, show: false },
-        { el: saveSelfieBtn, show: false }
+        { el: saveSelfieBtn, show: false },
     ]);
     startSelfieWebcam();
 }
@@ -227,8 +228,8 @@ function removeSelfiePhoto(index) {
         confirmButtonColor: "#d33",
         cancelButtonColor: "#3085d6",
         confirmButtonText: "Ya, hapus!",
-        cancelButtonText: "Batal"
-    }).then(result => {
+        cancelButtonText: "Batal",
+    }).then((result) => {
         if (result.isConfirmed) {
             selfiePhotos.splice(index, 1);
             renderSelfiePreviews();
@@ -277,7 +278,7 @@ function saveAllSelfies() {
         confirmButtonText: "Lanjutkan",
         timer: 2000,
         timerProgressBar: true,
-        showConfirmButton: false
+        showConfirmButton: false,
     });
 }
 
@@ -288,8 +289,8 @@ async function startWebcam(options = {}) {
                 width: { ideal: 400 },
                 height: { ideal: 300 },
                 facingMode: "environment",
-                ...options
-            }
+                ...options,
+            },
         });
         if (video) {
             video.srcObject = stream;
@@ -298,7 +299,7 @@ async function startWebcam(options = {}) {
         toggleElements([
             { el: startCamera, show: false },
             { el: captureBtn, show: true },
-            { el: retakeBtn, show: false }
+            { el: retakeBtn, show: false },
         ]);
     } catch (err) {
         alert("Gagal mengakses kamera: " + err.message);
@@ -318,7 +319,7 @@ function captureImage() {
     toggleElements([
         { el: video, show: false },
         { el: captureBtn, show: false },
-        { el: retakeBtn, show: true }
+        { el: retakeBtn, show: true },
     ]);
     stopStream();
 }
@@ -328,7 +329,7 @@ function retakePhoto() {
     toggleElements([
         { el: video, show: true },
         { el: captureBtn, show: true },
-        { el: retakeBtn, show: false }
+        { el: retakeBtn, show: false },
     ]);
     startCamera.click();
 }
@@ -336,7 +337,7 @@ function retakePhoto() {
 function stopStream() {
     const stream = video?.srcObject;
     if (stream && typeof stream.getTracks === "function") {
-        stream.getTracks().forEach(track => track.stop());
+        stream.getTracks().forEach((track) => track.stop());
         video.srcObject = null;
     }
 }
@@ -358,7 +359,7 @@ function saveCaptureIdentitas() {
             icon: "error",
             title: "Error",
             text: "Canvas tidak ditemukan.",
-            confirmButtonText: "OK"
+            confirmButtonText: "OK",
         });
         return;
     }
@@ -371,7 +372,7 @@ function saveCaptureIdentitas() {
             icon: "warning",
             title: "Belum Ada Foto",
             text: "Silakan ambil foto terlebih dahulu.",
-            confirmButtonText: "OK"
+            confirmButtonText: "OK",
         });
         return;
     }
@@ -411,7 +412,7 @@ function saveCaptureIdentitas() {
         icon: "success",
         title: "Berhasil!",
         text: "Foto berhasil disimpan.",
-        confirmButtonText: "Lanjutkan"
+        confirmButtonText: "Lanjutkan",
     });
 }
 
@@ -435,7 +436,7 @@ function formatTime(datetimeStr) {
 }
 
 // Tambahkan handler ke tombol Save Changes jika ada
-document.addEventListener("DOMContentLoaded", function() {
+document.addEventListener("DOMContentLoaded", function () {
     const saveBtn = document.querySelector(
         '[onclick="saveCaptureIdentitas()"]'
     );
@@ -444,7 +445,7 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 });
 
-document.addEventListener("DOMContentLoaded", function() {
+document.addEventListener("DOMContentLoaded", function () {
     $("#qrScannerModal").on("shown.bs.modal", startQrScanner);
     $("#qrScannerModal").on("hidden.bs.modal", stopQrStream);
 
@@ -456,6 +457,11 @@ document.addEventListener("DOMContentLoaded", function() {
     if (startSelfieBtn) {
         startSelfieBtn.addEventListener("click", startSelfieWebcam);
     }
+
+    if (selfieModal) {
+        selfieModal.addEventListener("shown.bs.modal", startSelfieWebcam);
+    }
+
     if (captureSelfieBtn) {
         captureSelfieBtn.addEventListener("click", captureSelfiePhoto);
     }
@@ -467,7 +473,7 @@ document.addEventListener("DOMContentLoaded", function() {
     }
     $("#selfieModal").on("hidden.bs.modal", stopSelfieStream);
 
-    window.removeKtpImage = function() {
+    window.removeKtpImage = function () {
         const ktpImage = document.getElementById("ktpImage");
         const ktpPreview = document.getElementById("ktpPreview");
         const inputField = document.getElementById("imgvisitorpathin");
@@ -500,23 +506,21 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 });
 
-$("#loadRealtimeVisitor").on("click", function() {
+$("#loadRealtimeVisitor").on("click", function () {
     $.ajax({
         url: VAR_REALTIME_VISITOR,
         type: "GET",
         dataType: "json",
-        beforeSend: function() {
+        beforeSend: function () {
             $("#loadRealtimeVisitor")
                 .prop("disabled", true)
                 .html('<i class="fas fa-spinner fa-spin me-2"></i>Loading...');
         },
-        success: function(data) {
+        success: function (data) {
             console.log("Realtime Visitor Data:", data);
             $("#namavisitor").val(data.NAMAVISITOR);
             $("#namacomp").val(data.NAMACOMP);
-            $("#purpose")
-                .val(data.PURPOSE)
-                .trigger("change");
+            $("#purpose").val(data.PURPOSE).trigger("change");
             $("#nopol").val(data.NOPOL);
             $("#sumpeople").val(data.SUMPEOPLE);
             $("#nohpdriver").val(data.NOHPDRIVER);
@@ -563,21 +567,21 @@ $("#loadRealtimeVisitor").on("click", function() {
 
             // alert("Data berhasil dimuat!");
         },
-        error: function(xhr, status, error) {
+        error: function (xhr, status, error) {
             console.error("Error:", error);
             alert("Gagal ambil data realtime.");
         },
-        complete: function() {
+        complete: function () {
             $("#loadRealtimeVisitor")
                 .prop("disabled", false)
                 .html(
                     '<i class="fas fa-sync-alt me-2"></i>Load Realtime Visitor'
                 );
-        }
+        },
     });
 });
 
-$('a[data-bs-toggle="tab"]').on("shown.bs.tab", function(e) {
+$('a[data-bs-toggle="tab"]').on("shown.bs.tab", function (e) {
     // Reset video stream
     stopStream();
     stopSelfieStream();
@@ -597,6 +601,6 @@ $('a[data-bs-toggle="tab"]').on("shown.bs.tab", function(e) {
         { el: document.getElementById("video"), show: false },
         { el: document.getElementById("startCamera"), show: true },
         { el: document.getElementById("captureBtn"), show: false },
-        { el: document.getElementById("retakeBtn"), show: false }
+        { el: document.getElementById("retakeBtn"), show: false },
     ]);
 });

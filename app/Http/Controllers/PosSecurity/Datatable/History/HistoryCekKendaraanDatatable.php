@@ -45,6 +45,7 @@ class HistoryCekKendaraanDatatable extends Controller
                 DB::raw("'transaction' as source"),
                 'created_at',
             ])
+            ->where('keterangan', 'SUPIR')
             ->where('created_at', '>=', $sevenDaysAgo);
 
         // visitor VENDOR
@@ -57,6 +58,8 @@ class HistoryCekKendaraanDatatable extends Controller
                 DB::raw("'vendor' as source"),
                 'created_at',
             ])
+            ->whereNotNull('nopol')
+            ->where('nopol', '!=', '')
             ->where('created_at', '>=', $sevenDaysAgo);
 
         // UNION visitor
@@ -187,11 +190,11 @@ class HistoryCekKendaraanDatatable extends Controller
 
                 // 2. Sudah cek tapi belum keluar
                 if (!empty($item->checked_in_at) && empty($item->checked_out_at)) {
-                    return '<span class="badge bg-warning">Belum Keluar</span>';
+                    return '<span class="badge bg-warning">Belum Cek Keluar</span>';
                 }
 
                 // 3. Sudah keluar
-                return '<span class="badge bg-success">Sudah Keluar</span>';
+                return '<span class="badge bg-success">Sudah Cek Keluar</span>';
             })
             ->rawColumns(['nomor_polisi', 'jenis', 'action', 'durasi', 'waktu', 'status'])
             ->make(true);

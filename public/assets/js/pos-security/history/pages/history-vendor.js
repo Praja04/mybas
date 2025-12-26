@@ -17,38 +17,50 @@ export class ContentDatatable {
                     {
                         data: "namacomp",
                         name: "namacomp",
+                        orderable: true,
+                        searchable: true,
                     },
                     {
                         data: "namavisitor",
                         name: "namavisitor",
+                        orderable: true,
+                        searchable: true,
                     },
                     {
                         data: "tgl_lahir",
                         name: "tgl_lahir",
+                        orderable: false,
+                        searchable: false,
                     },
                     {
                         data: "host",
                         name: "host",
-                    },
-                    {
-                        data: "sumpeople",
-                        name: "sumpeople",
+                        orderable: true,
+                        searchable: true,
                     },
                     {
                         data: "keperluan",
                         name: "keperluan",
+                        orderable: true,
+                        searchable: true,
                     },
                     {
                         data: "hostdeptid",
                         name: "hostdeptid",
+                        orderable: false,
+                        searchable: false,
                     },
                     {
                         data: "no_kartu",
                         name: "no_kartu",
+                        orderable: true,
+                        searchable: true,
                     },
                     {
                         data: "no_ktp_sim",
                         name: "no_ktp_sim",
+                        orderable: true,
+                        searchable: true,
                     },
                     {
                         data: "type",
@@ -87,12 +99,7 @@ export class ContentDatatable {
                 ],
             },
             dataSend: {},
-            excludeSearchColumns: [0, 5, 8, 9, 10, 11, 12, 13, 14],
-            // columnVisibility: {
-            //     small: [0, 1, 6],
-            //     medium: [0, 1, 2, 3, 7],
-            //     large: [0, 1, 2, 3, 4, 5, 6],
-            // },
+            excludeSearchColumns: [0, 5, 8, 9, 10, 11, 12, 13],
         };
     }
 

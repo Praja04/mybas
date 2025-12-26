@@ -30,7 +30,6 @@
                                         <th>Nama Pengunjung</th> <!-- host -->
                                         <th>Tanggal Lahir</th> <!-- host -->
                                         <th>Nama PIC</th> <!-- host -->
-                                        <th>Jumlah Orang</th> <!-- host -->
                                         <th>Keperluan</th> <!-- host -->
                                         <th>Departemen</th> <!-- hostdeptid -->
                                         <th>No Kartu</th> <!-- purpose -->
