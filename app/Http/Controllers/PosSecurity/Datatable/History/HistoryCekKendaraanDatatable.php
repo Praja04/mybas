@@ -60,7 +60,18 @@ class HistoryCekKendaraanDatatable extends Controller
             ])
             ->whereNotNull('nopol')
             ->where('nopol', '!=', '')
-            ->where('created_at', '>=', $sevenDaysAgo);
+            ->where('created_at', '>=', $sevenDaysAgo)
+            ->whereNotExists(function ($query) {
+                $query->select(DB::raw(1))
+                    ->from('ga_visitor_transaction')
+                    ->where('ga_visitor_transaction.keterangan', 'SUPIR')
+                    ->whereRaw("
+                REPLACE(REPLACE(UPPER(ga_visitor_transaction.nopol), ' ', ''), '-', '')
+                =
+                REPLACE(REPLACE(UPPER(ga_visitor_vendor.nopol), ' ', ''), '-', '')
+            ");
+            });
+
 
         // UNION visitor
         $visitors = DB::query()->fromSub(
