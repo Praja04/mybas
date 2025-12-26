@@ -282,7 +282,8 @@ class SupplierFormAjax extends Controller
             // validasi apakah kendaraan sudah dilakukan cek kendaraan
             $cekKendaraan = DB::table('ga_cek_kendaraan')
                 ->where('nomor_polisi', $visitor->nopol)
-                ->where('checked_in_at', '>=', $visitor->createdon)
+                // ->where('checked_in_at', '>=', $visitor->createdon)
+                ->where('checked_in_at', '>=', now()->subHours(24))
                 ->orderBy('checked_in_at', 'desc')
                 ->first();
 
@@ -313,7 +314,6 @@ class SupplierFormAjax extends Controller
             'message' => 'Data pengunjung tidak ditemukan atau sudah keluar.'
         ]);
     }
-
 
     // supplier
     public function store(Request $request)

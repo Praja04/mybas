@@ -45,6 +45,7 @@ class HistoryCekKendaraanDatatable extends Controller
                 DB::raw("'transaction' as source"),
                 'created_at',
             ])
+            ->where('keterangan', 'SUPIR')
             ->where('created_at', '>=', $sevenDaysAgo);
 
         // visitor VENDOR
@@ -57,6 +58,8 @@ class HistoryCekKendaraanDatatable extends Controller
                 DB::raw("'vendor' as source"),
                 'created_at',
             ])
+            ->whereNotNull('nopol')
+            ->where('nopol', '!=', '')
             ->where('created_at', '>=', $sevenDaysAgo);
 
         // UNION visitor

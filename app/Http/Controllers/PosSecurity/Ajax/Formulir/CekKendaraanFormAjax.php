@@ -15,7 +15,6 @@ use Illuminate\Support\Facades\Validator;
 
 class CekKendaraanFormAjax extends Controller
 {
-
     public function searchIn(Request $request)
     {
         $keyword = strtoupper(str_replace(' ', '', $request->input('keyword')));
@@ -144,7 +143,6 @@ class CekKendaraanFormAjax extends Controller
         ]);
     }
 
-
     // in
     public function store(Request $request)
     {
@@ -176,50 +174,32 @@ class CekKendaraanFormAjax extends Controller
         }
 
         try {
+            $keyword = strtoupper(str_replace(' ', '', $request->nomor_polisi));
+
+            $alreadyChecked = DB::table('ga_cek_kendaraan')
+                ->whereRaw("REPLACE(UPPER(nomor_polisi),' ','') = ?", [$keyword])
+                ->where('checked_in_at', '>=', now()->subHours(24))
+                ->exists();
+
+            if ($alreadyChecked) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Kendaraan ini sudah melakukan cek kendaraan masuk.'
+                ], 409);
+            }
+
             $now = now();
             $trnCekId = 'CK-' . $now->format('YmdHis');
             $otherTruckType = trim((string) $request->otherTruckType);
 
-
             $photoPaths = [];
 
             if ($request->has('photos')) {
-                foreach ($request->photos as $key => $base64Image) {
-                    if (!$base64Image) continue;
-
-                    if (!preg_match('/^data:image\/(\w+);base64,/', $base64Image, $type)) {
-                        continue;
-                    }
-
-                    $extension = strtolower($type[1]);
-                    $base64Image = substr($base64Image, strpos($base64Image, ',') + 1);
-                    $imageData = base64_decode($base64Image);
-
-                    if ($imageData === false) continue;
-
-                    $nopolClean = preg_replace('/[^A-Za-z0-9]/', '', strtoupper($request->nomor_polisi));
-
-                    $tanggal   = now()->format('Y-m-d');
-                    $status    = 'MASUK';
-                    $timestamp = now()->format('Ymd_His');
-
-                    $label = preg_replace('/[^A-Za-z0-9_-]/', '_', $key);
-
-                    $fileName = $timestamp . '.' . $extension;
-
-                    $path = implode('/', [
-                        'cek-kendaraan',
-                        $tanggal,
-                        $status,
-                        $nopolClean,
-                        $label,
-                        $fileName
-                    ]);
-
-                    Storage::disk('public')->put($path, $imageData);
-
-                    $photoPaths[$key][] = $path;
-                }
+                $photoPaths = $this->saveBase64Images(
+                    $request->photos,
+                    $request->nomor_polisi,
+                    'MASUK'
+                );
             }
 
             $data = [
@@ -285,58 +265,32 @@ class CekKendaraanFormAjax extends Controller
             if (!$cek) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Data cek kendaraan tidak ditemukan'
+                    'message' => 'Data kendaraan tidak ditemukan.'
                 ], 404);
+            }
+
+            if (!$cek->checked_in_at) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Kendaraan ini belum melakukan cek kendaraan masuk.'
+                ], 409);
             }
 
             if ($cek->checked_out_at) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Kendaraan sudah keluar pada kunjungan saat ini'
+                    'message' => 'Kendaraan ini sudah melakukan cek kendaraan keluar.'
                 ], 409);
             }
 
             $photoPaths = [];
 
             if ($request->has('photos')) {
-                foreach ($request->photos as $key => $base64Image) {
-                    if (!$base64Image) continue;
-
-                    if (!preg_match('/^data:image\/(\w+);base64,/', $base64Image, $type)) {
-                        continue;
-                    }
-
-                    $extension = strtolower($type[1]);
-                    $imageData = base64_decode(
-                        substr($base64Image, strpos($base64Image, ',') + 1)
-                    );
-
-                    if ($imageData === false) continue;
-
-                    $nopolClean = preg_replace('/[^A-Za-z0-9]/', '', strtoupper($cek->nomor_polisi));
-
-                    $tanggal   = now()->format('Y-m-d');
-                    $status    = 'KELUAR';
-                    $timestamp = now()->format('Ymd_His');
-
-                    $label = preg_replace('/[^A-Za-z0-9_-]/', '_', $key);
-
-
-                    $fileName = $timestamp . '.' . $extension;
-
-                    $path = implode('/', [
-                        'cek-kendaraan',
-                        $tanggal,
-                        $status,
-                        $nopolClean,
-                        $label,
-                        $fileName
-                    ]);
-
-                    Storage::disk('public')->put($path, $imageData);
-
-                    $photoPaths[$key][] = $path;
-                }
+                $photoPaths = $this->saveBase64Images(
+                    $request->photos,
+                    $cek->nomor_polisi,
+                    'KELUAR'
+                );
             }
 
             $updateData = [
@@ -363,114 +317,6 @@ class CekKendaraanFormAjax extends Controller
         }
     }
 
-    // 
-    public function kembali_kartu(Request $request)
-    {
-        $request->validate([
-            'trnvisitorid' => 'required|string|max:50'
-        ]);
-
-        try {
-            $visitor = GaVisitorTransaction::where('trnvisitorid', $request->trnvisitorid)->first();
-
-            if (!$visitor) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Visitor tidak ditemukan.'
-                ]);
-            }
-
-            $now = now();
-
-            $visitor->kartu_dikembalikan = true;
-            $visitor->gateidout = $visitor->gateidin;
-            $visitor->gatelineidout = $visitor->gatelineidin;
-            $visitor->dateout = $now->toDateString(); // YYYY-MM-DD
-            $visitor->timeout = $now->format('H:i:s'); // HH:MM:SS
-            $visitor->changedon = $now;
-            $visitor->changedby = auth()->user()->username ?? 'system'; // atau session user
-            $visitor->save();
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Kartu berhasil dikembalikan untuk visitor ID: ' . $visitor->trnvisitorid
-            ]);
-        } catch (\Exception $e) {
-            Log::error('Error saat mengembalikan kartu: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'Terjadi kesalahan saat mengembalikan kartu.'
-            ]);
-        }
-    }
-
-    /**
-     * Generate unique visitor ID
-     */
-    private function generateVisitorId($prefix)
-    {
-        $date = date('Ymd');
-
-        // Get last visitor ID for today by prefix
-        $lastVisitor = GaVisitorTransaction::where('trnvisitorid', 'LIKE', $prefix . $date . '%')
-            ->orderBy('trnvisitorid', 'desc')
-            ->first();
-
-        if ($lastVisitor) {
-            $lastNumber = (int) substr($lastVisitor->trnvisitorid, -3);
-            $newNumber = $lastNumber + 1;
-        } else {
-            $newNumber = 1;
-        }
-
-        return $prefix . $date . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
-    }
-
-
-    private function saveImageFromBase64($base64Image, $filename, $folder = 'suppliers')
-    {
-        // Bersihkan base64 prefix jika ada
-        if (strpos($base64Image, 'base64,') !== false) {
-            $base64Image = explode('base64,', $base64Image)[1];
-        }
-
-        // Decode
-        $imageData = base64_decode($base64Image);
-
-        // Buat nama file (png misalnya)
-        $fileName = $filename . '.png';
-
-        // Folder + tanggal (misal pakai per hari)
-        $datePath = now()->format('Y/m/d');
-        $savePath = "{$folder}/{$datePath}/{$fileName}";
-
-        // Simpan ke storage public
-        Storage::disk('public')->put($savePath, $imageData);
-
-        // Return URL public
-        return url('/storage/' . $savePath);
-    }
-
-
-    /**
-     * Generate QR Code data
-     */
-    private function generateQRCode($visitorId, $namaVisitor)
-    {
-        $qrData = [
-            'visitor_id' => $visitorId,
-            'nama' => $namaVisitor,
-            'timestamp' => time(),
-            'status' => 'active'
-        ];
-
-        return base64_encode(json_encode($qrData));
-    }
-
-
-    /**
-     * Show cek kendaraan detail
-     */
     public function show(Request $request)
     {
         $request->validate([
@@ -496,91 +342,48 @@ class CekKendaraanFormAjax extends Controller
         ]);
     }
 
-    /**
-     * Update visitor checkout
-     */
-    public function checkoutOld(Request $request, $id)
-    {
-        $validator = Validator::make($request->all(), [
-            'gateidout' => 'required|string|max:20',
-            'gatelineidout' => 'required|string|max:20'
-        ]);
+    private function saveBase64Images(
+        $photos,
+        $nomorPolisi,
+        $status // MASUK / KELUAR
+    ): array {
+        $photoPaths = [];
 
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'errors' => $validator->errors()
-            ], 422);
-        }
+        foreach ($photos as $key => $base64Image) {
+            if (!$base64Image) continue;
 
-        try {
-            $visitor = GaVisitorTransaction::findOrFail($id);
-
-            if ($visitor->dateout) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Visitor sudah checkout sebelumnya'
-                ], 400);
+            if (!preg_match('/^data:image\/(\w+);base64,/', $base64Image, $type)) {
+                continue;
             }
 
-            $now = Carbon::now();
+            $extension = strtolower($type[1]);
+            $imageData = base64_decode(
+                substr($base64Image, strpos($base64Image, ',') + 1)
+            );
 
-            $updateData = [
-                'gateidout' => $request->gateidout,
-                'gatelineidout' => $request->gatelineidout,
-                'dateout' => $now->format('Y-m-d'),
-                'timeout' => $now->format('H:i:s'),
-                'changedon' => $now,
-                'kartu_dikembalikan' => true
-            ];
+            if ($imageData === false) continue;
 
-            GaVisitorTransaction::where('id', $id)->update($updateData);
+            $nopolClean = preg_replace('/[^A-Za-z0-9]/', '', strtoupper($nomorPolisi));
+            $tanggal    = now()->format('Y-m-d');
+            $timestamp  = now()->format('Ymd_His');
+            $label      = preg_replace('/[^A-Za-z0-9_-]/', '_', $key);
 
+            $fileName = $timestamp . '.' . $extension;
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Visitor berhasil checkout'
+            $path = implode('/', [
+                'cek-kendaraan',
+                $tanggal,
+                $status,
+                $nopolClean,
+                $label,
+                $fileName
             ]);
-        } catch (\Exception $e) {
-            Log::error('Error checkout visitor: ' . $e->getMessage());
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Terjadi kesalahan saat checkout'
-            ], 500);
+            Storage::disk('public')->put($path, $imageData);
+
+            $photoPaths[$key][] = $path;
         }
-    }
 
-    /**
-     * Update data in both databases
-     */
-    private function updateInBothDatabases($id, $data)
-    {
-        DB::beginTransaction();
-
-        try {
-            // Update main database
-            GaVisitorTransaction::where('id', $id)->update($data);
-
-            // Update backup database
-            $backupDb = DB::connection('backup_db');
-            $backupDb->beginTransaction();
-            $backupDb->table('TRNVISITORINOUT')->where('id', $id)->update($data);
-            $backupDb->commit();
-
-            DB::commit();
-        } catch (\Exception $e) {
-            DB::rollback();
-            if (isset($backupDb)) {
-                $backupDb->rollback();
-            }
-            throw $e;
-        }
-    }
-
-    private function normalize_name($name)
-    {
-        // Ubah ke huruf kecil, hapus spasi berlebih
-        return strtolower(preg_replace('/\s+/', ' ', trim($name)));
+        return $photoPaths;
     }
 }

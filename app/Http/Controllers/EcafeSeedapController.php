@@ -64,7 +64,7 @@ class EcafeSeedapController extends Controller
                 ->orderByRaw('CAST(EMPCARDID AS SIGNED) DESC')
                 ->first();
 
-            Log::info('[' . Carbon::now()->format('Y-m-d H:i:s') . '] [Ecanteensedaap] Berhasil connect ke DB SMU dan ambil data RFID');
+            // Log::info('[' . Carbon::now()->format('Y-m-d H:i:s') . '] [Ecanteensedaap] Berhasil connect ke DB SMU dan ambil data RFID');
         } catch (\Exception $e) {
             Log::warning('[' . Carbon::now()->format('Y-m-d H:i:s') . '] [Ecanteensedaap] Gagal connect ke DB, pakai fallback RFID - ' . $e->getMessage());
 
