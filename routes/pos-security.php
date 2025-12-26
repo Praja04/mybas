@@ -4,8 +4,7 @@ use App\Http\Controllers\PosSecurityController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('pos-security')->group(function () {
-    // Route::group(['middleware' => ['auth', 'access_log', 'rules']], function () {
-    Route::group(['middleware' => ['https', 'auth', 'access_log', 'rules']], function () {
+    Route::group(['middleware' => ['auth', 'access_log', 'rules']], function () {
 
         Route::get('/formulir', [PosSecurityController::class, 'form'])->name('pos-security.formulir');
         Route::get('/formulir/supplier', [PosSecurityController::class, 'formSupplier'])->name('pos-security.formulir.supplier');
