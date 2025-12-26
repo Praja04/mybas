@@ -552,6 +552,14 @@
                                                                                     <p class="mb-0">
                                                                                         {!! str_replace('||--||', '&', $_pertanyaan->item_periksa) !!}
                                                                                     </p>
+                                                                                    @if ($incrementTerakhir)
+                                                                                        <div class="alert alert-info">
+                                                                                            <strong>Nilai Periode
+                                                                                                Sebelumnya:</strong>
+                                                                                            {{ $incrementTerakhir->nilai }}
+                                                                                        </div>
+                                                                                    @endif
+
                                                                                 </div>
                                                                                 <div class="question-body">
                                                                                     <div class="row">

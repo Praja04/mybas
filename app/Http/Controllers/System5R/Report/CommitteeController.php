@@ -20,113 +20,107 @@ class CommitteeController extends Controller
 {
     public function index()
     {
-        $myDepartment = DepartmentComittee::where('nik_committee', auth()->user()->username)->get();
+        $allJadwal = Jadwal::orderBy('tahun', 'desc')->get();
+        $latestJadwal = $allJadwal->first();
 
-        if($myDepartment->count() == 0) {
-            $workspace = null;
-        }else{
-            // $data = MasterDepartment::whereIn('id_department', 
-            // $myDepartment->pluck('id_department')->toArray()
-            // )->get();
+        return view(
+            'system5r.report.committee.index',
+            compact('allJadwal', 'latestJadwal')
+        );
+    }
 
+    public function data(Request $request)
+    {
+        $jadwalId = $request->jadwal_id;
 
-            $workspace = MasterWorkspace::whereHas('departments', function ($query) use ($myDepartment) {
-                $query->whereIn('id_department', $myDepartment->pluck('id_department')->toArray());
-            })->get();
+        // 🔹 department yang dipegang committee login
+        $myDepartments = DepartmentComittee::where(
+            'nik_committee',
+            auth()->user()->username
+        )->pluck('id_department')->toArray();
 
-            // Filter departments
-            $workspace = $workspace->map(function ($_item) use ($myDepartment) {
-                $_item->departments = $_item->departments->filter(function ($item) use ($myDepartment) {
-                    return $myDepartment->where('id_department', $item->id_department)->count() > 0;
-                });
-
-                return $_item;
-            });
-
-            if(isset($_GET['filter_jadwal'])) {
-                $workspace = $workspace->map(function ($_item) {
-                    $_data = $_item->departments->map(function ($item) {
-                        $periode = Periode::where('id_jadwal', $_GET['filter_jadwal'])->get();
-                        $id_department = $item->id_department;
-        
-                        $periode = $periode->map(function ($_item, $key) use ($id_department) {
-                            $__group = MasterGroup::where('id_department', $id_department)->get();
-        
-                            $id_periode = $_item->id_periode;
-        
-                            $_group = $__group->map(function ($__item, $key) use ($id_periode) {
-                                $__item->jawabanGroup = JawabanGroup::where('id_group', $__item->id_group)
-                                ->where('id_periode', $id_periode)
-                                ->first();
-        
-                                $totalNilai = 0;
-                                
-                                if($__item->jawabanGroup != null) {
-                                    $jawaban = Jawaban::where('id_jawaban_group', $__item->jawabanGroup->id_jawaban_group)->get();
-                                    
-                                    $totalNilai = $jawaban->sum('nilai')*($__item->persentase/100);
-                                }
-        
-                                $__item->totalNilai = $totalNilai;
-        
-                                return $__item;
-                            });
-        
-                            $juri_periode = MasterGroupJuriDepartment::where('id_department', $id_department)
-                            ->where('id_periode', $id_periode)
-                            ->with('group.anggota')
-                            ->first();
-        
-                            // dd($juri_periode->group->anggota);
-        
-                            if($juri_periode != null) {
-                                $juri_array = $juri_periode->group->anggota->map(function ($item, $key) {
-                                    return $item->nama_juri;
-                                })->toArray();
-                                
-                                $_item->juri = $juri_array;
-                            }else{
-                                $_item->juri = [];
-                            }
-        
-        
-                            $_group = $_group->filter(function ($__item, $key) {
-                                return $__item->jawabanGroup != null && $__item->jawabanGroup->status == 'approved';
-                            });
-        
-                            $_item->group = $_group;
-                            $_item->totalNilai = $_group->sum('totalNilai');
-        
-                            return $_item;
-                        });
-        
-                        $item->periode = $periode;
-        
-                        if($item->periode->where('totalNilai', '!=', '0')->count() == 0) {
-                            $__total = 0;
-                        }else{
-                            $__total = $item->periode->sum('totalNilai')/$item->periode->where('totalNilai', '!=', '0')->count();
-                        }
-        
-                        $item->__total = $__total;
-        
-                        return $item;
-                    });
-
-                    $_item->departments = $_data;
-                    return $_item;
-                });
-            }
-
+        if (count($myDepartments) === 0) {
+            return response()->json([
+                'status' => 'success',
+                'workspace' => []
+            ]);
         }
 
-        $allJadwal = Jadwal::all();
+        $workspace = MasterWorkspace::whereHas('departments', function ($q) use ($myDepartments) {
+            $q->whereIn('id_department', $myDepartments);
+        })->with(['departments' => function ($q) use ($myDepartments) {
+            $q->whereIn('id_department', $myDepartments);
+        }])->get();
 
-        return view('system5r.report.management.index', compact('workspace', 'allJadwal'));
+        $workspace = $workspace->map(function ($ws) use ($jadwalId) {
+
+            $ws->departments = $ws->departments->map(function ($dep) use ($jadwalId) {
+
+                $periode = Periode::where('id_jadwal', $jadwalId)->get();
+
+                $periode = $periode->map(function ($p) use ($dep) {
+
+                    $groups = MasterGroup::where('id_department', $dep->id_department)->get();
+
+                    $groups = $groups->map(function ($g) use ($p) {
+
+                        $jawabanGroup = JawabanGroup::where([
+                            'id_group' => $g->id_group,
+                            'id_periode' => $p->id_periode,
+                            'status' => 'approved'
+                        ])->first();
+
+                        if (!$jawabanGroup) return null;
+
+                        $jawaban = Jawaban::where(
+                            'id_jawaban_group',
+                            $jawabanGroup->id_jawaban_group
+                        )->get();
+
+                        $nilaiAkhir = $jawaban->sum('nilai') + 28;
+
+                        return [
+                            'id_group' => $g->id_group,
+                            'nama_group' => $g->nama_group,
+                            'nilaiAkhir' => round($nilaiAkhir, 2),
+                            'encryptedKey' => encrypt(
+                                implode('/', [
+                                    $g->id_department,
+                                    $p->id_jadwal,
+                                    $p->id_periode,
+                                    $g->id_group
+                                ])
+                            )
+                        ];
+                    })->filter()->values();
+
+                    $p->group = $groups;
+                    $p->totalNilai = $groups->sum('nilaiAkhir');
+
+                    return $p;
+                });
+
+                $dep->periode = $periode;
+
+                $valid = $periode->where('totalNilai', '>', 0);
+                $dep->__total = $valid->count()
+                    ? round($valid->sum('totalNilai') / $valid->count(), 2)
+                    : 0;
+
+                return $dep;
+            });
+
+            return $ws;
+        });
+
+        return response()->json([
+            'status' => 'success',
+            'workspace' => $workspace
+        ]);
     }
-    
 
-    public function masterCommitte(){
+    public function masterCommitte()
+    {
         $department = MasterDepartment::where('is_active', 'Y')->get();
         $group = MasterGroup::orderBy('id_department')->get();
         return view('system5r.master-comitte.index', compact('department', 'group'));
@@ -136,9 +130,9 @@ class CommitteeController extends Controller
     public function getDataComittee()
     {
         $dataComittees = DepartmentComittee::orderBy('created_at', 'desc')->get();
-    
+
         $totalDataComittee = [];
-    
+
         foreach ($dataComittees as $dataComittee) {
             $comittes = [
                 'id' => $dataComittee->id,
@@ -148,19 +142,19 @@ class CommitteeController extends Controller
                 'is_active' => $dataComittee->is_active,
                 'committee_utama' => $dataComittee->committee_utama,
             ];
-    
+
             $totalDataComittee[] = $comittes;
         }
-    
-        $response = [   
+
+        $response = [
             'data' => $totalDataComittee,
             'status' => 'success',
             'code' => 200,
         ];
-    
+
         return response()->json($response);
     }
-    
+
 
     public function storeDataComittee(Request $request)
     {
@@ -171,9 +165,9 @@ class CommitteeController extends Controller
             $comitte->nama_committee = $request->nama_committee;
             $comitte->is_active = 'Y';
             $comitte->committee_utama = 'N';
-    
+
             $comitte->save();
-    
+
             return response()->json([
                 'status' => 1,
                 'message' => 'Berhasil menambahkan user comittee'
@@ -201,12 +195,12 @@ class CommitteeController extends Controller
     public function editDataComitte(Request $request)
     {
         $committee = DepartmentComittee::where('id', $request->id)->first();
-    
+
         if ($committee) {
             $committee->id_department = $request->department;
             $committee->nik_committee = $request->nik_committee;
             $committee->nama_committee = $request->nama_committee;
-            $committee->save(); 
+            $committee->save();
 
             return response()->json(['message' => 'Data committee berhasil diupdate', 'status' => 'success']);
         } else {
@@ -214,26 +208,24 @@ class CommitteeController extends Controller
         }
     }
 
-    public function ubahStatusComittee(Request $request){
+    public function ubahStatusComittee(Request $request)
+    {
         $request->validate([
             'id' => 'required|exists:5r_department_committee,id',
             'is_active' => 'required|in:Y,N',
         ]);
-    
+
         $id_comittee = $request->id;
         $newStatus = $request->is_active;
-    
+
         try {
             DB::table('5r_department_committee')
                 ->where('id', $id_comittee)
                 ->update(['is_active' => $newStatus]);
-    
+
             return response()->json(['message' => 'Status berhasil diperbarui'], 200);
         } catch (Exception $e) {
             return response()->json(['message' => 'Terjadi kesalahan saat mengubah status', 'error' => $e->getMessage()], 500);
         }
     }
-    
-    
-
 }
