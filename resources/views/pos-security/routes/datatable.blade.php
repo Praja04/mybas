@@ -3,6 +3,9 @@
     var API_DATATABLE_HISTORY_VENDOR = "{{ route('datatable.pos-security.history.visitor.vendor') }}";
     var API_DATATABLE_HISTORY_KENDARAAN = "{{ route('datatable.pos-security.history.visitor.kendaraan') }}";
 
+    var API_DATATABLE_KENDARAAN_IN = "{{ route('datatable.pos-security.cek-kendaraan.in') }}";
+    var API_DATATABLE_KENDARAAN_OUT = "{{ route('datatable.pos-security.cek-kendaraan.out') }}";
+
     var API_DATATABLE_BLACKLIST_SUPPLIER = "{{ route('datatable.pos-security.blacklist.supplier.pas') }}";
 
     var API_DATATABLE_KARTU_AKTIF = "{{ route('datatable.pos-security.kartu-aktif.index') }}";

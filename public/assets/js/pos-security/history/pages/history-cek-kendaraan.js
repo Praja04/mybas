@@ -11,39 +11,76 @@ export class ContentDatatable {
                     {
                         data: "DT_RowIndex",
                         name: "DT_RowIndex",
+                        orderable: false,
+                        searchable: false,
                     },
                     {
                         data: "nomor_polisi",
                         name: "nomor_polisi",
+                        orderable: true,
+                        searchable: true,
                     },
                     {
-                        data: "nama_supir",
-                        name: "nama_supir",
+                        data: "namavisitor",
+                        name: "namavisitor",
+                        orderable: true,
+                        searchable: true,
                     },
                     {
-                        data: "company",
-                        name: "company",
+                        data: "namacomp",
+                        name: "namacomp",
+                        orderable: true,
+                        searchable: true,
                     },
                     {
-                        data: "nama_petugas",
-                        name: "nama_petugas",
+                        data: "waktu",
+                        name: "waktu",
+                        orderable: false,
+                        searchable: false,
                     },
                     {
-                        data: "waktu_pemeriksaan",
-                        name: "waktu_pemeriksaan",
+                        data: "durasi",
+                        name: "durasi",
+                        orderable: false,
+                        searchable: false,
                     },
                     {
                         data: "jenis",
                         name: "jenis",
+                        orderable: false,
+                        searchable: false,
+                    },
+                    {
+                        data: "status",
+                        name: "status",
+                        orderable: false,
+                        searchable: false,
                     },
                     {
                         data: "action",
                         name: "action",
+                        orderable: false,
+                        searchable: false,
                     },
                 ],
             },
+            // priority column
+            columnDefs: [
+                {
+                    targets: 1, // kolom Nomor Polisi
+                    responsivePriority: 1,
+                },
+                {
+                    targets: -2, // kolom Status
+                    responsivePriority: 2,
+                },
+                {
+                    targets: -1, // kolom Action
+                    responsivePriority: 3,
+                },
+            ],
             dataSend: {},
-            excludeSearchColumns: [0],
+            excludeSearchColumns: [0, 4, 5, 6, 7, 8],
         };
     }
 

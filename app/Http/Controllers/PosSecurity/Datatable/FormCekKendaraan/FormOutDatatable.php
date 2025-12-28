@@ -1,0 +1,110 @@
+<?php
+
+namespace App\Http\Controllers\PosSecurity\Datatable\FormCekKendaraan;
+
+use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
+use Yajra\DataTables\DataTables;
+use Illuminate\Support\Facades\DB;
+use App\Http\Controllers\Controller;
+
+class FormOutDatatable extends Controller
+{
+    public function index(Request $request)
+    {
+        $query = $this->rawData($request);
+        return $this->DrawTable($query);
+    }
+
+    private function rawData($request)
+    {
+        // visitor TRANSACTION
+        $transaction = DB::table('ga_visitor_transaction')
+            ->select([
+                'trnvisitorid',
+                'nopol',
+                'namavisitor',
+                'namacomp',
+                DB::raw("'transaction' as source"),
+                'created_at',
+            ])
+            ->where('keterangan', 'SUPIR');
+
+        // visitor VENDOR
+        $vendor = DB::table('ga_visitor_vendor')
+            ->select([
+                'trnvisitorid',
+                'nopol',
+                'namavisitor',
+                'namacomp',
+                DB::raw("'vendor' as source"),
+                'created_at',
+            ])
+            ->whereNotNull('nopol')
+            ->where('nopol', '!=', '');
+
+        // UNION visitor
+        $visitors = DB::query()->fromSub(
+            $transaction->unionAll($vendor),
+            'v'
+        );
+
+        // LEFT JOIN cek kendaraan
+        return DB::query()
+            ->fromSub($visitors, 'v')
+            ->leftJoin('ga_cek_kendaraan as c', function ($join) {
+                $join->on('c.trnvisitorid', '=', 'v.trnvisitorid');
+            })
+            ->whereNotNull('c.checked_in_at') // sudah cek masuk
+            ->whereNull('c.checked_out_at') // tapi belum cek keluar
+            ->select([
+                'v.trnvisitorid',
+                'v.nopol as nomor_polisi',
+                'v.namavisitor',
+                'v.namacomp',
+                'v.source',
+
+                'c.trncekid',
+                'c.truck_type',
+                'c.muatan_type',
+                'c.checked_in_at',
+                'c.checked_out_at',
+                'c.created_at as cek_created_at',
+            ])
+            ->orderBy('c.checked_in_at', 'DESC')
+            ->limit(300);
+    }
+
+    private function DrawTable($query)
+    {
+        return DataTables::of($query)
+            ->addIndexColumn()
+            ->editColumn('nomor_polisi', function ($item) {
+                return '<strong>' . ($item->nomor_polisi ?: '-') . '</strong>';
+            })
+            ->addColumn('action', function ($item) {
+                return '
+                    <button 
+                        type="button"
+                        class="btn btn-sm btn-primary"
+                        onclick="openFormOut(
+                            \'' . $item->trncekid . '\',
+                            \'' . e($item->nomor_polisi) . '\',
+                            \'' . e($item->namavisitor) . '\',
+                            \'' . e($item->namacomp) . '\',
+                            \'' . e($item->muatan_type) . '\',
+                            \'' . e($item->truck_type) . '\',
+                            \'' . e($item->truck_type_other ?? null) . '\',
+                            \'' . e($item->checked_in_at) . '\',
+                        )">
+                            Lakukan Cek Keluar
+                    </button>
+                ';
+            })
+            ->addColumn('status', function ($item) {
+                return '<span class="badge bg-warning">Belum Cek Keluar</span>';
+            })
+            ->rawColumns(['nomor_polisi', 'action', 'status'])
+            ->make(true);
+    }
+}

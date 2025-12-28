@@ -54,7 +54,7 @@
                             </div>
 
                             <div class="mb-3" id="purposeGroup" style="display: none;">
-                                <label class="form-label fw-semibold">Tujuan </label>
+                                <label class="form-label fw-semibold">Tujuan <span class="text-danger">*</span></label>
                                 <select class="form-select" name="purpose" id="purposeSelect" required>
                                     <option value="" disabled selected>-- Pilih Tujuan --</option>
                                     <option value="BONGKAR">BONGKAR</option>
@@ -63,7 +63,8 @@
                             </div>
 
                             <div class="mb-3" id="nopolGroup" style="display: none;">
-                                <label class="form-label fw-semibold">Nomor Polisi </label>
+                                <label class="form-label fw-semibold">Nomor Polisi <span
+                                        class="text-danger">*</span></label>
                                 <input type="text" class="form-control" name="nopol" id="nopolInput"
                                     placeholder="Contoh: B 1234 CD">
                             </div>
@@ -113,7 +114,7 @@
                                         class="text-danger">*</span></label>
                                 <input type="text" class="form-control" name="rfid" required
                                     placeholder="Scan atau masukkan nomor kartu RFID">
-                                <small class="text-muted d-block mt-1">
+                                <small id="rfidHint" class="text-muted d-block mt-1">
                                     <i class="mdi mdi-information-outline"></i>
                                     Mohon lengkapi semua data pengunjung terlebih dahulu sebelum scan atau input nomor
                                     kartu RFID.

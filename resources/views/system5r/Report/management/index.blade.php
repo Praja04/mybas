@@ -7,6 +7,7 @@
         table p {
             margin-bottom: 0 !important
         }
+
         table td {
             padding-top: 2px !important;
             padding-bottom: 2px !important;
@@ -15,422 +16,360 @@
 @endpush
 
 @section('content')
+    <div class="container-fluid">
 
-<div class="container-fluid">
-    <div class="card">
-        <div class="card-body">
-            <h3>Report 5R For Management</h3>
-            <div class="mt-3">
-                <form action="">
-                    <div class="row">
-                        <div class="col-md-3">
-                            <div class="form-group mb-2">
-                                <label for="filter_jadwal">JADWAL</label>
-                                <select name="filter_jadwal" id="filter_jadwal" class="form-control">
-                                    <option value="---">PILIH JADWAL</option>
-                                    @foreach ($allJadwal as $_jadwal)
-                                    <option @if(isset($_GET['filter_jadwal']) && $_GET['filter_jadwal'] == $_jadwal->id_jadwal) selected @endif value="{{ $_jadwal->id_jadwal }}">{{ $_jadwal->tahun }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                    <button class="btn btn-primary waves-effect waves-light">
-                        LIHAT LAPORAN
-                    </button>
-                </form>
+        {{-- HEADER --}}
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h3 class="mb-0">Report 5R Management</h3>
+                <small class="text-muted">
+                    Ringkas • Rapi • Resik • Rawat • Rajin
+                </small>
             </div>
-            @if(isset($_GET['filter_jadwal']) && $_GET['filter_jadwal'] != '---')
-            <hr />
-            @if($workspace == null)
-            <div class="alert alert-warning">
-                <strong>Woops!</strong> Maaf anda belum terdaftar sebagai comittee dari department manapun.
-            </div>
-            @else
-            @foreach ($workspace as $item)
-                <div class="card shadow-none border">
-                    <div class="card-body">
-                        <h3>{{ $item->name }}</h3>
-                        @php $data = $item->departments @endphp
-                        <div class="mt-3">
-                            <div class="row">
-                                <div class="col-md-6">
-                                    {{-- <table class="table align-middle table-bordered" id="table-summary-penilaian">
-                                        <thead>
-                                            <tr class="pas-background-color" style="border-color: #000">
-                                                <th class="text-white">DEPT</th>
-                                                <th class="text-white">PERIODE</th>
-                                                <th class="text-white">JURI</th>
-                                                <th class="text-white">NILAI</th>
-                                                <th class="text-white">TOTAL</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            @foreach ($data->sortByDesc('__total') as $department)
-                                                <tr>
-                                                    <td>{{ $department->id_department }}</td>
-                                                    <td>{{ $department->periode[0]->nama_periode }}</td>
-                                                    <td>
-                                                        @if(count($department->periode[0]->juri) > 0)
-                                                        @foreach($department->periode[0]->juri as $_juri)<span>{{ $_juri }}@if(!$loop->last), @endif</span>@endforeach
-                                                        @else-@endif
-                                                    </td>
-                                                    <td>{{ $department->periode[0]->totalNilai }}</td>
-                                                    <td>{{ round($department->__total, 1) }}</td>
-                                                </tr>
-                                                @foreach ($department->periode as $periode)
-                                                    @if($loop->iteration > 1)
-                                                    <tr>
-                                                        <td style="color: white">{{ $department->id_department }}</td>
-                                                        <td>{{ $periode->nama_periode }}</td>
-                                                        <td>
-                                                            @if(count($periode->juri) > 0)
-                                                            @foreach($periode->juri as $_juri)<span>{{ $_juri }}@if(!$loop->last), @endif</span>@endforeach
-                                                            @else-@endif
-                                                        </td>
-                                                        <td>{{ round($periode->totalNilai, 1) }}</td>
-                                                        <td style="color: white">{{ round($department->__total, 1) }}</td>
-                                                    </tr>
-                                                    @endif
-                                                @endforeach
-                                            @endforeach
-                                        </tbody>
-                                    </table> --}}
-                                    <table class="table align-middle table-bordered" id="table-summary-penilaian">
-                                        <thead>
-                                            <tr class="pas-background-color" style="border-color: #000">
-                                                <th class="text-white">DEPT</th>
-                                                <th class="text-white">PERIODE</th>
-                                                <th class="text-white">JURI</th>
-                                                <th class="text-white">NILAI</th>
-                                                <th class="text-white">TOTAL</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            @foreach ($data->sortByDesc('__total') as $department)
-                                                <tr>
-                                                    <td>{{ $department->id_department }}</td>
-                                                    <td>{{ $department->periode[0]->nama_periode }}</td>
-                                                    <td>
-                                                        @if(count($department->periode[0]->juri) > 0)
-                                                            @foreach($department->periode[0]->juri as $_juri)
-                                                                <span>{{ $_juri }}@if(!$loop->last), @endif</span>
-                                                            @endforeach
-                                                        @else
-                                                            -
-                                                        @endif
-                                                    </td>
-                                                    <td>{{ round($department->periode[0]->totalNilai, 1) }}</td>
-                                                    <td>{{ round($department->__total, 1) }}</td>
-                                                </tr>
-                                                @foreach ($department->periode as $periode)
-                                                    @if($loop->iteration > 1)
-                                                        <tr>
-                                                            <td style="color: white">{{ $department->id_department }}</td>
-                                                            <td>{{ $periode->nama_periode }}</td>
-                                                            <td>
-                                                                @if(count($periode->juri) > 0)
-                                                                    @foreach($periode->juri as $_juri)
-                                                                        <span>{{ $_juri }}@if(!$loop->last), @endif</span>
-                                                                    @endforeach
-                                                                @else
-                                                                    -
-                                                                @endif
-                                                            </td>
-                                                            <td>{{ round($periode->totalNilai, 1) }}</td>
-                                                            <td style="color: white">{{ round($department->__total, 1) }}</td>
-                                                        </tr>
-                                                    @endif
-                                                @endforeach
-                                            @endforeach
-                                        </tbody>
-                                    </table>
 
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="row">
-                                        <div class="col-2">
-                                            <div class="nav nav-pills flex-column nav-pills-tab custom-verti-nav-pills text-center" style="margin-top: 40px" role="tablist" aria-orientation="vertical">
-                                                @foreach ($data->sortByDesc('__total') as $department)
-                                                <a class="nav-link @if($loop->iteration == 1) active show @endif" style="margin-top: 8.6px" id="custom-v-pills-{{ $department->id_department }}-tab" data-bs-toggle="pill" href="#custom-v-pills-{{ $department->id_department }}" role="tab" aria-controls="custom-v-pills-{{ $department->id_department }}" aria-selected="true">
-                                                    {{ $department->id_department }}
-                                                </a>
-                                                @endforeach
-                                            </div>
-                                        </div>
-                                        <div class="col-10">
-                                            <div class="tab-content text-muted">
-                                                @foreach ($data->sortByDesc('__total') as $department)
-                                                <div class="tab-pane fade @if($loop->iteration == 1) active show @endif" id="custom-v-pills-{{ $department->id_department }}" role="tabpanel" aria-labelledby="custom-v-pills-{{ $department->id_department }}-tab">
-                                                    <div class="row">
-                                                      
-                                                        @foreach ($department->periode as $periode)
-                                                            <div class="col-md-12">
-                                                                <table class="table align-middle">
-                                                                    <thead>
-                                                                        <tr class="pas-background-color">
-                                                                            <th class="text-white" colspan="2">{{ $periode->nama_periode }}</th>
-                                                                            <th class="text-white">
-                                                                                <strong>{{ $periode->totalNilai }}</strong>
-                                                                            </th>
-                                                                        </tr>
-                                                                    </thead>
-                                                                    <tbody>
-                                                                        @foreach ($periode->group as $group)
-                                                                            <tr>
-                                                                                <td>
-                                                                                    <div class="d-flex justify-content-between">
-                                                                                        <a href="javascript:;" onClick="getDetail('{{ $periode->id_periode }}', '{{ $group->id_group }}')">
-                                                                                            <div>{{ $group->nama_group }} <i class="mdi mdi-open-in-new"></i></div>
-                                                                                            <div style="margin-top: -5px"><small>Click For Detail</small></div>
-                                                                                        </a>
-                                                                                        <div>
-                                                                                            <a target="_blank" href="{{ url('5r-system/report/download') . '/' . encrypt($department->id_department . '/' . $_GET['filter_jadwal'] . '/' . $periode->id_periode . '/' . $group->id_group) }}" data-bs-toggle="tooltip" title="Print hasil penilaian" type="button" class="btn p-0 btn-sm waves-effect waves-light shadow-none">
-                                                                                                <i class="mdi mdi-printer mdi-24px"></i>
-                                                                                            </a>
-                                                                                        </div>
-                                                                                    </div>
-                                                                                </td>
-                                                                                <td>{{ $group->persentase }}%</td>
-                                                                                <td>{{ $group->totalNilai / ($group->persentase / 100) }}</td>
-                                                                            </tr>
-                                                                        @endforeach
-                                                                    </tbody>
-                                                                </table>
-                                                            </div>
-                                                        @endforeach
-                                                    </div>
-                                                </div>
-                                                @endforeach
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+            <div style="width: 220px">
+                <label class="form-label mb-0">Jadwal Penilaian</label>
+                <select id="filter_jadwal" class="form-control form-control-sm">
+                    @foreach ($allJadwal as $jadwal)
+                        <option value="{{ $jadwal->id_jadwal }}"
+                            {{ $jadwal->id_jadwal == $latestJadwal->id_jadwal ? 'selected' : '' }}>
+                            {{ $jadwal->tahun }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+        </div>
+
+        <div id="report-container"></div>
+
+    </div>
+
+    {{-- MODAL DETAIL (TETAP DIPAKAI) --}}
+    <div class="modal fade" id="detailModal" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">DETAIL PENILAIAN</h5>
+                    <button class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-            @endforeach
-            @endif
-            @endif
-        </div>
-    </div>
-</div>
-
-<!-- Modal -->
-<div class="modal fade" id="detailModal" tabindex="-1" role="dialog" aria-labelledby="detailModalId" aria-hidden="true">
-    <div class="modal-dialog modal-lg" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">DETAIL PENILAIAN</h5>
-                <button type="button" class="btn btn-close" data-bs-dismiss="modal" aria-label="Close">
-                </button>
-            </div>
-            <div class="modal-body">
-                <table id="table-detail" class="table table-striped">
-                    <thead>
-                        <tr class="pas-background-color">
-                            <th class="text-white px-1" style="border-width: 1px solid #fff">GROUP</th>
-                            <th class="text-white">PERTANYAAN</th>
-                            <th class="text-white">NILAI</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
+                <div class="modal-body">
+                    <table class="table table-striped" id="table-detail">
+                        <thead>
+                            <tr class="pas-background-color">
+                                <th class="text-white">GROUP</th>
+                                <th class="text-white">PERTANYAAN</th>
+                                <th class="text-white">NILAI</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
-</div>
 
 
 @endsection
 
 @push('scripts')
+    <script>
+        $(document).ready(function() {
+            loadReport($('#filter_jadwal').val());
 
-<script>
-    $('#table-summary-penilaian').DataTable({
-        dom: 'Bfrtip',
-        buttons: [
-            {
-                extend: 'excelHtml5',
-                text: 'Export to Excel',
-                className: 'btn btn-success waves-effect waves-light',
-                exportOptions: {
-                    columns: [0, 1, 2, 3, 4]
-                },
-                customize: function (xlsx) {
-                    var sheet = xlsx.xl.worksheets['sheet1.xml'];
-                    $('row:first c', sheet).attr('s', '42');
-                }
-            }
-        ],
-        "paging": false,
-        "ordering": false,
-        "info": false,
-        "searching": false,
-        // "columnDefs": [
-        //     { "width": "10%", "targets": 0 },
-        //     { "width": "10%", "targets": 1 },
-        //     { "width": "10%", "targets": 2 },
-        //     { "width": "10%", "targets": 3 },
-        //     { "width": "10%", "targets": 4 },
-        // ]
-    });
+            $('#filter_jadwal').change(function() {
+                loadReport($(this).val());
+            });
 
-    // function getDetail(idPeriode, idGroup)
-    // {
-    //     var colors = ['#264653', '#2a9d8f', 'e9c46a', '#f4a261', '#e76f51'];
-    //     var textColors = ['#fff', '#fff', '#000', '#000', '#000'];
+            function loadReport(jadwalId) {
+                $('#report-container').html('<div class="text-center p-5">Loading...</div>');
 
-    //     $.ajax({
-    //         url: "{{ route('5r-system.report.detail') }}",
-    //         type: 'POST',
-    //         data: {
-    //             id_periode: idPeriode,
-    //             id_group: idGroup
-    //         },
-    //         success: function(response) {
-    //             if(response.status == 'success') {
-    //                 $('#table-detail tbody').html('')
-    //                 var noParent = 1;
-    //                 console.log(response.data)
-    //                 Object.values(response.data).forEach(function(item) {
-    //                     var no = 1;
+                $.post("{{ route('5r-system.report.management.data') }}", {
+                    _token: "{{ csrf_token() }}",
+                    jadwal_id: jadwalId
+                }, function(res) {
 
-    //                     item.forEach(function(jawaban) {
-    //                         console.log(item, jawaban)
+                    if (res.status !== 'success') return;
 
-    //                         var firtColumn = '';
+                    let html = '';
 
-    //                         if(no == 1) {
-    //                             firtColumn = `<td class="p-0" style="vertical-align: middle; font-size: 10px; font-weight: bold; text-align: center; background-color: ${colors[noParent-1]}; color: ${textColors[noParent-1]}" rowspan="${item.length}">${jawaban.pertanyaan.jenis}</td>`
-    //                         }
+                    if (res.workspace.length === 0) {
+                        $('#report-container').html(
+                            '<div class="alert alert-warning">Data tidak ditemukan</div>');
+                        return;
+                    }
 
-    //                         if(jawaban.foto != null) {
-    //                             var foto = '';
-    //                             var fotoNameArray = jawaban.foto.split(',');
-    //                             fotoNameArray.forEach(function(fotoName) {
-    //                                 foto += `
-    //                                     <div class="d-flex mb-1">
-    //                                         <img src="{{ asset('images/5r') }}/${fotoName}" alt="Foto" style="width: 300px" />
-    //                                     </div>`
-    //                             })
-    //                         }else{
-    //                             var foto = `<i class="text-muted">No Foto</i>`
-    //                         }
+                    res.workspace.forEach(ws => {
 
-    //                         $('#table-detail tbody').append(`
-    //                             <tr>
-    //                                 ${firtColumn}
-    //                                 <td>
-    //                                     <div style="width: 300px">
-    //                                         <h6>ITEM PERIKSA</h6>
-    //                                         ${jawaban.pertanyaan.item_periksa}
-    //                                         <h6 class="mt-3">KETERANGAN</h6>
-    //                                         ${jawaban.pertanyaan.keterangan}
-    //                                     </div>
-    //                                 </td>
-    //                                 <td>
-    //                                     <h6>NILAI <span title="Wajib diisi" class="text-danger">*</span></h6>
-    //                                     <input style="width: 100px" class="form-control" disabled value="${jawaban.nilai}" />
-    //                                     <div class="mt-3">
-    //                                         <h6>FOTO</h6>
-    //                                         ${foto}
-    //                                     </div>
-    //                                     <div class="mt-3 rounded bg-light p-1">
-    //                                         <h6>KETERANGAN</h6>
-    //                                         <p>${jawaban.keterangan}</p>
-    //                                     </div>
-    //                                 </td>
-    //                             </tr>
-    //                         `)
-
-    //                         no++;
-    //                     })
-
-    //                     noParent++;
-    //                 })
-
-    //                 $('#detailModal').modal('show')
-    //             }else{
-    //                 Swal.fire({
-    //                     title: 'Woops!',
-    //                     text: response.message,
-    //                     icon: 'error',
-    //                     confirmButtonText: 'OK'
-    //                 })
-    //             }
-    //         }
-    //     });
-    // }
-    function getDetail(idPeriode, idGroup) {
-    $.ajax({
-        url: "{{ route('5r-system.report.detail') }}",
-        type: 'POST',
-        data: {
-            id_periode: idPeriode,
-            id_group: idGroup
-        },
-        success: function(response) {
-            if (response.status == 'success') {
-                $('#table-detail tbody').html('');
-                var noParent = 1;
-                Object.values(response.data).forEach(function(item) {
-                    var no = 1;
-                    item.forEach(function(jawaban) {
-                        var foto = '';
-                        if (jawaban.foto != null) {
-                            var fotoNameArray = jawaban.foto.split(',');
-                            fotoNameArray.forEach(function(fotoName) {
-                                foto += `
-                                    <div class="d-flex mb-1">
-                                        <img src="{{ asset('images/5r') }}/${fotoName}" alt="Foto" style="width: 300px" />
-                                    </div>`;
-                            });
-                        } else {
-                            foto = `<i class="text-muted">No Foto</i>`;
-                        }
-                        $('#table-detail tbody').append(`
-                            <tr>
-                                <td>${jawaban.pertanyaan.jenis}</td>
-                                <td>
-                                    <div style="width: 300px">
-                                        <h6>ITEM PERIKSA</h6>
-                                        ${jawaban.pertanyaan.item_periksa}
-                                        <h6 class="mt-3">KETERANGAN</h6>
-                                        ${jawaban.pertanyaan.keterangan}
-                                    </div>
-                                </td>
-                                <td>
-                                    <h6>NILAI</h6>
-                                    <input style="width: 100px" class="form-control" disabled value="${jawaban.nilai}" />
-                                    <div class="mt-3">
-                                        <h6>FOTO</h6>
-                                        ${foto}
-                                    </div>
-                                    <div class="mt-3 rounded bg-light p-1">
-                                        <h6>KETERANGAN</h6>
-                                        <p>${jawaban.keterangan}</p>
-                                    </div>
-                                </td>
-                            </tr>
-                        `);
-                        no++;
+                        html += `
+                        <div class="card shadow-sm mb-4">
+                            <div class="card-body">
+                                <h4 class="mb-3 fw-bold">${ws.name}</h4>
+                                ${buildTable(ws.departments)}
+                            </div>
+                        </div>`;
                     });
-                    noParent++;
-                });
-                $('#detailModal').modal('show');
-            } else {
-                Swal.fire({
-                    title: 'Woops!',
-                    text: response.message,
-                    icon: 'error',
-                    confirmButtonText: 'OK'
+
+                    $('#report-container').html(html);
                 });
             }
-        }
-    });
-}
-</script>
 
+            // Render TABLE
+            function buildTable(departments) {
+
+                // Kumpulkan data per periode
+                let periodeMap = {};
+
+                departments.forEach(dep => {
+                    if (!dep.periode) return;
+
+                    dep.periode.forEach(p => {
+
+                        if (!periodeMap[p.nama_periode]) {
+                            periodeMap[p.nama_periode] = [];
+                        }
+
+                        periodeMap[p.nama_periode].push({
+                            department: dep.id_department,
+                            __total: dep.__total,
+                            group: p.group || [],
+                            id_periode: p.id_periode,
+                            juri: p.juri || []
+                        });
+                    });
+                });
+
+                let html = '';
+
+                // Render per PERIODE
+                Object.keys(periodeMap).forEach(namaPeriode => {
+
+                    let rank = 1;
+
+                    // sort ranking dalam 1 tahap
+                    periodeMap[namaPeriode].sort((a, b) => b.__total - a.__total);
+
+                    let rows = '';
+
+                    periodeMap[namaPeriode].forEach(item => {
+                        const totalGroup = item.group.length;
+                        const presentase = totalGroup * 100;
+
+                        if (item.group.length === 0) {
+                            rows += `
+                                <tr>
+                                    <td class="text-center">${rank}</td>
+                                    <td>${item.department}</td>
+                                    <td class="text-muted">-</td>
+                                    <td class="text-muted">-</td>
+                                    <td class="text-muted">-</td>
+                                    <td>
+                                        <span class="badge badge-soft-warning">
+                                            Belum Dinilai
+                                        </span>
+                                    </td>
+                                    <td class="text-center">-</td>
+                                </tr>
+                            `;
+                            rank++;
+                            return;
+                        }
+
+                        item.group.forEach((g, i) => {
+
+                            let printUrl = "{{ route('5r-system.report.print', '') }}/" + g
+                                .encryptedKey;
+
+                            rows += `
+                                <tr>
+                                    <td class="text-center">${i === 0 ? rank : ''}</td>
+                                    <td>${i === 0 ? item.department : ''}</td>
+                                    <td>${item.juri.length ? item.juri.join(', ') : '-'}</td>
+                                    <td>${g.nama_group}</td>
+                                    <td>${i === 0 ? presentase + '%' : ''}</td>   
+                                    <td>${g.nilaiAkhir.toFixed(1)}</td>
+                                    <td class="text-center">
+                                        <div class="d-flex gap-1 justify-content-center">
+                                            <button class="btn btn-sm btn-outline-info"
+                                                onclick="getDetail('${item.id_periode}','${g.id_group}')">
+                                                <i class="mdi mdi-eye"></i>
+                                            </button>
+                                            <a href="${printUrl}" target="_blank"
+                                            class="btn btn-sm btn-outline-primary">
+                                                <i class="mdi mdi-printer"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            `;
+                        });
+
+                        rank++;
+                    });
+
+                    html += `
+                        <div class="mb-4">
+                            <h5 class="fw-medium text-primary mb-2">
+                                Periode ${namaPeriode}
+                            </h5>
+                            <table class="table table-hover align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th width="5%">#</th>
+                                        <th>Department</th>
+                                        <th>Juri</th>
+                                        <th>Group</th>
+                                        <th>Presentase</th>
+                                        <th>Nilai Akhir</th>
+                                        <th class="text-center">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody>${rows}</tbody>
+                            </table>
+                        </div>
+                    `;
+                });
+
+                return html;
+            }
+        });
+
+        function getDetail(idPeriode, idGroup) {
+            $.ajax({
+                url: "{{ route('5r-system.report.detail') }}",
+                type: 'POST',
+                data: {
+                    id_periode: idPeriode,
+                    id_group: idGroup
+                },
+                success: function(response) {
+                    if (response.status == 'success') {
+                        $('#table-detail tbody').html('');
+                        var noParent = 1;
+                        Object.values(response.data).forEach(function(item) {
+                            var no = 1;
+                            item.forEach(function(jawaban) {
+                                var foto = '';
+                                if (jawaban.foto != null) {
+                                    var fotoNameArray = jawaban.foto.split(',');
+
+                                    // Ambil informasi area dari temuan jika ada
+                                    var temuanAreas = [];
+                                    if (jawaban.temuan && jawaban.temuan.length >
+                                        0) {
+                                        jawaban.temuan.forEach(function(temuan) {
+                                            if (temuan.area && temuan
+                                                .foto) {
+                                                temuanAreas.push({
+                                                    foto: temuan
+                                                        .foto,
+                                                    area: temuan
+                                                        .area
+                                                        .nama_area,
+                                                    deskripsi: temuan
+                                                        .deskripsi
+                                                });
+                                            }
+                                        });
+                                    }
+
+                                    fotoNameArray.forEach(function(fotoName,
+                                        index) {
+                                        var fotoPath = '';
+                                        var areaLabel = '';
+                                        var deskripsiLabel = '';
+
+                                        // Cari apakah foto ini ada di temuan
+                                        var temuanMatch = temuanAreas.find(
+                                            t => t
+                                            .foto === fotoName);
+
+                                        if (temuanMatch) {
+                                            // Foto dari temuan - gunakan path temuan
+                                            fotoPath =
+                                                "{{ asset('images/5r/temuan/') }}/" +
+                                                fotoName;
+                                            areaLabel = `
+                                            <div class="badge bg-primary mb-1" style="font-size: 11px;">
+                                                <i class="mdi mdi-map-marker"></i> Area: ${temuanMatch.area}
+                                            </div>
+                                        `;
+
+                                            if (temuanMatch.deskripsi) {
+                                                deskripsiLabel = `
+                                                <div class="alert alert-light p-2 mt-1" style="font-size: 11px;">
+                                                    <strong>Deskripsi:</strong><br>
+                                                    ${temuanMatch.deskripsi}
+                                                </div>
+                                            `;
+                                            }
+                                        } else {
+                                            // Foto upload langsung - gunakan path biasa
+                                            fotoPath =
+                                                "{{ asset('images/5r/') }}/" +
+                                                fotoName;
+                                            areaLabel = `
+                                            <div class="badge bg-secondary mb-1" style="font-size: 11px;">
+                                                <i class="mdi mdi-image"></i> Foto Upload Langsung
+                                            </div>
+                                        `;
+                                        }
+
+                                        foto += `
+                                        <div class="mb-2 p-2 border rounded" style="background-color: #f8f9fa;">
+                                            ${areaLabel}
+                                            <div class="d-flex mb-1">
+                                                <img src="${fotoPath}" 
+                                                    alt="Foto ${index + 1}" 
+                                                    style="width: 100%; max-width: 300px; cursor: pointer; border-radius: 4px;" 
+                                                    onclick="showImageModal('${fotoPath}')" />
+                                            </div>
+                                            ${deskripsiLabel}
+                                        </div>
+                                    `;
+                                    });
+                                } else {
+                                    foto = `<i class="text-muted">No Foto</i>`;
+                                }
+                                $('#table-detail tbody').append(`
+                                <tr>
+                                    <td>${jawaban.pertanyaan.jenis}</td>
+                                    <td>
+                                        <div style="width: 300px">
+                                            <h6>ITEM PERIKSA</h6>
+                                            ${jawaban.pertanyaan.item_periksa}
+                                            <h6 class="mt-3">KETERANGAN</h6>
+                                            ${jawaban.pertanyaan.keterangan}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <h6>NILAI</h6>
+                                        <input style="width: 100px" class="form-control" disabled value="${jawaban.nilai}" />
+                                        <div class="mt-3">
+                                            <h6>FOTO</h6>
+                                            ${foto}
+                                        </div>
+                                        <div class="mt-3 rounded bg-light p-1">
+                                            <h6>KETERANGAN</h6>
+                                            <p>${jawaban.keterangan}</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            `);
+                                no++;
+                            });
+                            noParent++;
+                        });
+                        $('#detailModal').modal('show');
+                    } else {
+                        Swal.fire({
+                            title: 'Woops!',
+                            text: response.message,
+                            icon: 'error',
+                            confirmButtonText: 'OK'
+                        });
+                    }
+                }
+            });
+        }
+    </script>
 @endpush

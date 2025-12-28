@@ -6,7 +6,10 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('5r-system')->group(function () {
     Route::group(['middleware' => ['auth', 'access_log', 'rules']], function () {
         // Dashboard
-        Route::get('/', 'System5R\DashboardController@index')->name('5r-system.dashboard');
+        Route::get('/dashboard', 'System5R\DashboardController@index')->name('5r-system.dashboard');
+        Route::get('/dashboard/data-widget', 'System5R\DashboardController@getDataWidget')->name('5r-system.dashboard.data-widget');
+        Route::get('/dashboard/data-periode', 'System5R\DashboardController@getDataPeriodeByWorkspace')->name('5r-system.dashboard.data-periode');
+        Route::get('/dashboard/rank-periode', 'System5R\DashboardController@getDataRankPeriodeByWorkspace')->name('5r-system.dashboard.rank-periode-workspace');
 
         // Master Group
         Route::get('/master-group', 'System5R\MasterGroupController@index')->name('5r-system.master-group');
@@ -49,8 +52,12 @@ Route::prefix('5r-system')->group(function () {
         Route::get('/penilaian/{id_group?}', 'System5R\PenilaianController@index')->name('5r-system.penilaian');
 
         Route::get('/report/management', 'System5R\Report\ManagementController@index')->name('5r-system.report.management');
+        Route::post('/report/management/data', 'System5R\Report\ManagementController@getReport')->name('5r-system.report.management.data');
+        // Route::get('/report/management', 'System5R\Report\ManagementController@viewCommitteReport')->name('5r-system.report.management');
         Route::get('/report/committee', 'System5R\Report\CommitteeController@index')->name('5r-system.report.comittee');
+        Route::post('/report/committee/data', 'System5R\Report\CommitteeController@data')->name('5r-system.report.committee.data');
         Route::post('report/detail', 'System5R\Report\ManagementController@detail')->name('5r-system.report.detail');
+        Route::get('report/download/{encryptedInfo}', 'System5R\Report\ManagementController@download')->name('5r-system.report.print');
 
         // page master committee
         Route::get('/report/master-committee', 'System5R\Report\CommitteeController@masterCommitte')->name('5r-system.master-committee');
@@ -133,11 +140,19 @@ Route::prefix('5r-system')->group(function () {
 
         Route::post('do-submit', 'System5R\PenilaianController@doSubmit')->name('5r-system.do-submit');
 
+        Route::post('save-temuan', 'System5R\PenilaianController@saveTemuan')->name('5r-system.save-temuan');
+        Route::get('get-list-temuan', 'System5R\PenilaianController@getListTemuan')->name('5r-system.get-list-temuan');
+        Route::delete('delete-temuan', 'System5R\PenilaianController@deleteTemuan')->name('5r-system.delete-temuan');
+
+        Route::post('save-draft', 'System5R\PenilaianController@saveDraft')->name('5r-system.save-draft');
+        Route::get('load-draft', 'System5R\PenilaianController@loadDraft')->name('5r-system.load-draft');
+        Route::delete('delete-draft', 'System5R\PenilaianController@deleteDraft')->name('5r-system.delete-draft');
+
         Route::get('validate-credentials-comittee/{id_group}', 'System5R\PenilaianController@validateCredentials')->name('5r-system.validate-comittee');
 
         Route::get('get-periode-by-id-jadwal/{id_jadwal}', 'System5R\PenilaianController@getPeriode');
 
-        Route::get('report/download/{encryptedInfo}', 'System5R\Report\ManagementController@download');
+
         Route::post('/schedule-juri/create-group-juri', 'System5R\ScheduleJuriController@createGroupJuri');
         Route::post('/schedule-juri/add-jadwal', 'System5R\ScheduleJuriController@addJadwal');
         Route::post('/schedule-juri/add-periode', 'System5R\ScheduleJuriController@addPeriode');
