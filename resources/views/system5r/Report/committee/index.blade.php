@@ -303,29 +303,37 @@
                                             `;
                                             }
                                         } else {
-                                            // Foto upload langsung - gunakan path biasa
+                                            // Foto upload langsung - coba dari server internal
+                                            // Prioritas: 10.11.10.130 dulu, kalau gagal fallback ke 172.21.5.105
                                             fotoPath =
-                                                "{{ asset('images/5r/') }}/" +
-                                                fotoName;
+                                                `http://172.21.5.105/images/5r/${fotoName}`;
+
                                             areaLabel = `
-                                            <div class="badge bg-secondary mb-1" style="font-size: 11px;">
-                                                <i class="mdi mdi-image"></i> Foto Upload Langsung
-                                            </div>
-                                        `;
+                                                <div class="badge bg-info mb-1" style="font-size: 11px;">
+                                                    <i class="mdi mdi-server"></i> Foto dari Server Internal
+                                                </div>
+                                            `;
+
+                                            // Deskripsi kosong karena bukan temuan
+                                            deskripsiLabel = '';
                                         }
 
+                                        var fallbackPath =
+                                            `http://10.11.10.130/images/5r/${fotoName}`;
+
                                         foto += `
-                                        <div class="mb-2 p-2 border rounded" style="background-color: #f8f9fa;">
-                                            ${areaLabel}
-                                            <div class="d-flex mb-1">
-                                                <img src="${fotoPath}" 
-                                                    alt="Foto ${index + 1}" 
-                                                    style="width: 100%; max-width: 300px; cursor: pointer; border-radius: 4px;" 
-                                                    onclick="showImageModal('${fotoPath}')" />
+                                            <div class="mb-2 p-2 border rounded" style="background-color: #f8f9fa;">
+                                                ${areaLabel}
+                                                <div class="d-flex mb-1 justify-content-center">
+                                                    <img src="${fotoPath}" 
+                                                        alt="Foto ${index + 1}" 
+                                                        style="width: 100%; max-width: 300px; cursor: pointer; border-radius: 4px; border: 1px solid #ddd;"
+                                                        onclick="showImageModal('${fotoPath}')"
+                                                        onerror="this.onerror=null; this.src='${fallbackPath}'; this.onclick=function(){ showImageModal('${fallbackPath}'); }" />
+                                                </div>
+                                                ${deskripsiLabel}
                                             </div>
-                                            ${deskripsiLabel}
-                                        </div>
-                                    `;
+                                        `;
                                     });
                                 } else {
                                     foto = `<i class="text-muted">No Foto</i>`;
