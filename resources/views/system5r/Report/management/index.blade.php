@@ -306,23 +306,33 @@
                                                 `;
                                             }
                                         } else {
-                                            // Foto upload langsung - coba dari server internal
-                                            // Prioritas: 10.11.10.130 dulu, kalau gagal fallback ke 172.21.5.105
+                                            // Ubah prioritas: coba 10.11.10.130 dulu (karena di prod ini yang accessible)
                                             fotoPath =
+                                                `http://10.11.10.130/images/5r/${fotoName}`;
+
+                                            // Fallback ke 172.21.5.105 kalau gagal (untuk compatibility lama)
+                                            var fallbackPath =
                                                 `http://172.21.5.105/images/5r/${fotoName}`;
 
                                             areaLabel = `
-                                                <div class="badge bg-info mb-1" style="font-size: 11px;">
-                                                    <i class="mdi mdi-server"></i> Foto dari Server Internal
+                                                <div class="badge bg-success mb-1" style="font-size: 11px;">
+                                                    <i class="mdi mdi-server"></i> Foto dari Server Utama
                                                 </div>
                                             `;
 
-                                            // Deskripsi kosong karena bukan temuan
-                                            deskripsiLabel = '';
                                         }
 
-                                        var fallbackPath =
-                                            `http://10.11.10.130/images/5r/${fotoName}`;
+                                        // var fallbackPath =
+                                        //     `http://10.11.10.130/images/5r/${fotoName}`;
+                                        onerror = "this.onerror=null; 
+                                        this.src = '${fallbackPath}';
+                                        this.onclick = function() {
+                                            showImageModal('${fallbackPath}');
+                                        };
+                                        this.parentElement.previousElementSibling
+                                            .innerHTML =
+                                            '<div class=\"badge bg-warning mb-1\" style=\"font-size: 11px;\"><i class=\"mdi mdi-alert\"></i> Loaded from Backup Server</div>';
+                                        ";
 
                                         foto += `
                                             <div class="mb-2 p-2 border rounded" style="background-color: #f8f9fa;">
