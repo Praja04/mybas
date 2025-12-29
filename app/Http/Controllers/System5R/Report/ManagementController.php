@@ -134,6 +134,33 @@ class ManagementController extends Controller
         ]);
     }
 
+    public function proxyImage($filename)
+    {
+        try {
+            $remoteUrl = 'http://172.21.5.105/images/5r/' . $filename;
+
+            // Ambil gambar dari server remote
+            $imageContent = @file_get_contents($remoteUrl);
+
+            if ($imageContent === false) {
+                // Jika gagal, return placeholder atau 404
+                abort(404, 'Image not found on remote server');
+            }
+
+            // Deteksi mime type
+            $finfo = new \finfo(FILEINFO_MIME_TYPE);
+            $mimeType = $finfo->buffer($imageContent);
+
+            // Return image dengan header yang sesuai
+            return response($imageContent)
+                ->header('Content-Type', $mimeType)
+                ->header('Cache-Control', 'public, max-age=3600'); // Cache 1 jam
+
+        } catch (\Exception $e) {
+            abort(404, 'Image not found: ' . $e->getMessage());
+        }
+    }
+
     public function download($encryptedInfo)
     {
         try {

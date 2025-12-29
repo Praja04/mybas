@@ -291,7 +291,7 @@
                                     fotoNameArray.forEach(function(fotoName, index) {
                                         console.log(
                                             `\n--- Foto ${index + 1}: ${fotoName} ---`
-                                            );
+                                        );
 
                                         let fotoPath = '';
                                         let fallbackPath = '';
@@ -311,10 +311,10 @@
                                             fallbackPath = fotoPath;
 
                                             areaLabel = `
-                                        <div class="badge bg-primary mb-1" style="font-size: 11px;">
-                                            <i class="mdi mdi-map-marker"></i> Area: ${temuanMatch.area}
-                                        </div>
-                                    `;
+                                            <div class="badge bg-primary mb-1" style="font-size: 11px;">
+                                                <i class="mdi mdi-map-marker"></i> Area: ${temuanMatch.area}
+                                            </div>
+                                        `;
 
                                             // Tambahkan deskripsi jika ada
                                             if (temuanMatch.deskripsi) {
@@ -322,47 +322,54 @@
                                             <div class="badge bg-info mt-1" style="font-size: 11px;">
                                                 <i class="mdi mdi-information"></i> ${temuanMatch.deskripsi}
                                             </div>
-                                        `;
+                                            `;
                                             }
 
                                             console.log('✅ Foto DARI TEMUAN');
                                         } else {
-                                            // FOTO TIDAK ADA DI TEMUAN - ambil dari server IP 172
+                                            // FOTO TIDAK ADA DI TEMUAN - gunakan PROXY Laravel
                                             fotoPath =
-                                                'http://172.21.5.105/images/5r/' +
+                                                "{{ route('5r-system.proxy-image', '') }}/" +
                                                 fotoName;
-                                            fallbackPath = fotoPath;
+                                            fallbackPath =
+                                                "{{ asset('images/placeholder.jpg') }}"; // Gambar placeholder jika gagal
+
+                                            console.log(
+                                                `  ║ 🌐 SOURCE: Remote via Proxy`);
 
                                             areaLabel = `
-                                        <div class="badge bg-success mb-1" style="font-size: 11px;">
-                                            <i class="mdi mdi-server"></i> Foto dari Server Utama
-                                        </div>
-                                    `;
-
-                                            console.log('🌐 Foto DARI SERVER IP 172');
+                                                <div class="badge bg-success mb-1" style="font-size: 11px;">
+                                                    <i class="mdi mdi-server"></i> Foto dari Server Utama
+                                                </div>
+                                            `;
                                         }
 
-                                        console.log('fotoPath:', fotoPath);
-                                        console.log('fallbackPath:', fallbackPath);
+                                        console.log(`  ║ 🔗 Path: ${fotoPath}`);
+                                        console.log(
+                                            `  ╚═══════════════════════════════\n`);
 
                                         foto += `
-                                    <div class="mb-2 p-2 border rounded bg-light">
-                                        ${areaLabel}
-                                        <div class="d-flex justify-content-center">
-                                            <img
-                                                src="${fotoPath}"
-                                                style="max-width:300px;width:100%;cursor:pointer"
-                                                onclick="showImageModal('${fotoPath}')"
-                                                onerror="
-                                                    this.onerror=null;
-                                                    this.src='${fallbackPath}';
-                                                    this.onclick=function(){ showImageModal('${fallbackPath}') };
-                                                "
-                                            />
-                                        </div>
-                                        ${deskripsiLabel}
-                                    </div>
-                                `;
+                                            <div class="mb-2 p-2 border rounded bg-light">
+                                                ${areaLabel}
+                                                <div class="d-flex justify-content-center">
+                                                    <img
+                                                        src="${fotoPath}"
+                                                        style="max-width:300px;width:100%;cursor:pointer"
+                                                        onclick="showImageModal('${fotoPath}')"
+                                                        onerror="
+                                                            console.error('❌ Image load failed:', '${fotoPath}');
+                                                            this.onerror=null;
+                                                            this.src='${fallbackPath}';
+                                                            this.parentElement.parentElement.querySelector('.badge').classList.remove('bg-success');
+                                                            this.parentElement.parentElement.querySelector('.badge').classList.add('bg-danger');
+                                                            this.parentElement.parentElement.querySelector('.badge').innerHTML = '<i class=\'mdi mdi-alert\'></i> Foto Tidak Tersedia';
+                                                        "
+                                                        onload="console.log('✅ Image loaded:', '${fotoPath}')"
+                                                    />
+                                                </div>
+                                                ${deskripsiLabel}
+                                            </div>
+                                        `;
                                     });
                                 } else {
                                     foto = `<i class="text-muted">No Foto</i>`;
