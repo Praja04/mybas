@@ -88,9 +88,13 @@ class ManagementController extends Controller
                         return $g;
                     })->filter(fn($g) => $g->totalNilai > 0);
 
-                    $p->group = $groups;
+                    $p->group = $groups->toArray();
                     $p->totalNilai = $groups->sum('totalNilai');
-                    $p->juri = $groups->pluck('submit_by')->unique()->values();
+                    $p->juri = $groups->pluck('submit_by')
+                        ->filter()
+                        ->unique()
+                        ->values()
+                        ->toArray();
 
                     return $p;
                 });
@@ -149,12 +153,12 @@ class ManagementController extends Controller
             abort(403, 'Invalid token');
         }
 
-        // 1️⃣ Ambil jawaban group (SAMA)
+        // Ambil jawaban group (SAMA)
         $group = JawabanGroup::where('id_group', $id_group)
             ->where('id_periode', $id_periode)
             ->firstOrFail();
 
-        // 2️⃣ Ambil JAWABAN + PERTANYAAN + TEMUAN (SAMA PERSIS DETAIL)
+        // Ambil JAWABAN + PERTANYAAN + TEMUAN (SAMA PERSIS DETAIL)
         $data = Jawaban::where('id_jawaban_group', $group->id_jawaban_group)
             ->with([
                 'pertanyaan',
@@ -163,7 +167,7 @@ class ManagementController extends Controller
             ->get()
             ->groupBy('pertanyaan.jenis'); // kalau mau sama persis
 
-        // 3️⃣ Info header PDF
+        // Info header PDF
         $info = [
             'tahun'      => Jadwal::findOrFail($id_jadwal)->tahun,
             'periode'    => Periode::findOrFail($id_periode)->nama_periode,

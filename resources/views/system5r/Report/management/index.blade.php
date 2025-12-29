@@ -131,9 +131,9 @@
                         periodeMap[p.nama_periode].push({
                             department: dep.id_department,
                             __total: dep.__total,
-                            group: p.group || [],
+                            group: Array.isArray(p.group) ? p.group : [],
                             id_periode: p.id_periode,
-                            juri: p.juri || []
+                            juri: Array.isArray(p.juri) ? p.juri : []
                         });
                     });
                 });
