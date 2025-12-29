@@ -49,7 +49,7 @@
         <div class="modal-dialog modal-xl">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">DETAIL PENILAIAN TEST</h5>
+                    <h5 class="modal-title">DETAIL PENILAIAN</h5>
                     <button class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
@@ -236,6 +236,142 @@
             }
         });
 
-      
+        function getDetail(idPeriode, idGroup) {
+            $.ajax({
+                url: "{{ route('5r-system.report.detail') }}",
+                type: 'POST',
+                data: {
+                    id_periode: idPeriode,
+                    id_group: idGroup
+                },
+                success: function(response) {
+                    if (response.status == 'success') {
+                        $('#table-detail tbody').html('');
+                        var noParent = 1;
+                        Object.values(response.data).forEach(function(item) {
+                            var no = 1;
+                            item.forEach(function(jawaban) {
+                                var foto = '';
+                                if (jawaban.foto != null) {
+                                    var fotoNameArray = jawaban.foto.split(',');
+
+                                    // Ambil informasi area dari temuan jika ada
+                                    var temuanAreas = [];
+                                    if (jawaban.temuan && jawaban.temuan.length >
+                                        0) {
+                                        jawaban.temuan.forEach(function(temuan) {
+                                            if (temuan.area && temuan
+                                                .foto) {
+                                                temuanAreas.push({
+                                                    foto: temuan
+                                                        .foto,
+                                                    area: temuan
+                                                        .area
+                                                        .nama_area,
+                                                    deskripsi: temuan
+                                                        .deskripsi
+                                                });
+                                            }
+                                        });
+                                    }
+
+                                    fotoNameArray.forEach(function(fotoName, index) {
+
+                                        let fotoPath = '';
+                                        let fallbackPath = '';
+                                        let areaLabel = '';
+                                        let deskripsiLabel = '';
+
+                                        const temuanMatch = temuanAreas.find(t => t
+                                            .foto === fotoName);
+
+                                        if (temuanMatch) {
+                                            fotoPath =
+                                                "{{ asset('images/5r/temuan/') }}/" +
+                                                fotoName;
+                                            fallbackPath = fotoPath; // ✅ PENTING
+
+                                            areaLabel = `
+                                                <div class="badge bg-primary mb-1" style="font-size: 11px;">
+                                                    <i class="mdi mdi-map-marker"></i> Area: ${temuanMatch.area}
+                                                </div>
+                                            `;
+                                        } else {
+                                            fotoPath = `/proxy/5r/${fotoName}`;
+                                            fallbackPath = fotoPath;
+
+                                            areaLabel = `
+                                                <div class="badge bg-success mb-1" style="font-size: 11px;">
+                                                    <i class="mdi mdi-server"></i> Foto dari Server Utama
+                                                </div>
+                                            `;
+                                        }
+
+                                        foto += `
+                                            <div class="mb-2 p-2 border rounded bg-light">
+                                                ${areaLabel}
+                                                <div class="d-flex justify-content-center">
+                                                    <img
+                                                        src="${fotoPath}"
+                                                        style="max-width:300px;width:100%;cursor:pointer"
+                                                        onclick="showImageModal('${fotoPath}')"
+                                                        onerror="
+                                                            this.onerror=null;
+                                                            this.src='${fallbackPath}';
+                                                            this.onclick=function(){ showImageModal('${fallbackPath}') };
+                                                        "
+                                                    />
+                                                </div>
+                                                ${deskripsiLabel}
+                                            </div>
+                                        `;
+
+                                        console.log('fotoPath:', fotoPath);
+                                        console.log('fallbackPath:', fallbackPath);
+                                    });
+                                } else {
+                                    foto = `<i class="text-muted">No Foto</i>`;
+                                }
+                                $('#table-detail tbody').append(`
+                                <tr>
+                                    <td>${jawaban.pertanyaan.jenis}</td>
+                                    <td>
+                                        <div style="width: 300px">
+                                            <h6>ITEM PERIKSA</h6>
+                                            ${jawaban.pertanyaan.item_periksa}
+                                            <h6 class="mt-3">KETERANGAN</h6>
+                                            ${jawaban.pertanyaan.keterangan}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <h6>NILAI</h6>
+                                        <input style="width: 100px" class="form-control" disabled value="${jawaban.nilai}" />
+                                        <div class="mt-3">
+                                            <h6>FOTO</h6>
+                                            ${foto}
+                                        </div>
+                                        <div class="mt-3 rounded bg-light p-1">
+                                            <h6>KETERANGAN</h6>
+                                            <p>${jawaban.keterangan}</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            `);
+                                no++;
+                            });
+                            noParent++;
+                        });
+                        $('#detailModal').modal('show');
+                    } else {
+                        Swal.fire({
+                            title: 'Woops!',
+                            text: response.message,
+                            icon: 'error',
+                            confirmButtonText: 'OK'
+                        });
+                    }
+                }
+            });
+        }
     </script>
 @endpush
