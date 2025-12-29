@@ -20,12 +20,12 @@ class ScheduleJuriController extends Controller
         $schedule = Jadwal::orderBy('created_at', 'desc')->get();
         $periode_penilaian = Periode::orderBy('created_at', 'desc')->get();
 
-        if(isset($_GET['periode'])){
+        if (isset($_GET['periode'])) {
             $periode_id = $_GET['periode'];
             $data = MasterGroupJuriDepartment::where('id_periode', $periode_id)
-            ->get()
-            ->sortBy('group.nama_group');
-        }else{
+                ->get()
+                ->sortBy('group.nama_group');
+        } else {
             $data = collect();
         }
 
@@ -42,13 +42,13 @@ class ScheduleJuriController extends Controller
         $_username = explode('|', $username)[0];
         $_name = explode('|', $username)[1];
         $id_group_juri = $request->id_group_juri;
-    
+
         // Check if it is already exist
         $isExist = GroupJuriAnggota::where('id_group_juri', $id_group_juri)
             ->where('nik_juri', $_username)
             ->first();
 
-        if($isExist != null){
+        if ($isExist != null) {
             return redirect()->back()->with('error', 'Juri sudah ada');
         }
 
@@ -76,9 +76,8 @@ class ScheduleJuriController extends Controller
 
             DB::commit();
 
-            return back()->with('success', 'Berhasil membuat jadwal');  
-        }catch(\Exception $e)
-        {
+            return back()->with('success', 'Berhasil membuat jadwal');
+        } catch (\Exception $e) {
             DB::rollBack();
 
             return back()->with('error', $e->getMessage());
@@ -104,14 +103,14 @@ class ScheduleJuriController extends Controller
 
             DB::commit();
 
-            return back()->with('success', 'Berhasil membuat periode');  
-        }catch(\Exception $e)
-        {
+            return back()->with('success', 'Berhasil membuat periode');
+        } catch (\Exception $e) {
             DB::rollBack();
 
             return back()->with('error', $e->getMessage());
         }
     }
+
 
     public function createGroupJuri(Request $request)
     {
@@ -122,12 +121,30 @@ class ScheduleJuriController extends Controller
             'index_tingkat_kesulitan' => 'required'
         ]);
 
-        // Create unique id
-        $id_group_juri = date('YmdHis');
+        // Generate unique id_group_juri yang sequential seperti di master juri (format G001, G002, dst.)
+        $lastRecord = GroupJuri::latest('id_group_juri')->first();
+
+        if ($lastRecord === null) {
+            $numeric = 0;
+        } else {
+            // Ambil angka setelah 'G' dan convert ke int
+            $numeric = intval(substr($lastRecord->id_group_juri, 1));
+        }
+
+        $numeric++;
+        $id_group_juri = 'G' . sprintf("%03d", $numeric);
+
+        // Merge ke request jika perlu, tapi sebenarnya langsung pakai variabel juga bisa
         $request->merge(['id_group_juri' => $id_group_juri]);
 
         try {
             DB::beginTransaction();
+
+            // Cek apakah group dengan id ini sudah ada (untuk safety, meski seharusnya unique)
+            $existing = GroupJuri::where('id_group_juri', $id_group_juri)->first();
+            if ($existing) {
+                throw new \Exception('ID Group Juri sudah terpakai, silakan coba lagi.');
+            }
 
             $group = new GroupJuri();
             $group->id_group_juri = $id_group_juri;
@@ -144,12 +161,12 @@ class ScheduleJuriController extends Controller
 
             DB::commit();
 
-            return back()->with('success', 'Berhasil membuat group juri');
-        }catch(\Exception $e)
-        {
+            return back()->with('success', 'Berhasil membuat group juri dengan ID: ' . $id_group_juri);
+        } catch (\Exception $e) {
             DB::rollBack();
 
-            return back()->with('error', $e->getMessage());
+            // Log error jika perlu: Log::error($e);
+            return back()->with('error', 'Gagal membuat group juri: ' . $e->getMessage());
         }
     }
 }
