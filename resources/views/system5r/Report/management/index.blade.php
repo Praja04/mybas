@@ -276,16 +276,17 @@
                                     }
 
                                     fotoNameArray.forEach(function(fotoName, index) {
-
                                         let fotoPath = '';
                                         let fallbackPath = '';
                                         let areaLabel = '';
                                         let deskripsiLabel = '';
 
+                                        // Cek apakah foto ini ada di temuan
                                         const temuanMatch = temuanAreas.find(t => t
                                             .foto === fotoName);
 
                                         if (temuanMatch) {
+                                            // FOTO ADA DI TEMUAN - gunakan path lokal
                                             fotoPath =
                                                 "{{ asset('images/5r/temuan/') }}/" +
                                                 fotoName;
@@ -296,9 +297,20 @@
                                                     <i class="mdi mdi-map-marker"></i> Area: ${temuanMatch.area}
                                                 </div>
                                             `;
+
+                                            // Tambahkan deskripsi jika ada
+                                            if (temuanMatch.deskripsi) {
+                                                deskripsiLabel = `
+                                                    <div class="badge bg-info mt-1" style="font-size: 11px;">
+                                                        <i class="mdi mdi-information"></i> ${temuanMatch.deskripsi}
+                                                    </div>
+                                                `;
+                                            }
                                         } else {
+                                            // FOTO TIDAK ADA DI TEMUAN - ambil dari server IP 172
                                             fotoPath =
-                                                'http://172.21.5.105/images/5r/689d838a9e73a.jpg';
+                                                'http://172.21.5.105/images/5r/' +
+                                                fotoName;
                                             fallbackPath = fotoPath;
 
                                             areaLabel = `
@@ -327,8 +339,9 @@
                                             </div>
                                         `;
 
-                                        console.log('fotoPath:', fotoPath);
-                                        console.log('fallbackPath:', fallbackPath);
+                                        console.log('Foto:', fotoName);
+                                        console.log('Dari Temuan:', !!temuanMatch);
+                                        console.log('Path:', fotoPath);
                                     });
                                 } else {
                                     foto = `<i class="text-muted">No Foto</i>`;
