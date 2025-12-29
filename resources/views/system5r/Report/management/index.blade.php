@@ -23,7 +23,7 @@
             <div>
                 <h3 class="mb-0">Report 5R Management</h3>
                 <small class="text-muted">
-                    Ringkas • Rapi • Resik • Rawat • Rajin
+                    Ringkas • Rapi • Resik • Rawat • Rajin • Digitalisasi
                 </small>
             </div>
 
@@ -115,8 +115,6 @@
 
             // Render TABLE
             function buildTable(departments) {
-
-                // Kumpulkan data per periode
                 let periodeMap = {};
 
                 departments.forEach(dep => {
@@ -128,24 +126,29 @@
                             periodeMap[p.nama_periode] = [];
                         }
 
+                        let groupArray = [];
+                        if (Array.isArray(p.group)) {
+                            groupArray = p.group;
+                        } else if (p.group && typeof p.group === 'object') {
+                            groupArray = Object.values(p.group);
+                        }
+
                         periodeMap[p.nama_periode].push({
-                            department: dep.id_department,
+                            department: dep
+                                .nama_department,
                             __total: dep.__total,
-                            group: p.group || [],
+                            group: groupArray,
                             id_periode: p.id_periode,
-                            juri: p.juri || []
+                            juri: Array.isArray(p.juri) ? p.juri : []
                         });
                     });
                 });
 
                 let html = '';
 
-                // Render per PERIODE
                 Object.keys(periodeMap).forEach(namaPeriode => {
-
                     let rank = 1;
 
-                    // sort ranking dalam 1 tahap
                     periodeMap[namaPeriode].sort((a, b) => b.__total - a.__total);
 
                     let rows = '';
@@ -154,22 +157,22 @@
                         const totalGroup = item.group.length;
                         const presentase = totalGroup * 100;
 
-                        if (item.group.length === 0) {
+                        if (totalGroup === 0) {
                             rows += `
-                                <tr>
-                                    <td class="text-center">${rank}</td>
-                                    <td>${item.department}</td>
-                                    <td class="text-muted">-</td>
-                                    <td class="text-muted">-</td>
-                                    <td class="text-muted">-</td>
-                                    <td>
-                                        <span class="badge badge-soft-warning">
-                                            Belum Dinilai
-                                        </span>
-                                    </td>
-                                    <td class="text-center">-</td>
-                                </tr>
-                            `;
+                    <tr>
+                        <td class="text-center">${rank}</td>
+                        <td>${item.department}</td>
+                        <td class="text-muted">-</td>
+                        <td class="text-muted">-</td>
+                        <td class="text-muted">-</td>
+                        <td>
+                            <span class="badge badge-soft-warning">
+                                Belum Dinilai
+                            </span>
+                        </td>
+                        <td class="text-center">-</td>
+                    </tr>
+                `;
                             rank++;
                             return;
                         }
@@ -180,53 +183,53 @@
                                 .encryptedKey;
 
                             rows += `
-                                <tr>
-                                    <td class="text-center">${i === 0 ? rank : ''}</td>
-                                    <td>${i === 0 ? item.department : ''}</td>
-                                    <td>${item.juri.length ? item.juri.join(', ') : '-'}</td>
-                                    <td>${g.nama_group}</td>
-                                    <td>${i === 0 ? presentase + '%' : ''}</td>   
-                                    <td>${g.nilaiAkhir.toFixed(1)}</td>
-                                    <td class="text-center">
-                                        <div class="d-flex gap-1 justify-content-center">
-                                            <button class="btn btn-sm btn-outline-info"
-                                                onclick="getDetail('${item.id_periode}','${g.id_group}')">
-                                                <i class="mdi mdi-eye"></i>
-                                            </button>
-                                            <a href="${printUrl}" target="_blank"
-                                            class="btn btn-sm btn-outline-primary">
-                                                <i class="mdi mdi-printer"></i>
-                                            </a>
-                                        </div>
-                                    </td>
-                                </tr>
-                            `;
+                    <tr>
+                        <td class="text-center">${i === 0 ? rank : ''}</td>
+                        <td>${i === 0 ? item.department : ''}</td>
+                        <td>${i === 0 ? (item.juri.length ? item.juri.join(', ') : '-') : ''}</td>
+                        <td>${g.nama_group}</td>
+                        <td>${i === 0 ? presentase + '%' : ''}</td>   
+                        <td>${g.nilaiAkhir.toFixed(1)}</td>
+                        <td class="text-center">
+                            <div class="d-flex gap-1 justify-content-center">
+                                <button class="btn btn-sm btn-outline-info"
+                                    onclick="getDetail('${item.id_periode}','${g.id_group}')">
+                                    <i class="mdi mdi-eye"></i>
+                                </button>
+                                <a href="${printUrl}" target="_blank"
+                                class="btn btn-sm btn-outline-primary">
+                                    <i class="mdi mdi-printer"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                `;
                         });
 
                         rank++;
                     });
 
                     html += `
-                        <div class="mb-4">
-                            <h5 class="fw-medium text-primary mb-2">
-                                Periode ${namaPeriode}
-                            </h5>
-                            <table class="table table-hover align-middle">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th width="5%">#</th>
-                                        <th>Department</th>
-                                        <th>Juri</th>
-                                        <th>Group</th>
-                                        <th>Presentase</th>
-                                        <th>Nilai Akhir</th>
-                                        <th class="text-center">Aksi</th>
-                                    </tr>
-                                </thead>
-                                <tbody>${rows}</tbody>
-                            </table>
-                        </div>
-                    `;
+                    <div class="mb-4">
+                        <h5 class="fw-medium text-primary mb-2">
+                            Periode ${namaPeriode}
+                        </h5>
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th width="5%">#</th>
+                                    <th>Department</th>
+                                    <th>Juri</th>
+                                    <th>Group</th>
+                                    <th>Presentase</th>
+                                    <th>Nilai Akhir</th>
+                                    <th class="text-center">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>${rows}</tbody>
+                        </table>
+                    </div>
+                `;
                 });
 
                 return html;

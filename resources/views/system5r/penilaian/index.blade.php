@@ -2033,12 +2033,29 @@
                 var deskripsi = modal.find('textarea[name="deskripsi_temuan[' + idPertanyaan + ']"]').val();
                 var idPeriode = modal.closest('form').find('input[name="id_periode"]').val();
 
+                // Validasi area
                 if (!area) {
                     Swal.fire({
-                        icon: 'error',
-                        title: 'Gagal',
-                        text: 'Area harus dipilih',
-                        timer: 1500
+                        icon: 'warning',
+                        title: 'Area Wajib Diisi',
+                        text: 'Silakan pilih area terlebih dahulu',
+                        confirmButtonText: 'OK',
+                        confirmButtonColor: '#6c5ce7'
+                    });
+                    return;
+                }
+
+                // VALIDASI FOTO DULU - CEK PREVIEW IMAGE
+                var imageContainer = modal.find('.image-preview-container');
+                var hasImage = imageContainer.find('img').length > 0;
+
+                if (!hasImage) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Foto Wajib Diisi',
+                        text: 'Silakan upload foto terlebih dahulu sebelum menyimpan temuan',
+                        confirmButtonText: 'OK',
+                        confirmButtonColor: '#6c5ce7'
                     });
                     return;
                 }
@@ -2068,12 +2085,34 @@
 
                         console.log('Jumlah foto:', images.length);
 
+                        // VALIDASI FOTO DARI INDEXEDDB
                         if (images.length === 0) {
                             Swal.fire({
-                                icon: 'error',
-                                title: 'Gagal',
-                                text: 'Foto harus diupload terlebih dahulu',
-                                timer: 1500
+                                icon: 'warning',
+                                title: 'Foto Wajib Diisi',
+                                text: 'Silakan upload foto terlebih dahulu sebelum menyimpan temuan',
+                                confirmButtonText: 'OK',
+                                confirmButtonColor: '#6c5ce7'
+                            });
+                            return;
+                        }
+
+                        // Validasi apakah images berisi data base64 yang valid
+                        var validImage = false;
+                        for (var i = 0; i < images.length; i++) {
+                            if (images[i] && images[i].length > 100) {
+                                validImage = true;
+                                break;
+                            }
+                        }
+
+                        if (!validImage) {
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Foto Tidak Valid',
+                                text: 'Foto yang diupload tidak valid. Silakan upload ulang',
+                                confirmButtonText: 'OK',
+                                confirmButtonColor: '#6c5ce7'
                             });
                             return;
                         }
@@ -2100,21 +2139,44 @@
                             data: formData,
                             success: function(response) {
                                 if (response.status === 'success') {
+                                    // Close modal
                                     modal.modal('hide');
                                     Swal.fire({
                                         icon: 'success',
                                         title: 'Berhasil',
                                         text: response.message,
                                     }).then(() => {
-                                        modal.find('select').val('');
-                                        modal.find('textarea').val('');
-
-                                        // Clear image container
+                                        modal.find('select[name="area[' + idPertanyaan +
+                                            ']"]').val('').trigger('change');
+                                        modal.find('textarea[name="deskripsi_temuan[' +
+                                            idPertanyaan + ']"]').val('');
                                         modal.find('.image-preview-container').html('');
+                                        modal.find('input[type="file"]').val('');
+
+                                        // Clear IndexedDB images
+                                        var clearDB = window.indexedDB.open("system_5r", 5);
+                                        clearDB.onsuccess = function(event) {
+                                            var db = event.target.result;
+                                            var transaction = db.transaction(
+                                                "penilaian", "readwrite");
+                                            var objectStore = transaction.objectStore(
+                                                "penilaian");
+                                            var requestClear = objectStore.get(idKey);
+
+                                            requestClear.onsuccess = function(event) {
+                                                var data = event.target.result;
+                                                if (data) {
+                                                    data.images = [];
+                                                    objectStore.put(data);
+                                                    console.log(
+                                                        'IndexedDB images cleared successfully'
+                                                    );
+                                                }
+                                            };
+                                        };
 
                                         // Add badge to indicate temuan has been added
-                                        var questionCard = $('#modalTemuan' + idPertanyaan)
-                                            .closest('.question-card');
+                                        var questionCard = modal.closest('.question-card');
                                         if (questionCard.find('.badge-temuan').length ===
                                             0) {
                                             questionCard.find('.question-header h6').append(
@@ -2125,7 +2187,6 @@
                                         }
                                     });
                                 } else {
-                                    modal.modal('hide');
                                     Swal.fire({
                                         icon: 'error',
                                         title: 'Gagal',
@@ -2133,19 +2194,25 @@
                                     });
                                 }
 
+                                // Reset button state
                                 button.prop('disabled', false).html(
                                     '<i class="bi bi-save me-1"></i> Simpan Temuan');
                             },
                             error: function(xhr) {
-                                console.error('AJAX Error:', xhr); // Debug
+                                console.error('AJAX Error:', xhr);
+
+                                var errorMessage = 'Terjadi kesalahan';
+                                if (xhr.responseJSON && xhr.responseJSON.message) {
+                                    errorMessage = xhr.responseJSON.message;
+                                }
 
                                 Swal.fire({
                                     icon: 'error',
                                     title: 'Gagal',
-                                    text: xhr.responseJSON?.message || 'Terjadi kesalahan',
-                                    timer: 1500
+                                    text: errorMessage,
                                 });
 
+                                // Reset button state
                                 button.prop('disabled', false).html(
                                     '<i class="bi bi-save me-1"></i> Simpan Temuan');
                             }
@@ -2153,25 +2220,23 @@
                     };
 
                     request.onerror = function(event) {
-                        console.error('IndexedDB Error:', event.target.error); // Debug
+                        console.error('IndexedDB Error:', event.target.error);
 
                         Swal.fire({
                             icon: 'error',
                             title: 'Gagal',
                             text: 'Gagal mengambil data foto dari IndexedDB',
-                            timer: 1500
                         });
                     };
                 };
 
                 database.onerror = function(event) {
-                    console.error('Database Error:', event.target.error); // Debug
+                    console.error('Database Error:', event.target.error);
 
                     Swal.fire({
                         icon: 'error',
                         title: 'Gagal',
                         text: 'Gagal membuka database',
-                        timer: 1500
                     });
                 };
             });
