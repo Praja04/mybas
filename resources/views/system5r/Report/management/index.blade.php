@@ -25,6 +25,7 @@
                 <small class="text-muted">
                     Ringkas • Rapi • Resik • Rawat • Rajin • Digitalisasi
                 </small>
+                <p>testttttttttttttttttt</p>
             </div>
 
             {{-- <img src="http://172.21.5.105/images/5r/689d838a9e73a.jpg" alt="test"> --}}
