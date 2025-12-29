@@ -237,117 +237,67 @@
         });
 
         function getDetail(idPeriode, idGroup) {
-            console.log('=== MULAI getDetail ===');
-            console.log('idPeriode:', idPeriode);
-            console.log('idGroup:', idGroup);
-
             $.ajax({
                 url: "{{ route('5r-system.report.detail') }}",
                 type: 'POST',
                 data: {
-                    _token: "{{ csrf_token() }}", // ⚠️ TAMBAHKAN INI
                     id_periode: idPeriode,
                     id_group: idGroup
                 },
                 success: function(response) {
-                    console.log('=== RESPONSE DITERIMA ===');
-                    console.log('Response:', response);
-
                     if (response.status == 'success') {
                         $('#table-detail tbody').html('');
                         var noParent = 1;
-
                         Object.values(response.data).forEach(function(item) {
-                            console.log('=== Processing Item ===');
-                            console.log('Item:', item);
-
                             var no = 1;
                             item.forEach(function(jawaban) {
-                                console.log('--- Processing Jawaban ---');
-                                console.log('Jawaban:', jawaban);
-                                console.log('Foto jawaban:', jawaban.foto);
-                                console.log('Temuan jawaban:', jawaban.temuan);
-
                                 var foto = '';
                                 if (jawaban.foto != null) {
                                     var fotoNameArray = jawaban.foto.split(',');
-                                    console.log('fotoNameArray:', fotoNameArray);
 
                                     // Ambil informasi area dari temuan jika ada
                                     var temuanAreas = [];
-                                    if (jawaban.temuan && jawaban.temuan.length > 0) {
+                                    if (jawaban.temuan && jawaban.temuan.length >
+                                        0) {
                                         jawaban.temuan.forEach(function(temuan) {
-                                            if (temuan.area && temuan.foto) {
+                                            if (temuan.area && temuan
+                                                .foto) {
                                                 temuanAreas.push({
-                                                    foto: temuan.foto,
-                                                    area: temuan.area.nama_area,
-                                                    deskripsi: temuan.deskripsi
+                                                    foto: temuan
+                                                        .foto,
+                                                    area: temuan
+                                                        .area
+                                                        .nama_area,
+                                                    deskripsi: temuan
+                                                        .deskripsi
                                                 });
                                             }
                                         });
                                     }
-                                    console.log('temuanAreas:', temuanAreas);
 
                                     fotoNameArray.forEach(function(fotoName, index) {
-                                        console.log(
-                                            `\n--- Foto ${index + 1}: ${fotoName} ---`
-                                        );
 
                                         let fotoPath = '';
                                         let fallbackPath = '';
                                         let areaLabel = '';
                                         let deskripsiLabel = '';
 
-                                        // Cek apakah foto ini ada di temuan
                                         const temuanMatch = temuanAreas.find(t => t
                                             .foto === fotoName);
-                                        console.log('temuanMatch:', temuanMatch);
 
                                         if (temuanMatch) {
-                                            // FOTO ADA DI TEMUAN - gunakan path lokal
                                             fotoPath =
                                                 "{{ asset('images/5r/temuan/') }}/" +
                                                 fotoName;
-                                            fallbackPath = fotoPath;
+                                            fallbackPath = fotoPath; // ✅ PENTING
 
                                             areaLabel = `
-                                            <div class="badge bg-primary mb-1" style="font-size: 11px;">
-                                                <i class="mdi mdi-map-marker"></i> Area: ${temuanMatch.area}
-                                            </div>
-                                        `;
-
-                                            // Tambahkan deskripsi jika ada
-                                            if (temuanMatch.deskripsi) {
-                                                deskripsiLabel = `
-                                            <div class="badge bg-info mt-1" style="font-size: 11px;">
-                                                <i class="mdi mdi-information"></i> ${temuanMatch.deskripsi}
-                                            </div>
-                                            `;
-                                            }
-
-                                            console.log('✅ Foto DARI TEMUAN');
-                                        } else {
-                                            // FOTO TIDAK ADA DI TEMUAN - gunakan PROXY Laravel
-                                            fotoPath =
-                                                "{{ route('5r-system.proxy-image', '') }}/" +
-                                                fotoName;
-                                            fallbackPath =
-                                                "{{ asset('images/placeholder.jpg') }}"; // Gambar placeholder jika gagal
-
-                                            console.log(
-                                                `  ║ 🌐 SOURCE: Remote via Proxy`);
-
-                                            areaLabel = `
-                                                <div class="badge bg-success mb-1" style="font-size: 11px;">
-                                                    <i class="mdi mdi-server"></i> Foto dari Server Utama
+                                                <div class="badge bg-primary mb-1" style="font-size: 11px;">
+                                                    <i class="mdi mdi-map-marker"></i> Area: ${temuanMatch.area}
                                                 </div>
                                             `;
-                                        }
-
-                                        console.log(`  ║ 🔗 Path: ${fotoPath}`);
-                                        console.log(
-                                            `  ╚═══════════════════════════════\n`);
-
+                                        } 
+                                        
                                         foto += `
                                             <div class="mb-2 p-2 border rounded bg-light">
                                                 ${areaLabel}
@@ -357,59 +307,53 @@
                                                         style="max-width:300px;width:100%;cursor:pointer"
                                                         onclick="showImageModal('${fotoPath}')"
                                                         onerror="
-                                                            console.error('❌ Image load failed:', '${fotoPath}');
                                                             this.onerror=null;
                                                             this.src='${fallbackPath}';
-                                                            this.parentElement.parentElement.querySelector('.badge').classList.remove('bg-success');
-                                                            this.parentElement.parentElement.querySelector('.badge').classList.add('bg-danger');
-                                                            this.parentElement.parentElement.querySelector('.badge').innerHTML = '<i class=\'mdi mdi-alert\'></i> Foto Tidak Tersedia';
+                                                            this.onclick=function(){ showImageModal('${fallbackPath}') };
                                                         "
-                                                        onload="console.log('✅ Image loaded:', '${fotoPath}')"
                                                     />
                                                 </div>
                                                 ${deskripsiLabel}
                                             </div>
                                         `;
+
+                                        console.log('fotoPath:', fotoPath);
+                                        console.log('fallbackPath:', fallbackPath);
                                     });
                                 } else {
                                     foto = `<i class="text-muted">No Foto</i>`;
-                                    console.log('⚠️ Tidak ada foto');
                                 }
-
                                 $('#table-detail tbody').append(`
-                            <tr>
-                                <td>${jawaban.pertanyaan.jenis}</td>
-                                <td>
-                                    <div style="width: 300px">
-                                        <h6>ITEM PERIKSA</h6>
-                                        ${jawaban.pertanyaan.item_periksa}
-                                        <h6 class="mt-3">KETERANGAN</h6>
-                                        ${jawaban.pertanyaan.keterangan}
-                                    </div>
-                                </td>
-                                <td>
-                                    <h6>NILAI</h6>
-                                    <input style="width: 100px" class="form-control" disabled value="${jawaban.nilai}" />
-                                    <div class="mt-3">
-                                        <h6>FOTO</h6>
-                                        ${foto}
-                                    </div>
-                                    <div class="mt-3 rounded bg-light p-1">
-                                        <h6>KETERANGAN</h6>
-                                        <p>${jawaban.keterangan}</p>
-                                    </div>
-                                </td>
-                            </tr>
-                        `);
+                                <tr>
+                                    <td>${jawaban.pertanyaan.jenis}</td>
+                                    <td>
+                                        <div style="width: 300px">
+                                            <h6>ITEM PERIKSA</h6>
+                                            ${jawaban.pertanyaan.item_periksa}
+                                            <h6 class="mt-3">KETERANGAN</h6>
+                                            ${jawaban.pertanyaan.keterangan}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <h6>NILAI</h6>
+                                        <input style="width: 100px" class="form-control" disabled value="${jawaban.nilai}" />
+                                        <div class="mt-3">
+                                            <h6>FOTO</h6>
+                                            ${foto}
+                                        </div>
+                                        <div class="mt-3 rounded bg-light p-1">
+                                            <h6>KETERANGAN</h6>
+                                            <p>${jawaban.keterangan}</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            `);
                                 no++;
                             });
                             noParent++;
                         });
-
-                        console.log('=== MODAL AKAN DITAMPILKAN ===');
                         $('#detailModal').modal('show');
                     } else {
-                        console.error('Response status bukan success:', response);
                         Swal.fire({
                             title: 'Woops!',
                             text: response.message,
@@ -417,19 +361,6 @@
                             confirmButtonText: 'OK'
                         });
                     }
-                },
-                error: function(xhr, status, error) {
-                    console.error('=== AJAX ERROR ===');
-                    console.error('Status:', status);
-                    console.error('Error:', error);
-                    console.error('Response:', xhr.responseText);
-
-                    Swal.fire({
-                        title: 'Error!',
-                        text: 'Terjadi kesalahan: ' + error,
-                        icon: 'error',
-                        confirmButtonText: 'OK'
-                    });
                 }
             });
         }
