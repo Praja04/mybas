@@ -25,9 +25,13 @@
                 <small class="text-muted">
                     Ringkas • Rapi • Resik • Rawat • Rajin • Digitalisasi
                 </small>
+                <p>test</p>
+
             </div>
 
+            <p>test</p>
             <img src="http://172.21.5.105/images/5r/689d838a9e73a.jpg" alt="test">
+            <img src="{{ url('/proxy/5r/689d838a9e73a.jpg') }}" alt="test proxy">
 
             <div style="width: 220px">
                 <label class="form-label mb-0">Jadwal Penilaian</label>
@@ -69,7 +73,6 @@
             </div>
         </div>
     </div>
-
 
 @endsection
 
