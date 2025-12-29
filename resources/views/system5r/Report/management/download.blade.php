@@ -107,9 +107,9 @@
         </div>
 
         @php
-            $colors = ['#264653', '#2a9d8f', '#e9c46a', '#f4a261', '#e76f51'];
-            $textColors = ['#fff', '#fff', '#000', '#000', '#000'];
-            $jenisList = ['RINGKAS', 'RAPI', 'RESIK', 'RAWAT', 'RAJIN'];
+            $colors = ['#264653', '#2a9d8f', '#e9c46a', '#f4a261', '#e76f51', '#1d3557'];
+            $textColors = ['#fff', '#fff', '#000', '#000', '#000', '#ffffff'];
+            $jenisList = ['RINGKAS', 'RAPI', 'RESIK', 'RAWAT', 'RAJIN', 'DIGITALISASI'];
         @endphp
 
         <table style="width:100%; border-collapse:collapse; margin-bottom:25px;">
@@ -168,20 +168,73 @@
 
                                     @if ($row->temuan && $row->temuan->count())
                                         @foreach ($row->temuan as $temuan)
-                                            @foreach (explode(',', $temuan->foto) as $_foto)
+                                            @php
+                                                $areaName = $temuan->area->nama_area ?? '-';
+                                                $keterangan = $temuan->deskripsi ?? '';
+                                                $fotos = array_filter(array_map('trim', explode(',', $temuan->foto)));
+                                            @endphp
+
+                                            @foreach ($fotos as $_foto)
                                                 @php
-                                                    $path = public_path('images/5r/temuan/' . trim($_foto));
+                                                    $path = public_path('images/5r/temuan/' . $_foto);
                                                 @endphp
 
                                                 @if (file_exists($path))
-                                                    <img src="file://{{ $path }}"
-                                                        style="max-width:100px; margin:3px;">
+                                                    <div style="margin-bottom:10px;">
+
+                                                        {{-- BADGE AREA --}}
+                                                        <span
+                                                            style="
+                                                                display:inline-block;
+                                                                background:#1d3557;
+                                                                color:#fff;
+                                                                font-size:9px;
+                                                                padding:3px 8px;
+                                                                border-radius:10px;
+                                                                margin-bottom:4px;
+                                                            ">
+                                                            {{ $areaName }}
+                                                        </span>
+
+                                                        <br>
+
+                                                        {{-- FOTO FULL WIDTH --}}
+                                                        <img src="file://{{ $path }}"
+                                                            style="
+                                                                width: 100%;
+                                                                max-height: 220px;
+                                                                object-fit: contain;
+                                                                border: 1px solid #ccc;
+                                                                padding: 4px;
+                                                                background: #fff;
+                                                                display: block;
+                                                            "
+                                                            alt="Foto temuan {{ $areaName }}">
+
+                                                        {{-- KETERANGAN TEMUAN (di bawah foto) --}}
+                                                        @if (!empty($keterangan))
+                                                            <div
+                                                                style="
+                                                                    margin-top: 6px;
+                                                                    font-size: 11px;
+                                                                    color: #444;
+                                                                    font-style: italic;
+                                                                    background: #f8f9fa;
+                                                                    padding: 6px 8px;
+                                                                    border-left: 3px solid #1d3557;
+                                                                    line-height: 1.4;
+                                                                ">
+                                                                <strong>Deskripsi:</strong> {{ $keterangan }}
+                                                            </div>
+                                                        @endif
+                                                    </div>
                                                 @endif
                                             @endforeach
                                         @endforeach
                                     @else
                                         <em>Tidak ada foto</em>
                                     @endif
+
 
                                     <br><br>
 
