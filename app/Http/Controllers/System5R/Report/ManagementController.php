@@ -111,7 +111,6 @@ class ManagementController extends Controller
 
     public function detail(Request $request)
     {
-        dd($request->all());
         $group = JawabanGroup::where('id_group', $request->id_group)
             ->where('id_periode', $request->id_periode)
             ->first();
