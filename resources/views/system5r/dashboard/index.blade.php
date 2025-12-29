@@ -102,9 +102,7 @@
                             <select class="form-select form-select-sm w-auto jadwalChartPeriode" id="jadwalChartPeriode"
                                 data-workspace="{{ $ws->id_workspace }}">
                                 @foreach ($allJadwal as $j)
-                                    <option value="{{ $j->id_jadwal }}">
-                                        {{ $j->tahun }}
-                                    </option>
+                                    <option value="{{ $j->id_jadwal }}">{{ $j->tahun }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -126,7 +124,6 @@
 
                             <select class="form-select form-select-sm w-auto jadwal-rank"
                                 data-workspace="{{ $ws->id_workspace }}">
-                                <option value="">Semua Jadwal</option>
                                 @foreach ($allJadwal as $j)
                                     <option value="{{ $j->id_jadwal }}">{{ $j->tahun }}</option>
                                 @endforeach
@@ -192,6 +189,7 @@
             }
 
             function loadChartPerPeriode(canvasId, workspaceId, jadwalId) {
+                console.log(jadwalId);
                 $.ajax({
                     url: "{{ route('5r-system.dashboard.data-periode') }}",
                     type: 'GET',
@@ -268,6 +266,17 @@
                 ];
                 return colors[index % colors.length];
             }
+
+            $('.jadwalChartPeriode').each(function() {
+                let jadwalId = $(this).val();
+                let workspace = $(this).data('workspace');
+
+                loadChartPerPeriode(
+                    'chart-' + workspace,
+                    workspace,
+                    jadwalId
+                );
+            });
 
             $(document).on('change', '.jadwalChartPeriode', function() {
                 let jadwalId = $(this).val();

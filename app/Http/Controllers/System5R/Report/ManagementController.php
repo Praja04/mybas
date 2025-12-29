@@ -109,7 +109,6 @@ class ManagementController extends Controller
         });
     }
 
-
     public function detail(Request $request)
     {
         $group = JawabanGroup::where('id_group', $request->id_group)
@@ -127,6 +126,7 @@ class ManagementController extends Controller
             ->with(['pertanyaan', 'temuan.area'])
             ->get()
             ->groupBy('pertanyaan.jenis');
+
 
         return response()->json([
             'status' => 'success',

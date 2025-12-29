@@ -48,8 +48,29 @@ class DashboardController extends Controller
 
     public function getDataPeriodeByWorkspace(Request $request)
     {
-        $jadwalId    = $request->id_jadwal;
         $workspaceId = $request->id_workspace;
+        $jadwalId    = $request->id_jadwal;
+
+        // Jika tidak ada id_jadwal dari frontend, ambil jadwal terbaru otomatis
+        if (!$jadwalId) {
+            $jadwalId = DB::table('5r_jadwal_penilaian') // sesuaikan nama tabel jadwal kamu
+                ->orderByDesc('tahun')         // asumsi ada kolom 'tahun' (2025, 2026, 2027)
+                ->value('id_jadwal');
+
+            // Jika masih kosong (belum ada jadwal sama sekali), return empty
+            if (!$jadwalId) {
+                return response()->json([
+                    'status'   => 'success',
+                    'labels'   => [],
+                    'datasets' => []
+                ]);
+            }
+        }
+
+        // Validasi workspace wajib
+        if (!$workspaceId) {
+            return response()->json(['status' => 'error', 'message' => 'Workspace required'], 422);
+        }
 
         $rows = DB::table('5r_periode_penilaian as p')
             ->crossJoin('5r_master_department as d')
@@ -60,11 +81,7 @@ class DashboardController extends Controller
             })
             ->leftJoin('5r_jawaban as j', 'j.id_jawaban_group', '=', 'jg.id_jawaban_group')
             ->where('d.id_workspace', $workspaceId)
-            ->when(
-                $jadwalId,
-                fn($q) =>
-                $q->where('p.id_jadwal', $jadwalId)
-            )
+            ->where('p.id_jadwal', $jadwalId) // SELALU filter jadwal (baik dari frontend atau default)
             ->select(
                 'p.nama_periode',
                 'd.nama_department',
@@ -80,25 +97,25 @@ class DashboardController extends Controller
             ->orderBy('p.nama_periode')
             ->get();
 
-        // labels & datasets (TIDAK DIUBAH)
+        // Jika tidak ada data, return empty chart
+        if ($rows->isEmpty()) {
+            return response()->json([
+                'status'   => 'success',
+                'labels'   => [],
+                'datasets' => []
+            ]);
+        }
+
         $departments = $rows->pluck('nama_department')->unique()->values();
         $periodes    = $rows->pluck('nama_periode')->unique()->values();
 
         $datasets = [];
-
         foreach ($periodes as $periode) {
             $data = [];
-
             foreach ($departments as $dept) {
-                $row = $rows->first(
-                    fn($r) =>
-                    $r->nama_periode === $periode &&
-                        $r->nama_department === $dept
-                );
-
+                $row = $rows->first(fn($r) => $r->nama_periode === $periode && $r->nama_department === $dept);
                 $data[] = $row ? (float) $row->total_nilai : 0;
             }
-
             $datasets[] = [
                 'label' => $periode,
                 'data'  => $data
@@ -114,8 +131,29 @@ class DashboardController extends Controller
 
     public function getDataRankPeriodeByWorkspace(Request $request)
     {
-        $jadwalId    = $request->id_jadwal;
         $workspaceId = $request->id_workspace;
+        $jadwalId    = $request->id_jadwal;
+
+        // Jika tidak ada id_jadwal dari frontend, ambil jadwal terbaru otomatis
+        if (!$jadwalId) {
+            $jadwalId = DB::table('5r_jadwal_penilaian') // sesuaikan nama tabel jadwal kamu
+                ->orderByDesc('tahun')         // asumsi kolom 'tahun' (2025, 2026, 2027)
+                ->value('id_jadwal');
+
+            // Jika masih tidak ada jadwal sama sekali, return empty
+            if (!$jadwalId) {
+                return response()->json([
+                    'status' => 'success',
+                    'labels' => [],
+                    'data'   => []
+                ]);
+            }
+        }
+
+        // Validasi workspace wajib
+        if (!$workspaceId) {
+            return response()->json(['status' => 'error', 'message' => 'Workspace required'], 422);
+        }
 
         $rows = DB::table('5r_master_department as d')
             ->leftJoin('5r_master_group as g', 'g.id_department', '=', 'd.id_department')
@@ -125,11 +163,7 @@ class DashboardController extends Controller
             ->leftJoin('5r_jawaban as j', 'j.id_jawaban_group', '=', 'jg.id_jawaban_group')
             ->leftJoin('5r_periode_penilaian as p', 'p.id_periode', '=', 'jg.id_periode')
             ->where('d.id_workspace', $workspaceId)
-            ->when(
-                $jadwalId,
-                fn($q) =>
-                $q->where('p.id_jadwal', $jadwalId)
-            )
+            ->where('p.id_jadwal', $jadwalId) // SELALU filter jadwal
             ->select(
                 'd.nama_department',
                 DB::raw("
@@ -146,7 +180,7 @@ class DashboardController extends Controller
 
         return response()->json([
             'status' => 'success',
-            'labels' => $rows->pluck('nama_department'),
+            'labels' => $rows->pluck('nama_department')->values(),
             'data'   => $rows->pluck('total_nilai')->map(fn($v) => (float) $v)
         ]);
     }
