@@ -1123,6 +1123,8 @@ class CateringController extends Controller
                 'catering' => $pengirimcatering->catering,
                 'tanggal' => $pengirimcatering->tanggal,
                 'foto' => asset('cateringbas/pengirim/' . $pengirimcatering->foto),
+                // 'foto_primary' => 'http://10.11.10.130:8093/cateringbas/pengirim/' . $pengirimcatering->foto,
+                'foto_backup'  => 'http://172.21.5.105/cateringbas/pengirim/' . $pengirimcatering->foto,
                 'shift' => $pengirimcatering->shift,
                 'nama_petugas_security' => $pengirimcatering->nama_petugas_security,
                 'nama_petugas_kantin_pesanan' => $pengirimcatering->nama_petugas_kantin_pesanan,
