@@ -289,7 +289,7 @@
                                             fotoPath =
                                                 "{{ asset('images/5r/temuan/') }}/" +
                                                 fotoName;
-                                            fallbackPath = fotoPath; // ✅ PENTING
+                                            fallbackPath = fotoPath;
 
                                             areaLabel = `
                                                 <div class="badge bg-primary mb-1" style="font-size: 11px;">
@@ -297,7 +297,8 @@
                                                 </div>
                                             `;
                                         } else {
-                                            fotoPath = `/proxy/5r/${fotoName}`;
+                                            fotoPath =
+                                                'http://172.21.5.105/images/5r/689d838a9e73a.jpg';
                                             fallbackPath = fotoPath;
 
                                             areaLabel = `
