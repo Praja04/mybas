@@ -23,7 +23,7 @@
             <div>
                 <h3 class="mb-0">Report 5R Management</h3>
                 <small class="text-muted">
-                    Ringkas • Rapi • Resik • Rawat • Rajin
+                    Ringkas • Rapi • Resik • Rawat • Rajin • Digitalisasi
                 </small>
             </div>
 
