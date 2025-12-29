@@ -275,43 +275,31 @@
                                         });
                                     }
 
-                                    fotoNameArray.forEach(function(fotoName,
-                                        index) {
-                                        var fotoPath = '';
-                                        var areaLabel = '';
-                                        var deskripsiLabel = '';
+                                    fotoNameArray.forEach(function(fotoName, index) {
 
-                                        // Cari apakah foto ini ada di temuan
-                                        var temuanMatch = temuanAreas.find(
-                                            t => t
+                                        let fotoPath = '';
+                                        let fallbackPath = '';
+                                        let areaLabel = '';
+                                        let deskripsiLabel = '';
+
+                                        const temuanMatch = temuanAreas.find(t => t
                                             .foto === fotoName);
 
                                         if (temuanMatch) {
-                                            // Foto dari temuan - gunakan path temuan
                                             fotoPath =
                                                 "{{ asset('images/5r/temuan/') }}/" +
                                                 fotoName;
+                                            fallbackPath = fotoPath; // ✅ PENTING
+
                                             areaLabel = `
                                                 <div class="badge bg-primary mb-1" style="font-size: 11px;">
                                                     <i class="mdi mdi-map-marker"></i> Area: ${temuanMatch.area}
                                                 </div>
                                             `;
-
-                                            if (temuanMatch.deskripsi) {
-                                                deskripsiLabel = `
-                                                    <div class="alert alert-light p-2 mt-1" style="font-size: 11px;">
-                                                        <strong>Deskripsi:</strong><br>
-                                                        ${temuanMatch.deskripsi}
-                                                    </div>
-                                                `;
-                                            }
                                         } else {
-                                            // Ubah prioritas: coba 10.11.10.130 dulu (karena di prod ini yang accessible)
                                             fotoPath =
                                                 `http://10.11.10.130/images/5r/${fotoName}`;
-
-                                            // Fallback ke 172.21.5.105 kalau gagal (untuk compatibility lama)
-                                            var fallbackPath =
+                                            fallbackPath =
                                                 `http://172.21.5.105/images/5r/${fotoName}`;
 
                                             areaLabel = `
@@ -319,30 +307,22 @@
                                                     <i class="mdi mdi-server"></i> Foto dari Server Utama
                                                 </div>
                                             `;
-
                                         }
 
-                                        // var fallbackPath =
-                                        //     `http://10.11.10.130/images/5r/${fotoName}`;
-                                        onerror = "this.onerror=null; 
-                                        this.src = '${fallbackPath}';
-                                        this.onclick = function() {
-                                            showImageModal('${fallbackPath}');
-                                        };
-                                        this.parentElement.previousElementSibling
-                                            .innerHTML =
-                                            '<div class=\"badge bg-warning mb-1\" style=\"font-size: 11px;\"><i class=\"mdi mdi-alert\"></i> Loaded from Backup Server</div>';
-                                        ";
-
                                         foto += `
-                                            <div class="mb-2 p-2 border rounded" style="background-color: #f8f9fa;">
+                                            <div class="mb-2 p-2 border rounded bg-light">
                                                 ${areaLabel}
-                                                <div class="d-flex mb-1 justify-content-center">
-                                                    <img src="${fotoPath}" 
-                                                        alt="Foto ${index + 1}" 
-                                                        style="width: 100%; max-width: 300px; cursor: pointer; border-radius: 4px; border: 1px solid #ddd;"
+                                                <div class="d-flex justify-content-center">
+                                                    <img
+                                                        src="${fotoPath}"
+                                                        style="max-width:300px;width:100%;cursor:pointer"
                                                         onclick="showImageModal('${fotoPath}')"
-                                                        onerror="this.onerror=null; this.src='${fallbackPath}'; this.onclick=function(){ showImageModal('${fallbackPath}'); }" />
+                                                        onerror="
+                                                            this.onerror=null;
+                                                            this.src='${fallbackPath}';
+                                                            this.onclick=function(){ showImageModal('${fallbackPath}') };
+                                                        "
+                                                    />
                                                 </div>
                                                 ${deskripsiLabel}
                                             </div>
