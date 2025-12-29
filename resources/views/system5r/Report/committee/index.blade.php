@@ -294,10 +294,8 @@
                                                 </div>
                                             `;
                                         } else {
-                                            fotoPath =
-                                                `http://10.11.10.130/images/5r/${fotoName}`;
-                                            fallbackPath =
-                                                `http://172.21.5.105/images/5r/${fotoName}`;
+                                            fotoPath = `/proxy/5r/${fotoName}`;
+                                            fallbackPath = fotoPath;
 
                                             areaLabel = `
                                                 <div class="badge bg-success mb-1" style="font-size: 11px;">

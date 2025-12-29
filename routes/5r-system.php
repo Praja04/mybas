@@ -59,6 +59,17 @@ Route::prefix('5r-system')->group(function () {
         Route::post('report/detail', 'System5R\Report\ManagementController@detail')->name('5r-system.report.detail');
         Route::get('report/download/{encryptedInfo}', 'System5R\Report\ManagementController@download')->name('5r-system.report.print');
 
+        Route::get('/proxy/5r/{filename}', function ($filename) {
+
+            $url = "http://172.21.5.105/images/5r/" . $filename;
+
+            $client = new \GuzzleHttp\Client();
+            $response = $client->get($url);
+
+            return response($response->getBody(), 200)
+                ->header('Content-Type', $response->getHeaderLine('Content-Type'));
+        });
+
         // page master committee
         Route::get('/report/master-committee', 'System5R\Report\CommitteeController@masterCommitte')->name('5r-system.master-committee');
         // delete master group
