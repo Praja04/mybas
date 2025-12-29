@@ -8,6 +8,8 @@
 /public/cateringbas
 /public/storage
 /public/e-doc
+/public/pos-security
+/public/uploads
 /storage
 /vendor
 .env

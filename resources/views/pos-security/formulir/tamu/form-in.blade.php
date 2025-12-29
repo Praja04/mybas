@@ -91,10 +91,10 @@
                             </div>
 
                             <div class="mb-3">
-                                <label class="form-label fw-semibold">Nama PIC <span
+                                <label class="form-label fw-semibold">Bertemu Dengan <span
                                         class="text-danger">*</span></label>
                                 <input type="text" name="host" class="form-control"
-                                    placeholder="Contoh: Budi Santoso">
+                                    placeholder="Contoh: Pak Budi Santoso">
                             </div>
 
                             <div class="mb-3">

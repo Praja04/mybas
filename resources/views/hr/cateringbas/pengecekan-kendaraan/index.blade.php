@@ -148,10 +148,30 @@
                     {
                         data: 'id_transaksi'
                     },
+                    // {
+                    //     data: 'foto',
+                    //     render: function(data) {
+                    //         return `<a href="${data}" class=""><img src="${data}" class="clickable-image" style="max-width: 80px; height: auto;" /></a>`;
+                    //     }
+                    // },
                     {
                         data: 'foto',
-                        render: function(data) {
-                            return `<a href="${data}" class=""><img src="${data}" class="clickable-image" style="max-width: 80px; height: auto;" /></a>`;
+                        render: function(data, type, row) {
+
+                            return `
+                            <a href="javascript:void(0)" onclick="openImage(this)">
+                                <img
+                                    src="${row.foto}"
+                                    onerror="
+                                        if (this.src !== '${row.foto_backup}') {
+                                            this.src='${row.foto_backup}';
+                                        }
+                                    "
+                                    class="clickable-image"
+                                    style="max-width:80px;height:auto;"
+                                />
+                            </a>
+                        `;
                         }
                     },
                     {
@@ -199,6 +219,14 @@
                 ]
             });
         });
+
+        function openImage(el) {
+            const img = el.querySelector('img');
+            if (img && img.src) {
+                window.open(img.src, '_blank');
+            }
+        }
+
 
         // delete pesanan
         function deletePengirimcatering(id) {
