@@ -272,89 +272,86 @@
                                         });
                                     }
 
-                                    fotoNameArray.forEach(function(fotoName,
-                                        index) {
-                                        var fotoPath = '';
-                                        var areaLabel = '';
-                                        var deskripsiLabel = '';
+                                    fotoNameArray.forEach(function(fotoName, index) {
 
-                                        // Cari apakah foto ini ada di temuan
-                                        var temuanMatch = temuanAreas.find(
-                                            t => t
+                                        let fotoPath = '';
+                                        let fallbackPath = '';
+                                        let areaLabel = '';
+                                        let deskripsiLabel = '';
+
+                                        const temuanMatch = temuanAreas.find(t => t
                                             .foto === fotoName);
 
                                         if (temuanMatch) {
-                                            // Foto dari temuan - gunakan path temuan
                                             fotoPath =
                                                 "{{ asset('images/5r/temuan/') }}/" +
                                                 fotoName;
-                                            areaLabel = `
-                                            <div class="badge bg-primary mb-1" style="font-size: 11px;">
-                                                <i class="mdi mdi-map-marker"></i> Area: ${temuanMatch.area}
-                                            </div>
-                                        `;
+                                            fallbackPath = fotoPath; // ✅ PENTING
 
-                                            if (temuanMatch.deskripsi) {
-                                                deskripsiLabel = `
-                                                <div class="alert alert-light p-2 mt-1" style="font-size: 11px;">
-                                                    <strong>Deskripsi:</strong><br>
-                                                    ${temuanMatch.deskripsi}
+                                            areaLabel = `
+                                                <div class="badge bg-primary mb-1" style="font-size: 11px;">
+                                                    <i class="mdi mdi-map-marker"></i> Area: ${temuanMatch.area}
                                                 </div>
                                             `;
-                                            }
                                         } else {
-                                            // Foto upload langsung - gunakan path biasa
-                                            fotoPath =
-                                                "{{ asset('images/5r/') }}/" +
-                                                fotoName;
+                                            fotoPath = `/proxy/5r/${fotoName}`;
+                                            fallbackPath = fotoPath;
+
                                             areaLabel = `
-                                            <div class="badge bg-secondary mb-1" style="font-size: 11px;">
-                                                <i class="mdi mdi-image"></i> Foto Upload Langsung
-                                            </div>
-                                        `;
+                                                <div class="badge bg-success mb-1" style="font-size: 11px;">
+                                                    <i class="mdi mdi-server"></i> Foto dari Server Utama
+                                                </div>
+                                            `;
                                         }
 
                                         foto += `
-                                        <div class="mb-2 p-2 border rounded" style="background-color: #f8f9fa;">
-                                            ${areaLabel}
-                                            <div class="d-flex mb-1">
-                                                <img src="${fotoPath}" 
-                                                    alt="Foto ${index + 1}" 
-                                                    style="width: 100%; max-width: 300px; cursor: pointer; border-radius: 4px;" 
-                                                    onclick="showImageModal('${fotoPath}')" />
+                                            <div class="mb-2 p-2 border rounded bg-light">
+                                                ${areaLabel}
+                                                <div class="d-flex justify-content-center">
+                                                    <img
+                                                        src="${fotoPath}"
+                                                        style="max-width:300px;width:100%;cursor:pointer"
+                                                        onclick="showImageModal('${fotoPath}')"
+                                                        onerror="
+                                                            this.onerror=null;
+                                                            this.src='${fallbackPath}';
+                                                            this.onclick=function(){ showImageModal('${fallbackPath}') };
+                                                        "
+                                                    />
+                                                </div>
+                                                ${deskripsiLabel}
                                             </div>
-                                            ${deskripsiLabel}
-                                        </div>
-                                    `;
+                                        `;
                                     });
+
                                 } else {
                                     foto = `<i class="text-muted">No Foto</i>`;
                                 }
                                 $('#table-detail tbody').append(`
-                                <tr>
-                                    <td>${jawaban.pertanyaan.jenis}</td>
-                                    <td>
-                                        <div style="width: 300px">
-                                            <h6>ITEM PERIKSA</h6>
-                                            ${jawaban.pertanyaan.item_periksa}
-                                            <h6 class="mt-3">KETERANGAN</h6>
-                                            ${jawaban.pertanyaan.keterangan}
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <h6>NILAI</h6>
-                                        <input style="width: 100px" class="form-control" disabled value="${jawaban.nilai}" />
-                                        <div class="mt-3">
-                                            <h6>FOTO</h6>
-                                            ${foto}
-                                        </div>
-                                        <div class="mt-3 rounded bg-light p-1">
-                                            <h6>KETERANGAN</h6>
-                                            <p>${jawaban.keterangan}</p>
-                                        </div>
-                                    </td>
-                                </tr>
-                            `);
+                                    <tr>
+                                        <td>${jawaban.pertanyaan.jenis}</td>
+                                        <td>
+                                            <div style="width: 300px">
+                                                <h6>ITEM PERIKSA</h6>
+                                                ${jawaban.pertanyaan.item_periksa}
+                                                <h6 class="mt-3">KETERANGAN</h6>
+                                                ${jawaban.pertanyaan.keterangan}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <h6>NILAI</h6>
+                                            <input style="width: 100px" class="form-control" disabled value="${jawaban.nilai}" />
+                                            <div class="mt-3">
+                                                <h6>FOTO</h6>
+                                                ${foto}
+                                            </div>
+                                            <div class="mt-3 rounded bg-light p-1">
+                                                <h6>KETERANGAN</h6>
+                                                <p>${jawaban.keterangan}</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                `);
                                 no++;
                             });
                             noParent++;

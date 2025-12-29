@@ -27,6 +27,8 @@
                 </small>
             </div>
 
+            <img src="http://172.21.5.105/images/5r/689d838a9e73a.jpg" alt="test">
+
             <div style="width: 220px">
                 <label class="form-label mb-0">Jadwal Penilaian</label>
                 <select id="filter_jadwal" class="form-control form-control-sm">
@@ -49,7 +51,7 @@
         <div class="modal-dialog modal-xl">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">DETAIL PENILAIAN</h5>
+                    <h5 class="modal-title">DETAIL PENILAIAN TEST</h5>
                     <button class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
@@ -275,60 +277,59 @@
                                         });
                                     }
 
-                                    fotoNameArray.forEach(function(fotoName,
-                                        index) {
-                                        var fotoPath = '';
-                                        var areaLabel = '';
-                                        var deskripsiLabel = '';
+                                    fotoNameArray.forEach(function(fotoName, index) {
 
-                                        // Cari apakah foto ini ada di temuan
-                                        var temuanMatch = temuanAreas.find(
-                                            t => t
+                                        let fotoPath = '';
+                                        let fallbackPath = '';
+                                        let areaLabel = '';
+                                        let deskripsiLabel = '';
+
+                                        const temuanMatch = temuanAreas.find(t => t
                                             .foto === fotoName);
 
                                         if (temuanMatch) {
-                                            // Foto dari temuan - gunakan path temuan
                                             fotoPath =
                                                 "{{ asset('images/5r/temuan/') }}/" +
                                                 fotoName;
-                                            areaLabel = `
-                                            <div class="badge bg-primary mb-1" style="font-size: 11px;">
-                                                <i class="mdi mdi-map-marker"></i> Area: ${temuanMatch.area}
-                                            </div>
-                                        `;
+                                            fallbackPath = fotoPath; // ✅ PENTING
 
-                                            if (temuanMatch.deskripsi) {
-                                                deskripsiLabel = `
-                                                <div class="alert alert-light p-2 mt-1" style="font-size: 11px;">
-                                                    <strong>Deskripsi:</strong><br>
-                                                    ${temuanMatch.deskripsi}
+                                            areaLabel = `
+                                                <div class="badge bg-primary mb-1" style="font-size: 11px;">
+                                                    <i class="mdi mdi-map-marker"></i> Area: ${temuanMatch.area}
                                                 </div>
                                             `;
-                                            }
                                         } else {
-                                            // Foto upload langsung - gunakan path biasa
-                                            fotoPath =
-                                                "{{ asset('images/5r/') }}/" +
-                                                fotoName;
+                                            fotoPath = `/proxy/5r/${fotoName}`;
+                                            fallbackPath = fotoPath;
+
                                             areaLabel = `
-                                            <div class="badge bg-secondary mb-1" style="font-size: 11px;">
-                                                <i class="mdi mdi-image"></i> Foto Upload Langsung
-                                            </div>
-                                        `;
+                                                <div class="badge bg-success mb-1" style="font-size: 11px;">
+                                                    <i class="mdi mdi-server"></i> Foto dari Server Utama
+                                                </div>
+                                            `;
                                         }
 
                                         foto += `
-                                        <div class="mb-2 p-2 border rounded" style="background-color: #f8f9fa;">
-                                            ${areaLabel}
-                                            <div class="d-flex mb-1">
-                                                <img src="${fotoPath}" 
-                                                    alt="Foto ${index + 1}" 
-                                                    style="width: 100%; max-width: 300px; cursor: pointer; border-radius: 4px;" 
-                                                    onclick="showImageModal('${fotoPath}')" />
+                                            <div class="mb-2 p-2 border rounded bg-light">
+                                                ${areaLabel}
+                                                <div class="d-flex justify-content-center">
+                                                    <img
+                                                        src="${fotoPath}"
+                                                        style="max-width:300px;width:100%;cursor:pointer"
+                                                        onclick="showImageModal('${fotoPath}')"
+                                                        onerror="
+                                                            this.onerror=null;
+                                                            this.src='${fallbackPath}';
+                                                            this.onclick=function(){ showImageModal('${fallbackPath}') };
+                                                        "
+                                                    />
+                                                </div>
+                                                ${deskripsiLabel}
                                             </div>
-                                            ${deskripsiLabel}
-                                        </div>
-                                    `;
+                                        `;
+
+                                        console.log('fotoPath:', fotoPath);
+                                        console.log('fallbackPath:', fallbackPath);
                                     });
                                 } else {
                                     foto = `<i class="text-muted">No Foto</i>`;
