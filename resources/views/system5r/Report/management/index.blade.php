@@ -289,8 +289,7 @@
                                             fotoPath =
                                                 "{{ asset('images/5r/temuan/') }}/" +
                                                 fotoName;
-                                            fallbackPath = fotoPath; // ✅ PENTING
-
+                                            fallbackPath = fotoPath;
                                             areaLabel = `
                                                 <div class="badge bg-primary mb-1" style="font-size: 11px;">
                                                     <i class="mdi mdi-map-marker"></i> Area: ${temuanMatch.area}
@@ -339,7 +338,7 @@
                                         <input style="width: 100px" class="form-control" disabled value="${jawaban.nilai}" />
                                         <div class="mt-3">
                                             <h6>FOTO</h6>
-                                            ${foto}
+                                          
                                         </div>
                                         <div class="mt-3 rounded bg-light p-1">
                                             <h6>KETERANGAN</h6>
