@@ -27,6 +27,8 @@
                 </small>
             </div>
 
+            <img src="http://172.21.5.105/images/5r/689d838a9e73a.jpg" alt="test">
+
             <div style="width: 220px">
                 <label class="form-label mb-0">Jadwal Penilaian</label>
                 <select id="filter_jadwal" class="form-control form-control-sm">
