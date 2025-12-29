@@ -309,7 +309,7 @@
                                             // Foto upload langsung - coba dari server internal
                                             // Prioritas: 10.11.10.130 dulu, kalau gagal fallback ke 172.21.5.105
                                             fotoPath =
-                                                `http://10.11.10.130/images/5r/${fotoName}`;
+                                                `http://172.21.5.105/images/5r/${fotoName}`;
 
                                             areaLabel = `
                                                 <div class="badge bg-info mb-1" style="font-size: 11px;">
@@ -322,7 +322,7 @@
                                         }
 
                                         var fallbackPath =
-                                            `http://172.21.5.105/images/5r/${fotoName}`;
+                                            `http://10.11.10.130/images/5r/${fotoName}`;
 
                                         foto += `
                                             <div class="mb-2 p-2 border rounded" style="background-color: #f8f9fa;">
