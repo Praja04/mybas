@@ -178,7 +178,9 @@ class ManagementController extends Controller
             ->setPaper('A4', 'portrait')
             ->setOptions([
                 'isHtml5ParserEnabled' => true,
-                'isRemoteEnabled' => true,
+                'isRemoteEnabled' => true,       // tetap biar aman
+                'isPhpEnabled' => true,          // penting untuk @php di blade
+                'defaultFont' => 'DejaVu Sans',  // karena kamu pakai font itu
             ]);
 
         return $pdf->stream('Report-5R.pdf');

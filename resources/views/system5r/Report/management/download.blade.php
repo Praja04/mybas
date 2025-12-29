@@ -199,17 +199,33 @@
                                                         <br>
 
                                                         {{-- FOTO FULL WIDTH --}}
-                                                        <img src="file://{{ $path }}"
-                                                            style="
-                                                                width: 100%;
-                                                                max-height: 220px;
-                                                                object-fit: contain;
-                                                                border: 1px solid #ccc;
-                                                                padding: 4px;
-                                                                background: #fff;
-                                                                display: block;
-                                                            "
-                                                            alt="Foto temuan {{ $areaName }}">
+                                                        @php
+                                                            $imageData = @file_get_contents($path);
+                                                            if ($imageData !== false) {
+                                                                $mime = mime_content_type($path); // atau 'image/jpeg' jika pasti jpg
+                                                                $base64 = base64_encode($imageData);
+                                                                $src = 'data:' . $mime . ';base64,' . $base64;
+                                                            } else {
+                                                                // Jika file tidak ada, tampilkan placeholder atau skip
+                                                                $src = ''; // atau gunakan placeholder base64 kecil
+                                                            }
+                                                        @endphp
+
+                                                        @if (!empty($src))
+                                                            <img src="{{ $src }}"
+                                                                style="
+                                                                    width: 100%;
+                                                                    max-height: 220px;
+                                                                    object-fit: contain;
+                                                                    border: 1px solid #ccc;
+                                                                    padding: 4px;
+                                                                    background: #fff;
+                                                                    display: block;
+                                                                "
+                                                                alt="Foto temuan {{ $areaName }}">
+                                                        @else
+                                                            <em>File foto tidak ditemukan</em>
+                                                        @endif
 
                                                         {{-- KETERANGAN TEMUAN (di bawah foto) --}}
                                                         @if (!empty($keterangan))
