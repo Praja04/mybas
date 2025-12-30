@@ -1,7 +1,8 @@
 function openCekKendaraanActionModal(trncekid) {
     $.get(API_CEK_KENDARAAN_SHOW + "?id=" + trncekid, function (response) {
         if (!response.success) {
-            Swal.fire("Gagal", response.message, "error");
+            console.log(response.message);
+            Swal.fire("Gagal", "Terjadi kesalahan", "error");
             return;
         }
         const data = response.data;
@@ -112,41 +113,76 @@ function hitungDurasi(inTime, outTime) {
 function renderFoto(container, fotoJson) {
     container.html("");
 
+    let fotoObj = {};
     try {
-        const fotoObj = JSON.parse(fotoJson || "{}");
-
-        if (Object.keys(fotoObj).length === 0) {
-            container.append("<p class='text-muted'>Tidak ada foto.</p>");
-            return;
-        }
-
-        // flatten semua path
-        Object.values(fotoObj)
-            .flat()
-            .forEach((path) => {
-                const label = getLabelFromPath(path);
-                const imageUrl = `/${path}`;
-
-                container.append(`
-                    <div class="col-md-6 col-lg-3 mb-3 text-center">
-                        <small class="text-muted d-block mb-1">${label}</small>
-                        <img
-                            src="${imageUrl}"
-                            alt="${label}"
-                            class="img-fluid rounded border zoomable-image"
-                            style="max-height:180px;cursor:pointer;transition:transform .2s"
-                            onmouseover="this.style.transform='scale(1.03)'"
-                            onmouseout="this.style.transform='scale(1)'"
-                        >
-                    </div>
-                `);
-            });
-    } catch (e) {
-        console.warn("Gagal render foto", e);
-        container.append(
-            "<p class='text-danger'>Gagal memuat foto kendaraan.</p>"
-        );
+        fotoObj = JSON.parse(fotoJson || "{}");
+    } catch {
+        fotoObj = {};
     }
+
+    if (!fotoObj || Object.keys(fotoObj).length === 0) {
+        container.append(
+            "<p class='text-muted fst-italic'>Tidak ada foto.</p>"
+        );
+        return;
+    }
+
+    const accordionId = `accordion-${Math.random().toString(36).substr(2, 6)}`;
+
+    const accordion = $(`<div class="accordion" id="${accordionId}"></div>`);
+
+    let index = 0;
+
+    Object.entries(fotoObj).forEach(([key, images]) => {
+        if (!Array.isArray(images) || images.length === 0) return;
+
+        const label = key
+            .replace(/_/g, " ")
+            .replace(/\b\w/g, (c) => c.toUpperCase());
+
+        const itemId = `${accordionId}-item-${index}`;
+        const collapseId = `${accordionId}-collapse-${index}`;
+
+        const item = $(`
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="${itemId}">
+                    <button class="accordion-button collapsed"
+                        type="button"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#${collapseId}">
+                        ${label}
+                        <span class="badge bg-secondary ms-2">
+                            ${images.length} foto
+                        </span>
+                    </button>
+                </h2>
+                <div id="${collapseId}"
+                    class="accordion-collapse collapse"
+                    data-bs-parent="#${accordionId}">
+                    <div class="accordion-body">
+                        <div class="row g-2"></div>
+                    </div>
+                </div>
+            </div>
+        `);
+
+        const row = item.find(".row");
+
+        images.forEach((path) => {
+            row.append(`
+                <div class="col-6 col-md-4 col-lg-3">
+                    <img src="/${path}"
+                        class="img-fluid rounded border zoomable-image"
+                        style="height:120px;object-fit:cover;cursor:pointer">
+                </div>
+            `);
+        });
+
+        accordion.append(item);
+        index++;
+    });
+
+    container.append(accordion);
 }
 
 function renderStatusBadge(data) {
@@ -183,4 +219,27 @@ $(document).on("keydown", function (e) {
         $("#imageOverlay").css("display", "none");
         $("#overlayImage").attr("src", "");
     }
+});
+
+document.addEventListener("DOMContentLoaded", function () {
+    const modalDetail = document.getElementById("modalCekKendaraanDetail");
+    if (!modalDetail) return;
+
+    modalDetail.addEventListener("hidden.bs.modal", function () {
+        // reset ke tab Informasi
+        const infoTabBtn = document.querySelector(
+            '#detailTabs button[data-bs-target="#tabInfo"]'
+        );
+
+        if (infoTabBtn) {
+            const tab = bootstrap.Tab.getOrCreateInstance(infoTabBtn);
+            tab.show();
+        }
+
+        // reset scroll tab content
+        const tabContent = modalDetail.querySelector(".tab-content");
+        if (tabContent) {
+            tabContent.scrollTop = 0;
+        }
+    });
 });

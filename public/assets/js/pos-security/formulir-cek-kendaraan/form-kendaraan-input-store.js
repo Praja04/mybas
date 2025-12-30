@@ -7,10 +7,31 @@ $(document).ready(function () {
         let firstEmptyLabel = "";
 
         $("#fotoSection input[required]").each(function () {
-            if (!$(this).val()) {
+            const rawValue = $(this).val();
+            let photos = [];
+
+            try {
+                photos = JSON.parse(rawValue || "[]");
+            } catch (e) {
+                photos = [];
+            }
+
+            // validasi foto kosong
+            if (!Array.isArray(photos) || photos.length === 0) {
                 valid = false;
-                const key = $(this).attr("id").replace("input-", "");
-                firstEmptyLabel = key.replace(/_/g, " ");
+
+                const label = $(this)
+                    .closest(".foto-slot")
+                    .find("label")
+                    .clone()
+                    .children()
+                    .remove()
+                    .end()
+                    .text()
+                    .trim();
+
+                firstEmptyLabel = label || "Foto";
+
                 return false;
             }
         });
