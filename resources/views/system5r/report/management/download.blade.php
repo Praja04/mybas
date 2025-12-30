@@ -150,7 +150,7 @@
 
                                 <br><br>
 
-                                <strong>Foto:</strong><br>
+                                <strong>Foto:</strong><br><br>
 
                                 @php
                                     // Cek apakah ada foto dari field foto langsung
