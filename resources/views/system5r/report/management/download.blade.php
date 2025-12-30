@@ -199,12 +199,10 @@
                                             $localPath = public_path('images/5r/temuan/' . $_foto);
                                             $imageData = false;
                                             $src = '';
-                                            $sourceLabel = '';
 
                                             // Cek file lokal di folder temuan
                                             if (file_exists($localPath)) {
                                                 $imageData = @file_get_contents($localPath);
-                                                $sourceLabel = 'Local Server - Temuan';
                                             }
 
                                             // Jika tidak ada di temuan, coba di folder 5r langsung
@@ -212,7 +210,6 @@
                                                 $localPath2 = public_path('images/5r/' . $_foto);
                                                 if (file_exists($localPath2)) {
                                                     $imageData = @file_get_contents($localPath2);
-                                                    $sourceLabel = 'Local Server - 5R';
                                                 }
                                             }
 
@@ -220,9 +217,6 @@
                                             if ($imageData === false) {
                                                 $remotePath = 'http://172.21.5.105/images/5r/' . $_foto;
                                                 $imageData = @file_get_contents($remotePath);
-                                                if ($imageData !== false) {
-                                                    $sourceLabel = 'Server 172.21.5.105';
-                                                }
                                             }
 
                                             // Konversi ke base64 jika berhasil
@@ -256,22 +250,6 @@
                                                     ">
                                                 {{ $areaName }}
                                             </span>
-
-                                            @if (!empty($src))
-                                                {{-- BADGE SOURCE (OPSIONAL) --}}
-                                                <span
-                                                    style="
-                                                            display:inline-block;
-                                                            background:#28a745;
-                                                            color:#fff;
-                                                            font-size:8px;
-                                                            padding:2px 6px;
-                                                            border-radius:8px;
-                                                            margin-left:5px;
-                                                        ">
-                                                    {{ $sourceLabel }}
-                                                </span>
-                                            @endif
 
                                             <br>
 
