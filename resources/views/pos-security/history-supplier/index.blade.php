@@ -34,6 +34,8 @@
                                         <th>Perusahaan</th>
                                         <th>No. Polisi</th>
                                         <th>No. Kartu</th>
+                                        <th>Pakai Kacamata</th>
+                                        <th>Kondisi Kacamata</th>
                                         <th>Foto Tamu</th>
                                         <th>Foto Identitas</th>
                                         <th>Waktu Masuk</th>

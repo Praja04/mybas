@@ -73,6 +73,9 @@
                                         <li><strong>No KTP/SIM:</strong> <span id="visitorKTP"></span></li>
                                         <li><strong>No Polisi:</strong> <span id="visitorNopol"></span></li>
                                         <li><strong>Jumlah Orang:</strong> <span id="visitorSumPeople"></span></li>
+                                        <li><strong>Pakai Kacamata:</strong> <span id="visitorIsKacamata"></span></li>
+                                        <li><strong>Kondisi Kacamata:</strong> <span id="visitorKondisiKacamata"></span>
+                                        </li>
                                     </ul>
                                 </div>
                             </div>

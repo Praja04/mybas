@@ -243,6 +243,7 @@ class TamuFormAjax extends Controller
             'rfid'              => 'required|string|max:100',
             'imgvisitorpathin'  => 'required|string',
             'foto'              => 'required|string',
+            'is_kacamata'       => 'required|boolean',
         ], [
             'namavisitor.required'      => 'Nama visitor harus diisi',
             'namacomp.required'         => 'Nama perusahaan harus diisi',
@@ -258,6 +259,7 @@ class TamuFormAjax extends Controller
             'rfid.required'             => 'Nomor kartu wajib diisi',
             'imgvisitorpathin.required' => 'Foto KTP harus diunggah.',
             'foto.required'             => 'Foto selfie wajib diunggah.',
+            'is_kacamata.required'      => 'Pertanyaan kacamata wajib diisi',
         ]);
 
         // Validasi kondisional:
@@ -375,6 +377,8 @@ class TamuFormAjax extends Controller
                 'flagtrx'              => 'X', // flag status transaksi (default: X => baru dibuat)
                 'kartu_dikembalikan'   => false,
                 'qr_code_saat_ini'     => $request->qr_code_saat_ini ?? null,
+                'is_kacamata'          => $request->is_kacamata,
+                'kondisi_kacamata'     => $request->kondisi_kacamata ?? null,
             ];
 
             DB::transaction(function () use ($visitorData, &$isNewRecord, &$isUpdated, &$isCardInUse) {

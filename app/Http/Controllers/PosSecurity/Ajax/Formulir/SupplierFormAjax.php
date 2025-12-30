@@ -339,7 +339,9 @@ class SupplierFormAjax extends Controller
             'sumpeople'         => 'nullable|integer|min:1|max:10',
             'imgvisitorpathin'  => 'required|string',
             'foto'              => 'required|string',
-            'nohpdriver'        => 'nullable|string|max:20'
+            'nohpdriver'        => 'nullable|string|max:20',
+            'is_kacamata'       => 'required|boolean',
+
         ], [
             'namavisitor.required'      => 'Nama visitor harus diisi',
             'namacomp.required'         => 'Nama perusahaan harus diisi',
@@ -352,7 +354,8 @@ class SupplierFormAjax extends Controller
             'imgvisitorpathin.required' => 'Foto KTP harus diambil',
             'foto.required'             => 'Foto selfie wajib diambil',
             'sumpeople.min'             => 'Jumlah orang minimal 1',
-            'sumpeople.max'             => 'Jumlah orang maksimal 10'
+            'sumpeople.max'             => 'Jumlah orang maksimal 10',
+            'is_kacamata.required'      => 'Pertanyaan kacamata wajib diisi',
         ]);
 
         if ($validator->fails()) {
@@ -453,6 +456,8 @@ class SupplierFormAjax extends Controller
                 'kartu_dikembalikan' => false,
                 'qr_code_saat_ini'   => $request->qr_code_saat_ini,
                 'tgl_lahir'          => $request->tgllahir,
+                'is_kacamata'          => $request->is_kacamata,
+                'kondisi_kacamata'     => $request->kondisi_kacamata ?? null,
             ];
 
             // dd($supplier_data);

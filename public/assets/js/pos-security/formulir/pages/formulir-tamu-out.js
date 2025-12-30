@@ -71,6 +71,17 @@ function searchVisitorData(keyword) {
                 }
                 $("#visitorCardStatus").text(statusKartu);
 
+                // Pakai kacamata
+                let pakaiKacamata = "-";
+                if (data.is_kacamata == 0) {
+                    pakaiKacamata = "Tidak";
+                } else if (data.is_kacamata == 1) {
+                    pakaiKacamata = "Ya";
+                }
+
+                $("#visitorIsKacamata").text(pakaiKacamata);
+                $("#visitorKondisiKacamata").text(data.kondisi_kacamata || "-");
+
                 // Info gate keluar
                 $("#visitorGateIdOut").text(data.gateidout || "-");
                 $("#visitorGateLineIdOut").text(data.gatelineidout || "-");

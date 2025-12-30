@@ -80,8 +80,6 @@ function searchVisitorData(keyword) {
                     response.data.no_ktp_sim || "-";
                 document.getElementById("visitorNopol").innerText =
                     response.data.nopol || "-";
-                document.getElementById("visitorSumPeople").innerText =
-                    response.data.sumpeople || "1";
                 document.getElementById("visitorDateIn").innerText =
                     response.data.datein || "-";
                 document.getElementById("visitorTimeIn").innerText =
@@ -106,6 +104,19 @@ function searchVisitorData(keyword) {
                 }
                 document.getElementById("visitorCardStatus").innerText =
                     statusKartu;
+
+                // Pakai kacamata
+                let pakaiKacamata = "-";
+                if (response.data.is_kacamata == 0) {
+                    pakaiKacamata = "Tidak";
+                } else if (response.data.is_kacamata == 1) {
+                    pakaiKacamata = "Ya";
+                }
+
+                document.getElementById("visitorIsKacamata").innerText =
+                    pakaiKacamata;
+                document.getElementById("visitorKondisiKacamata").innerText =
+                    response.data.kondisi_kacamata || "-";
 
                 // Gate info
                 document.getElementById("visitorGateIdOut").innerText =

@@ -35,6 +35,8 @@
                                         <th>No Kartu</th> <!-- purpose -->
                                         <th>No Identitas</th> <!-- purpose -->
                                         <th>Jenis Kartu</th>
+                                        <th>Pakai Kacamata</th>
+                                        <th>Kondisi Kacamata</th>
                                         <th>Foto Diri</th> <!-- photo_visitor -->
                                         <th>Foto Identitas</th> <!-- img_visitor -->
                                         <th>Waktu Masuk</th>

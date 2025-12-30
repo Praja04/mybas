@@ -3,6 +3,8 @@ document.addEventListener("DOMContentLoaded", function () {
     const $submitBtn = $("#submitBtn");
     const $rfidInput = $("input[name='rfid']");
     const jenisSelect = document.getElementById("jenisSelect");
+    const isKacamataSelect = document.getElementById("isKacamata");
+    const kondisiKacamataSelect = document.getElementById("kondisiKacamata");
     const purposeGroup = document.getElementById("purposeGroup");
     const nopolGroup = document.getElementById("nopolGroup");
     const purposeSelect = document.getElementById("purposeSelect");
@@ -61,6 +63,11 @@ document.addEventListener("DOMContentLoaded", function () {
         const tujuan = purposeSelect.value?.trim() || "";
         const nomorPolisi = nopolInput.value?.trim() || "";
 
+        const isKacamataValue = isKacamataSelect.value;
+        const isUseKacamata = isKacamataValue === "1";
+
+        const kondisiKacamataValue = kondisiKacamataSelect.value;
+
         if (
             !namaVendor ||
             !namaPerusahaan ||
@@ -72,12 +79,17 @@ document.addEventListener("DOMContentLoaded", function () {
             !deptId ||
             !keperluan ||
             !host ||
-            !jenis
+            !jenis ||
+            !isKacamataValue
         ) {
             return false;
         }
 
         if (isTransporter && (!tujuan || !nomorPolisi)) {
+            return false;
+        }
+
+        if (isUseKacamata && !kondisiKacamataValue) {
             return false;
         }
 
@@ -250,6 +262,11 @@ document.addEventListener("DOMContentLoaded", function () {
                 $form[0].reset();
                 resetPreviewImage();
                 resetModalKamera();
+
+                if (typeof resetKacamata === "function") {
+                    resetKacamata();
+                }
+
                 if (typeof selfiePhotos !== "undefined") {
                     selfiePhotos = [];
                     typeof updateSelfieHiddenInput === "function" &&
@@ -415,6 +432,11 @@ document.addEventListener("DOMContentLoaded", function () {
             typeof renderSelfiePreviews === "function" &&
                 renderSelfiePreviews();
         }
+
+        if (typeof resetKacamata === "function") {
+            resetKacamata();
+        }
+
         Swal.fire({
             icon: "success",
             title: "Form berhasil direset",

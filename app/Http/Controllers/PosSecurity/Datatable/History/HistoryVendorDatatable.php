@@ -122,6 +122,22 @@ class HistoryVendorDatatable extends Controller
         </div>
       HTML;
             })
+            ->addColumn('is_kacamata', function ($item) {
+                if ($item->is_kacamata === null) {
+                    return '-';
+                }
+
+                return $item->is_kacamata
+                    ? '<span class="badge bg-success">Ya</span>'
+                    : '<span class="badge bg-secondary">Tidak</span>';
+            })
+            ->addColumn('kondisi_kacamata', function ($item) {
+                if (!$item->is_kacamata) {
+                    return '-';
+                }
+
+                return $item->kondisi_kacamata;
+            })
             ->editColumn('NAMAVISITOR', fn($item) => $item->NAMAVISITOR ?: '-')
             ->editColumn('NAMACOMP', fn($item) => $item->NAMACOMP ?: '-')
             ->editColumn('PURPOSE', fn($item) => $item->PURPOSE ?: '-')
@@ -147,7 +163,7 @@ class HistoryVendorDatatable extends Controller
                 //     </ul>
                 // </div>';
             })
-            ->rawColumns(['photo_visitor', 'img_visitor', 'qr_image', 'namacomp', 'waktu_masuk', 'waktu_keluar', 'namavisitor', 'action'])
+            ->rawColumns(['photo_visitor', 'img_visitor', 'qr_image', 'namacomp', 'waktu_masuk', 'waktu_keluar', 'namavisitor', 'action', "is_kacamata", "kondisi_kacamata"])
             ->make(true);
     }
 

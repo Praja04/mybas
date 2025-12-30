@@ -99,6 +99,27 @@
                             </div>
 
                             <div class="mb-3">
+                                <label class="form-label fw-semibold">Apakah Tamu Menggunakan Kacamata? <span
+                                        class="text-danger">*</span></label>
+                                <select name="is_kacamata" id="isKacamata" class="form-select w-100" required>
+                                    <option value="" disabled selected>-- Pilih --</option>
+                                    <option value="1">Ya</option>
+                                    <option value="0">Tidak</option>
+
+                                </select>
+                            </div>
+
+                            <div class="mb-3" id="kondisiKacamataGroup" style="display: none;">
+                                <label class="form-label fw-semibold">Kondisi Kacamata Saat Ini <span
+                                        class="text-danger">*</span></label>
+                                <select name="kondisi_kacamata" id="kondisiKacamata" class="form-select w-100">
+                                    <option value="" disabled selected>-- Pilih Kondisi --</option>
+                                    <option value="Bagus">Bagus/bisa digunakan</option>
+                                    <option value="Rusak">Rusak/pecah/tidak bisa digunakan</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
                                 <label class="form-label fw-semibold">Nomor Kartu ID <span
                                         class="text-danger">*</span></label>
                                 <input type="text" class="form-control" name="rfid" required

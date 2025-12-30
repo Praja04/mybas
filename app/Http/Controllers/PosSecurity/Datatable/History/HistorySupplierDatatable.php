@@ -150,6 +150,22 @@ class HistorySupplierDatatable extends Controller
              style="max-width: 80px; max-height: 80px; border-radius: 6px; cursor: pointer; margin: 3px;" 
              onclick="showImageModal(\'' . $item->imgvisitorpathin . '\')" />';
             })
+            ->addColumn('is_kacamata', function ($item) {
+                if ($item->is_kacamata === null) {
+                    return '-';
+                }
+
+                return $item->is_kacamata
+                    ? '<span class="badge bg-success">Ya</span>'
+                    : '<span class="badge bg-secondary">Tidak</span>';
+            })
+            ->addColumn('kondisi_kacamata', function ($item) {
+                if (!$item->is_kacamata) {
+                    return '-';
+                }
+
+                return $item->kondisi_kacamata;
+            })
             ->editColumn('NAMAVISITOR', function ($item) {
                 return $item->NAMAVISITOR ?: '-';
             })
@@ -234,7 +250,7 @@ class HistorySupplierDatatable extends Controller
             })
 
 
-            ->rawColumns(['photo_visitor', 'img_visitor', 'namacomp', 'waktu_masuk', 'waktu_keluar', 'namavisitor', 'action', 'keterangan'])
+            ->rawColumns(['photo_visitor', 'img_visitor', 'namacomp', 'waktu_masuk', 'waktu_keluar', 'namavisitor', 'action', 'keterangan', 'is_kacamata', 'kondisi_kacamata'])
             ->make(true);
     }
 }

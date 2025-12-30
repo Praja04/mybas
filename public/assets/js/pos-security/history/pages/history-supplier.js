@@ -45,6 +45,18 @@ export class ContentDatatable {
                         searchable: true,
                     },
                     {
+                        data: "is_kacamata",
+                        name: "is_kacamata",
+                        orderable: false,
+                        searchable: false,
+                    },
+                    {
+                        data: "kondisi_kacamata",
+                        name: "kondisi_kacamata",
+                        orderable: false,
+                        searchable: false,
+                    },
+                    {
                         data: "photo_visitor",
                         name: "photo_visitor",
                         orderable: false,
