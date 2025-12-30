@@ -296,11 +296,7 @@
                                                 </div>
                                             `;
                                         } else {
-                                            // fotoPath = `/proxy/5r/${fotoName}`;
-                                            // fallbackPath = fotoPath;
-
-                                            fotoPath = "{{ asset('images/5r/') }}/" +
-                                                fotoName;
+                                            fotoPath = `http://172.21.5.105/images/5r/${fotoName}`;
                                             fallbackPath = fotoPath;
 
                                             areaLabel = `
