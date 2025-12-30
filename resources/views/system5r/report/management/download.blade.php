@@ -152,132 +152,174 @@
 
                                 <strong>Foto:</strong><br>
 
-                                @if ($row->temuan && $row->temuan->count())
-                                    @foreach ($row->temuan as $temuan)
-                                        @php
-                                            $areaName = $temuan->area->nama_area ?? '-';
-                                            $keterangan = $temuan->deskripsi ?? '';
-                                            $fotos = array_filter(array_map('trim', explode(',', $temuan->foto)));
-                                        @endphp
+                                @php
+                                    // Cek apakah ada foto dari field foto langsung
+                                    $directFotos = [];
+                                    if (!empty($row->foto)) {
+                                        $directFotos = array_filter(array_map('trim', explode(',', $row->foto)));
+                                    }
 
-                                        @foreach ($fotos as $_foto)
-                                            @php
-                                                // Coba path lokal dulu
-                                                $localPath = public_path('images/5r/temuan/' . $_foto);
-                                                $imageData = false;
-                                                $src = '';
-                                                $sourceLabel = '';
-
-                                                // Cek file lokal
-                                                if (file_exists($localPath)) {
-                                                    $imageData = @file_get_contents($localPath);
-                                                    $sourceLabel = 'Local Server';
+                                    // Kumpulkan semua temuan dengan foto
+                                    $allTemuan = [];
+                                    if ($row->temuan && $row->temuan->count()) {
+                                        foreach ($row->temuan as $temuan) {
+                                            if (!empty($temuan->foto)) {
+                                                $fotos = array_filter(array_map('trim', explode(',', $temuan->foto)));
+                                                foreach ($fotos as $foto) {
+                                                    $allTemuan[] = [
+                                                        'foto' => $foto,
+                                                        'area' => $temuan->area->nama_area ?? '-',
+                                                        'deskripsi' => $temuan->deskripsi ?? '',
+                                                    ];
                                                 }
+                                            }
+                                        }
+                                    }
 
-                                                // Jika tidak ada di lokal, coba ambil dari IP 172
-                                                if ($imageData === false) {
-                                                    $remotePath = 'http://172.21.5.105/images/5r/' . $_foto;
-                                                    $imageData = @file_get_contents($remotePath);
+                                    // Jika tidak ada temuan tapi ada foto langsung, gunakan foto langsung
+                                    if (empty($allTemuan) && !empty($directFotos)) {
+                                        foreach ($directFotos as $foto) {
+                                            $allTemuan[] = [
+                                                'foto' => $foto,
+                                                'area' => 'Foto dari Server Utama',
+                                                'deskripsi' => '',
+                                            ];
+                                        }
+                                    }
+                                @endphp
+
+                                @if (!empty($allTemuan))
+                                    @foreach ($allTemuan as $temuanItem)
+                                        @php
+                                            $_foto = $temuanItem['foto'];
+                                            $areaName = $temuanItem['area'];
+                                            $keterangan = $temuanItem['deskripsi'];
+
+                                            // Coba path lokal dulu (untuk foto temuan)
+                                            $localPath = public_path('images/5r/temuan/' . $_foto);
+                                            $imageData = false;
+                                            $src = '';
+                                            $sourceLabel = '';
+
+                                            // Cek file lokal di folder temuan
+                                            if (file_exists($localPath)) {
+                                                $imageData = @file_get_contents($localPath);
+                                                $sourceLabel = 'Local Server - Temuan';
+                                            }
+
+                                            // Jika tidak ada di temuan, coba di folder 5r langsung
+                                            if ($imageData === false) {
+                                                $localPath2 = public_path('images/5r/' . $_foto);
+                                                if (file_exists($localPath2)) {
+                                                    $imageData = @file_get_contents($localPath2);
+                                                    $sourceLabel = 'Local Server - 5R';
+                                                }
+                                            }
+
+                                            // Jika tidak ada di lokal, coba ambil dari IP 172
+                                            if ($imageData === false) {
+                                                $remotePath = 'http://172.21.5.105/images/5r/' . $_foto;
+                                                $imageData = @file_get_contents($remotePath);
+                                                if ($imageData !== false) {
                                                     $sourceLabel = 'Server 172.21.5.105';
                                                 }
+                                            }
 
-                                                // Konversi ke base64 jika berhasil
-                                                if ($imageData !== false) {
-                                                    // Deteksi MIME type
-                                                    $finfo = new finfo(FILEINFO_MIME_TYPE);
-                                                    $mime = $finfo->buffer($imageData);
+                                            // Konversi ke base64 jika berhasil
+                                            if ($imageData !== false) {
+                                                // Deteksi MIME type
+                                                $finfo = new finfo(FILEINFO_MIME_TYPE);
+                                                $mime = $finfo->buffer($imageData);
 
-                                                    // Fallback MIME type
-                                                    if (!$mime || strpos($mime, 'image/') !== 0) {
-                                                        $mime = 'image/jpeg';
-                                                    }
-
-                                                    $base64 = base64_encode($imageData);
-                                                    $src = 'data:' . $mime . ';base64,' . $base64;
+                                                // Fallback MIME type
+                                                if (!$mime || strpos($mime, 'image/') !== 0) {
+                                                    $mime = 'image/jpeg';
                                                 }
-                                            @endphp
 
-                                            <div style="margin-bottom:10px;">
+                                                $base64 = base64_encode($imageData);
+                                                $src = 'data:' . $mime . ';base64,' . $base64;
+                                            }
+                                        @endphp
 
-                                                {{-- BADGE AREA --}}
+                                        <div style="margin-bottom:10px;">
+
+                                            {{-- BADGE AREA --}}
+                                            <span
+                                                style="
+                                                        display:inline-block;
+                                                        background:#1d3557;
+                                                        color:#fff;
+                                                        font-size:9px;
+                                                        padding:3px 8px;
+                                                        border-radius:10px;
+                                                        margin-bottom:4px;
+                                                    ">
+                                                {{ $areaName }}
+                                            </span>
+
+                                            @if (!empty($src))
+                                                {{-- BADGE SOURCE (OPSIONAL) --}}
                                                 <span
                                                     style="
                                                             display:inline-block;
-                                                            background:#1d3557;
+                                                            background:#28a745;
                                                             color:#fff;
-                                                            font-size:9px;
-                                                            padding:3px 8px;
-                                                            border-radius:10px;
-                                                            margin-bottom:4px;
+                                                            font-size:8px;
+                                                            padding:2px 6px;
+                                                            border-radius:8px;
+                                                            margin-left:5px;
                                                         ">
-                                                    {{ $areaName }}
+                                                    {{ $sourceLabel }}
                                                 </span>
+                                            @endif
 
-                                                @if (!empty($src))
-                                                    {{-- BADGE SOURCE (OPSIONAL) --}}
-                                                    <span
-                                                        style="
-                                                                display:inline-block;
-                                                                background:#28a745;
-                                                                color:#fff;
-                                                                font-size:8px;
-                                                                padding:2px 6px;
-                                                                border-radius:8px;
-                                                                margin-left:5px;
-                                                            ">
-                                                        {{ $sourceLabel }}
-                                                    </span>
-                                                @endif
+                                            <br>
 
-                                                <br>
+                                            @if (!empty($src))
+                                                {{-- FOTO FULL WIDTH --}}
+                                                <img src="{{ $src }}"
+                                                    style="
+                                                            width: 100%;
+                                                            max-height: 220px;
+                                                            object-fit: contain;
+                                                            border: 1px solid #ccc;
+                                                            padding: 4px;
+                                                            background: #fff;
+                                                            display: block;
+                                                        "
+                                                    alt="Foto temuan {{ $areaName }}">
+                                            @else
+                                                <div
+                                                    style="
+                                                        padding: 20px;
+                                                        background: #fff3cd;
+                                                        border: 1px solid #ffc107;
+                                                        text-align: center;
+                                                        font-size: 10px;
+                                                        color: #856404;
+                                                    ">
+                                                    <em>❌ Foto tidak ditemukan</em><br>
+                                                    <small>{{ $_foto }}</small>
+                                                </div>
+                                            @endif
 
-                                                @if (!empty($src))
-                                                    {{-- FOTO FULL WIDTH --}}
-                                                    <img src="{{ $src }}"
-                                                        style="
-                                                                width: 100%;
-                                                                max-height: 220px;
-                                                                object-fit: contain;
-                                                                border: 1px solid #ccc;
-                                                                padding: 4px;
-                                                                background: #fff;
-                                                                display: block;
-                                                            "
-                                                        alt="Foto temuan {{ $areaName }}">
-                                                @else
-                                                    <div
-                                                        style="
-                                                            padding: 20px;
-                                                            background: #fff3cd;
-                                                            border: 1px solid #ffc107;
-                                                            text-align: center;
-                                                            font-size: 10px;
-                                                            color: #856404;
+                                            {{-- KETERANGAN TEMUAN (di bawah foto) --}}
+                                            @if (!empty($keterangan))
+                                                <div
+                                                    style="
+                                                            margin-top: 6px;
+                                                            font-size: 11px;
+                                                            color: #444;
+                                                            font-style: italic;
+                                                            background: #f8f9fa;
+                                                            padding: 6px 8px;
+                                                            border-left: 3px solid #1d3557;
+                                                            line-height: 1.4;
                                                         ">
-                                                        <em>❌ Foto tidak ditemukan di local maupun server
-                                                            172.21.5.105</em><br>
-                                                        <small>{{ $_foto }}</small>
-                                                    </div>
-                                                @endif
-
-                                                {{-- KETERANGAN TEMUAN (di bawah foto) --}}
-                                                @if (!empty($keterangan))
-                                                    <div
-                                                        style="
-                                                                margin-top: 6px;
-                                                                font-size: 11px;
-                                                                color: #444;
-                                                                font-style: italic;
-                                                                background: #f8f9fa;
-                                                                padding: 6px 8px;
-                                                                border-left: 3px solid #1d3557;
-                                                                line-height: 1.4;
-                                                            ">
-                                                        <strong>Deskripsi:</strong> {{ $keterangan }}
-                                                    </div>
-                                                @endif
-                                            </div>
-                                        @endforeach
+                                                    <strong>Deskripsi:</strong> {{ $keterangan }}
+                                                </div>
+                                            @endif
+                                        </div>
                                     @endforeach
                                 @else
                                     <em>Tidak ada foto</em>
@@ -288,6 +330,7 @@
 
                                 <strong>Keterangan:</strong><br>
                                 {{ $row->keterangan ?? '-' }}
+                            </td>
                             </td>
                         </tr>
                     @endforeach

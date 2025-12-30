@@ -49,7 +49,7 @@
         <div class="modal-dialog modal-xl">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">DETAIL PENILAIAN TEST</h5>
+                    <h5 class="modal-title">DETAIL PENILAIAN</h5>
                     <button class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
