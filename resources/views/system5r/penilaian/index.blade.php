@@ -260,6 +260,51 @@
             font-weight: 600;
         }
 
+        /* Camera Modal Styles */
+        .camera-container {
+            position: relative;
+            width: 100%;
+            max-width: 640px;
+            margin: 0 auto;
+            aspect-ratio: 4/3;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #cameraVideo {
+            max-width: 100%;
+            max-height: 480px;
+            border-radius: 8px;
+        }
+
+        #cameraModal .modal-dialog {
+            max-width: 700px;
+        }
+
+        #cameraModal .modal-body {
+            background: #f8f9fa;
+        }
+
+        /* Button styling */
+        .btn-open-camera:hover {
+            background-color: #28a745;
+            color: white;
+            border-color: #28a745;
+        }
+
+        /* Responsive camera */
+        @media (max-width: 768px) {
+            #cameraModal .modal-dialog {
+                max-width: 95%;
+                margin: 1rem auto;
+            }
+
+            .camera-container {
+                max-width: 100%;
+            }
+        }
+
         /* Responsive */
         @media (max-width: 576px) {
             .image-preview-container {
@@ -790,16 +835,39 @@
                                                                                                         </div>
                                                                                                     @endif
                                                                                                 @else
+                                                                                                    <!-- Button Group untuk Upload dan Camera -->
+                                                                                                    <div class="btn-group w-100 mb-3"
+                                                                                                        role="group">
+                                                                                                        <button
+                                                                                                            type="button"
+                                                                                                            class="btn btn-outline-primary flex-fill"
+                                                                                                            onclick="document.getElementById('{{ $_pertanyaan->id_group }}-{{ $_pertanyaan->id_pertanyaan }}-input-file').click()">
+                                                                                                            <i
+                                                                                                                class="mdi mdi-folder-image"></i>
+                                                                                                            Upload Foto
+                                                                                                        </button>
+                                                                                                        <button
+                                                                                                            type="button"
+                                                                                                            class="btn btn-outline-success flex-fill btn-open-camera"
+                                                                                                            data-id-pertanyaan="{{ $_pertanyaan->id_group }}-{{ $_pertanyaan->id_pertanyaan }}">
+                                                                                                            <i
+                                                                                                                class="mdi mdi-camera"></i>
+                                                                                                            Gunakan Kamera
+                                                                                                        </button>
+                                                                                                    </div>
+
+                                                                                                    <!-- Preview Container -->
                                                                                                     <div class="image-preview-container mb-2"
                                                                                                         id="{{ $_pertanyaan->id_group }}-{{ $_pertanyaan->id_pertanyaan }}-image-container">
                                                                                                     </div>
 
+                                                                                                    <!-- Hidden File Input -->
                                                                                                     <input
                                                                                                         onchange="addMultipleImages('{{ $_pertanyaan->id_group }}-{{ $_pertanyaan->id_pertanyaan }}')"
                                                                                                         type="file"
                                                                                                         accept="image/*"
                                                                                                         multiple
-                                                                                                        class="form-control"
+                                                                                                        class="form-control d-none"
                                                                                                         name="{{ $_pertanyaan->id_group }}_{{ $_pertanyaan->id_pertanyaan }}_foto"
                                                                                                         id="{{ $_pertanyaan->id_group }}-{{ $_pertanyaan->id_pertanyaan }}-input-file">
 
@@ -807,11 +875,95 @@
                                                                                                         class="text-muted d-block mt-1">
                                                                                                         <i
                                                                                                             class="mdi mdi-information-outline"></i>
-                                                                                                        Anda dapat memilih
+                                                                                                        Anda dapat upload
                                                                                                         beberapa foto
-                                                                                                        sekaligus
+                                                                                                        sekaligus atau
+                                                                                                        gunakan kamera untuk
+                                                                                                        mengambil foto
                                                                                                     </small>
                                                                                                 @endif
+                                                                                            </div>
+
+                                                                                            <!-- Camera Modal (akan ditambahkan sekali di luar loop) -->
+                                                                                            <div class="modal fade"
+                                                                                                id="cameraModal"
+                                                                                                tabindex="-1"
+                                                                                                aria-hidden="true">
+                                                                                                <div
+                                                                                                    class="modal-dialog modal-dialog-centered modal-lg">
+                                                                                                    <div
+                                                                                                        class="modal-content">
+                                                                                                        <div
+                                                                                                            class="modal-header">
+                                                                                                            <h5
+                                                                                                                class="modal-title">
+                                                                                                                <i
+                                                                                                                    class="mdi mdi-camera"></i>
+                                                                                                                Ambil Foto
+                                                                                                            </h5>
+                                                                                                            <button
+                                                                                                                type="button"
+                                                                                                                class="btn-close"
+                                                                                                                data-bs-dismiss="modal"
+                                                                                                                aria-label="Close"></button>
+                                                                                                        </div>
+                                                                                                        <div
+                                                                                                            class="modal-body text-center p-4">
+                                                                                                            <!-- Video Preview -->
+                                                                                                            <div class="camera-container mb-3"
+                                                                                                                style="max-width: 100%; background: #000; border-radius: 8px; overflow: hidden;">
+                                                                                                                <video
+                                                                                                                    id="cameraVideo"
+                                                                                                                    autoplay
+                                                                                                                    playsinline
+                                                                                                                    style="width: 100%; display: block;"></video>
+                                                                                                            </div>
+
+                                                                                                            <!-- Canvas untuk capture (hidden) -->
+                                                                                                            <canvas
+                                                                                                                id="cameraCanvas"
+                                                                                                                style="display: none;"></canvas>
+
+                                                                                                            <!-- Info -->
+                                                                                                            <div id="cameraInfo"
+                                                                                                                class="alert alert-info">
+                                                                                                                <i
+                                                                                                                    class="mdi mdi-information"></i>
+                                                                                                                Posisikan
+                                                                                                                objek di
+                                                                                                                depan
+                                                                                                                kamera, lalu
+                                                                                                                klik tombol
+                                                                                                                Ambil Foto
+                                                                                                            </div>
+
+                                                                                                            <!-- Error message -->
+                                                                                                            <div id="cameraError"
+                                                                                                                class="alert alert-danger"
+                                                                                                                style="display: none;">
+                                                                                                            </div>
+                                                                                                        </div>
+                                                                                                        <div
+                                                                                                            class="modal-footer">
+                                                                                                            <button
+                                                                                                                type="button"
+                                                                                                                class="btn btn-light"
+                                                                                                                data-bs-dismiss="modal">
+                                                                                                                <i
+                                                                                                                    class="mdi mdi-close"></i>
+                                                                                                                Batal
+                                                                                                            </button>
+                                                                                                            <button
+                                                                                                                type="button"
+                                                                                                                class="btn btn-primary"
+                                                                                                                id="btnCapturePhoto">
+                                                                                                                <i
+                                                                                                                    class="mdi mdi-camera"></i>
+                                                                                                                Ambil Foto
+                                                                                                            </button>
+                                                                                                        </div>
+                                                                                                    </div>
+                                                                                                </div>
                                                                                             </div>
 
                                                                                             <div class="mb-3">
@@ -2495,8 +2647,7 @@
                                                 fotoHtml += `</div>`;
                                             }
                                         });
-                                        fotoHtml += '</div>';
-                                    ;
+                                        fotoHtml += '</div>';;
                                     } else {
                                         // Single photo
                                         var foto = fotoArray[0].trim();
@@ -2633,7 +2784,7 @@
                                                 // Update count or show message
                                                 button.closest('td').html(
                                                     '<span class="text-muted">Semua foto telah dihapus</span>'
-                                                    );
+                                                );
                                             } else {
                                                 // Update photo count
                                                 var countElement = button.closest('td').find(
@@ -2642,7 +2793,7 @@
                                                 // Re-number remaining photos
                                                 photoContainer.find(
                                                     'span[style*="position: absolute"][style*="left"]'
-                                                    ).each(function(idx) {
+                                                ).each(function(idx) {
                                                     $(this).text(idx + 1);
                                                 });
                                             }
@@ -2676,7 +2827,7 @@
                                 });
 
                                 button.prop('disabled', false).html(
-                                '<i class="mdi mdi-close"></i>');
+                                    '<i class="mdi mdi-close"></i>');
                             }
                         });
                     }
@@ -2796,6 +2947,197 @@
                     }
                 });
             }
+
+            // Camera functionality
+            let currentStream = null;
+            let currentIdPertanyaan = null;
+            const cameraVideo = document.getElementById('cameraVideo');
+            const cameraCanvas = document.getElementById('cameraCanvas');
+            const cameraModal = new bootstrap.Modal(document.getElementById('cameraModal'));
+
+            // Open camera when button clicked
+            $(document).on('click', '.btn-open-camera', function() {
+                currentIdPertanyaan = $(this).data('id-pertanyaan');
+                openCamera();
+            });
+
+            // Function to open camera
+            async function openCamera() {
+                try {
+                    // Reset error message
+                    $('#cameraError').hide();
+                    $('#cameraInfo').show();
+
+                    // Request camera access
+                    const constraints = {
+                        video: {
+                            facingMode: 'environment', // Gunakan kamera belakang di mobile
+                            width: {
+                                ideal: 1280
+                            },
+                            height: {
+                                ideal: 720
+                            }
+                        }
+                    };
+
+                    currentStream = await navigator.mediaDevices.getUserMedia(constraints);
+                    cameraVideo.srcObject = currentStream;
+
+                    // Show modal
+                    cameraModal.show();
+
+                } catch (error) {
+                    console.error('Error accessing camera:', error);
+
+                    let errorMessage = 'Tidak dapat mengakses kamera. ';
+
+                    if (error.name === 'NotAllowedError') {
+                        errorMessage += 'Izin kamera ditolak. Silakan izinkan akses kamera di pengaturan browser.';
+                    } else if (error.name === 'NotFoundError') {
+                        errorMessage += 'Kamera tidak ditemukan pada perangkat ini.';
+                    } else if (error.name === 'NotReadableError') {
+                        errorMessage += 'Kamera sedang digunakan aplikasi lain.';
+                    } else {
+                        errorMessage += error.message;
+                    }
+
+                    $('#cameraInfo').hide();
+                    $('#cameraError').html('<i class="mdi mdi-alert"></i> ' + errorMessage).show();
+
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Gagal Membuka Kamera',
+                        text: errorMessage,
+                        confirmButtonText: 'OK'
+                    });
+                }
+            }
+
+            // Function to stop camera
+            function stopCamera() {
+                if (currentStream) {
+                    currentStream.getTracks().forEach(track => track.stop());
+                    cameraVideo.srcObject = null;
+                    currentStream = null;
+                }
+            }
+
+            // Capture photo when button clicked
+            document.getElementById('btnCapturePhoto').addEventListener('click', async function() {
+                if (!currentStream || !currentIdPertanyaan) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Kamera tidak aktif atau ID pertanyaan tidak ditemukan',
+                        timer: 1500
+                    });
+                    return;
+                }
+
+                try {
+                    // Set canvas size sama dengan video
+                    cameraCanvas.width = cameraVideo.videoWidth;
+                    cameraCanvas.height = cameraVideo.videoHeight;
+
+                    // Draw video frame to canvas
+                    const context = cameraCanvas.getContext('2d');
+                    context.drawImage(cameraVideo, 0, 0);
+
+                    // Convert to blob
+                    const blob = await new Promise(resolve => cameraCanvas.toBlob(resolve, 'image/jpeg', 0.8));
+
+                    // Convert blob to base64
+                    const reader = new FileReader();
+                    reader.onloadend = function() {
+                        const base64 = reader.result;
+
+                        // Add to IndexedDB
+                        addCapturedImageToIndexedDB(currentIdPertanyaan, base64);
+
+                        // Close camera modal
+                        cameraModal.hide();
+                        stopCamera();
+
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Berhasil',
+                            text: 'Foto berhasil diambil',
+                            timer: 1500,
+                            showConfirmButton: false
+                        });
+                    };
+                    reader.readAsDataURL(blob);
+
+                } catch (error) {
+                    console.error('Error capturing photo:', error);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Gagal',
+                        text: 'Gagal mengambil foto: ' + error.message
+                    });
+                }
+            });
+
+            // Function to add captured image to IndexedDB
+            function addCapturedImageToIndexedDB(idPertanyaan, base64Image) {
+                const database = window.indexedDB.open("system_5r", 5);
+
+                database.onsuccess = function(event) {
+                    const db = event.target.result;
+                    const transaction = db.transaction("penilaian", "readwrite");
+                    const objectStore = transaction.objectStore("penilaian");
+
+                    const request = objectStore.get(idPertanyaan);
+
+                    request.onsuccess = function(event) {
+                        const data = event.target.result;
+                        let existingImages = data && data.images ? data.images : [];
+
+                        // Add new image
+                        existingImages.push(base64Image);
+
+                        // Save to IndexedDB
+                        if (data) {
+                            data.images = existingImages;
+                            objectStore.put(data);
+                        } else {
+                            objectStore.put({
+                                id: idPertanyaan,
+                                images: existingImages
+                            });
+                        }
+
+                        // Render preview
+                        renderImages(idPertanyaan, existingImages);
+                    };
+
+                    request.onerror = function(event) {
+                        console.error('Error saving to IndexedDB:', event.target.error);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Gagal',
+                            text: 'Gagal menyimpan foto ke browser',
+                            timer: 1500
+                        });
+                    };
+                };
+
+                database.onerror = function(event) {
+                    console.error('Error opening IndexedDB:', event.target.error);
+                };
+            }
+
+            // Stop camera when modal is closed
+            $('#cameraModal').on('hidden.bs.modal', function() {
+                stopCamera();
+                currentIdPertanyaan = null;
+            });
+
+            // Handle modal close button
+            $('#cameraModal .btn-close, #cameraModal [data-bs-dismiss="modal"]').on('click', function() {
+                stopCamera();
+            });
         </script>
     @endif
 @endpush
