@@ -35,8 +35,10 @@
                                         <th>No. Polisi</th>
                                         <th>No. Kartu</th>
                                         <th>Pakai Kacamata</th>
-                                        <th>Kondisi Kacamata</th>
-                                        <th>Foto Tamu</th>
+                                        <th>Kondisi Kacamata (Masuk)</th>
+                                        <th>Kondisi Kacamata (Keluar)</th>
+                                        <th>Foto Tamu (Masuk)</th> <!-- photo_visitor -->
+                                        <th>Foto Tamu (Keluar)</th> <!-- photo_visitor_out -->
                                         <th>Foto Identitas</th>
                                         <th>Waktu Masuk</th>
                                         <th>Waktu Keluar</th>

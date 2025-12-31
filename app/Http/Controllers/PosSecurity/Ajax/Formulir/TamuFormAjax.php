@@ -92,7 +92,8 @@ class TamuFormAjax extends Controller
     {
         // dd($request->all());
         $request->validate([
-            'trnvisitorid' => 'required|string|max:50'
+            'trnvisitorid' => 'required|string|max:50',
+            'foto_out'     => 'required|string',
         ]);
 
         try {
@@ -105,6 +106,14 @@ class TamuFormAjax extends Controller
                 ]);
             }
 
+            $fotoOutUrl = $this->saveImageFromBase64(
+                $request->foto_out,
+                // 'foto_out_' . $visitor->trnvisitorid . '_' . now()->format('His'),
+                // 'visitors/out'
+                $visitor->trnvisitorid . '_foto_out',
+                'uploads/pos-security/tamu/selfie_out'
+            );
+
             $now = now();
 
             $visitor->kartu_dikembalikan = true;
@@ -114,6 +123,8 @@ class TamuFormAjax extends Controller
             $visitor->timeout = $now->format('H:i:s'); // HH:MM:SS
             $visitor->changedon = $now;
             $visitor->changedby = auth()->user()->username ?? 'system'; // atau session user
+            $visitor->foto_out = $fotoOutUrl;
+            $visitor->kondisi_kacamata_out = $request->kondisi_kacamata_out ?? null;
             $visitor->save();
 
             return response()->json([
