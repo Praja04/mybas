@@ -158,20 +158,20 @@
 
                         if (totalGroup === 0) {
                             rows += `
-                    <tr>
-                        <td class="text-center">${rank}</td>
-                        <td>${item.department}</td>
-                        <td class="text-muted">-</td>
-                        <td class="text-muted">-</td>
-                        <td class="text-muted">-</td>
-                        <td>
-                            <span class="badge badge-soft-warning">
-                                Belum Dinilai
-                            </span>
-                        </td>
-                        <td class="text-center">-</td>
-                    </tr>
-                `;
+                                <tr>
+                                    <td class="text-center">${rank}</td>
+                                    <td>${item.department}</td>
+                                    <td class="text-muted">-</td>
+                                    <td class="text-muted">-</td>
+                                    <td class="text-muted">-</td>
+                                    <td>
+                                        <span class="badge badge-soft-warning">
+                                            Belum Dinilai
+                                        </span>
+                                    </td>
+                                    <td class="text-center">-</td>
+                                </tr>
+                            `;
                             rank++;
                             return;
                         }
@@ -182,27 +182,27 @@
                                 .encryptedKey;
 
                             rows += `
-                    <tr>
-                        <td class="text-center">${i === 0 ? rank : ''}</td>
-                        <td>${i === 0 ? item.department : ''}</td>
-                        <td>${i === 0 ? (item.juri.length ? item.juri.join(', ') : '-') : ''}</td>
-                        <td>${g.nama_group}</td>
-                        <td>${i === 0 ? presentase + '%' : ''}</td>   
-                        <td>${g.nilaiAkhir.toFixed(1)}</td>
-                        <td class="text-center">
-                            <div class="d-flex gap-1 justify-content-center">
-                                <button class="btn btn-sm btn-outline-info"
-                                    onclick="getDetail('${item.id_periode}','${g.id_group}')">
-                                    <i class="mdi mdi-eye"></i>
-                                </button>
-                                <a href="${printUrl}" target="_blank"
-                                class="btn btn-sm btn-outline-primary">
-                                    <i class="mdi mdi-printer"></i>
-                                </a>
-                            </div>
-                        </td>
-                    </tr>
-                `;
+                                <tr>
+                                    <td class="text-center">${i === 0 ? rank : ''}</td>
+                                    <td>${i === 0 ? item.department : ''}</td>
+                                    <td>${i === 0 ? (item.juri.length ? item.juri.join(', ') : '-') : ''}</td>
+                                    <td>${g.nama_group}</td>
+                                    <td>${i === 0 ? presentase + '%' : ''}</td>   
+                                    <td>${formatNumber(g.nilaiAkhir)}</td>
+                                    <td class="text-center">
+                                        <div class="d-flex gap-1 justify-content-center">
+                                            <button class="btn btn-sm btn-outline-info"
+                                                onclick="getDetail('${item.id_periode}','${g.id_group}')">
+                                                <i class="mdi mdi-eye"></i>
+                                            </button>
+                                            <a href="${printUrl}" target="_blank"
+                                            class="btn btn-sm btn-outline-primary">
+                                                <i class="mdi mdi-printer"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            `;
                         });
 
                         rank++;
@@ -232,6 +232,21 @@
                 });
 
                 return html;
+            }
+
+            function formatNumber(num) {
+                if (num === null || num === undefined) return '-';
+
+                // Bulatkan ke 1 desimal dulu
+                let fixed = Number(num).toFixed(1);
+
+                // Hilangkan .0 jika bulat
+                if (fixed.endsWith('.0')) {
+                    fixed = fixed.slice(0, -2);
+                }
+
+                // Format ribuan dengan titik
+                return fixed.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
             }
         });
 
