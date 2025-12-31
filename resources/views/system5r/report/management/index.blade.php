@@ -241,125 +241,143 @@
                 type: 'POST',
                 data: {
                     id_periode: idPeriode,
-                    id_group: idGroup
+                    id_group: idGroup,
+                    _token: '{{ csrf_token() }}'
                 },
                 success: function(response) {
                     if (response.status == 'success') {
                         $('#table-detail tbody').html('');
                         var noParent = 1;
+
                         Object.values(response.data).forEach(function(item) {
                             var no = 1;
                             item.forEach(function(jawaban) {
                                 var foto = '';
-                                if (jawaban.foto != null) {
-                                    var fotoNameArray = jawaban.foto.split(',');
 
-                                    // Ambil informasi area dari temuan jika ada
-                                    var temuanAreas = [];
-                                    if (jawaban.temuan && jawaban.temuan.length >
-                                        0) {
+                                if (jawaban.foto != null && jawaban.foto.trim() !== '') {
+                                    // Split foto berdasarkan koma
+                                    var fotoNameArray = jawaban.foto.split(',').map(f => f
+                                        .trim()).filter(f => f);
+
+                                    // Buat map dari temuan untuk cepat lookup area & deskripsi
+                                    var temuanMap = {};
+                                    if (jawaban.temuan && jawaban.temuan.length > 0) {
                                         jawaban.temuan.forEach(function(temuan) {
-                                            if (temuan.area && temuan
-                                                .foto) {
-                                                temuanAreas.push({
-                                                    foto: temuan
-                                                        .foto,
-                                                    area: temuan
-                                                        .area
-                                                        .nama_area,
-                                                    deskripsi: temuan
-                                                        .deskripsi
+                                            if (temuan.foto) {
+                                                // Temuan juga bisa multiple foto (split by comma)
+                                                var temuanFotos = temuan.foto.split(',')
+                                                    .map(f => f.trim());
+                                                temuanFotos.forEach(function(tf) {
+                                                    temuanMap[tf] = {
+                                                        area: temuan.area ?
+                                                            temuan.area
+                                                            .nama_area :
+                                                            null,
+                                                        deskripsi: temuan
+                                                            .deskripsi ||
+                                                            null
+                                                    };
                                                 });
                                             }
                                         });
                                     }
 
+                                    // Loop setiap foto
                                     fotoNameArray.forEach(function(fotoName, index) {
-
                                         let fotoPath = '';
                                         let fallbackPath = '';
                                         let areaLabel = '';
                                         let deskripsiLabel = '';
 
-                                        const temuanMatch = temuanAreas.find(t => t
-                                            .foto === fotoName);
+                                        // Cek apakah foto ini ada di temuan
+                                        const temuanMatch = temuanMap[fotoName];
 
                                         if (temuanMatch) {
+                                            // Foto dari temuan (folder /temuan/)
                                             fotoPath =
                                                 "{{ asset('images/5r/temuan/') }}/" +
                                                 fotoName;
-                                            fallbackPath = fotoPath; // ✅ PENTING
+                                            fallbackPath = fotoPath;
 
-                                            areaLabel = `
-                                                <div class="badge bg-primary mb-1" style="font-size: 11px;">
-                                                    <i class="mdi mdi-map-marker"></i> Area: ${temuanMatch.area}
-                                                </div>
-                                            `;
+                                            if (temuanMatch.area) {
+                                                areaLabel = `
+                                            <div class="badge bg-primary mb-1" style="font-size: 11px;">
+                                                <i class="mdi mdi-map-marker"></i> Area: ${temuanMatch.area}
+                                            </div>
+                                        `;
+                                            }
+
+                                            if (temuanMatch.deskripsi) {
+                                                deskripsiLabel = `
+                                            <div class="mt-1 p-1 bg-light border rounded" style="font-size: 11px;">
+                                                <strong>Deskripsi:</strong> ${temuanMatch.deskripsi}
+                                            </div>
+                                        `;
+                                            }
                                         } else {
-                                            fotoPath = `http://172.21.5.105/images/5r/${fotoName}`;
+                                            // Foto lama dari server utama (folder /5r/)
+                                            fotoPath =
+                                                `http://172.21.5.105/images/5r/${fotoName}`;
                                             fallbackPath = fotoPath;
 
                                             areaLabel = `
-                                                <div class="badge bg-success mb-1" style="font-size: 11px;">
-                                                    <i class="mdi mdi-server"></i> Foto dari Server Utama
-                                                </div>
-                                            `;
+                                        <div class="badge bg-success mb-1" style="font-size: 11px;">
+                                            <i class="mdi mdi-server"></i> Foto dari Server Utama
+                                        </div>
+                                    `;
                                         }
 
                                         foto += `
-                                            <div class="mb-2 p-2 border rounded bg-light">
-                                                ${areaLabel}
-                                                <div class="d-flex justify-content-center">
-                                                    <img
-                                                        src="${fotoPath}"
-                                                        style="max-width:300px;width:100%;cursor:pointer"
-                                                        onclick="showImageModal('${fotoPath}')"
-                                                        onerror="
-                                                            this.onerror=null;
-                                                            this.src='${fallbackPath}';
-                                                            this.onclick=function(){ showImageModal('${fallbackPath}') };
-                                                        "
-                                                    />
-                                                </div>
-                                                ${deskripsiLabel}
-                                            </div>
-                                        `;
-
-                                        console.log('fotoPath:', fotoPath);
-                                        console.log('fallbackPath:', fallbackPath);
+                                    <div class="mb-2 p-2 border rounded bg-light">
+                                        ${areaLabel}
+                                        <div class="d-flex justify-content-center">
+                                            <img
+                                                src="${fotoPath}"
+                                                style="max-width:300px;width:100%;"
+                                                onerror="
+                                                    this.onerror=null;
+                                                    this.src='${fallbackPath}';
+                                                "
+                                            />
+                                        </div>
+                                        ${deskripsiLabel}
+                                    </div>
+                                `;
                                     });
                                 } else {
                                     foto = `<i class="text-muted">No Foto</i>`;
                                 }
+
                                 $('#table-detail tbody').append(`
-                                <tr>
-                                    <td>${jawaban.pertanyaan.jenis}</td>
-                                    <td>
-                                        <div style="width: 300px">
-                                            <h6>ITEM PERIKSA</h6>
-                                            ${jawaban.pertanyaan.item_periksa}
-                                            <h6 class="mt-3">KETERANGAN</h6>
-                                            ${jawaban.pertanyaan.keterangan}
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <h6>NILAI</h6>
-                                        <input style="width: 100px" class="form-control" disabled value="${jawaban.nilai}" />
-                                        <div class="mt-3">
-                                            <h6>FOTO</h6>
-                                            ${foto}
-                                        </div>
-                                        <div class="mt-3 rounded bg-light p-1">
-                                            <h6>KETERANGAN</h6>
-                                            <p>${jawaban.keterangan}</p>
-                                        </div>
-                                    </td>
-                                </tr>
+                            <tr>
+                                <td>${jawaban.pertanyaan.jenis}</td>
+                                <td>
+                                    <div style="width: 300px">
+                                        <h6>ITEM PERIKSA</h6>
+                                        ${jawaban.pertanyaan.item_periksa}
+                                        <h6 class="mt-3">KETERANGAN</h6>
+                                        ${jawaban.pertanyaan.keterangan}
+                                    </div>
+                                </td>
+                                <td>
+                                    <h6>NILAI</h6>
+                                    <input style="width: 100px" class="form-control" disabled value="${jawaban.nilai}" />
+                                    <div class="mt-3">
+                                        <h6>FOTO</h6>
+                                        ${foto}
+                                    </div>
+                                    <div class="mt-3 rounded bg-light p-1">
+                                        <h6>KETERANGAN</h6>
+                                        <p>${jawaban.keterangan}</p>
+                                    </div>
+                                </td>
+                            </tr>
                             `);
                                 no++;
                             });
                             noParent++;
                         });
+
                         $('#detailModal').modal('show');
                     } else {
                         Swal.fire({

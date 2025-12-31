@@ -150,14 +150,28 @@ class PenilaianController extends Controller
             ]);
 
             foreach ($request->nilai as $id_pertanyaan => $nilai) {
-                // Ambil foto dari tabel temuan berdasarkan id_pertanyaan dan id_periode
+                // Ambil SEMUA foto dari tabel temuan berdasarkan id_pertanyaan dan id_periode
                 $temuanList = Temuan::where('id_pertanyaan', $id_pertanyaan)
                     ->where('id_periode', $id_periode)
                     ->whereNotNull('foto')
-                    ->pluck('foto')
-                    ->toArray();
+                    ->get();
 
-                // Foto dari upload langsung (jika ada)
+                // Kumpulkan semua foto dari temuan (bisa multiple per temuan)
+                $fotoFromTemuan = [];
+                foreach ($temuanList as $temuan) {
+                    if ($temuan->foto) {
+                        // Split foto jika ada koma (multiple photos)
+                        $photos = explode(',', $temuan->foto);
+                        foreach ($photos as $photo) {
+                            $photo = trim($photo);
+                            if (!empty($photo)) {
+                                $fotoFromTemuan[] = $photo;
+                            }
+                        }
+                    }
+                }
+
+                // Foto dari upload langsung via form (jika ada)
                 $fotoPenilaian = [];
                 if ($request->image != null && array_key_exists($id_pertanyaan, $request->image)) {
                     foreach ($request->image[$id_pertanyaan] as $image) {
@@ -170,8 +184,13 @@ class PenilaianController extends Controller
                     }
                 }
 
-                // Gabungkan foto dari temuan dan foto upload langsung
-                $allFotos = array_merge($temuanList, $fotoPenilaian);
+                // Gabungkan semua foto: dari temuan + dari upload langsung
+                $allFotos = array_merge($fotoFromTemuan, $fotoPenilaian);
+
+                // Hilangkan duplikat (jika ada)
+                $allFotos = array_unique($allFotos);
+
+                // Gabungkan dengan koma untuk disimpan di database
                 $imageNames = count($allFotos) > 0 ? implode(',', $allFotos) : null;
 
                 // Create jawaban record
@@ -179,10 +198,11 @@ class PenilaianController extends Controller
                     'id_jawaban_group' => $jawabanGroup->id_jawaban_group,
                     'id_pertanyaan' => $id_pertanyaan,
                     'nilai' => $nilai,
-                    'foto' => $imageNames,
+                    'foto' => $imageNames, // Format: foto1.jpg,foto2.jpg,foto3.jpg
                     'keterangan' => $request->keterangan[$id_pertanyaan]
                 ]);
 
+                // Update semua temuan terkait dengan id_jawaban
                 Temuan::where('id_pertanyaan', $id_pertanyaan)
                     ->where('id_periode', $id_periode)
                     ->whereNull('id_jawaban')
@@ -191,6 +211,7 @@ class PenilaianController extends Controller
 
             DB::commit();
 
+            // Hapus draft jika ada
             JawabanDraft::where([
                 'id_group' => $id_group,
                 'id_periode' => $id_periode,
@@ -222,27 +243,40 @@ class PenilaianController extends Controller
                 throw new \Exception('Foto tidak valid');
             }
 
-            $base64Image = $fotoArray[0];
+            // Array untuk menyimpan nama-nama file foto
+            $savedPhotos = [];
 
-            if (strpos($base64Image, 'data:image') !== false) {
-                $base64Image = preg_replace('/^data:image\/\w+;base64,/', '', $base64Image);
-            }
-
-            $base64Image = str_replace(' ', '+', $base64Image);
-
-            $imageName = 'temuan_' . uniqid() . '_' . time() . '.jpg';
-
+            // Create direktori jika belum ada
             if (!file_exists(public_path('images/5r/temuan'))) {
                 mkdir(public_path('images/5r/temuan'), 0755, true);
             }
 
-            $imageData = base64_decode($base64Image);
+            // Process setiap foto
+            foreach ($fotoArray as $index => $base64Image) {
+                // Hapus prefix data:image jika ada
+                if (strpos($base64Image, 'data:image') !== false) {
+                    $base64Image = preg_replace('/^data:image\/\w+;base64,/', '', $base64Image);
+                }
 
-            if ($imageData === false) {
-                throw new \Exception('Gagal decode base64 image');
+                $base64Image = str_replace(' ', '+', $base64Image);
+
+                // Generate unique filename untuk setiap foto
+                $imageName = 'temuan_' . uniqid() . '_' . time() . '_' . ($index + 1) . '.jpg';
+
+                // Decode dan simpan foto
+                $imageData = base64_decode($base64Image);
+
+                if ($imageData === false) {
+                    throw new \Exception('Gagal decode base64 image pada foto ke-' . ($index + 1));
+                }
+
+                \File::put(public_path('images/5r/temuan/' . $imageName), $imageData);
+
+                $savedPhotos[] = $imageName;
             }
 
-            \File::put(public_path('images/5r/temuan/' . $imageName), $imageData);
+            // Gabungkan semua nama foto dengan koma
+            $fotoString = implode(',', $savedPhotos);
 
             // Create temuan record
             $temuan = Temuan::create([
@@ -250,7 +284,7 @@ class PenilaianController extends Controller
                 'id_pertanyaan' => $request->id_pertanyaan,
                 'id_periode' => $request->id_periode,
                 'id_area' => $request->area,
-                'foto' => $imageName,
+                'foto' => $fotoString, // Simpan dengan format: foto1.jpg,foto2.jpg,foto3.jpg
                 'deskripsi' => $request->deskripsi_temuan,
                 'created_by' => auth()->user()->name
             ]);
@@ -259,14 +293,25 @@ class PenilaianController extends Controller
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'Temuan berhasil disimpan',
+                'message' => 'Temuan dengan ' . count($savedPhotos) . ' foto berhasil disimpan',
                 'data' => [
                     'id_temuan' => $temuan->id_temuan,
-                    'foto_path' => asset('images/5r/temuan/' . $imageName)
+                    'foto_count' => count($savedPhotos),
+                    'foto_list' => $savedPhotos
                 ]
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
+
+            // Hapus foto yang sudah tersimpan jika terjadi error
+            if (!empty($savedPhotos)) {
+                foreach ($savedPhotos as $photo) {
+                    $photoPath = public_path('images/5r/temuan/' . $photo);
+                    if (file_exists($photoPath)) {
+                        unlink($photoPath);
+                    }
+                }
+            }
 
             return response()->json([
                 'status' => 'error',
@@ -310,17 +355,52 @@ class PenilaianController extends Controller
 
             $id_temuan = $request->id_temuan;
 
+            // Ambil data temuan
             $temuan = Temuan::find($id_temuan);
 
             if (!$temuan) {
                 throw new \Exception('Temuan tidak ditemukan');
             }
 
-            // Hapus foto dari storage jika ada
-            if ($temuan->foto) {
-                $fotoPath = public_path('images/5r/temuan/' . $temuan->foto);
-                if (file_exists($fotoPath)) {
-                    unlink($fotoPath);
+            // Simpan nama foto dari temuan untuk proses penghapusan
+            $fotoTemuan = $temuan->foto ? explode(',', $temuan->foto) : [];
+
+            // Cari jawaban terkait dengan temuan ini
+            $jawaban = null;
+            if ($temuan->id_jawaban) {
+                $jawaban = Jawaban::find($temuan->id_jawaban);
+            }
+
+            // Jika ada jawaban, hapus foto dari field foto jawaban
+            if ($jawaban && $jawaban->foto) {
+                // Parse foto yang ada di jawaban (format: foto1.jpg,foto2.jpg,foto3.jpg)
+                $fotoJawaban = explode(',', $jawaban->foto);
+
+                // Filter: hapus foto yang ada di temuan dari jawaban
+                $fotoJawabanBaru = array_filter($fotoJawaban, function ($foto) use ($fotoTemuan) {
+                    return !in_array($foto, $fotoTemuan);
+                });
+
+                // Update jawaban dengan foto yang tersisa
+                if (empty($fotoJawabanBaru)) {
+                    // Jika tidak ada foto tersisa, set null
+                    $jawaban->foto = null;
+                } else {
+                    // Jika masih ada foto tersisa, gabungkan kembali dengan koma
+                    $jawaban->foto = implode(',', $fotoJawabanBaru);
+                }
+
+                $jawaban->save();
+            }
+
+            // Hapus file foto dari storage
+            foreach ($fotoTemuan as $foto) {
+                $foto = trim($foto); // Hapus whitespace
+                if (!empty($foto)) {
+                    $fotoPath = public_path('images/5r/temuan/' . $foto);
+                    if (file_exists($fotoPath)) {
+                        unlink($fotoPath);
+                    }
                 }
             }
 
@@ -331,7 +411,11 @@ class PenilaianController extends Controller
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'Temuan berhasil dihapus'
+                'message' => 'Temuan dan foto terkait berhasil dihapus',
+                'data' => [
+                    'deleted_photos' => count($fotoTemuan),
+                    'jawaban_updated' => $jawaban ? true : false
+                ]
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
@@ -339,6 +423,84 @@ class PenilaianController extends Controller
             return response()->json([
                 'status' => 'error',
                 'message' => 'Gagal menghapus temuan: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function deleteSinglePhoto(Request $request)
+    {
+        try {
+            DB::beginTransaction();
+
+            $id_temuan = $request->id_temuan;
+            $foto_name = $request->foto_name;
+
+            // Ambil data temuan
+            $temuan = Temuan::find($id_temuan);
+
+            if (!$temuan) {
+                throw new \Exception('Temuan tidak ditemukan');
+            }
+
+            // Parse foto yang ada
+            $fotoArray = $temuan->foto ? explode(',', $temuan->foto) : [];
+
+            // Cari dan hapus foto yang diminta
+            $fotoArray = array_map('trim', $fotoArray);
+            $key = array_search($foto_name, $fotoArray);
+
+            if ($key === false) {
+                throw new \Exception('Foto tidak ditemukan dalam temuan');
+            }
+
+            // Hapus dari array
+            unset($fotoArray[$key]);
+            $fotoArray = array_values($fotoArray); // Re-index array
+
+            // Update temuan
+            $temuan->foto = !empty($fotoArray) ? implode(',', $fotoArray) : null;
+            $temuan->save();
+
+            // Update jawaban jika ada
+            if ($temuan->id_jawaban) {
+                $jawaban = Jawaban::find($temuan->id_jawaban);
+
+                if ($jawaban && $jawaban->foto) {
+                    $fotoJawaban = explode(',', $jawaban->foto);
+                    $fotoJawaban = array_map('trim', $fotoJawaban);
+
+                    $keyJawaban = array_search($foto_name, $fotoJawaban);
+                    if ($keyJawaban !== false) {
+                        unset($fotoJawaban[$keyJawaban]);
+                        $fotoJawaban = array_values($fotoJawaban);
+
+                        $jawaban->foto = !empty($fotoJawaban) ? implode(',', $fotoJawaban) : null;
+                        $jawaban->save();
+                    }
+                }
+            }
+
+            // Hapus file fisik dari storage
+            $fotoPath = public_path('images/5r/temuan/' . $foto_name);
+            if (file_exists($fotoPath)) {
+                unlink($fotoPath);
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Foto berhasil dihapus',
+                'data' => [
+                    'remaining_photos' => count($fotoArray)
+                ]
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Gagal menghapus foto: ' . $e->getMessage()
             ], 500);
         }
     }

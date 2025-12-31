@@ -28,12 +28,6 @@ Route::prefix('5r-system')->group(function () {
         Route::post('/master-area/nonaktifkan', 'System5R\MasterAreaController@nonaktifkan')->name('5r-system.master-area.nonaktifkan');
         Route::post('/master-area/delete', 'System5R\MasterAreaController@delete')->name('5r-system.master-area.delete');
 
-
-
-
-
-
-
         // Master Pertanyaan
         Route::get('/master-pertanyaan', 'System5R\MasterPertanyaanController@index')->name('5r-system.master-pertanyaan');
         Route::get('/master-pertanyaan/data', 'System5R\MasterPertanyaanController@data')->name('5r-system.master-pertanyaan.data');
@@ -50,6 +44,7 @@ Route::prefix('5r-system')->group(function () {
         Route::post('/penilaian/komplain/submit', 'System5R\KomplainPenilaianController@submit')->name('5r-system.komplain-penilaian.submit');
         Route::get('/penilaian/komplain/{id_jawaban_group}', 'System5R\KomplainPenilaianController@view')->name('5r-system.komplain-penilaian.view');
         Route::get('/penilaian/{id_group?}', 'System5R\PenilaianController@index')->name('5r-system.penilaian');
+        Route::post('/penilaian/delete-single-photo', 'System5R\PenilaianController@deleteSinglePhoto')->name('5r-system.delete-single-photo');
 
         Route::get('/report/management', 'System5R\Report\ManagementController@index')->name('5r-system.report.management');
         Route::post('/report/management/data', 'System5R\Report\ManagementController@getReport')->name('5r-system.report.management.data');
