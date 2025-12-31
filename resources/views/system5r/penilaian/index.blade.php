@@ -206,7 +206,6 @@
             background: rgba(220, 53, 69, 1);
         }
 
-        /* Untuk display foto yang sudah tersimpan (read-only) */
         .image-preview-container.readonly .image-preview-wrapper {
             cursor: zoom-in;
         }
@@ -225,7 +224,6 @@
             border: 2px dashed #dee2e6;
         }
 
-        /* Styling untuk list temuan */
         .table-responsive {
             max-height: 500px;
             overflow-y: auto;
@@ -247,7 +245,6 @@
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
         }
 
-        /* Badge untuk jumlah temuan */
         .badge-temuan-count {
             position: absolute;
             top: -8px;
@@ -260,22 +257,28 @@
             font-weight: 600;
         }
 
-        /* Camera Modal Styles */
         .camera-container {
             position: relative;
             width: 100%;
             max-width: 640px;
             margin: 0 auto;
-            aspect-ratio: 4/3;
+            background: #000;
+            border-radius: 8px;
+            overflow: hidden;
+            min-height: 480px;
             display: flex;
             align-items: center;
             justify-content: center;
         }
 
         #cameraVideo {
-            max-width: 100%;
+            width: 100% !important;
+            height: auto !important;
             max-height: 480px;
+            display: block !important;
             border-radius: 8px;
+            background: #000;
+            object-fit: contain;
         }
 
         #cameraModal .modal-dialog {
@@ -284,16 +287,23 @@
 
         #cameraModal .modal-body {
             background: #f8f9fa;
+            padding: 20px;
         }
 
-        /* Button styling */
+        #cameraModal .modal-content {
+            background: #fff;
+        }
+
+        #cameraCanvas {
+            display: none !important;
+        }
+
         .btn-open-camera:hover {
             background-color: #28a745;
             color: white;
             border-color: #28a745;
         }
 
-        /* Responsive camera */
         @media (max-width: 768px) {
             #cameraModal .modal-dialog {
                 max-width: 95%;
@@ -305,7 +315,6 @@
             }
         }
 
-        /* Responsive */
         @media (max-width: 576px) {
             .image-preview-container {
                 grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
@@ -884,88 +893,6 @@
                                                                                                 @endif
                                                                                             </div>
 
-                                                                                            <!-- Camera Modal (akan ditambahkan sekali di luar loop) -->
-                                                                                            <div class="modal fade"
-                                                                                                id="cameraModal"
-                                                                                                tabindex="-1"
-                                                                                                aria-hidden="true">
-                                                                                                <div
-                                                                                                    class="modal-dialog modal-dialog-centered modal-lg">
-                                                                                                    <div
-                                                                                                        class="modal-content">
-                                                                                                        <div
-                                                                                                            class="modal-header">
-                                                                                                            <h5
-                                                                                                                class="modal-title">
-                                                                                                                <i
-                                                                                                                    class="mdi mdi-camera"></i>
-                                                                                                                Ambil Foto
-                                                                                                            </h5>
-                                                                                                            <button
-                                                                                                                type="button"
-                                                                                                                class="btn-close"
-                                                                                                                data-bs-dismiss="modal"
-                                                                                                                aria-label="Close"></button>
-                                                                                                        </div>
-                                                                                                        <div
-                                                                                                            class="modal-body text-center p-4">
-                                                                                                            <!-- Video Preview -->
-                                                                                                            <div class="camera-container mb-3"
-                                                                                                                style="max-width: 100%; background: #000; border-radius: 8px; overflow: hidden;">
-                                                                                                                <video
-                                                                                                                    id="cameraVideo"
-                                                                                                                    autoplay
-                                                                                                                    playsinline
-                                                                                                                    style="width: 100%; display: block;"></video>
-                                                                                                            </div>
-
-                                                                                                            <!-- Canvas untuk capture (hidden) -->
-                                                                                                            <canvas
-                                                                                                                id="cameraCanvas"
-                                                                                                                style="display: none;"></canvas>
-
-                                                                                                            <!-- Info -->
-                                                                                                            <div id="cameraInfo"
-                                                                                                                class="alert alert-info">
-                                                                                                                <i
-                                                                                                                    class="mdi mdi-information"></i>
-                                                                                                                Posisikan
-                                                                                                                objek di
-                                                                                                                depan
-                                                                                                                kamera, lalu
-                                                                                                                klik tombol
-                                                                                                                Ambil Foto
-                                                                                                            </div>
-
-                                                                                                            <!-- Error message -->
-                                                                                                            <div id="cameraError"
-                                                                                                                class="alert alert-danger"
-                                                                                                                style="display: none;">
-                                                                                                            </div>
-                                                                                                        </div>
-                                                                                                        <div
-                                                                                                            class="modal-footer">
-                                                                                                            <button
-                                                                                                                type="button"
-                                                                                                                class="btn btn-light"
-                                                                                                                data-bs-dismiss="modal">
-                                                                                                                <i
-                                                                                                                    class="mdi mdi-close"></i>
-                                                                                                                Batal
-                                                                                                            </button>
-                                                                                                            <button
-                                                                                                                type="button"
-                                                                                                                class="btn btn-primary"
-                                                                                                                id="btnCapturePhoto">
-                                                                                                                <i
-                                                                                                                    class="mdi mdi-camera"></i>
-                                                                                                                Ambil Foto
-                                                                                                            </button>
-                                                                                                        </div>
-                                                                                                    </div>
-                                                                                                </div>
-                                                                                            </div>
-
                                                                                             <div class="mb-3">
                                                                                                 <label
                                                                                                     class="form-label">Deskripsi
@@ -1143,6 +1070,56 @@
                 <p class="mt-4">Tidak ada data nilai pada periode sebelumnya.</p>
             @endif
 
+            <!-- Camera Modal  -->
+            <div class="modal fade" id="cameraModal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">
+                                <i class="mdi mdi-camera"></i>
+                                Ambil Foto
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body text-center p-4">
+                            <!-- Video Preview -->
+                            <div class="camera-container mb-3"
+                                style="max-width: 100%; background: #000; border-radius: 8px; overflow: hidden;">
+                                <video id="cameraVideo" autoplay playsinline style="width: 100%; display: block;"></video>
+                            </div>
+
+                            <!-- Canvas untuk capture (hidden) -->
+                            <canvas id="cameraCanvas" style="display: none;"></canvas>
+
+                            <!-- Info -->
+                            <div id="cameraInfo" class="alert alert-info">
+                                <i class="mdi mdi-information"></i>
+                                Posisikan
+                                objek di
+                                depan
+                                kamera, lalu
+                                klik tombol
+                                Ambil Foto
+                            </div>
+
+                            <!-- Error message -->
+                            <div id="cameraError" class="alert alert-danger" style="display: none;">
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-light" data-bs-dismiss="modal">
+                                <i class="mdi mdi-close"></i>
+                                Batal
+                            </button>
+                            <button type="button" class="btn btn-primary" id="btnCapturePhoto">
+                                <i class="mdi mdi-camera"></i>
+                                Ambil Foto
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             <!-- Kisi-kisi Modal -->
             <div class="modal fade" id="kisi-kisi-modal" tabindex="-1" role="dialog"
@@ -2951,27 +2928,72 @@
             // Camera functionality
             let currentStream = null;
             let currentIdPertanyaan = null;
-            const cameraVideo = document.getElementById('cameraVideo');
-            const cameraCanvas = document.getElementById('cameraCanvas');
-            const cameraModal = new bootstrap.Modal(document.getElementById('cameraModal'));
+            let cameraVideo = null;
+            let cameraCanvas = null;
+            let cameraModalInstance = null;
+
+            // Initialize camera elements when DOM is ready
+            function initializeCameraElements() {
+                cameraVideo = document.getElementById('cameraVideo');
+                cameraCanvas = document.getElementById('cameraCanvas');
+
+                const cameraModalElement = document.getElementById('cameraModal');
+                if (cameraModalElement && !cameraModalInstance) {
+                    cameraModalInstance = new bootstrap.Modal(cameraModalElement, {
+                        backdrop: 'static',
+                        keyboard: false
+                    });
+                }
+            }
 
             // Open camera when button clicked
-            $(document).on('click', '.btn-open-camera', function() {
+            $(document).on('click', '.btn-open-camera', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                // Stop existing stream first
+                if (currentStream) {
+                    stopCamera();
+                }
+
                 currentIdPertanyaan = $(this).data('id-pertanyaan');
-                openCamera();
+
+                console.log('Opening camera for:', currentIdPertanyaan);
+
+                // Initialize elements if not done yet
+                if (!cameraVideo || !cameraCanvas || !cameraModalInstance) {
+                    initializeCameraElements();
+                }
+
+                // Delay camera opening to ensure modal is ready
+                setTimeout(() => {
+                    openCamera();
+                }, 100);
             });
 
             // Function to open camera
             async function openCamera() {
                 try {
-                    // Reset error message
+                    // Validate elements
+                    if (!cameraVideo || !cameraCanvas) {
+                        console.error('Camera elements not found');
+                        initializeCameraElements();
+
+                        if (!cameraVideo || !cameraCanvas) {
+                            throw new Error('Camera elements tidak ditemukan di halaman');
+                        }
+                    }
+
+                    // Reset UI
                     $('#cameraError').hide();
                     $('#cameraInfo').show();
+
+                    console.log('Requesting camera access...');
 
                     // Request camera access
                     const constraints = {
                         video: {
-                            facingMode: 'environment', // Gunakan kamera belakang di mobile
+                            facingMode: 'environment',
                             width: {
                                 ideal: 1280
                             },
@@ -2982,13 +3004,36 @@
                     };
 
                     currentStream = await navigator.mediaDevices.getUserMedia(constraints);
+
+                    console.log('Camera access granted');
+
+                    // Set video source
                     cameraVideo.srcObject = currentStream;
 
+                    // Wait for video to be ready
+                    await new Promise((resolve) => {
+                        cameraVideo.onloadedmetadata = () => {
+                            cameraVideo.play();
+                            resolve();
+                        };
+                    });
+
+                    console.log('Video stream ready');
+
                     // Show modal
-                    cameraModal.show();
+                    if (cameraModalInstance) {
+                        cameraModalInstance.show();
+                    } else {
+                        $('#cameraModal').modal('show');
+                    }
+
+                    console.log('Modal opened');
 
                 } catch (error) {
                     console.error('Error accessing camera:', error);
+
+                    // Stop any partial stream
+                    stopCamera();
 
                     let errorMessage = 'Tidak dapat mengakses kamera. ';
 
@@ -3002,9 +3047,6 @@
                         errorMessage += error.message;
                     }
 
-                    $('#cameraInfo').hide();
-                    $('#cameraError').html('<i class="mdi mdi-alert"></i> ' + errorMessage).show();
-
                     Swal.fire({
                         icon: 'error',
                         title: 'Gagal Membuka Kamera',
@@ -3016,15 +3058,25 @@
 
             // Function to stop camera
             function stopCamera() {
+                console.log('Stopping camera...');
+
                 if (currentStream) {
-                    currentStream.getTracks().forEach(track => track.stop());
-                    cameraVideo.srcObject = null;
+                    currentStream.getTracks().forEach(track => {
+                        track.stop();
+                        console.log('Track stopped:', track.kind);
+                    });
                     currentStream = null;
                 }
+
+                if (cameraVideo) {
+                    cameraVideo.srcObject = null;
+                }
+
+                console.log('Camera stopped');
             }
 
             // Capture photo when button clicked
-            document.getElementById('btnCapturePhoto').addEventListener('click', async function() {
+            $(document).on('click', '#btnCapturePhoto', async function() {
                 if (!currentStream || !currentIdPertanyaan) {
                     Swal.fire({
                         icon: 'error',
@@ -3036,6 +3088,13 @@
                 }
 
                 try {
+                    console.log('Capturing photo...');
+
+                    // Validate elements
+                    if (!cameraVideo || !cameraCanvas) {
+                        throw new Error('Camera elements tidak ditemukan');
+                    }
+
                     // Set canvas size sama dengan video
                     cameraCanvas.width = cameraVideo.videoWidth;
                     cameraCanvas.height = cameraVideo.videoHeight;
@@ -3052,11 +3111,18 @@
                     reader.onloadend = function() {
                         const base64 = reader.result;
 
+                        console.log('Photo captured, adding to IndexedDB...');
+
                         // Add to IndexedDB
                         addCapturedImageToIndexedDB(currentIdPertanyaan, base64);
 
                         // Close camera modal
-                        cameraModal.hide();
+                        if (cameraModalInstance) {
+                            cameraModalInstance.hide();
+                        } else {
+                            $('#cameraModal').modal('hide');
+                        }
+
                         stopCamera();
 
                         Swal.fire({
@@ -3108,6 +3174,8 @@
                             });
                         }
 
+                        console.log('Image added to IndexedDB, rendering preview...');
+
                         // Render preview
                         renderImages(idPertanyaan, existingImages);
                     };
@@ -3130,13 +3198,15 @@
 
             // Stop camera when modal is closed
             $('#cameraModal').on('hidden.bs.modal', function() {
+                console.log('Modal closed, cleaning up...');
                 stopCamera();
                 currentIdPertanyaan = null;
             });
 
-            // Handle modal close button
-            $('#cameraModal .btn-close, #cameraModal [data-bs-dismiss="modal"]').on('click', function() {
-                stopCamera();
+            // Initialize on document ready
+            $(document).ready(function() {
+                console.log('Initializing camera functionality...');
+                initializeCameraElements();
             });
         </script>
     @endif
