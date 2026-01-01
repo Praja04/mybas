@@ -51,13 +51,11 @@ class DashboardController extends Controller
         $workspaceId = $request->id_workspace;
         $jadwalId    = $request->id_jadwal;
 
-        // Jika tidak ada id_jadwal dari frontend, ambil jadwal terbaru otomatis
         if (!$jadwalId) {
-            $jadwalId = DB::table('5r_jadwal_penilaian') // sesuaikan nama tabel jadwal kamu
-                ->orderByDesc('tahun')         // asumsi ada kolom 'tahun' (2025, 2026, 2027)
+            $jadwalId = DB::table('5r_jadwal_penilaian')
+                ->orderByDesc('tahun')
                 ->value('id_jadwal');
 
-            // Jika masih kosong (belum ada jadwal sama sekali), return empty
             if (!$jadwalId) {
                 return response()->json([
                     'status'   => 'success',
@@ -67,38 +65,17 @@ class DashboardController extends Controller
             }
         }
 
-        // Validasi workspace wajib
         if (!$workspaceId) {
             return response()->json(['status' => 'error', 'message' => 'Workspace required'], 422);
         }
 
-        $rows = DB::table('5r_periode_penilaian as p')
-            ->crossJoin('5r_master_department as d')
-            ->leftJoin('5r_master_group as g', 'g.id_department', '=', 'd.id_department')
-            ->leftJoin('5r_jawaban_group as jg', function ($join) {
-                $join->on('jg.id_group', '=', 'g.id_group')
-                    ->on('jg.id_periode', '=', 'p.id_periode');
-            })
-            ->leftJoin('5r_jawaban as j', 'j.id_jawaban_group', '=', 'jg.id_jawaban_group')
-            ->where('d.id_workspace', $workspaceId)
-            ->where('p.id_jadwal', $jadwalId) // SELALU filter jadwal (baik dari frontend atau default)
-            ->select(
-                'p.nama_periode',
-                'd.nama_department',
-                DB::raw("
-                CASE 
-                    WHEN COUNT(j.id) > 0 
-                    THEN SUM(j.nilai) + 28
-                    ELSE 0
-                END as total_nilai
-            ")
-            )
-            ->groupBy('p.nama_periode', 'd.nama_department')
-            ->orderBy('p.nama_periode')
-            ->get();
+        // 1. Ambil semua departemen di workspace
+        $allDepartments = DB::table('5r_master_department')
+            ->where('id_workspace', $workspaceId)
+            ->orderBy('nama_department')
+            ->pluck('nama_department', 'id_department');
 
-        // Jika tidak ada data, return empty chart
-        if ($rows->isEmpty()) {
+        if ($allDepartments->isEmpty()) {
             return response()->json([
                 'status'   => 'success',
                 'labels'   => [],
@@ -106,16 +83,62 @@ class DashboardController extends Controller
             ]);
         }
 
-        $departments = $rows->pluck('nama_department')->unique()->values();
-        $periodes    = $rows->pluck('nama_periode')->unique()->values();
+        // 2. Query nilai dengan binding aman untuk id_workspace string
+        $rows = DB::table('5r_periode_penilaian as p')
+            ->join('5r_master_department as d', function ($join) use ($workspaceId) {
+                $join->on('d.id_workspace', '=', DB::raw('?'))
+                    ->addBinding($workspaceId);
+            })
+            ->join('5r_master_group as g', 'g.id_department', '=', 'd.id_department')
+            ->join('5r_jawaban_group as jg', function ($join) {
+                $join->on('jg.id_group', '=', 'g.id_group')
+                    ->on('jg.id_periode', '=', 'p.id_periode')
+                    ->where('jg.status', '=', 'approved');
+            })
+            ->join('5r_jawaban as j', 'j.id_jawaban_group', '=', 'jg.id_jawaban_group')
+            ->where('p.id_jadwal', $jadwalId)
+            ->select(
+                'p.nama_periode',
+                'd.id_department',
+                'd.nama_department',
+                DB::raw('SUM(j.nilai) as total_skor')
+            )
+            ->groupBy('p.id_periode', 'p.nama_periode', 'd.id_department', 'd.nama_department')
+            ->get();
 
+        // 3. Ambil semua periode
+        $periodes = DB::table('5r_periode_penilaian')
+            ->where('id_jadwal', $jadwalId)
+            ->orderBy('nama_periode')
+            ->pluck('nama_periode');
+
+        // 4. Bangun data chart — semua departemen muncul
         $datasets = [];
+
         foreach ($periodes as $periode) {
             $data = [];
-            foreach ($departments as $dept) {
-                $row = $rows->first(fn($r) => $r->nama_periode === $periode && $r->nama_department === $dept);
-                $data[] = $row ? (float) $row->total_nilai : 0;
+
+            foreach ($allDepartments as $deptId => $deptName) {
+                $row = $rows->first(fn($r) => $r->nama_periode === $periode && $r->id_department == $deptId);
+
+                $totalSkor = $row ? (float) $row->total_skor : 0;
+
+                // (total + 28) * faktor, tapi kalau total = 0 → nilai akhir = 0 (biar chart kelihatan belum dinilai)
+                $baseNilai = $totalSkor > 0 ? ($totalSkor + 28) : 0;
+
+                $deptUpper = strtoupper($deptName);
+
+                if (str_contains($deptUpper, 'HRGA') || str_contains($deptUpper, 'GA')) {
+                    $nilaiAkhir = $baseNilai * 105;
+                } elseif (str_contains($deptUpper, 'PRD') || str_contains($deptUpper, 'PROD')) {
+                    $nilaiAkhir = $baseNilai * 110;
+                } else {
+                    $nilaiAkhir = $baseNilai * 100;
+                }
+
+                $data[] = round($nilaiAkhir, 2);
             }
+
             $datasets[] = [
                 'label' => $periode,
                 'data'  => $data
@@ -124,7 +147,7 @@ class DashboardController extends Controller
 
         return response()->json([
             'status'   => 'success',
-            'labels'   => $departments,
+            'labels'   => $allDepartments->values()->toArray(),
             'datasets' => $datasets
         ]);
     }
@@ -134,13 +157,12 @@ class DashboardController extends Controller
         $workspaceId = $request->id_workspace;
         $jadwalId    = $request->id_jadwal;
 
-        // Jika tidak ada id_jadwal dari frontend, ambil jadwal terbaru otomatis
+        // Ambil jadwal terbaru jika tidak ada
         if (!$jadwalId) {
-            $jadwalId = DB::table('5r_jadwal_penilaian') // sesuaikan nama tabel jadwal kamu
-                ->orderByDesc('tahun')         // asumsi kolom 'tahun' (2025, 2026, 2027)
+            $jadwalId = DB::table('5r_jadwal_penilaian')
+                ->orderByDesc('tahun')
                 ->value('id_jadwal');
 
-            // Jika masih tidak ada jadwal sama sekali, return empty
             if (!$jadwalId) {
                 return response()->json([
                     'status' => 'success',
@@ -150,38 +172,79 @@ class DashboardController extends Controller
             }
         }
 
-        // Validasi workspace wajib
         if (!$workspaceId) {
             return response()->json(['status' => 'error', 'message' => 'Workspace required'], 422);
         }
 
+        // 1. Ambil SEMUA departemen di workspace ini (wajib muncul semua di ranking)
+        $allDepartments = DB::table('5r_master_department')
+            ->where('id_workspace', $workspaceId)
+            ->orderBy('nama_department')
+            ->pluck('nama_department', 'id_department');
+
+        if ($allDepartments->isEmpty()) {
+            return response()->json([
+                'status' => 'success',
+                'labels' => [],
+                'data'   => []
+            ]);
+        }
+
+        // 2. Hitung nilai aktual (hanya dari jawaban approved di jadwal ini)
         $rows = DB::table('5r_master_department as d')
-            ->leftJoin('5r_master_group as g', 'g.id_department', '=', 'd.id_department')
-            ->leftJoin('5r_jawaban_group as jg', function ($join) {
-                $join->on('jg.id_group', '=', 'g.id_group');
+            ->join('5r_master_group as g', 'g.id_department', '=', 'd.id_department')
+            ->join('5r_jawaban_group as jg', function ($join) use ($jadwalId) {
+                $join->on('jg.id_group', '=', 'g.id_group')
+                    ->where('jg.status', '=', 'approved')
+                    ->whereExists(function ($query) use ($jadwalId) {
+                        $query->select(DB::raw(1))
+                            ->from('5r_periode_penilaian as p')
+                            ->whereColumn('p.id_periode', 'jg.id_periode')
+                            ->where('p.id_jadwal', $jadwalId);
+                    });
             })
-            ->leftJoin('5r_jawaban as j', 'j.id_jawaban_group', '=', 'jg.id_jawaban_group')
-            ->leftJoin('5r_periode_penilaian as p', 'p.id_periode', '=', 'jg.id_periode')
+            ->join('5r_jawaban as j', 'j.id_jawaban_group', '=', 'jg.id_jawaban_group')
             ->where('d.id_workspace', $workspaceId)
-            ->where('p.id_jadwal', $jadwalId) // SELALU filter jadwal
             ->select(
+                'd.id_department',
                 'd.nama_department',
-                DB::raw("
-                CASE 
-                    WHEN COUNT(j.id) > 0 
-                    THEN SUM(j.nilai) + 28
-                    ELSE 0
-                END as total_nilai
-            ")
+                DB::raw('SUM(j.nilai) as total_skor')
             )
-            ->groupBy('d.nama_department')
-            ->orderByDesc('total_nilai')
+            ->groupBy('d.id_department', 'd.nama_department')
             ->get();
+
+        // 3. Proses nilai akhir untuk semua departemen (termasuk yang nilainya 0)
+        $processed = $allDepartments->map(function ($deptName, $deptId) use ($rows) {
+            // Cari apakah ada data nilai untuk departemen ini
+            $row = $rows->first(fn($r) => $r->id_department == $deptId);
+
+            $totalSkor = $row ? (float) $row->total_skor : 0;
+
+            // Logika nilai akhir: (total + 28) × faktor, tapi kalau total = 0 → nilai akhir = 0
+            $baseNilai = $totalSkor > 0 ? ($totalSkor + 28) : 0;
+
+            $deptUpper = strtoupper($deptName);
+
+            if (str_contains($deptUpper, 'HRGA') || str_contains($deptUpper, 'GA')) {
+                $nilaiAkhir = $baseNilai * 105;
+            } elseif (str_contains($deptUpper, 'PRD') || str_contains($deptUpper, 'PROD')) {
+                $nilaiAkhir = $baseNilai * 110;
+            } else {
+                $nilaiAkhir = $baseNilai * 100;
+            }
+
+            return (object) [
+                'nama_department' => $deptName,
+                'nilai_akhir'     => round($nilaiAkhir, 2)
+            ];
+        })
+            ->sortByDesc('nilai_akhir') // ranking dari tertinggi
+            ->values();
 
         return response()->json([
             'status' => 'success',
-            'labels' => $rows->pluck('nama_department')->values(),
-            'data'   => $rows->pluck('total_nilai')->map(fn($v) => (float) $v)
+            'labels' => $processed->pluck('nama_department')->toArray(),
+            'data'   => $processed->pluck('nilai_akhir')->toArray()
         ]);
     }
 }

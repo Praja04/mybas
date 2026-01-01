@@ -161,7 +161,6 @@
                                     <td>${item.department}</td>
                                     <td class="text-muted">-</td>
                                     <td class="text-muted">-</td>
-                                    <td class="text-muted">-</td>
                                     <td>
                                         <span class="badge badge-soft-warning">
                                             Belum Dinilai
@@ -183,10 +182,9 @@
                                 <tr>
                                     <td class="text-center">${i === 0 ? rank : ''}</td>
                                     <td>${i === 0 ? item.department : ''}</td>
-                                    <td>${item.juri.length ? item.juri.join(', ') : '-'}</td>
                                     <td>${g.nama_group}</td>
-                                     <td>${i === 0 ? presentase + '%' : ''}</td>   
-                                    <td>${g.nilaiAkhir.toFixed(1)}</td>
+                                    <td>${i === 0 ? presentase + '%' : ''}</td>   
+                                    <td>${formatNumber(g.nilaiAkhir)}</td>
                                     <td class="text-center">
                                         <div class="d-flex gap-1 justify-content-center">
                                             <button class="btn btn-sm btn-outline-info"
@@ -216,7 +214,6 @@
                                     <tr>
                                         <th width="5%">#</th>
                                         <th>Department</th>
-                                        <th>Juri</th>
                                         <th>Group</th>
                                         <th>Presentase</th>
                                         <th>Nilai Akhir</th>
@@ -230,6 +227,21 @@
                 });
 
                 return html;
+            }
+
+            function formatNumber(num) {
+                if (num === null || num === undefined) return '-';
+
+                // Bulatkan ke 1 desimal dulu
+                let fixed = Number(num).toFixed(1);
+
+                // Hilangkan .0 jika bulat
+                if (fixed.endsWith('.0')) {
+                    fixed = fixed.slice(0, -2);
+                }
+
+                // Format ribuan dengan titik
+                return fixed.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
             }
         });
 
