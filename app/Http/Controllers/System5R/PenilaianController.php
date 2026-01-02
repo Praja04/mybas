@@ -251,6 +251,9 @@ class PenilaianController extends Controller
                 mkdir(public_path('images/5r/temuan'), 0755, true);
             }
 
+            // Generate ID temuan DULU (sebelum save foto)
+            $idTemuan = 'TM' . time() . uniqid('', true) . bin2hex(random_bytes(4));
+
             // Process setiap foto
             foreach ($fotoArray as $index => $base64Image) {
                 // Hapus prefix data:image jika ada
@@ -267,43 +270,66 @@ class PenilaianController extends Controller
                     throw new \Exception('Gagal decode base64 image pada foto ke-' . ($index + 1));
                 }
 
-                // GENERATE NAMA FILE YANG BENAR-BENAR UNIQUE
-                // Kombinasi: id_pertanyaan + timestamp + uniqid + hash + random
-                $timestamp = time();
-                $uniqueId = uniqid('', true); // true = more entropy
-                $contentHash = substr(md5($imageData), 0, 8); // Hash dari konten foto
-                $randomStr = bin2hex(random_bytes(4)); // 8 karakter random
+                // ===================================================================
+                // SOLUSI PRODUCTION: Gunakan Str::uuid() atau DB Auto Increment
+                // ===================================================================
 
-                // Format: temuan_ID_TIMESTAMP_UNIQID_HASH_RANDOM.jpg
+                // Method 1: UUID v4 (RECOMMENDED untuk production)
+                // Guaranteed unique secara global, bahkan di distributed system
+                $uuid = \Illuminate\Support\Str::uuid()->toString();
+                $uuidShort = str_replace('-', '', $uuid); // Remove dashes
+
+                // Method 2: Tambahkan random bytes ekstra
+                $extraRandom = bin2hex(random_bytes(8)); // 16 karakter
+
+                // Method 3: Tambahkan process ID (untuk multi-process server)
+                $processId = getmypid(); // Process ID
+
+                // Gabungkan semua untuk MAXIMUM uniqueness
                 $imageName = sprintf(
-                    'temuan_%s_%s_%s_%s_%s.jpg',
-                    $request->id_pertanyaan,  // Parameter 1
-                    $timestamp,                // Parameter 2
-                    $uniqueId,                 // Parameter 3
-                    $contentHash,              // Parameter 4
-                    $randomStr                 // Parameter 5
+                    'tm_%s_%s_%d_%03d_%s.jpg',
+                    $request->area,           // Area ID
+                    $uuidShort,               // UUID (32 chars, guaranteed unique)
+                    $processId,               // Process ID
+                    $index + 1,               // Index foto
+                    $extraRandom              // Extra random (16 chars)
                 );
 
-                // Double check: jika nama file sudah ada, regenerate
-                $counter = 0;
-                while (file_exists(public_path('images/5r/temuan/' . $imageName)) && $counter < 10) {
-                    $counter++;
-                    $randomStr = bin2hex(random_bytes(4));
+                // Sanitize (remove special chars jika ada)
+                $imageName = preg_replace('/[^a-zA-Z0-9._-]/', '_', $imageName);
+
+                // FINAL CHECK: Jika masih duplikat (impossible, tapi just in case)
+                $finalPath = public_path('images/5r/temuan/' . $imageName);
+                $retry = 0;
+                while (file_exists($finalPath) && $retry < 3) {
+                    $retry++;
+                    // Regenerate dengan timestamp nano + retry count
+                    $nanoTime = hrtime(true); // Nanosecond precision
                     $imageName = sprintf(
-                        'temuan_%s_%s_%s_%s_%s_%d.jpg',
-                        $request->id_pertanyaan,  // Parameter 1
-                        $timestamp,                // Parameter 2
-                        $uniqueId,                 // Parameter 3
-                        $contentHash,              // Parameter 4
-                        $randomStr,                // Parameter 5
-                        $counter                   // Parameter 6
+                        'tm_%s_%s_%d_%03d_%s_%d_%d.jpg',
+                        $request->area,
+                        $uuidShort,
+                        $processId,
+                        $index + 1,
+                        $extraRandom,
+                        $nanoTime,
+                        $retry
                     );
+                    $imageName = preg_replace('/[^a-zA-Z0-9._-]/', '_', $imageName);
+                    $finalPath = public_path('images/5r/temuan/' . $imageName);
                 }
 
                 // Simpan foto
-                \File::put(public_path('images/5r/temuan/' . $imageName), $imageData);
+                \File::put($finalPath, $imageData);
 
                 $savedPhotos[] = $imageName;
+
+                // Log untuk debugging di production
+                Log::info('Foto saved', [
+                    'filename' => $imageName,
+                    'size' => strlen($imageData),
+                    'index' => $index
+                ]);
             }
 
             // Gabungkan semua nama foto dengan koma
@@ -311,7 +337,7 @@ class PenilaianController extends Controller
 
             // Create temuan record
             $temuan = Temuan::create([
-                'id_temuan' => 'TM' . uniqid() . time(),
+                'id_temuan' => $idTemuan,
                 'id_pertanyaan' => $request->id_pertanyaan,
                 'id_periode' => $request->id_periode,
                 'id_area' => $request->area,
@@ -333,6 +359,12 @@ class PenilaianController extends Controller
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
+
+            Log::error('Save Temuan Error', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'request' => $request->except(['foto']) // Jangan log base64
+            ]);
 
             // Hapus foto yang sudah tersimpan jika terjadi error
             if (!empty($savedPhotos)) {
