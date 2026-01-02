@@ -355,29 +355,60 @@ class PenilaianController extends Controller
 
             $id_temuan = $request->id_temuan;
 
+            // Ambil data temuan yang akan dihapus
             $temuan = Temuan::find($id_temuan);
 
             if (!$temuan) {
                 throw new \Exception('Temuan tidak ditemukan');
             }
 
+            // Simpan nama foto dari temuan untuk proses penghapusan
             $fotoTemuan = $temuan->foto ? array_map('trim', explode(',', $temuan->foto)) : [];
 
+            // CEK: Apakah foto ini digunakan oleh temuan lain dengan pertanyaan yang sama?
+            $temuanLainDenganPertanyaanSama = Temuan::where('id_pertanyaan', $temuan->id_pertanyaan)
+                ->where('id_periode', $temuan->id_periode)
+                ->where('id_temuan', '!=', $id_temuan) // EXCLUDE temuan yang akan dihapus
+                ->whereNotNull('foto')
+                ->get();
+
+            // Kumpulkan SEMUA foto dari temuan lain
+            $fotoYangMasihDigunakan = [];
+            foreach ($temuanLainDenganPertanyaanSama as $temuanLain) {
+                if ($temuanLain->foto) {
+                    $fotoLain = array_map('trim', explode(',', $temuanLain->foto));
+                    $fotoYangMasihDigunakan = array_merge($fotoYangMasihDigunakan, $fotoLain);
+                }
+            }
+            $fotoYangMasihDigunakan = array_unique($fotoYangMasihDigunakan);
+
+            // Cari jawaban terkait dengan temuan ini
             $jawaban = null;
             if ($temuan->id_jawaban) {
                 $jawaban = Jawaban::find($temuan->id_jawaban);
             }
 
+            // HANYA hapus foto dari jawaban yang TIDAK digunakan temuan lain
+            $fotoYangAmanDihapusDariJawaban = [];
+            foreach ($fotoTemuan as $foto) {
+                if (!in_array($foto, $fotoYangMasihDigunakan)) {
+                    $fotoYangAmanDihapusDariJawaban[] = $foto;
+                }
+            }
+
+            // Update field foto di jawaban
             if ($jawaban && $jawaban->foto) {
                 $fotoJawaban = array_map('trim', explode(',', $jawaban->foto));
 
+                // Hapus foto yang aman dihapus dari jawaban
                 $fotoJawabanBaru = [];
                 foreach ($fotoJawaban as $foto) {
-                    if (!in_array($foto, $fotoTemuan)) {
+                    if (!in_array($foto, $fotoYangAmanDihapusDariJawaban)) {
                         $fotoJawabanBaru[] = $foto;
                     }
                 }
 
+                // Update jawaban
                 if (empty($fotoJawabanBaru)) {
                     $jawaban->foto = null;
                 } else {
@@ -387,24 +418,29 @@ class PenilaianController extends Controller
                 $jawaban->save();
             }
 
-            foreach ($fotoTemuan as $foto) {
+            // Hapus file fisik HANYA yang tidak digunakan temuan lain
+            $deletedFiles = 0;
+            foreach ($fotoYangAmanDihapusDariJawaban as $foto) {
                 if (!empty($foto)) {
                     $fotoPath = public_path('images/5r/temuan/' . $foto);
                     if (file_exists($fotoPath)) {
                         unlink($fotoPath);
+                        $deletedFiles++;
                     }
                 }
             }
 
+            // Hapus data temuan dari database
             $temuan->delete();
 
             DB::commit();
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'Temuan dan foto terkait berhasil dihapus',
+                'message' => 'Temuan berhasil dihapus',
                 'data' => [
-                    'deleted_photos' => count($fotoTemuan),
+                    'deleted_photos' => $deletedFiles,
+                    'preserved_photos' => count($fotoTemuan) - $deletedFiles,
                     'jawaban_updated' => $jawaban ? true : false
                 ]
             ]);
@@ -431,16 +467,19 @@ class PenilaianController extends Controller
             $id_temuan = $request->id_temuan;
             $foto_name = trim($request->foto_name);
 
+            // Validasi input
             if (empty($foto_name)) {
                 throw new \Exception('Nama foto tidak valid');
             }
 
+            // Ambil data temuan
             $temuan = Temuan::find($id_temuan);
 
             if (!$temuan) {
                 throw new \Exception('Temuan tidak ditemukan');
             }
 
+            // Parse foto yang ada di temuan
             $fotoArray = $temuan->foto ? array_map('trim', explode(',', $temuan->foto)) : [];
 
             // Cari dan hapus foto yang diminta
