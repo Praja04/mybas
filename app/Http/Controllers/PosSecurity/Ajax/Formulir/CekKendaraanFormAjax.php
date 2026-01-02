@@ -195,9 +195,24 @@ class CekKendaraanFormAjax extends Controller
 
             $photoPaths = [];
 
-            if ($request->has('photos')) {
+            // if ($request->has('photos')) {
+            //     $photoPaths = $this->saveBase64Images(
+            //         $request->photos,
+            //         $trnCekId,
+            //         'MASUK'
+            //     );
+            // }
+
+
+            if ($request->filled('photos') && is_array($request->photos)) {
+                $decodedPhotos = [];
+
+                foreach ($request->photos as $key => $value) {
+                    $decodedPhotos[$key] = json_decode($value, true) ?? [];
+                }
+
                 $photoPaths = $this->saveBase64Images(
-                    $request->photos,
+                    $decodedPhotos,
                     $trnCekId,
                     'MASUK'
                 );
@@ -286,10 +301,24 @@ class CekKendaraanFormAjax extends Controller
 
             $photoPaths = [];
 
-            if ($request->has('photos')) {
+            // if ($request->has('photos')) {
+            //     $photoPaths = $this->saveBase64Images(
+            //         $request->photos,
+            //         $request->trncekid
+            //         'KELUAR'
+            //     );
+            // }
+
+            if ($request->filled('photos') && is_array($request->photos)) {
+                $decodedPhotos = [];
+
+                foreach ($request->photos as $key => $value) {
+                    $decodedPhotos[$key] = json_decode($value, true) ?? [];
+                }
+
                 $photoPaths = $this->saveBase64Images(
-                    $request->photos,
-                    $cek->nomor_polisi,
+                    $decodedPhotos,
+                    $request->trncekid,
                     'KELUAR'
                 );
             }
@@ -347,46 +376,57 @@ class CekKendaraanFormAjax extends Controller
         $photos,
         $trnCekId,
         $status // MASUK / KELUAR
-    ): array {
+    ) {
         $photoPaths = [];
 
-        foreach ($photos as $key => $base64Image) {
-            if (!$base64Image) continue;
+        foreach ($photos as $key => $images) {
+            if (!is_array($images)) continue;
 
-            if (!preg_match('/^data:image\/(\w+);base64,/', $base64Image, $type)) {
-                continue;
+            // sanitasi nama kategori
+            $label = preg_replace('/[^A-Za-z0-9_-]/', '_', $key);
+
+            foreach ($images as $index => $base64Image) {
+                if (!$base64Image) continue;
+
+                if (!preg_match('/^data:image\/(\w+);base64,/', $base64Image, $type)) {
+                    continue;
+                }
+
+                $extension = strtolower($type[1]);
+
+                $imageData = base64_decode(
+                    substr($base64Image, strpos($base64Image, ',') + 1)
+                );
+
+                if ($imageData === false) continue;
+
+                // tanggal folder 
+                $year  = now()->format('Y');
+                $month = now()->format('m');
+                $day   = now()->format('d');
+
+                $fileName = "{$index}.{$extension}";
+
+                $relativePath = implode('/', [
+                    'uploads/pos-security/cek-kendaraan',
+                    $year,
+                    $month,
+                    $day,
+                    $trnCekId,
+                    $status,
+                    $label
+                ]);
+
+                $fullPath = public_path($relativePath);
+
+                if (!File::exists($fullPath)) {
+                    File::makeDirectory($fullPath, 0755, true);
+                }
+
+                File::put($fullPath . '/' . $fileName, $imageData);
+
+                $photoPaths[$key][] = $relativePath . '/' . $fileName;
             }
-
-            $extension = strtolower($type[1]);
-            $imageData = base64_decode(
-                substr($base64Image, strpos($base64Image, ',') + 1)
-            );
-
-            if ($imageData === false) continue;
-
-            $tanggal    = now()->format('Y-m-d');
-            $timestamp  = now()->format('Ymd_His');
-            $label      = preg_replace('/[^A-Za-z0-9_-]/', '_', $key);
-
-            $fileName = $timestamp . '.' . $extension;
-
-            $relativePath = implode('/', [
-                'uploads/pos-security/cek-kendaraan',
-                $tanggal,
-                $status,
-                $trnCekId,
-                $label
-            ]);
-
-            $fullPath = public_path($relativePath);
-
-            if (!File::exists($fullPath)) {
-                File::makeDirectory($fullPath, 0755, true);
-            }
-
-            File::put($fullPath . '/' . $fileName, $imageData);
-
-            $photoPaths[$key][] = $relativePath . '/' . $fileName;
         }
 
         return $photoPaths;

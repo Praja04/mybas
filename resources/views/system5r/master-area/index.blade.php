@@ -15,7 +15,7 @@
         <div class="card">
             <div class="card-body">
                 <div class="row align-items-end g-3">
-                    <div class="col-md-9">
+                    <div class="col-md-12">
                         <div>
                             <label for="filter-department">Pilih Departemen <span class="text-danger">*</span></label>
                             <select name="department" id="filter_department" class="form-control">
@@ -25,12 +25,6 @@
                                 @endforeach
                             </select>
                         </div>
-                    </div>
-                    <div class="col-md-3">
-                        <button type="button" id="btn-pilih-department" class="btn btn-primary waves-effect w-100">
-                            <i class="mdi mdi-magnify"></i>
-                            Pilih
-                        </button>
                     </div>
                 </div>
             </div>
@@ -238,31 +232,6 @@
         }
 
 
-        $('#btn-pilih-department').on('click', function() {
-            let department = $('#filter_department').val();
-
-            if (!department) {
-                Swal.fire(
-                    'Perhatian',
-                    'Silakan pilih Departemen terlebih dahulu',
-                    'info'
-                );
-                return;
-            }
-
-            let deptName = $('#filter_department option:selected').text();
-            $('#area-title').text('Area Departemen ' + deptName);
-
-            // Hide alert
-            $('#alert-area').hide();
-
-            // Show table
-            $('#area-table-wrapper').removeClass('d-none');
-
-            table.ajax.reload();
-        });
-
-
         $('#formCreateGroup').on('submit', function(e) {
             e.preventDefault()
 
@@ -339,19 +308,30 @@
             });
         });
 
-        $('#filter_department').on('keydown', function(e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                $('#btn-pilih-department').click();
-            }
-        });
-
         $('#modalCreateGroup').on('show.bs.modal', function() {
             let selectedDepartment = $('#filter_department').val();
 
             if (selectedDepartment) {
                 $('#create_department').val(selectedDepartment);
             }
+        });
+
+        $('#filter_department').on('change', function() {
+            let department = $(this).val();
+
+            if (!department) return;
+
+            let deptName = $('#filter_department option:selected').text();
+            $('#area-title').text('Area Departemen ' + deptName);
+
+            // Hide alert
+            $('#alert-area').hide();
+
+            // Show table
+            $('#area-table-wrapper').removeClass('d-none');
+
+            // Reload datatable with new filter
+            table.ajax.reload();
         });
     </script>
 @endpush

@@ -11,7 +11,8 @@ class MasterAreaController extends Controller
 {
     public function index()
     {
-        $department = MasterDepartment::where('is_active', 'Y')->get();
+        // $department = MasterDepartment::where('is_active', 'Y')->get();
+        $department = MasterDepartment::all();
 
         return view('system5r.master-area.index', compact('department'));
     }

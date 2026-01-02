@@ -39,7 +39,7 @@
                                 <label class="form-label fw-semibold">Tanggal Lahir <span
                                         class="text-danger">*</span></label>
                                 <input type="text" class="form-control flatpickr-single" name="tgllahir"
-                                    id="tglLahir" placeholder="Pilih tanggal lahir">
+                                    id="tglLahir" placeholder="Pilih tanggal lahir" required>
                             </div>
 
                             <div class="mb-3">
@@ -87,25 +87,46 @@
                                 <label class="form-label fw-semibold">Keperluan <span
                                         class="text-danger">*</span></label>
                                 <input type="text" name="keperluan" class="form-control"
-                                    placeholder="Contoh: Meeting, Pengiriman Barang">
+                                    placeholder="Contoh: Meeting, Pengiriman Barang" required>
                             </div>
 
                             <div class="mb-3">
                                 <label class="form-label fw-semibold">Bertemu Dengan <span
                                         class="text-danger">*</span></label>
                                 <input type="text" name="host" class="form-control"
-                                    placeholder="Contoh: Pak Budi Santoso">
+                                    placeholder="Contoh: Pak Budi Santoso" required>
                             </div>
 
                             <div class="mb-3">
                                 <label class="form-label fw-semibold">Departemen <span
                                         class="text-danger">*</span></label>
-                                <select name="hostdeptid" class="form-select assign-departement-ga w-100">
+                                <select name="hostdeptid" class="form-select assign-departement-ga w-100" required>
                                     <option value="" disabled selected>-- Pilih Departemen --</option>
                                     @foreach ($departments as $dept)
                                         <option value="{{ $dept->name }}">{{ $dept->name }}</option>
                                     @endforeach
 
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Apakah Tamu Menggunakan Kacamata? <span
+                                        class="text-danger">*</span></label>
+                                <select name="is_kacamata" id="isKacamata" class="form-select w-100" required>
+                                    <option value="" disabled selected>-- Pilih --</option>
+                                    <option value="1">Ya</option>
+                                    <option value="0">Tidak</option>
+
+                                </select>
+                            </div>
+
+                            <div class="mb-3" id="kondisiKacamataGroup" style="display: none;">
+                                <label class="form-label fw-semibold">Kondisi Kacamata Saat Ini <span
+                                        class="text-danger">*</span></label>
+                                <select name="kondisi_kacamata" id="kondisiKacamata" class="form-select w-100">
+                                    <option value="" disabled selected>-- Pilih Kondisi --</option>
+                                    <option value="Bagus">Bagus/bisa digunakan</option>
+                                    <option value="Rusak">Rusak/pecah/tidak bisa digunakan</option>
                                 </select>
                             </div>
 

@@ -166,7 +166,7 @@
 
                         {{-- Foto Section --}}
                         <div class="row">
-                            <div id="fotoSectionOut" class="row mt-3"></div>
+                            <div id="fotoSectionOut" class="row my-3"></div>
                         </div>
 
                         {{-- Button --}}
@@ -212,38 +212,27 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body text-center">
-                <h5 class="fs-15 mb-3">Capture Gambar dari Kamera</h5>
-
-                <!-- Tombol Mulai Kamera -->
-                <button id="startCameraOut" class="btn btn-success mb-3">Mulai Kamera</button>
-
-                <!-- Video Stream -->
-                <video id="videoOut" width="100%" autoplay class="mb-3 rounded shadow"
+                <video id="videoOut" autoplay width="100%" class="rounded shadow-sm mb-3"
                     style="display: none;"></video>
-
-                <!-- Canvas untuk Capture -->
                 <canvas id="canvasOut" style="display: none;"></canvas>
 
-                <!-- Preview Hasil Capture -->
+                <button id="startCameraOut" class="btn btn-success mb-3">Mulai Kamera</button>
+
                 <div id="capturedImageContainerOut" class="mt-3" style="display: none;">
                     <img id="capturedImageOut" class="img-fluid rounded shadow" />
                 </div>
-
-                <!-- Tombol Capture & Ulang -->
-
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
-
-                <button id="captureBtnOut" class="btn btn-secondary me-2" style="display: none;">Capture</button>
-
-                <button id="retakeBtnOut" class="btn btn-warning" style="display: none;">Ambil Ulang</button>
-
-                <button id="saveBtnOut" type="button" class="btn btn-primary" style="display:none;">Simpan
-                    Foto</button>
+                <div>
+                    <button id="retakeBtnOut" class="btn btn-warning me-2" style="display: none;">Tambah
+                        Foto</button>
+                    <button id="captureBtnOut" class="btn btn-secondary me-2" style="display: none;">Capture</button>
+                    <button id="saveBtnOut" class="btn btn-primary" style="display: none;">Simpan Semua</button>
+                </div>
             </div>
-        </div><!-- /.modal-content -->
-    </div><!-- /.modal-dialog -->
+        </div>
+    </div>
 </div>
 
 @push('scripts')

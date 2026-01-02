@@ -6,82 +6,108 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
 
-            <div class="modal-body">
-                <div class="row g-4">
+            <div class="modal-body p-0">
 
-                    <!-- Informasi Kendaraan -->
-                    <div class="col-12">
-                        <h6 class="fw-bold border-bottom pb-2 mb-3">Informasi Kendaraan</h6>
-                        <dl class="row">
-                            <dt class="col-sm-4">Nomor Polisi</dt>
-                            <dd class="col-sm-8" id="detailNomorPolisi"></dd>
-
-                            <dt class="col-sm-4">Nama Supir</dt>
-                            <dd class="col-sm-8" id="detailNamaSupir"></dd>
-
-                            <dt class="col-sm-4">Perusahaan</dt>
-                            <dd class="col-sm-8" id="detailNamaPerusahaan"></dd>
-
-                            <dt class="col-sm-4">Jenis Muatan</dt>
-                            <dd class="col-sm-8" id="detailJenisMuatan"></dd>
-
-                            <dt class="col-sm-4">Jenis Truk</dt>
-                            <dd class="col-sm-8" id="detailJenisTruk"></dd>
-
-                            <dt class="col-sm-4">Jenis Truk Lainnya</dt>
-                            <dd class="col-sm-8" id="detailJenisTrukLainnya"></dd>
-
-                            <dt class="col-sm-4">Status</dt>
-                            <dd class="col-sm-8" id="detailStatus"></dd>
-                        </dl>
-                    </div>
-
-                    <div class="row">
-
-                        <!-- Informasi Masuk -->
-                        <div class="col-12 col-lg-6 mb-3">
-                            <h6 class="fw-bold border-bottom pb-2 mb-3">Informasi Masuk</h6>
-                            <dl class="row">
-                                <dt class="col-sm-5">Nama Petugas Masuk</dt>
-                                <dd class="col-sm-7" id="detailNamaPetugasMasuk"></dd>
-
-                                <dt class="col-sm-5">Waktu Masuk</dt>
-                                <dd class="col-sm-7" id="detailWaktuMasuk"></dd>
-                            </dl>
-                        </div>
-
-                        <!-- Informasi Keluar -->
-                        <div class="col-12 col-lg-6 mb-3">
-                            <h6 class="fw-bold border-bottom pb-2 mb-3">Informasi Keluar</h6>
-                            <dl class="row">
-                                <dt class="col-sm-5">Nama Petugas Keluar</dt>
-                                <dd class="col-sm-7" id="detailNamaPetugasKeluar"></dd>
-
-                                <dt class="col-sm-5">Waktu Keluar</dt>
-                                <dd class="col-sm-7" id="detailWaktuKeluar"></dd>
-
-                                <dt class="col-sm-5">Durasi</dt>
-                                <dd class="col-sm-7" id="detailDurasi"></dd>
-                            </dl>
-                        </div>
-
-                    </div>
-
-                    <div class="col-12">
-                        <h6 class="fw-bold border-bottom pb-2 mb-3">
-                            Foto Pengecekan Kendaraan (MASUK)
-                        </h6>
-                        <div class="row" id="detailFotoContainer"></div>
-
-                        <h6 class="fw-bold border-bottom pb-2 mb-3">
-                            Foto Pengecekan Kendaraan (kELUAR)
-                        </h6>
-                        <div class="row" id="detailFotoKeluarContainer"></div>
-                    </div>
-
-                    <div class="col-12">
-                    </div>
+                <!-- Tabs -->
+                <div style="position: sticky; top: 0; z-index: 10; background: #fff;">
+                    <ul class="nav nav-tabs px-3 pt-3" id="detailTabs" role="tablist">
+                        <li class="nav-item">
+                            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tabInfo"
+                                type="button">
+                                Informasi
+                            </button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabFotoMasuk" type="button">
+                                Foto Masuk
+                            </button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabFotoKeluar"
+                                type="button">
+                                Foto Keluar
+                            </button>
+                        </li>
+                    </ul>
                 </div>
+
+                <div class="tab-content px-3 py-4" style="max-height:70vh; overflow-y:auto;">
+                    <!-- TAB INFO -->
+                    <div class="tab-pane fade show active" id="tabInfo">
+                        <div class="row g-4">
+
+                            <!-- Informasi Kendaraan -->
+                            <div class="col-12">
+                                <h6 class="fw-bold border-bottom pb-2 mb-3">Informasi Kendaraan</h6>
+                                <dl class="row">
+                                    <dt class="col-sm-4">Nomor Polisi</dt>
+                                    <dd class="col-sm-8" id="detailNomorPolisi"></dd>
+
+                                    <dt class="col-sm-4">Nama Supir</dt>
+                                    <dd class="col-sm-8" id="detailNamaSupir"></dd>
+
+                                    <dt class="col-sm-4">Perusahaan</dt>
+                                    <dd class="col-sm-8" id="detailNamaPerusahaan"></dd>
+
+                                    <dt class="col-sm-4">Jenis Muatan</dt>
+                                    <dd class="col-sm-8" id="detailJenisMuatan"></dd>
+
+                                    <dt class="col-sm-4">Jenis Truk</dt>
+                                    <dd class="col-sm-8" id="detailJenisTruk"></dd>
+
+                                    <dt class="col-sm-4">Jenis Truk Lainnya</dt>
+                                    <dd class="col-sm-8" id="detailJenisTrukLainnya"></dd>
+
+                                    <dt class="col-sm-4">Status</dt>
+                                    <dd class="col-sm-8" id="detailStatus"></dd>
+                                </dl>
+                            </div>
+
+                            <div class="row">
+
+                                <!-- Informasi Masuk -->
+                                <div class="col-12 col-lg-6 mb-3">
+                                    <h6 class="fw-bold border-bottom pb-2 mb-3">Informasi Masuk</h6>
+                                    <dl class="row">
+                                        <dt class="col-sm-5">Nama Petugas Masuk</dt>
+                                        <dd class="col-sm-7" id="detailNamaPetugasMasuk"></dd>
+
+                                        <dt class="col-sm-5">Waktu Masuk</dt>
+                                        <dd class="col-sm-7" id="detailWaktuMasuk"></dd>
+                                    </dl>
+                                </div>
+
+                                <!-- Informasi Keluar -->
+                                <div class="col-12 col-lg-6 mb-3">
+                                    <h6 class="fw-bold border-bottom pb-2 mb-3">Informasi Keluar</h6>
+                                    <dl class="row">
+                                        <dt class="col-sm-5">Nama Petugas Keluar</dt>
+                                        <dd class="col-sm-7" id="detailNamaPetugasKeluar"></dd>
+
+                                        <dt class="col-sm-5">Waktu Keluar</dt>
+                                        <dd class="col-sm-7" id="detailWaktuKeluar"></dd>
+
+                                        <dt class="col-sm-5">Durasi</dt>
+                                        <dd class="col-sm-7" id="detailDurasi"></dd>
+                                    </dl>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB FOTO MASUK -->
+                    <div class="tab-pane fade" id="tabFotoMasuk">
+                        <div id="detailFotoContainer"></div>
+                    </div>
+
+                    <!-- TAB FOTO KELUAR -->
+                    <div class="tab-pane fade" id="tabFotoKeluar">
+                        <div id="detailFotoKeluarContainer"></div>
+                    </div>
+
+                </div>
+
             </div>
 
             <div class="modal-footer">

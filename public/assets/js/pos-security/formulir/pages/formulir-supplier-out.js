@@ -1,3 +1,14 @@
+const videoOut = document.getElementById("videoOut");
+const canvasOut = document.getElementById("canvasOut");
+const captureBtnOut = document.getElementById("captureBtnOut");
+const retakeBtnOut = document.getElementById("retakeBtnOut");
+const saveBtnOut = document.getElementById("saveBtnOut");
+const startCameraOut = document.getElementById("startCameraOut");
+const capturedImageOut = document.getElementById("capturedImageOut");
+const capturedImageContainerOut = document.getElementById(
+    "capturedImageContainerOut"
+);
+
 const qrRegionId = "qr-reader";
 
 // Cek apakah browser mendukung getUserMedia
@@ -41,6 +52,9 @@ function onScanError(errorMessage) {
 }
 function searchVisitorData(keyword) {
     $("#returnCard").removeData("trnvisitorid");
+    // $("#kondisiKacamataGroupOut").hide();
+    // $("#kondisiKacamataOut").val("");
+    // resetFotoOut();
 
     console.log("Keyword pencarian:", keyword);
 
@@ -80,8 +94,6 @@ function searchVisitorData(keyword) {
                     response.data.no_ktp_sim || "-";
                 document.getElementById("visitorNopol").innerText =
                     response.data.nopol || "-";
-                document.getElementById("visitorSumPeople").innerText =
-                    response.data.sumpeople || "1";
                 document.getElementById("visitorDateIn").innerText =
                     response.data.datein || "-";
                 document.getElementById("visitorTimeIn").innerText =
@@ -106,6 +118,19 @@ function searchVisitorData(keyword) {
                 }
                 document.getElementById("visitorCardStatus").innerText =
                     statusKartu;
+
+                // Pakai kacamata
+                // let pakaiKacamata = "-";
+                // if (response.data.is_kacamata == 0) {
+                //     pakaiKacamata = "Tidak";
+                // } else if (response.data.is_kacamata == 1) {
+                //     pakaiKacamata = "Ya";
+                // }
+
+                // document.getElementById("visitorIsKacamata").innerText =
+                //     pakaiKacamata;
+                // document.getElementById("visitorKondisiKacamata").innerText =
+                //     response.data.kondisi_kacamata || "-";
 
                 // Gate info
                 document.getElementById("visitorGateIdOut").innerText =
@@ -167,6 +192,17 @@ function searchVisitorData(keyword) {
                     );
                     modal.show();
                 };
+
+                // Kondisi kacamata (OUT)
+                // if (
+                //     response.data.is_kacamata === 1 ||
+                //     response.data.is_kacamata === "1"
+                // ) {
+                //     $("#kondisiKacamataGroupOut").show();
+                // } else {
+                //     $("#kondisiKacamataGroupOut").hide();
+                //     $("#kondisiKacamataOut").val("");
+                // }
 
                 // Set trnvisitorid ke tombol "Kartu Dikembalikan"
                 document
@@ -302,12 +338,34 @@ document.addEventListener("DOMContentLoaded", function () {
 
 $("#returnCard").on("click", function () {
     const trnvisitorid = $(this).data("trnvisitorid");
+    // const isKacamata = $(this).data("is_kacamata");
+    // const fotoOut = $("#fotoOut").val();
+    // const kondisiKacamata = $("#kondisiKacamataOut").val();
+
     console.log("returnCard trnvisitorid: ", trnvisitorid);
 
     if (!trnvisitorid) {
         Swal.fire("Error", "Visitor ID tidak ditemukan!", "error");
         return;
     }
+
+    // if (!fotoOut) {
+    //     Swal.fire(
+    //         "Peringatan",
+    //         "Silakan ambil foto keluar terlebih dahulu.",
+    //         "warning"
+    //     );
+    //     return;
+    // }
+
+    // if (isKacamata == 1 && !kondisiKacamata) {
+    //     Swal.fire(
+    //         "Peringatan",
+    //         "Silakan pilih kondisi kacamata terlebih dahulu.",
+    //         "warning"
+    //     );
+    //     return;
+    // }
 
     Swal.fire({
         title: "Konfirmasi",
@@ -325,6 +383,8 @@ $("#returnCard").on("click", function () {
                 dataType: "json",
                 data: {
                     trnvisitorid: trnvisitorid,
+                    // foto_out: fotoOut,
+                    // kondisi_kacamata_out: kondisiKacamata,
                 },
                 headers: {
                     "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr(
@@ -334,6 +394,9 @@ $("#returnCard").on("click", function () {
                 success: function (data) {
                     if (data.success) {
                         Swal.fire("Berhasil!", data.message, "success");
+                        // resetFotoOut();
+                        // $("#kondisiKacamataGroupOut").hide();
+                        // $("#kondisiKacamataOut").val("");
                         $("#visitorResult").hide();
                     } else {
                         Swal.fire("Gagal!", data.message, "error");
@@ -374,3 +437,173 @@ $('a[data-bs-toggle="tab"]').on("shown.bs.tab", function (e) {
     $("#visitorKTPImage").attr("src", "");
     $("#visitorSelfieImages").empty(); // Kosongkan kontainer selfie
 });
+
+// Mulai kamera untuk foto diri
+async function startWebcamOut() {
+    if (!isCameraSupported()) {
+        alert("Kamera tidak didukung di browser ini.");
+        return;
+    }
+
+    try {
+        const streamOut = await navigator.mediaDevices.getUserMedia({
+            video: { width: 400, height: 300, facingMode: "environment" },
+        });
+
+        if (videoOut) {
+            videoOut.srcObject = streamOut;
+            videoOut.style.display = "block";
+        }
+
+        toggleElements([
+            { el: startCameraOut, show: false },
+            { el: captureBtnOut, show: true },
+            { el: retakeBtnOut, show: false },
+            { el: saveBtnOut, show: false },
+        ]);
+    } catch (err) {
+        alert("Gagal mengakses kamera: " + err.message);
+        console.error(err);
+    }
+}
+
+function captureImageOut() {
+    if (!videoOut || !canvasOut) return;
+
+    const contextOut = canvasOut.getContext("2d");
+    canvasOut.width = videoOut.videoWidth;
+    canvasOut.height = videoOut.videoHeight;
+    contextOut.drawImage(videoOut, 0, 0);
+    const dataURLOut = canvasOut.toDataURL("image/jpeg", 0.8);
+
+    capturedImageOut.src = dataURLOut;
+    capturedImageContainerOut.style.display = "block";
+
+    toggleElements([
+        { el: videoOut, show: false },
+        { el: captureBtnOut, show: false },
+        { el: retakeBtnOut, show: true },
+        { el: saveBtnOut, show: true },
+    ]);
+
+    stopStreamOut();
+}
+
+// Ambil ulang foto KTP
+function retakePhotoOut() {
+    capturedImageOut.src = "";
+    capturedImageContainerOut.style.display = "none";
+    toggleElements([
+        { el: videoOut, show: true },
+        { el: captureBtnOut, show: true },
+        { el: retakeBtnOut, show: false },
+        { el: saveBtnOut, show: false },
+    ]);
+    startWebcamOut();
+}
+
+// Simpan foto KTP ke input hidden
+function saveCaptureOut() {
+    const inputField = document.getElementById("fotoOut");
+    const previewImg = document.getElementById("fotoDiriOut");
+
+    if (!canvasOut) {
+        Swal.fire("Error", "Canvas tidak ditemukan.", "error");
+        return;
+    }
+
+    const imgData = canvasOut.toDataURL("image/jpeg", 0.8);
+    if (!imgData || imgData === "data:,") {
+        Swal.fire(
+            "Peringatan",
+            "Silakan ambil foto terlebih dahulu.",
+            "warning"
+        );
+        return;
+    }
+
+    inputField.value = imgData;
+    inputField.dispatchEvent(new Event("change"));
+
+    previewImg.innerHTML = "";
+    const imgElement = document.createElement("img");
+    imgElement.src = imgData;
+    imgElement.className = "img-fluid rounded shadow-sm";
+    previewImg.appendChild(imgElement);
+    previewImg.style.display = "block";
+
+    const modal = bootstrap.Modal.getInstance(
+        document.getElementById("myModalOut")
+    );
+    if (modal) modal.hide();
+
+    Swal.fire({
+        icon: "success",
+        title: "Berhasil!",
+        text: "Foto berhasil disimpan.",
+        timer: 1500,
+        showConfirmButton: false,
+    });
+}
+
+// Reset preview foto
+function resetPreviewImage() {
+    $("#previewImg").hide().html("");
+    $("#fotoOut").val("").trigger("change");
+}
+
+// Hapus foto KTP
+window.removeKtpImage = function () {
+    const previewImg = document.getElementById("fotoDiriOut");
+    const inputField = document.getElementById("fotoOut");
+
+    previewImg.innerHTML = "";
+    previewImg.style.display = "none";
+    inputField.value = "";
+    alert("Foto KTP berhasil dihapus.");
+};
+
+// Toggle tampilan elemen
+function toggleElements(elements = []) {
+    elements.forEach(({ el, show }) => {
+        if (el) el.style.display = show ? "inline-block" : "none";
+    });
+}
+
+// Berhenti stream kamera
+function stopStreamOut() {
+    const stream = videoOut?.srcObject;
+    if (stream && typeof stream.getTracks === "function") {
+        stream.getTracks().forEach((track) => track.stop());
+        videoOut.srcObject = null;
+    }
+}
+
+function resetFotoOut() {
+    $("#fotoOut").val("");
+
+    $("#fotoDiriOut").html("").hide();
+
+    $("#capturedImageOut").attr("src", "");
+    $("#capturedImageContainerOut").hide();
+
+    toggleElements([
+        { el: startCameraOut, show: true },
+        { el: captureBtnOut, show: false },
+        { el: retakeBtnOut, show: false },
+        { el: saveBtnOut, show: true },
+        { el: videoOut, show: false },
+    ]);
+
+    stopStreamOut();
+}
+
+startCameraOut.addEventListener("click", startWebcamOut);
+captureBtnOut.addEventListener("click", captureImageOut);
+retakeBtnOut.addEventListener("click", retakePhotoOut);
+
+document
+    .getElementById("myModalOut")
+    .addEventListener("shown.bs.modal", function () {
+        startWebcamOut();
+    });

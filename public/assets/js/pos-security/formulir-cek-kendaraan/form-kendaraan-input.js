@@ -11,6 +11,8 @@
     );
 
     let activePhotoKey = null;
+    let photoStore = {};
+    let tempPhotos = [];
 
     window.setActivePhotoKey = function (value) {
         activePhotoKey = value;
@@ -60,6 +62,8 @@
 
         const dataURL = canvas.toDataURL("image/jpeg", 0.8);
 
+        tempPhotos.push(dataURL);
+
         if (capturedImage) capturedImage.src = dataURL;
         if (capturedImageContainer)
             capturedImageContainer.style.display = "block";
@@ -98,32 +102,21 @@
     }
 
     function saveCapture() {
-        if (!activePhotoKey) {
+        if (!activePhotoKey || tempPhotos.length === 0) {
             Swal.fire({
-                icon: "error",
+                icon: "warning",
                 title: "Error!",
-                text: "Slot foto tidak ditemukan",
+                text: "Gagal menyimpan foto.",
             });
             return;
         }
 
-        const imgData = canvas.toDataURL("image/jpeg", 0.8);
+        photoStore[activePhotoKey].push(...tempPhotos);
 
-        const input = document.getElementById(`input-${activePhotoKey}`);
-        input.value = imgData;
+        renderPhotoPreview(activePhotoKey);
+        updateHiddenInput(activePhotoKey);
 
-        const previewBox = document.getElementById(`preview-${activePhotoKey}`);
-
-        previewBox.innerHTML = `
-        <div class="position-relative">
-            <img src="${imgData}" class="img-fluid rounded shadow" style="max-height:160px">
-            <button type="button"
-                class="btn btn-danger btn-sm position-absolute top-0 end-0 remove-photo"
-                data-key="${activePhotoKey}">
-                <i class="mdi mdi-close"></i>
-            </button>
-        </div>
-    `;
+        tempPhotos = [];
 
         const modal = bootstrap.Modal.getInstance(
             document.getElementById("myModal")
@@ -132,8 +125,10 @@
 
         Swal.fire({
             icon: "success",
-            title: "Berhasil!",
+            title: "Berhasil",
             text: "Foto berhasil disimpan",
+            timer: 1200,
+            showConfirmButton: false,
         });
     }
 
@@ -304,14 +299,13 @@
                         return `
                         <div class="col-12 col-lg-4 mb-4">
                             <div class="foto-slot" data-key="${key}">
-                                
+
                                 <label class="form-label fw-semibold mb-2 text-center">
                                     ${label} ${requiredMark} ${badge}
                                 </label>
 
-                                <div class="preview-container d-flex flex-wrap gap-2 justify-content-center mb-3"
-                                    id="preview-${key}"
-                                    style="width: 100%; min-height: 180px; background:#f8f9fa; padding:10px; border-radius:6px; border:1px solid #dee2e6;">
+                                <div class="preview-container d-flex flex-wrap gap-2 justify-content-center mb-3" id="preview-${key}"
+                                    style="width: 100%; min-height: 180px; background-color: #f8f9fa; padding: 10px; border-radius: 6px; border: 1px solid #dee2e6;">
                                 </div>
 
                                 <button type="button"
@@ -325,10 +319,11 @@
                                 <input type="hidden"
                                     name="photos[${key}]"
                                     id="input-${key}"
+                                    value="[]"
                                     ${requiredAttr}>
                             </div>
                         </div>
-                    `;
+                        `;
                     })
                     .join("")
             );
@@ -368,6 +363,12 @@
     $(document).on("click", ".open-camera", function () {
         // activePhotoKey = $(this).data("key");
         setActivePhotoKey($(this).data("key"));
+
+        if (!photoStore[activePhotoKey]) {
+            photoStore[activePhotoKey] = [];
+        }
+
+        tempPhotos = [];
     });
 
     $(document).on("click", ".remove-photo", function () {
@@ -439,4 +440,41 @@
 
         setStep("table");
     };
+
+    function renderPhotoPreview(key) {
+        const container = document.getElementById(`preview-${key}`);
+        if (!container) return;
+
+        container.innerHTML = "";
+
+        photoStore[key].forEach((photo, index) => {
+            const wrapper = document.createElement("div");
+            wrapper.className = "position-relative";
+
+            wrapper.innerHTML = `
+            <img src="${photo}" class="rounded shadow-sm" style="height:80px">
+            <button type="button"
+                class="btn btn-danger btn-sm position-absolute top-0 end-0"
+                onclick="removePhoto('${key}', ${index})">
+                <i class="mdi mdi-close"></i>
+            </button>
+        `;
+
+            container.appendChild(wrapper);
+        });
+    }
+
+    window.removePhoto = function (key, index) {
+        photoStore[key].splice(index, 1);
+        renderPhotoPreview(key);
+        updateHiddenInput(key);
+    };
+
+    function updateHiddenInput(key) {
+        const input = document.getElementById(`input-${key}`);
+        if (input) {
+            input.value = JSON.stringify(photoStore[key]);
+            input.dispatchEvent(new Event("change"));
+        }
+    }
 })();

@@ -11,6 +11,8 @@
     );
 
     let activePhotoKey = null;
+    let photoStore = {};
+    let tempPhotos = [];
 
     // window.setActivePhotoKey = function (value) {
     //     activePhotoKey = value;
@@ -60,6 +62,8 @@
 
         const dataURL = canvasOut.toDataURL("image/jpeg", 0.8);
 
+        tempPhotos.push(dataURL);
+
         if (capturedImageOut) capturedImageOut.src = dataURL;
         if (capturedImageContainerOut)
             capturedImageContainerOut.style.display = "block";
@@ -98,34 +102,21 @@
     }
 
     function saveCaptureOut() {
-        if (!activePhotoKey) {
+        if (!activePhotoKey || tempPhotos.length === 0) {
             Swal.fire({
-                icon: "error",
+                icon: "warning",
                 title: "Error!",
-                text: "Slot foto tidak ditemukan",
+                text: "Gagal menyimpan foto.",
             });
             return;
         }
 
-        const imgData = canvasOut.toDataURL("image/jpeg", 0.8);
+        photoStore[activePhotoKey].push(...tempPhotos);
 
-        const input = document.getElementById(`input-out-${activePhotoKey}`);
-        input.value = imgData;
+        renderPhotoPreviewOut(activePhotoKey);
+        updateHiddenInputOut(activePhotoKey);
 
-        const previewBox = document.getElementById(
-            `preview-out-${activePhotoKey}`
-        );
-
-        previewBox.innerHTML = `
-        <div class="position-relative">
-            <img src="${imgData}" class="img-fluid rounded shadow" style="max-height:160px">
-            <button type="button"
-                class="btn btn-danger btn-sm position-absolute top-0 end-0 remove-photo"
-                data-key="${activePhotoKey}">
-                <i class="mdi mdi-close"></i>
-            </button>
-        </div>
-    `;
+        tempPhotos = [];
 
         const modal = bootstrap.Modal.getInstance(
             document.getElementById("myModalOut")
@@ -134,8 +125,10 @@
 
         Swal.fire({
             icon: "success",
-            title: "Berhasil!",
+            title: "Berhasil",
             text: "Foto berhasil disimpan",
+            timer: 1200,
+            showConfirmButton: false,
         });
     }
 
@@ -182,36 +175,39 @@
                         : '<span class="badge bg-danger ms-1">Wajib</span>';
 
                     return `
-                <div class="col-12 col-lg-4 mb-4">
-                    <div class="foto-slot" data-key="${key}">
-                        <label class="form-label fw-semibold mb-2 text-center">
-                            ${label} ${requiredMark} ${badge}
-                        </label>
+                        <div class="col-12 col-lg-4 mb-4">
+                            <div class="foto-slot" data-key="${key}">
 
-                        <div class="preview-container d-flex flex-wrap gap-2 justify-content-center mb-3"
-                            id="preview-out-${key}"
-                            style="width: 100%; min-height: 180px; background:#f8f9fa; padding:10px; border-radius:6px; border:1px solid #dee2e6;">
+                                <label class="form-label fw-semibold mb-2 text-center">
+                                    ${label} ${requiredMark} ${badge}
+                                </label>
+
+                                <div class="preview-container d-flex flex-wrap gap-2 justify-content-center mb-3" 
+                                id="preview-out-${key}"
+                                    style="width: 100%; min-height: 180px; background-color: #f8f9fa; padding: 10px; border-radius: 6px; border: 1px solid #dee2e6;">
+                                </div>
+
+                                <button type="button"
+                                    class="btn btn-sm btn-primary w-100 open-camera"
+                                    data-key="${key}"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#myModalOut">
+                                    Ambil Foto ${label}
+                                </button>
+
+                                <input type="hidden"
+                                    name="photos[${key}]"
+                                    id="input-out-${key}"
+                                    value="[]"
+                                    ${requiredAttr}>
+                            </div>
                         </div>
-
-                        <button type="button"
-                            class="btn btn-sm btn-primary w-100 open-camera"
-                            data-key="${key}"
-                            data-bs-toggle="modal"
-                            data-bs-target="#myModalOut">
-                            Ambil Foto ${label}
-                        </button>
-
-                        <input type="hidden"
-                            name="photos[${key}]"
-                            id="input-out-${key}"
-                            ${requiredAttr}>
-                    </div>
-                </div>
-            `;
+                    `;
                 })
                 .join("")
         );
     }
+
     document.addEventListener("DOMContentLoaded", function () {
         const modalElement = document.getElementById("myModalOut");
         if (modalElement) {
@@ -266,6 +262,11 @@
     $(document).on("click", ".open-camera", function () {
         activePhotoKey = $(this).data("key");
         // setActivePhotoKey($(this).data("key"));
+        if (!photoStore[activePhotoKey]) {
+            photoStore[activePhotoKey] = [];
+        }
+
+        tempPhotos = [];
     });
 
     $(document).on("click", ".remove-photo", function () {
@@ -373,4 +374,41 @@
 
         setStepOut("table");
     };
+
+    function renderPhotoPreviewOut(key) {
+        const container = document.getElementById(`preview-out-${key}`);
+        if (!container) return;
+
+        container.innerHTML = "";
+
+        photoStore[key].forEach((photo, index) => {
+            const wrapper = document.createElement("div");
+            wrapper.className = "position-relative";
+
+            wrapper.innerHTML = `
+                    <img src="${photo}" class="rounded shadow-sm" style="height:80px">
+                    <button type="button"
+                        class="btn btn-danger btn-sm position-absolute top-0 end-0"
+                        onclick="removePhotoOut('${key}', ${index})">
+                        <i class="mdi mdi-close"></i>
+                    </button>
+                `;
+
+            container.appendChild(wrapper);
+        });
+    }
+
+    window.removePhotoOut = function (key, index) {
+        photoStore[key].splice(index, 1);
+        renderPhotoPreviewOut(key);
+        updateHiddenInputOut(key);
+    };
+
+    function updateHiddenInputOut(key) {
+        const input = document.getElementById(`input-out-${key}`);
+        if (input) {
+            input.value = JSON.stringify(photoStore[key]);
+            input.dispatchEvent(new Event("change"));
+        }
+    }
 })();
