@@ -206,7 +206,6 @@
             background: rgba(220, 53, 69, 1);
         }
 
-        /* Untuk display foto yang sudah tersimpan (read-only) */
         .image-preview-container.readonly .image-preview-wrapper {
             cursor: zoom-in;
         }
@@ -225,7 +224,6 @@
             border: 2px dashed #dee2e6;
         }
 
-        /* Styling untuk list temuan */
         .table-responsive {
             max-height: 500px;
             overflow-y: auto;
@@ -247,7 +245,6 @@
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
         }
 
-        /* Badge untuk jumlah temuan */
         .badge-temuan-count {
             position: absolute;
             top: -8px;
@@ -260,7 +257,64 @@
             font-weight: 600;
         }
 
-        /* Responsive */
+        .camera-container {
+            position: relative;
+            width: 100%;
+            max-width: 640px;
+            margin: 0 auto;
+            background: #000;
+            border-radius: 8px;
+            overflow: hidden;
+            min-height: 480px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #cameraVideo {
+            width: 100% !important;
+            height: auto !important;
+            max-height: 480px;
+            display: block !important;
+            border-radius: 8px;
+            background: #000;
+            object-fit: contain;
+        }
+
+        #cameraModal .modal-dialog {
+            max-width: 700px;
+        }
+
+        #cameraModal .modal-body {
+            background: #f8f9fa;
+            padding: 20px;
+        }
+
+        #cameraModal .modal-content {
+            background: #fff;
+        }
+
+        #cameraCanvas {
+            display: none !important;
+        }
+
+        .btn-open-camera:hover {
+            background-color: #28a745;
+            color: white;
+            border-color: #28a745;
+        }
+
+        @media (max-width: 768px) {
+            #cameraModal .modal-dialog {
+                max-width: 95%;
+                margin: 1rem auto;
+            }
+
+            .camera-container {
+                max-width: 100%;
+            }
+        }
+
         @media (max-width: 576px) {
             .image-preview-container {
                 grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
@@ -751,9 +805,10 @@
                                                                                             <div class="mb-3">
                                                                                                 <label
                                                                                                     class="form-label">Foto
-                                                                                                    Pendukung (Maksimal 1
-                                                                                                    Foto) <span
+                                                                                                    Pendukung (Bisa lebih
+                                                                                                    dari 1 foto) <span
                                                                                                         class="text-danger">*</span></label>
+
                                                                                                 @if ($jawaban != null)
                                                                                                     @php
                                                                                                         $foto =
@@ -789,20 +844,53 @@
                                                                                                         </div>
                                                                                                     @endif
                                                                                                 @else
-                                                                                                    <!-- Untuk input foto baru -->
+                                                                                                    <!-- Button Group untuk Upload dan Camera -->
+                                                                                                    <div class="btn-group w-100 mb-3"
+                                                                                                        role="group">
+                                                                                                        <button
+                                                                                                            type="button"
+                                                                                                            class="btn btn-outline-primary flex-fill"
+                                                                                                            onclick="document.getElementById('{{ $_pertanyaan->id_group }}-{{ $_pertanyaan->id_pertanyaan }}-input-file').click()">
+                                                                                                            <i
+                                                                                                                class="mdi mdi-folder-image"></i>
+                                                                                                            Upload Foto
+                                                                                                        </button>
+                                                                                                        <button
+                                                                                                            type="button"
+                                                                                                            class="btn btn-outline-success flex-fill btn-open-camera"
+                                                                                                            data-id-pertanyaan="{{ $_pertanyaan->id_group }}-{{ $_pertanyaan->id_pertanyaan }}">
+                                                                                                            <i
+                                                                                                                class="mdi mdi-camera"></i>
+                                                                                                            Gunakan Kamera
+                                                                                                        </button>
+                                                                                                    </div>
+
+                                                                                                    <!-- Preview Container -->
                                                                                                     <div class="image-preview-container mb-2"
                                                                                                         id="{{ $_pertanyaan->id_group }}-{{ $_pertanyaan->id_pertanyaan }}-image-container">
-                                                                                                        <!-- Preview akan muncul di sini via JS -->
                                                                                                     </div>
+
+                                                                                                    <!-- Hidden File Input -->
                                                                                                     <input
-                                                                                                        onchange="addImage('{{ $_pertanyaan->id_group }}-{{ $_pertanyaan->id_pertanyaan }}')"
+                                                                                                        onchange="addMultipleImages('{{ $_pertanyaan->id_group }}-{{ $_pertanyaan->id_pertanyaan }}')"
                                                                                                         type="file"
                                                                                                         accept="image/*"
-                                                                                                        class="form-control"
+                                                                                                        multiple
+                                                                                                        class="form-control d-none"
                                                                                                         name="{{ $_pertanyaan->id_group }}_{{ $_pertanyaan->id_pertanyaan }}_foto"
                                                                                                         id="{{ $_pertanyaan->id_group }}-{{ $_pertanyaan->id_pertanyaan }}-input-file">
-                                                                                                @endif
 
+                                                                                                    <small
+                                                                                                        class="text-muted d-block mt-1">
+                                                                                                        <i
+                                                                                                            class="mdi mdi-information-outline"></i>
+                                                                                                        Anda dapat upload
+                                                                                                        beberapa foto
+                                                                                                        sekaligus atau
+                                                                                                        gunakan kamera untuk
+                                                                                                        mengambil foto
+                                                                                                    </small>
+                                                                                                @endif
                                                                                             </div>
 
                                                                                             <div class="mb-3">
@@ -874,9 +962,6 @@
                                                                                                             <th width="5%"
                                                                                                                 class="text-center">
                                                                                                                 No</th>
-                                                                                                            <th
-                                                                                                                width="12%">
-                                                                                                                Periode</th>
                                                                                                             <th
                                                                                                                 width="12%">
                                                                                                                 Area</th>
@@ -985,6 +1070,56 @@
                 <p class="mt-4">Tidak ada data nilai pada periode sebelumnya.</p>
             @endif
 
+            <!-- Camera Modal  -->
+            <div class="modal fade" id="cameraModal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">
+                                <i class="mdi mdi-camera"></i>
+                                Ambil Foto
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body text-center p-4">
+                            <!-- Video Preview -->
+                            <div class="camera-container mb-3"
+                                style="max-width: 100%; background: #000; border-radius: 8px; overflow: hidden;">
+                                <video id="cameraVideo" autoplay playsinline style="width: 100%; display: block;"></video>
+                            </div>
+
+                            <!-- Canvas untuk capture (hidden) -->
+                            <canvas id="cameraCanvas" style="display: none;"></canvas>
+
+                            <!-- Info -->
+                            <div id="cameraInfo" class="alert alert-info">
+                                <i class="mdi mdi-information"></i>
+                                Posisikan
+                                objek di
+                                depan
+                                kamera, lalu
+                                klik tombol
+                                Ambil Foto
+                            </div>
+
+                            <!-- Error message -->
+                            <div id="cameraError" class="alert alert-danger" style="display: none;">
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-light" data-bs-dismiss="modal">
+                                <i class="mdi mdi-close"></i>
+                                Batal
+                            </button>
+                            <button type="button" class="btn btn-primary" id="btnCapturePhoto">
+                                <i class="mdi mdi-camera"></i>
+                                Ambil Foto
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             <!-- Kisi-kisi Modal -->
             <div class="modal fade" id="kisi-kisi-modal" tabindex="-1" role="dialog"
@@ -1710,137 +1845,231 @@
                 });
             };
 
-            const addImage = async (idPertanyaan) => {
+            const addMultipleImages = async (idPertanyaan) => {
                 var files = document.getElementById(idPertanyaan + '-input-file').files;
 
-                // No files selected
                 if (!files.length) return;
 
-                let file = files[0];
+                // Validasi semua file adalah gambar
+                for (let file of files) {
+                    if (!file.type.startsWith('image')) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Gagal',
+                            text: 'Semua file harus berupa gambar',
+                            timer: 1500
+                        });
+                        return;
+                    }
+                }
 
-                let dataTransfer = new DataTransfer();
+                // PROSES semua foto DULU jadi base64
+                let allImages = [];
 
-                console.log(file.name, file.size);
+                for (let file of files) {
+                    try {
+                        let compressedFile = await compressImage(file, {
+                            quality: 0.4,
+                            type: 'image/jpeg',
+                        });
 
-                if (!file.type.startsWith('image')) {
+                        // Convert to base64
+                        let base64 = await new Promise((resolve, reject) => {
+                            let reader = new FileReader();
+                            reader.onload = () => resolve(reader.result);
+                            reader.onerror = reject;
+                            reader.readAsDataURL(compressedFile);
+                        });
+
+                        allImages.push(base64);
+                    } catch (error) {
+                        console.error('Error processing file:', error);
+                    }
+                }
+
+                if (allImages.length === 0) {
                     Swal.fire({
                         icon: 'error',
                         title: 'Gagal',
-                        text: 'File harus berupa gambar',
+                        text: 'Tidak ada foto yang berhasil diproses',
                         timer: 1500
                     });
                     return;
                 }
 
-                let compressedFile = await compressImage(file, {
-                    quality: 0.4,
-                    type: 'image/jpeg',
-                });
+                // BARU simpan ke IndexedDB SETELAH semua foto ready
+                var database = window.indexedDB.open("system_5r", 5);
 
-                dataTransfer.items.add(compressedFile);
+                database.onsuccess = function(event) {
+                    let db = event.target.result;
+                    let transaction = db.transaction("penilaian", "readwrite");
+                    let objectStore = transaction.objectStore("penilaian");
 
-                file = dataTransfer.files[0];
-                let reader = new FileReader();
-                reader.readAsDataURL(file);
-                reader.onload = function() {
-                    let base64 = reader.result;
+                    let request = objectStore.get(idPertanyaan);
 
-                    document.getElementById(idPertanyaan + '-image-container').innerHTML = '';
+                    request.onsuccess = function(event) {
+                        let data = event.target.result;
+                        let existingImages = data && data.images ? data.images : [];
 
-                    let image = document.createElement('img');
-                    image.src = base64;
-                    image.style.width = '100%';
-                    image.style.height = '100%';
-                    image.style.objectFit = 'contain';
+                        // Gabungkan dengan foto yang sudah ada
+                        let mergedImages = existingImages.concat(allImages);
 
-                    var imageInner = document.createElement('div');
-                    imageInner.style.marginBottom = '2px';
-                    imageInner.style.position = 'relative';
-                    imageInner.appendChild(image);
-
-                    // Create delete button
-                    var deleteButton = document.createElement('button');
-                    deleteButton.style.position = 'absolute';
-                    deleteButton.style.top = '0';
-                    deleteButton.style.right = '0';
-                    deleteButton.style.margin = '2px';
-                    deleteButton.style.padding = '2px 5px';
-                    deleteButton.style.fontSize = '10px';
-                    deleteButton.style.cursor = 'pointer';
-                    deleteButton.innerHTML = 'Hapus';
-                    deleteButton.type = 'button';
-                    deleteButton.classList.add('btn');
-                    deleteButton.classList.add('btn-xs');
-                    deleteButton.classList.add('btn-danger');
-
-                    deleteButton.onclick = function() {
-                        Swal.fire({
-                            title: 'Hapus Foto?',
-                            text: 'Apakah anda yakin ingin menghapus foto ini?',
-                            icon: 'warning',
-                            showCancelButton: true,
-                            confirmButtonText: 'Ya, hapus',
-                            cancelButtonText: 'Batal',
-                            reverseButtons: true
-                        }).then((result) => {
-                            if (!result.isConfirmed) return;
-
-                            // Delete image from indexeddb
-                            var database = window.indexedDB.open("system_5r", 5);
-                            database.onsuccess = function(event) {
-                                let db = event.target.result;
-                                let transaction = db.transaction("penilaian", "readwrite");
-                                let objectStore = transaction.objectStore("penilaian");
-
-                                let request = objectStore.get(idPertanyaan);
-                                request.onsuccess = function(event) {
-                                    let data = event.target.result;
-                                    if (data) {
-                                        data.images = [];
-                                        objectStore.put(data);
-                                    }
-                                };
-                            };
-
-                            document.getElementById(idPertanyaan + '-image-container').innerHTML = '';
-
-                            Swal.fire({
-                                icon: 'success',
-                                title: 'Dihapus',
-                                text: 'Foto berhasil dihapus',
-                                timer: 1500
+                        // Save ke IndexedDB
+                        if (data) {
+                            data.images = mergedImages;
+                            objectStore.put(data);
+                        } else {
+                            objectStore.put({
+                                id: idPertanyaan,
+                                images: mergedImages
                             });
+                        }
+
+                        // Render preview
+                        renderImages(idPertanyaan, mergedImages);
+
+                        // Clear file input
+                        document.getElementById(idPertanyaan + '-input-file').value = '';
+
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Berhasil',
+                            text: `${allImages.length} foto berhasil ditambahkan`,
+                            timer: 1500,
+                            showConfirmButton: false
                         });
                     };
 
-                    imageInner.appendChild(deleteButton);
-                    document.getElementById(idPertanyaan + '-image-container').appendChild(imageInner);
+                    request.onerror = function(event) {
+                        console.error('Error saving to IndexedDB:', event.target.error);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Gagal',
+                            text: 'Gagal menyimpan foto ke browser',
+                            timer: 1500
+                        });
+                    };
+                };
+
+                database.onerror = function(event) {
+                    console.error('Error opening IndexedDB:', event.target.error);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Gagal',
+                        text: 'Gagal membuka database browser',
+                        timer: 1500
+                    });
+                };
+            };
+
+            // Function untuk render images
+            // Function untuk render images - TAMBAHKAN INI
+            function renderImages(idPertanyaan, images) {
+                const container = document.getElementById(idPertanyaan + '-image-container');
+
+                if (!container) {
+                    console.error('Container tidak ditemukan:', idPertanyaan + '-image-container');
+                    return;
+                }
+
+                container.innerHTML = '';
+
+                if (!images || images.length === 0) {
+                    return;
+                }
+
+                images.forEach((base64, index) => {
+                    let imageWrapper = document.createElement('div');
+                    imageWrapper.className = 'image-preview-wrapper';
+
+                    let image = document.createElement('img');
+                    image.src = base64;
+                    image.className = 'image-preview';
+                    image.style.width = '100px';
+                    image.style.height = '100px';
+                    image.style.objectFit = 'cover';
+
+                    let indexBadge = document.createElement('div');
+                    indexBadge.className = 'image-preview-index';
+                    indexBadge.textContent = index + 1;
+
+                    let deleteButton = document.createElement('button');
+                    deleteButton.className = 'image-preview-remove';
+                    deleteButton.type = 'button';
+                    deleteButton.innerHTML = '×';
+                    deleteButton.onclick = function() {
+                        deleteImage(idPertanyaan, index);
+                    };
+
+                    imageWrapper.appendChild(image);
+                    imageWrapper.appendChild(indexBadge);
+                    imageWrapper.appendChild(deleteButton);
+                    container.appendChild(imageWrapper);
+                });
+            }
+
+            // Function untuk delete single image
+            function deleteImage(idPertanyaan, imageIndex) {
+                Swal.fire({
+                    title: 'Hapus Foto?',
+                    text: 'Apakah anda yakin ingin menghapus foto ini?',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Ya, hapus',
+                    cancelButtonText: 'Batal',
+                    reverseButtons: true
+                }).then((result) => {
+                    if (!result.isConfirmed) return;
 
                     var database = window.indexedDB.open("system_5r", 5);
+
                     database.onsuccess = function(event) {
                         let db = event.target.result;
                         let transaction = db.transaction("penilaian", "readwrite");
                         let objectStore = transaction.objectStore("penilaian");
 
                         let request = objectStore.get(idPertanyaan);
+
                         request.onsuccess = function(event) {
                             let data = event.target.result;
-                            if (data) {
-                                data.images = [base64];
+                            if (data && data.images) {
+                                data.images.splice(imageIndex, 1);
                                 objectStore.put(data);
-                            } else {
-                                objectStore.put({
-                                    id: idPertanyaan,
-                                    images: [base64]
+
+                                renderImages(idPertanyaan, data.images);
+
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Dihapus',
+                                    text: 'Foto berhasil dihapus',
+                                    timer: 1500,
+                                    showConfirmButton: false
                                 });
                             }
-                            console.log("Foto berhasil disimpan ke IndexedDB");
                         };
                     };
+                });
+            }
 
-                    document.getElementById(idPertanyaan + '-input-file').value = '';
+            // Load images dari IndexedDB saat halaman load
+            function loadImagesFromIndexedDB(idPertanyaan) {
+                var database = window.indexedDB.open("system_5r", 5);
+
+                database.onsuccess = function(event) {
+                    var db = event.target.result;
+                    var transaction = db.transaction("penilaian", "readonly");
+                    var objectStore = transaction.objectStore("penilaian");
+                    var request = objectStore.get(idPertanyaan);
+
+                    request.onsuccess = function(event) {
+                        var data = event.target.result;
+                        if (data && data.images && data.images.length > 0) {
+                            renderImages(idPertanyaan, data.images);
+                        }
+                    };
                 };
-            };
+            }
+
 
             @foreach ($pertanyaan as $_pertanyaan)
                 @foreach ($_pertanyaan->pertanyaan as $p)
@@ -2023,15 +2252,25 @@
                 $('#btnCommittee').click(); // Picu klik tombol Verifikasi
             });
 
-            // Handle save temuan via AJAX
+            // Handle save temuan via AJAX - FIXED VERSION
             $(document).on('click', '.btn-save-temuan', function() {
                 var button = $(this);
                 var modal = button.closest('.modal');
-                var idPertanyaan = modal.attr('id').replace('modalTemuan', '');
+                var modalId = modal.attr('id');
 
+                // Extract id_pertanyaan dari modal ID
+                var idPertanyaan = modalId.replace('modalTemuan', '');
+
+                console.log('=== DEBUG START ===');
+                console.log('Modal ID:', modalId);
+                console.log('ID Pertanyaan:', idPertanyaan);
+
+                // Get form values
                 var area = modal.find('select[name="area[' + idPertanyaan + ']"]').val();
                 var deskripsi = modal.find('textarea[name="deskripsi_temuan[' + idPertanyaan + ']"]').val();
-                var idPeriode = modal.closest('form').find('input[name="id_periode"]').val();
+
+                console.log('Area:', area);
+                console.log('Deskripsi:', deskripsi);
 
                 // Validasi area
                 if (!area) {
@@ -2045,35 +2284,71 @@
                     return;
                 }
 
-                // VALIDASI FOTO DULU - CEK PREVIEW IMAGE
-                var imageContainer = modal.find('.image-preview-container');
-                var hasImage = imageContainer.find('img').length > 0;
+                // Cari id_periode dari form yang aktif
+                var activeForm = $('.form-pertanyaan').filter(function() {
+                    return $(this).closest('.tab-pane').hasClass('active');
+                });
+                var idPeriode = activeForm.find('input[name="id_periode"]').val();
 
-                if (!hasImage) {
+                console.log('ID Periode:', idPeriode);
+
+                if (!idPeriode) {
                     Swal.fire({
-                        icon: 'warning',
-                        title: 'Foto Wajib Diisi',
-                        text: 'Silakan upload foto terlebih dahulu sebelum menyimpan temuan',
-                        confirmButtonText: 'OK',
-                        confirmButtonColor: '#6c5ce7'
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'ID Periode tidak ditemukan. Silakan refresh halaman.',
                     });
                     return;
                 }
 
-                // Get images from indexedDB
+                // Cari id_group dari tab-pane yang aktif
+                var activeTabPane = $('.tab-pane.active.show');
+                var tabPaneId = activeTabPane.attr('id');
+                var idGroup = tabPaneId ? tabPaneId.replace('custom-v-pills-', '') : null;
+
+                console.log('Tab Pane ID:', tabPaneId);
+                console.log('ID Group:', idGroup);
+
+                if (!idGroup) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'ID Group tidak ditemukan. Silakan refresh halaman.',
+                    });
+                    return;
+                }
+
+                // Construct ID key untuk IndexedDB
+                var idKey = idGroup + '-' + idPertanyaan;
+                console.log('ID Key untuk IndexedDB:', idKey);
+
+                // Show loading immediately
+                button.prop('disabled', true).html(
+                    '<i class="mdi mdi-loading mdi-spin me-1"></i> Menyimpan...'
+                );
+
+                // Get images from IndexedDB
                 var database = window.indexedDB.open("system_5r", 5);
 
                 database.onsuccess = function(event) {
                     var db = event.target.result;
+
+                    // Check if objectStore exists
+                    if (!db.objectStoreNames.contains("penilaian")) {
+                        console.error('ObjectStore "penilaian" tidak ditemukan');
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error Database',
+                            text: 'Database belum siap. Silakan refresh halaman.',
+                        });
+                        button.prop('disabled', false).html(
+                            '<i class="bi bi-save me-1"></i> Simpan Temuan'
+                        );
+                        return;
+                    }
+
                     var transaction = db.transaction("penilaian", "readonly");
                     var objectStore = transaction.objectStore("penilaian");
-
-                    var activeTabPane = modal.closest('.tab-pane');
-                    var idGroup = activeTabPane.attr('id').replace('custom-v-pills-', '');
-                    var idKey = idGroup + '-' + idPertanyaan;
-
-                    console.log('ID Key untuk IndexedDB:', idKey);
-
                     var request = objectStore.get(idKey);
 
                     request.onsuccess = function(event) {
@@ -2081,11 +2356,17 @@
 
                         console.log('Data dari IndexedDB:', data);
 
-                        var images = data && data.images ? data.images : [];
+                        var images = [];
+
+                        if (data && data.images && Array.isArray(data.images)) {
+                            images = data.images;
+                        }
 
                         console.log('Jumlah foto:', images.length);
+                        console.log('Sample foto (first 100 chars):', images[0] ? images[0].substring(0, 100) :
+                            'none');
 
-                        // VALIDASI FOTO DARI INDEXEDDB
+                        // VALIDASI FOTO
                         if (images.length === 0) {
                             Swal.fire({
                                 icon: 'warning',
@@ -2094,13 +2375,16 @@
                                 confirmButtonText: 'OK',
                                 confirmButtonColor: '#6c5ce7'
                             });
+                            button.prop('disabled', false).html(
+                                '<i class="bi bi-save me-1"></i> Simpan Temuan'
+                            );
                             return;
                         }
 
-                        // Validasi apakah images berisi data base64 yang valid
+                        // Validasi format base64
                         var validImage = false;
                         for (var i = 0; i < images.length; i++) {
-                            if (images[i] && images[i].length > 100) {
+                            if (images[i] && typeof images[i] === 'string' && images[i].length > 100) {
                                 validImage = true;
                                 break;
                             }
@@ -2110,14 +2394,17 @@
                             Swal.fire({
                                 icon: 'warning',
                                 title: 'Foto Tidak Valid',
-                                text: 'Foto yang diupload tidak valid. Silakan upload ulang',
+                                text: 'Format foto tidak valid. Silakan upload ulang',
                                 confirmButtonText: 'OK',
                                 confirmButtonColor: '#6c5ce7'
                             });
+                            button.prop('disabled', false).html(
+                                '<i class="bi bi-save me-1"></i> Simpan Temuan'
+                            );
                             return;
                         }
 
-                        // Prepare data
+                        // Prepare data untuk dikirim
                         var formData = {
                             id_pertanyaan: idPertanyaan,
                             id_periode: idPeriode,
@@ -2127,9 +2414,13 @@
                             _token: '{{ csrf_token() }}'
                         };
 
-                        // Show loading
-                        button.prop('disabled', true).html(
-                            '<i class="mdi mdi-loading mdi-spin me-1"></i> Menyimpan...');
+                        console.log('Data yang akan dikirim:', {
+                            id_pertanyaan: idPertanyaan,
+                            id_periode: idPeriode,
+                            area: area,
+                            deskripsi_length: deskripsi ? deskripsi.length : 0,
+                            foto_count: images.length
+                        });
 
                         // Send AJAX request
                         $.ajax({
@@ -2138,22 +2429,40 @@
                             dataType: "JSON",
                             data: formData,
                             success: function(response) {
+                                console.log('Response:', response);
+
                                 if (response.status === 'success') {
                                     // Close modal
                                     modal.modal('hide');
+
                                     Swal.fire({
                                         icon: 'success',
                                         title: 'Berhasil',
                                         text: response.message,
+                                        timer: 2000,
+                                        showConfirmButton: false
                                     }).then(() => {
+                                        // Clear form fields
                                         modal.find('select[name="area[' + idPertanyaan +
-                                            ']"]').val('').trigger('change');
+                                            ']"]').val('');
                                         modal.find('textarea[name="deskripsi_temuan[' +
                                             idPertanyaan + ']"]').val('');
-                                        modal.find('.image-preview-container').html('');
-                                        modal.find('input[type="file"]').val('');
 
-                                        // Clear IndexedDB images
+                                        // Clear image preview
+                                        var imageContainer = document.getElementById(idKey +
+                                            '-image-container');
+                                        if (imageContainer) {
+                                            imageContainer.innerHTML = '';
+                                        }
+
+                                        // Clear file input
+                                        var fileInput = document.getElementById(idKey +
+                                            '-input-file');
+                                        if (fileInput) {
+                                            fileInput.value = '';
+                                        }
+
+                                        // Clear IndexedDB
                                         var clearDB = window.indexedDB.open("system_5r", 5);
                                         clearDB.onsuccess = function(event) {
                                             var db = event.target.result;
@@ -2169,90 +2478,97 @@
                                                     data.images = [];
                                                     objectStore.put(data);
                                                     console.log(
-                                                        'IndexedDB images cleared successfully'
-                                                    );
+                                                        '✓ IndexedDB cleared');
                                                 }
                                             };
                                         };
-
-                                        // Add badge to indicate temuan has been added
-                                        var questionCard = modal.closest('.question-card');
-                                        if (questionCard.find('.badge-temuan').length ===
-                                            0) {
-                                            questionCard.find('.question-header h6').append(
-                                                '<span class="badge bg-success badge-temuan ms-2">' +
-                                                '<i class="mdi mdi-check-circle me-1"></i>Temuan Tersimpan' +
-                                                '</span>'
-                                            );
-                                        }
                                     });
                                 } else {
                                     Swal.fire({
                                         icon: 'error',
                                         title: 'Gagal',
-                                        text: response.message,
+                                        text: response.message || 'Terjadi kesalahan',
                                     });
                                 }
 
-                                // Reset button state
+                                // Reset button
                                 button.prop('disabled', false).html(
-                                    '<i class="bi bi-save me-1"></i> Simpan Temuan');
+                                    '<i class="bi bi-save me-1"></i> Simpan Temuan'
+                                );
                             },
-                            error: function(xhr) {
-                                console.error('AJAX Error:', xhr);
+                            error: function(xhr, status, error) {
+                                console.error('AJAX Error:', {
+                                    status: xhr.status,
+                                    statusText: xhr.statusText,
+                                    responseText: xhr.responseText,
+                                    error: error
+                                });
 
-                                var errorMessage = 'Terjadi kesalahan';
+                                var errorMessage = 'Terjadi kesalahan saat menyimpan';
+
                                 if (xhr.responseJSON && xhr.responseJSON.message) {
                                     errorMessage = xhr.responseJSON.message;
+                                } else if (xhr.responseText) {
+                                    errorMessage = 'Server error: ' + xhr.statusText;
                                 }
 
                                 Swal.fire({
                                     icon: 'error',
-                                    title: 'Gagal',
+                                    title: 'Gagal Menyimpan',
                                     text: errorMessage,
                                 });
 
-                                // Reset button state
+                                // Reset button
                                 button.prop('disabled', false).html(
-                                    '<i class="bi bi-save me-1"></i> Simpan Temuan');
+                                    '<i class="bi bi-save me-1"></i> Simpan Temuan'
+                                );
                             }
                         });
                     };
 
                     request.onerror = function(event) {
-                        console.error('IndexedDB Error:', event.target.error);
+                        console.error('IndexedDB request error:', event.target.error);
 
                         Swal.fire({
                             icon: 'error',
-                            title: 'Gagal',
-                            text: 'Gagal mengambil data foto dari IndexedDB',
+                            title: 'Error Database',
+                            text: 'Gagal membaca data foto dari browser',
                         });
+
+                        button.prop('disabled', false).html(
+                            '<i class="bi bi-save me-1"></i> Simpan Temuan'
+                        );
                     };
                 };
 
                 database.onerror = function(event) {
-                    console.error('Database Error:', event.target.error);
+                    console.error('IndexedDB open error:', event.target.error);
 
                     Swal.fire({
                         icon: 'error',
-                        title: 'Gagal',
-                        text: 'Gagal membuka database',
+                        title: 'Error Database',
+                        text: 'Gagal membuka database browser',
                     });
+
+                    button.prop('disabled', false).html(
+                        '<i class="bi bi-save me-1"></i> Simpan Temuan'
+                    );
                 };
+
+                console.log('=== DEBUG END ===');
             });
 
-            // Handle show list temuan modal
             $(document).on('show.bs.modal', '[id^="modalListTemuan"]', function(e) {
                 var modal = $(this);
                 var idPertanyaan = modal.attr('id').replace('modalListTemuan', '');
                 var idPeriode = modal.closest('.tab-pane').find('input[name="id_periode"]').val();
+                var listButton = $('[data-bs-target="#' + modal.attr('id') + '"]');
+                var isReadOnly = listButton.data('read-only') === true || listButton.data('read-only') === 'true';
 
-                // Show loading
                 $('#loadingTemuan' + idPertanyaan).show();
                 $('#tableTemuanContainer' + idPertanyaan).hide();
                 $('#emptyStateTemuan' + idPertanyaan).hide();
 
-                // Load data temuan
                 $.ajax({
                     url: "{{ route('5r-system.get-list-temuan') }}",
                     type: "GET",
@@ -2269,14 +2585,72 @@
 
                             $.each(response.data, function(index, temuan) {
                                 var fotoHtml = '';
+
                                 if (temuan.foto) {
-                                    fotoHtml = `
-                            <img src="{{ asset('images/5r/temuan/') }}/${temuan.foto}" 
-                                class="img-thumbnail" 
-                                style="max-width: 100px; max-height: 100px; cursor: pointer;"
-                                onclick="showImagePreview('{{ asset('images/5r/temuan/') }}/${temuan.foto}')"
-                                alt="Foto Temuan">
-                        `;
+                                    var fotoArray = temuan.foto.split(',');
+
+                                    if (fotoArray.length > 1) {
+                                        // Multiple photos dengan tombol hapus per foto
+                                        fotoHtml =
+                                            '<div style="display: flex; flex-wrap: wrap; gap: 8px;">';
+                                        fotoArray.forEach(function(foto, idx) {
+                                            foto = foto.trim();
+                                            if (foto) {
+                                                fotoHtml += `
+                                        <div style="position: relative; border: 2px solid #e9ecef; border-radius: 8px; overflow: hidden;">
+                                            <img src="{{ asset('images/5r/temuan/') }}/${foto}" 
+                                                class="img-thumbnail" 
+                                                style="width: 80px; height: 80px; object-fit: cover; cursor: pointer; display: block;"
+                                                onclick="showImagePreview('{{ asset('images/5r/temuan/') }}/${foto}')"
+                                                alt="Foto ${idx + 1}">
+                                            <span style="position: absolute; top: 4px; left: 4px; background: rgba(0,0,0,0.7); color: white; font-size: 10px; padding: 2px 6px; border-radius: 3px; font-weight: 600;">
+                                                ${idx + 1}
+                                            </span>`;
+
+                                                // Tombol hapus hanya muncul jika NOT read-only
+                                                if (!isReadOnly) {
+                                                    fotoHtml += `
+                                            <button type="button" 
+                                                class="btn btn-danger btn-sm btn-delete-single-photo"
+                                                data-id-temuan="${temuan.id_temuan}"
+                                                data-foto-name="${foto}"
+                                                data-foto-index="${idx}"
+                                                style="position: absolute; top: 4px; right: 4px; padding: 2px 6px; font-size: 10px; line-height: 1; border-radius: 3px;"
+                                                title="Hapus foto ini">
+                                                <i class="mdi mdi-close" style="font-size: 12px;"></i>
+                                            </button>`;
+                                                }
+
+                                                fotoHtml += `</div>`;
+                                            }
+                                        });
+                                        fotoHtml += '</div>';;
+                                    } else {
+                                        // Single photo
+                                        var foto = fotoArray[0].trim();
+                                        fotoHtml = `
+                                <div style="position: relative; display: inline-block; border: 2px solid #e9ecef; border-radius: 8px; overflow: hidden;">
+                                    <img src="{{ asset('images/5r/temuan/') }}/${foto}" 
+                                        class="img-thumbnail" 
+                                        style="max-width: 120px; max-height: 120px; cursor: pointer; display: block;"
+                                        onclick="showImagePreview('{{ asset('images/5r/temuan/') }}/${foto}')"
+                                        alt="Foto Temuan">`;
+
+                                        if (!isReadOnly) {
+                                            fotoHtml += `
+                                    <button type="button" 
+                                        class="btn btn-danger btn-sm btn-delete-single-photo"
+                                        data-id-temuan="${temuan.id_temuan}"
+                                        data-foto-name="${foto}"
+                                        data-foto-index="0"
+                                        style="position: absolute; top: 4px; right: 4px; padding: 4px 8px; font-size: 11px;"
+                                        title="Hapus foto ini">
+                                        <i class="mdi mdi-delete"></i>
+                                    </button>`;
+                                        }
+
+                                        fotoHtml += `</div>`;
+                                    }
                                 } else {
                                     fotoHtml = '<span class="text-muted">Tidak ada foto</span>';
                                 }
@@ -2292,24 +2666,31 @@
                                         minute: '2-digit'
                                     }) : '-';
 
+                                // Tombol hapus temuan
+                                var deleteButton = '';
+                                if (!isReadOnly) {
+                                    deleteButton = `
+                            <button type="button" 
+                                class="btn btn-sm btn-danger btn-delete-temuan" 
+                                data-id-temuan="${temuan.id_temuan}"
+                                data-id-pertanyaan="${idPertanyaan}"
+                                title="Hapus Temuan">
+                                <i class="mdi mdi-delete"></i>
+                            </button>`;
+                                } else {
+                                    deleteButton =
+                                        '<span class="text-muted"><i class="mdi mdi-lock"></i></span>';
+                                }
+
                                 var row = `
                         <tr>
                             <td class="text-center">${index + 1}</td>
-                            <td>${temuan.periode?.nama_periode || '-'}</td>
                             <td>${temuan.area?.nama_area || '-'}</td>
                             <td>${deskripsi}</td>
                             <td>${temuan.created_by || '-'}</td>
                             <td class="text-nowrap">${tanggal}</td>
-                            <td class="text-center">${fotoHtml}</td>
-                             <td class="text-center">
-                                <button type="button" 
-                                    class="btn btn-sm btn-danger btn-delete-temuan" 
-                                    data-id-temuan="${temuan.id_temuan}"
-                                    data-id-pertanyaan="${idPertanyaan}"
-                                    title="Hapus Temuan">
-                                    <i class="mdi mdi-delete"></i>
-                                </button>
-                            </td>
+                            <td>${fotoHtml}</td>
+                            <td class="text-center">${deleteButton}</td>
                         </tr>
                     `;
 
@@ -2327,6 +2708,104 @@
                             icon: 'error',
                             title: 'Gagal',
                             text: 'Gagal memuat data temuan',
+                        });
+                    }
+                });
+            });
+
+            $(document).on('click', '.btn-delete-single-photo', function() {
+                var button = $(this);
+                var idTemuan = button.data('id-temuan');
+                var fotoName = button.data('foto-name');
+                var fotoIndex = button.data('foto-index');
+
+                Swal.fire({
+                    title: 'Hapus Foto Ini?',
+                    text: 'Foto akan dihapus dari temuan ini. Tindakan ini tidak dapat dibatalkan.',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#dc3545',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'Ya, Hapus Foto!',
+                    cancelButtonText: 'Batal',
+                    reverseButtons: true
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        // Show loading
+                        button.prop('disabled', true).html('<i class="mdi mdi-loading mdi-spin"></i>');
+
+                        // Send delete request
+                        $.ajax({
+                            url: "{{ route('5r-system.delete-single-photo') }}",
+                            type: "POST",
+                            dataType: "JSON",
+                            data: {
+                                id_temuan: idTemuan,
+                                foto_name: fotoName,
+                                _token: '{{ csrf_token() }}'
+                            },
+                            success: function(response) {
+                                if (response.status === 'success') {
+                                    // Animate removal
+                                    button.closest('div[style*="position: relative"]').fadeOut(300,
+                                        function() {
+                                            $(this).remove();
+
+                                            // Check if this was the last photo
+                                            var photoContainer = button.closest('td').find(
+                                                'div[style*="flex"]');
+                                            var remainingPhotos = photoContainer.find('img')
+                                                .length;
+
+                                            if (remainingPhotos === 0) {
+                                                // Update count or show message
+                                                button.closest('td').html(
+                                                    '<span class="text-muted">Semua foto telah dihapus</span>'
+                                                );
+                                            } else {
+                                                // Update photo count
+                                                var countElement = button.closest('td').find(
+                                                    'small.text-muted');
+
+                                                // Re-number remaining photos
+                                                photoContainer.find(
+                                                    'span[style*="position: absolute"][style*="left"]'
+                                                ).each(function(idx) {
+                                                    $(this).text(idx + 1);
+                                                });
+                                            }
+                                        });
+
+                                    Swal.fire({
+                                        icon: 'success',
+                                        title: 'Berhasil',
+                                        text: response.message,
+                                        timer: 1500,
+                                        showConfirmButton: false
+                                    });
+                                } else {
+                                    Swal.fire({
+                                        icon: 'error',
+                                        title: 'Gagal',
+                                        text: response.message
+                                    });
+                                    button.prop('disabled', false).html(
+                                        '<i class="mdi mdi-close"></i>');
+                                }
+                            },
+                            error: function(xhr) {
+                                console.error('Delete Photo Error:', xhr);
+
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Gagal',
+                                    text: xhr.responseJSON?.message ||
+                                        'Terjadi kesalahan saat menghapus foto'
+                                });
+
+                                button.prop('disabled', false).html(
+                                    '<i class="mdi mdi-close"></i>');
+                            }
                         });
                     }
                 });
@@ -2445,6 +2924,290 @@
                     }
                 });
             }
+
+            // Camera functionality
+            let currentStream = null;
+            let currentIdPertanyaan = null;
+            let cameraVideo = null;
+            let cameraCanvas = null;
+            let cameraModalInstance = null;
+
+            // Initialize camera elements when DOM is ready
+            function initializeCameraElements() {
+                cameraVideo = document.getElementById('cameraVideo');
+                cameraCanvas = document.getElementById('cameraCanvas');
+
+                const cameraModalElement = document.getElementById('cameraModal');
+                if (cameraModalElement && !cameraModalInstance) {
+                    cameraModalInstance = new bootstrap.Modal(cameraModalElement, {
+                        backdrop: 'static',
+                        keyboard: false
+                    });
+                }
+            }
+
+            // Open camera when button clicked
+            $(document).on('click', '.btn-open-camera', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                // Stop existing stream first
+                if (currentStream) {
+                    stopCamera();
+                }
+
+                currentIdPertanyaan = $(this).data('id-pertanyaan');
+
+                console.log('Opening camera for:', currentIdPertanyaan);
+
+                // Initialize elements if not done yet
+                if (!cameraVideo || !cameraCanvas || !cameraModalInstance) {
+                    initializeCameraElements();
+                }
+
+                // Delay camera opening to ensure modal is ready
+                setTimeout(() => {
+                    openCamera();
+                }, 100);
+            });
+
+            // Function to open camera
+            async function openCamera() {
+                try {
+                    // Validate elements
+                    if (!cameraVideo || !cameraCanvas) {
+                        console.error('Camera elements not found');
+                        initializeCameraElements();
+
+                        if (!cameraVideo || !cameraCanvas) {
+                            throw new Error('Camera elements tidak ditemukan di halaman');
+                        }
+                    }
+
+                    // Reset UI
+                    $('#cameraError').hide();
+                    $('#cameraInfo').show();
+
+                    console.log('Requesting camera access...');
+
+                    // Request camera access
+                    const constraints = {
+                        video: {
+                            facingMode: 'environment',
+                            width: {
+                                ideal: 1280
+                            },
+                            height: {
+                                ideal: 720
+                            }
+                        }
+                    };
+
+                    currentStream = await navigator.mediaDevices.getUserMedia(constraints);
+
+                    console.log('Camera access granted');
+
+                    // Set video source
+                    cameraVideo.srcObject = currentStream;
+
+                    // Wait for video to be ready
+                    await new Promise((resolve) => {
+                        cameraVideo.onloadedmetadata = () => {
+                            cameraVideo.play();
+                            resolve();
+                        };
+                    });
+
+                    console.log('Video stream ready');
+
+                    // Show modal
+                    if (cameraModalInstance) {
+                        cameraModalInstance.show();
+                    } else {
+                        $('#cameraModal').modal('show');
+                    }
+
+                    console.log('Modal opened');
+
+                } catch (error) {
+                    console.error('Error accessing camera:', error);
+
+                    // Stop any partial stream
+                    stopCamera();
+
+                    let errorMessage = 'Tidak dapat mengakses kamera. ';
+
+                    if (error.name === 'NotAllowedError') {
+                        errorMessage += 'Izin kamera ditolak. Silakan izinkan akses kamera di pengaturan browser.';
+                    } else if (error.name === 'NotFoundError') {
+                        errorMessage += 'Kamera tidak ditemukan pada perangkat ini.';
+                    } else if (error.name === 'NotReadableError') {
+                        errorMessage += 'Kamera sedang digunakan aplikasi lain.';
+                    } else {
+                        errorMessage += error.message;
+                    }
+
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Gagal Membuka Kamera',
+                        text: errorMessage,
+                        confirmButtonText: 'OK'
+                    });
+                }
+            }
+
+            // Function to stop camera
+            function stopCamera() {
+                console.log('Stopping camera...');
+
+                if (currentStream) {
+                    currentStream.getTracks().forEach(track => {
+                        track.stop();
+                        console.log('Track stopped:', track.kind);
+                    });
+                    currentStream = null;
+                }
+
+                if (cameraVideo) {
+                    cameraVideo.srcObject = null;
+                }
+
+                console.log('Camera stopped');
+            }
+
+            // Capture photo when button clicked
+            $(document).on('click', '#btnCapturePhoto', async function() {
+                if (!currentStream || !currentIdPertanyaan) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Kamera tidak aktif atau ID pertanyaan tidak ditemukan',
+                        timer: 1500
+                    });
+                    return;
+                }
+
+                try {
+                    console.log('Capturing photo...');
+
+                    // Validate elements
+                    if (!cameraVideo || !cameraCanvas) {
+                        throw new Error('Camera elements tidak ditemukan');
+                    }
+
+                    // Set canvas size sama dengan video
+                    cameraCanvas.width = cameraVideo.videoWidth;
+                    cameraCanvas.height = cameraVideo.videoHeight;
+
+                    // Draw video frame to canvas
+                    const context = cameraCanvas.getContext('2d');
+                    context.drawImage(cameraVideo, 0, 0);
+
+                    // Convert to blob
+                    const blob = await new Promise(resolve => cameraCanvas.toBlob(resolve, 'image/jpeg', 0.8));
+
+                    // Convert blob to base64
+                    const reader = new FileReader();
+                    reader.onloadend = function() {
+                        const base64 = reader.result;
+
+                        console.log('Photo captured, adding to IndexedDB...');
+
+                        // Add to IndexedDB
+                        addCapturedImageToIndexedDB(currentIdPertanyaan, base64);
+
+                        // Close camera modal
+                        if (cameraModalInstance) {
+                            cameraModalInstance.hide();
+                        } else {
+                            $('#cameraModal').modal('hide');
+                        }
+
+                        stopCamera();
+
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Berhasil',
+                            text: 'Foto berhasil diambil',
+                            timer: 1500,
+                            showConfirmButton: false
+                        });
+                    };
+                    reader.readAsDataURL(blob);
+
+                } catch (error) {
+                    console.error('Error capturing photo:', error);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Gagal',
+                        text: 'Gagal mengambil foto: ' + error.message
+                    });
+                }
+            });
+
+            // Function to add captured image to IndexedDB
+            function addCapturedImageToIndexedDB(idPertanyaan, base64Image) {
+                const database = window.indexedDB.open("system_5r", 5);
+
+                database.onsuccess = function(event) {
+                    const db = event.target.result;
+                    const transaction = db.transaction("penilaian", "readwrite");
+                    const objectStore = transaction.objectStore("penilaian");
+
+                    const request = objectStore.get(idPertanyaan);
+
+                    request.onsuccess = function(event) {
+                        const data = event.target.result;
+                        let existingImages = data && data.images ? data.images : [];
+
+                        // Add new image
+                        existingImages.push(base64Image);
+
+                        // Save to IndexedDB
+                        if (data) {
+                            data.images = existingImages;
+                            objectStore.put(data);
+                        } else {
+                            objectStore.put({
+                                id: idPertanyaan,
+                                images: existingImages
+                            });
+                        }
+
+                        console.log('Image added to IndexedDB, rendering preview...');
+
+                        // Render preview
+                        renderImages(idPertanyaan, existingImages);
+                    };
+
+                    request.onerror = function(event) {
+                        console.error('Error saving to IndexedDB:', event.target.error);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Gagal',
+                            text: 'Gagal menyimpan foto ke browser',
+                            timer: 1500
+                        });
+                    };
+                };
+
+                database.onerror = function(event) {
+                    console.error('Error opening IndexedDB:', event.target.error);
+                };
+            }
+
+            // Stop camera when modal is closed
+            $('#cameraModal').on('hidden.bs.modal', function() {
+                console.log('Modal closed, cleaning up...');
+                stopCamera();
+                currentIdPertanyaan = null;
+            });
+
+            // Initialize on document ready
+            $(document).ready(function() {
+                console.log('Initializing camera functionality...');
+                initializeCameraElements();
+            });
         </script>
     @endif
 @endpush

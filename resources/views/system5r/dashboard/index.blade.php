@@ -243,7 +243,7 @@
                                 scales: {
                                     y: {
                                         beginAtZero: true,
-                                        max: 100,
+                                        max: 10000,
                                         title: {
                                             display: true,
                                             text: 'Nilai'
@@ -258,8 +258,8 @@
 
             function getColor(index) {
                 const colors = [
-                    'rgba(54, 162, 235, 0.8)',
                     'rgba(75, 192, 192, 0.8)',
+                    'rgba(54, 162, 235, 0.8)',
                     'rgba(255, 159, 64, 0.8)',
                     'rgba(153, 102, 255, 0.8)',
                     'rgba(255, 99, 132, 0.8)'
@@ -346,7 +346,7 @@
                                 scales: {
                                     x: {
                                         beginAtZero: true,
-                                        max: 100
+                                        max: 10000
                                     }
                                 }
                             }

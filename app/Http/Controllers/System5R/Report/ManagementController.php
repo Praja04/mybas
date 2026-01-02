@@ -65,6 +65,7 @@ class ManagementController extends Controller
                         ])->first();
 
                         $g->totalNilai = 0;
+                        $g->nilaiAkhir = 0; // default
 
                         if ($jawabanGroup) {
                             $total = Jawaban::where(
@@ -73,11 +74,24 @@ class ManagementController extends Controller
                             )->sum('nilai');
 
                             $g->totalNilai = $total;
-                            $g->nilaiAkhir = $total + 28;
                             $g->submit_by = $jawabanGroup->submit_by;
+
+                            // === LOGIKA PENGALIAN BERDASARKAN NAMA DEPARTEMEN ===
+                            $baseNilai = $total + 28;
+
+                            $deptName = strtoupper($dept->nama_department ?? $dept->department_name ?? '');
+
+                            if (str_contains($deptName, 'HRGA') || str_contains($deptName, 'GA')) {
+                                $g->nilaiAkhir = $baseNilai * 105;
+                            } elseif (str_contains($deptName, 'PRD') || str_contains($deptName, 'PROD')) {
+                                $g->nilaiAkhir = $baseNilai * 110;
+                            } else {
+                                $g->nilaiAkhir = $baseNilai * 100;
+                            }
+                            // ====================================================
                         }
 
-                        // ✅ SEKARANG AMAN
+                        // Enkripsi key tetap sama
                         $g->encryptedKey = encrypt(
                             $dept->id_department . '/' .
                                 $jadwalId . '/' .
@@ -90,17 +104,36 @@ class ManagementController extends Controller
 
                     $p->group = $groups->toArray();
                     $p->totalNilai = $groups->sum('totalNilai');
-                    $p->juri = $groups->pluck('submit_by')
-                        ->filter()
+                    $p->nilaiAkhir = $groups->sum('nilaiAkhir'); // optional: tambah total nilai akhir per periode
+                    $p->juri = $groups
+                        ->filter(fn($g) => $g->jawabanGroup)
+                        ->pluck('jawabanGroup.submit_by')
                         ->unique()
                         ->values()
                         ->toArray();
+
+                    $juriRecord = MasterGroupJuriDepartment::where('id_department', $dept->id_department)
+                        ->where('id_periode', $p->id_periode)
+                        ->with('group.anggota') // asumsi relasi: group -> anggota (table user/juri)
+                        ->first();
+
+                    if ($juriRecord && $juriRecord->group && $juriRecord->group->anggota) {
+                        $p->juri = $juriRecord->group->anggota
+                            ->pluck('nama_juri') // atau 'name', 'nama_lengkap', sesuaikan kolom nama
+                            ->unique()
+                            ->values()
+                            ->toArray();
+                    } else {
+                        $p->juri = []; // atau fallback ke submit_by jika mau
+                    }
 
                     return $p;
                 });
 
                 $dept->periode = $periode;
-                $dept->__total = $periode->where('totalNilai', '>', 0)->avg('totalNilai') ?? 0;
+
+                // Rata-rata nilai akhir per periode (atau pakai totalNilai jika mau)
+                $dept->__total = $periode->where('totalNilai', '>', 0)->avg('nilaiAkhir') ?? 0;
 
                 return $dept;
             });
