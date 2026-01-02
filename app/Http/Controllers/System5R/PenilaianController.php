@@ -260,16 +260,47 @@ class PenilaianController extends Controller
 
                 $base64Image = str_replace(' ', '+', $base64Image);
 
-                // Generate unique filename untuk setiap foto
-                $imageName = 'temuan_' . uniqid() . '_' . time() . '_' . ($index + 1) . '.jpg';
-
-                // Decode dan simpan foto
+                // Decode image data
                 $imageData = base64_decode($base64Image);
 
                 if ($imageData === false) {
                     throw new \Exception('Gagal decode base64 image pada foto ke-' . ($index + 1));
                 }
 
+                // GENERATE NAMA FILE YANG BENAR-BENAR UNIQUE
+                // Kombinasi: id_pertanyaan + timestamp + uniqid + hash + random
+                $timestamp = time();
+                $uniqueId = uniqid('', true); // true = more entropy
+                $contentHash = substr(md5($imageData), 0, 8); // Hash dari konten foto
+                $randomStr = bin2hex(random_bytes(4)); // 8 karakter random
+
+                // Format: temuan_ID_TIMESTAMP_UNIQID_HASH_RANDOM.jpg
+                $imageName = sprintf(
+                    'temuan_%s_%s_%s_%s_%s.jpg',
+                    $request->id_pertanyaan,  // Parameter 1
+                    $timestamp,                // Parameter 2
+                    $uniqueId,                 // Parameter 3
+                    $contentHash,              // Parameter 4
+                    $randomStr                 // Parameter 5
+                );
+
+                // Double check: jika nama file sudah ada, regenerate
+                $counter = 0;
+                while (file_exists(public_path('images/5r/temuan/' . $imageName)) && $counter < 10) {
+                    $counter++;
+                    $randomStr = bin2hex(random_bytes(4));
+                    $imageName = sprintf(
+                        'temuan_%s_%s_%s_%s_%s_%d.jpg',
+                        $request->id_pertanyaan,  // Parameter 1
+                        $timestamp,                // Parameter 2
+                        $uniqueId,                 // Parameter 3
+                        $contentHash,              // Parameter 4
+                        $randomStr,                // Parameter 5
+                        $counter                   // Parameter 6
+                    );
+                }
+
+                // Simpan foto
                 \File::put(public_path('images/5r/temuan/' . $imageName), $imageData);
 
                 $savedPhotos[] = $imageName;
@@ -284,7 +315,7 @@ class PenilaianController extends Controller
                 'id_pertanyaan' => $request->id_pertanyaan,
                 'id_periode' => $request->id_periode,
                 'id_area' => $request->area,
-                'foto' => $fotoString, // Simpan dengan format: foto1.jpg,foto2.jpg,foto3.jpg
+                'foto' => $fotoString,
                 'deskripsi' => $request->deskripsi_temuan,
                 'created_by' => auth()->user()->name
             ]);
