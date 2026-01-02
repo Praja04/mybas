@@ -929,7 +929,7 @@
                                                                                                 id="modalListTemuanLabel{{ $_pertanyaan->id_pertanyaan }}">
                                                                                                 <i
                                                                                                     class="bi bi-list-check me-2"></i>
-                                                                                                Daftar Temuan
+                                                                                                Daftar Temuan Test
                                                                                             </h5>
                                                                                             <button type="button"
                                                                                                 class="btn-close"
