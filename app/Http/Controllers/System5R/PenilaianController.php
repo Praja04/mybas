@@ -418,26 +418,44 @@ class PenilaianController extends Controller
 
             $id_temuan = $request->id_temuan;
 
+            // CRITICAL FIX: Validasi id_temuan format
+            if (empty($id_temuan)) {
+                throw new \Exception('ID Temuan tidak valid');
+            }
+
+            Log::info('=== DELETE TEMUAN REQUEST ===', [
+                'id_temuan_raw' => $id_temuan,
+                'id_temuan_type' => gettype($id_temuan),
+                'request_all' => $request->all()
+            ]);
+
             // Lock row untuk mencegah race condition
-            $temuan = Temuan::where('id_temuan', $id_temuan)
+            // GUNAKAN whereRaw untuk memastikan exact match
+            $temuan = Temuan::where('id_temuan', '=', $id_temuan)
                 ->lockForUpdate()
                 ->first();
 
             if (!$temuan) {
-                throw new \Exception('Temuan tidak ditemukan');
+                Log::error('Temuan not found', [
+                    'id_temuan' => $id_temuan,
+                    'query' => Temuan::where('id_temuan', '=', $id_temuan)->toSql()
+                ]);
+                throw new \Exception('Temuan tidak ditemukan (ID: ' . $id_temuan . ')');
             }
 
             // CRITICAL: Simpan data penting sebelum proses apa pun
             $idPertanyaan = $temuan->id_pertanyaan;
             $idPeriode = $temuan->id_periode;
             $idJawaban = $temuan->id_jawaban;
+            $idArea = $temuan->id_area;
             $fotoTemuan = $temuan->foto ? array_map('trim', explode(',', $temuan->foto)) : [];
 
             Log::info('=== DELETE TEMUAN START ===', [
                 'id_temuan' => $id_temuan,
+                'id_temuan_db' => $temuan->id_temuan,
                 'id_pertanyaan' => $idPertanyaan,
                 'id_periode' => $idPeriode,
-                'id_area' => $temuan->id_area,
+                'id_area' => $idArea,
                 'foto_count' => count($fotoTemuan),
                 'foto_list' => $fotoTemuan
             ]);
@@ -450,6 +468,11 @@ class PenilaianController extends Controller
                 ->whereNotNull('foto')
                 ->lockForUpdate()
                 ->get();
+
+            Log::info('Found other temuan', [
+                'count' => $temuanLainSemua->count(),
+                'ids' => $temuanLainSemua->pluck('id_temuan')->toArray()
+            ]);
 
             // Kumpulkan SEMUA foto dari SEMUA temuan lain (termasuk area berbeda)
             $fotoYangMasihDigunakan = [];
@@ -554,13 +577,18 @@ class PenilaianController extends Controller
                 }
             }
 
-            // Hapus data temuan dari database
-            $temuan->delete();
+            // CRITICAL: Hapus data temuan dari database dengan exact match
+            $deleted = Temuan::where('id_temuan', '=', $id_temuan)->delete();
+
+            if ($deleted === 0) {
+                throw new \Exception('Gagal menghapus temuan dari database');
+            }
 
             DB::commit();
 
             Log::info('=== DELETE TEMUAN SUCCESS ===', [
                 'id_temuan' => $id_temuan,
+                'deleted_records' => $deleted,
                 'deleted_files' => $deletedFiles,
                 'preserved_files' => count($fotoYangDipertahankan),
                 'failed_files' => count($failedFiles)
@@ -583,7 +611,8 @@ class PenilaianController extends Controller
                 'id_temuan' => $request->id_temuan,
                 'error' => $e->getMessage(),
                 'line' => $e->getLine(),
-                'file' => $e->getFile()
+                'file' => $e->getFile(),
+                'trace' => $e->getTraceAsString()
             ]);
 
             return response()->json([
@@ -603,6 +632,7 @@ class PenilaianController extends Controller
 
             Log::info('=== DELETE SINGLE PHOTO START ===', [
                 'id_temuan' => $id_temuan,
+                'id_temuan_type' => gettype($id_temuan),
                 'foto_name' => $foto_name
             ]);
 
@@ -611,16 +641,25 @@ class PenilaianController extends Controller
                 throw new \Exception('Nama foto tidak valid');
             }
 
+            if (empty($id_temuan)) {
+                throw new \Exception('ID Temuan tidak valid');
+            }
+
             // Lock temuan untuk mencegah race condition
-            $temuan = Temuan::where('id_temuan', $id_temuan)
+            $temuan = Temuan::where('id_temuan', '=', $id_temuan)
                 ->lockForUpdate()
                 ->first();
 
             if (!$temuan) {
-                throw new \Exception('Temuan tidak ditemukan');
+                Log::error('Temuan not found for photo delete', [
+                    'id_temuan' => $id_temuan,
+                    'foto_name' => $foto_name
+                ]);
+                throw new \Exception('Temuan tidak ditemukan (ID: ' . $id_temuan . ')');
             }
 
             Log::info('Temuan info', [
+                'id_temuan_db' => $temuan->id_temuan,
                 'id_pertanyaan' => $temuan->id_pertanyaan,
                 'id_periode' => $temuan->id_periode,
                 'id_area' => $temuan->id_area,
@@ -797,7 +836,8 @@ class PenilaianController extends Controller
                 'foto_name' => $request->foto_name,
                 'error' => $e->getMessage(),
                 'line' => $e->getLine(),
-                'file' => $e->getFile()
+                'file' => $e->getFile(),
+                'trace' => $e->getTraceAsString()
             ]);
 
             return response()->json([
