@@ -2558,50 +2558,45 @@
                 console.log('=== DEBUG END ===');
             });
 
-         $(document).on('show.bs.modal', '[id^="modalListTemuan"]', function(e) {
-    var modal = $(this);
-    var idPertanyaan = modal.attr('id').replace('modalListTemuan', '');
-    var idPeriode = modal.closest('.tab-pane').find('input[name="id_periode"]').val();
-    var listButton = $('[data-bs-target="#' + modal.attr('id') + '"]');
-    var isReadOnly = listButton.data('read-only') === true || listButton.data('read-only') === 'true';
+            $(document).on('show.bs.modal', '[id^="modalListTemuan"]', function(e) {
+                var modal = $(this);
+                var idPertanyaan = modal.attr('id').replace('modalListTemuan', '');
+                var idPeriode = modal.closest('.tab-pane').find('input[name="id_periode"]').val();
+                var listButton = $('[data-bs-target="#' + modal.attr('id') + '"]');
+                var isReadOnly = listButton.data('read-only') === true || listButton.data('read-only') === 'true';
 
-    console.log('Loading temuan list:', {
-        idPertanyaan: idPertanyaan,
-        idPeriode: idPeriode,
-        isReadOnly: isReadOnly
-    });
+                $('#loadingTemuan' + idPertanyaan).show();
+                $('#tableTemuanContainer' + idPertanyaan).hide();
+                $('#emptyStateTemuan' + idPertanyaan).hide();
 
-    $('#loadingTemuan' + idPertanyaan).show();
-    $('#tableTemuanContainer' + idPertanyaan).hide();
-    $('#emptyStateTemuan' + idPertanyaan).hide();
+                $.ajax({
+                    url: "{{ route('5r-system.get-list-temuan') }}",
+                    type: "GET",
+                    data: {
+                        id_pertanyaan: idPertanyaan,
+                        id_periode: idPeriode
+                    },
+                    success: function(response) {
+                        $('#loadingTemuan' + idPertanyaan).hide();
 
-    $.ajax({
-        url: "{{ route('5r-system.get-list-temuan') }}",
-        type: "GET",
-        data: {
-            id_pertanyaan: idPertanyaan,
-            id_periode: idPeriode
-        },
-        success: function(response) {
-            $('#loadingTemuan' + idPertanyaan).hide();
+                        if (response.status === 'success' && response.data.length > 0) {
+                            var tbody = $('#tableTemuanBody' + idPertanyaan);
+                            tbody.empty();
 
-            if (response.status === 'success' && response.data.length > 0) {
-                var tbody = $('#tableTemuanBody' + idPertanyaan);
-                tbody.empty();
+                            $.each(response.data, function(index, temuan) {
+                                var fotoHtml = '';
 
-                $.each(response.data, function(index, temuan) {
-                    var fotoHtml = '';
+                                if (temuan.foto) {
+                                    var fotoArray = temuan.foto.split(',');
 
-                    if (temuan.foto) {
-                        var fotoArray = temuan.foto.split(',');
-
-                        if (fotoArray.length > 1) {
-                            // Multiple photos dengan tombol hapus per foto
-                            fotoHtml = '<div style="display: flex; flex-wrap: wrap; gap: 8px;">';
-                            fotoArray.forEach(function(foto, idx) {
-                                foto = foto.trim();
-                                if (foto) {
-                                    fotoHtml += `
+                                    if (fotoArray.length > 1) {
+                                        // Multiple photos dengan tombol hapus per foto
+                                        fotoHtml =
+                                            '<div style="display: flex; flex-wrap: wrap; gap: 8px;">';
+                                        fotoArray.forEach(function(foto, idx) {
+                                            foto = foto.trim();
+                                            if (foto) {
+                                                fotoHtml += `
                                         <div style="position: relative; border: 2px solid #e9ecef; border-radius: 8px; overflow: hidden;">
                                             <img src="{{ asset('images/5r/temuan/') }}/${foto}" 
                                                 class="img-thumbnail" 
@@ -2612,9 +2607,9 @@
                                                 ${idx + 1}
                                             </span>`;
 
-                                    // Tombol hapus hanya muncul jika NOT read-only
-                                    if (!isReadOnly) {
-                                        fotoHtml += `
+                                                // Tombol hapus hanya muncul jika NOT read-only
+                                                if (!isReadOnly) {
+                                                    fotoHtml += `
                                             <button type="button" 
                                                 class="btn btn-danger btn-sm btn-delete-single-photo"
                                                 data-id-temuan="${temuan.id_temuan}"
@@ -2624,16 +2619,16 @@
                                                 title="Hapus foto ini">
                                                 <i class="mdi mdi-close" style="font-size: 12px;"></i>
                                             </button>`;
-                                    }
+                                                }
 
-                                    fotoHtml += `</div>`;
-                                }
-                            });
-                            fotoHtml += '</div>';
-                        } else {
-                            // Single photo
-                            var foto = fotoArray[0].trim();
-                            fotoHtml = `
+                                                fotoHtml += `</div>`;
+                                            }
+                                        });
+                                        fotoHtml += '</div>';;
+                                    } else {
+                                        // Single photo
+                                        var foto = fotoArray[0].trim();
+                                        fotoHtml = `
                                 <div style="position: relative; display: inline-block; border: 2px solid #e9ecef; border-radius: 8px; overflow: hidden;">
                                     <img src="{{ asset('images/5r/temuan/') }}/${foto}" 
                                         class="img-thumbnail" 
@@ -2641,8 +2636,8 @@
                                         onclick="showImagePreview('{{ asset('images/5r/temuan/') }}/${foto}')"
                                         alt="Foto Temuan">`;
 
-                            if (!isReadOnly) {
-                                fotoHtml += `
+                                        if (!isReadOnly) {
+                                            fotoHtml += `
                                     <button type="button" 
                                         class="btn btn-danger btn-sm btn-delete-single-photo"
                                         data-id-temuan="${temuan.id_temuan}"
@@ -2652,27 +2647,29 @@
                                         title="Hapus foto ini">
                                         <i class="mdi mdi-delete"></i>
                                     </button>`;
-                            }
+                                        }
 
-                            fotoHtml += `</div>`;
-                        }
-                    } else {
-                        fotoHtml = '<span class="text-muted">Tidak ada foto</span>';
-                    }
+                                        fotoHtml += `</div>`;
+                                    }
+                                } else {
+                                    fotoHtml = '<span class="text-muted">Tidak ada foto</span>';
+                                }
 
-                    var deskripsi = temuan.deskripsi || '<span class="text-muted">-</span>';
-                    var tanggal = temuan.created_at ? new Date(temuan.created_at).toLocaleDateString('id-ID', {
-                        day: '2-digit',
-                        month: 'short',
-                        year: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                    }) : '-';
+                                var deskripsi = temuan.deskripsi ||
+                                    '<span class="text-muted">-</span>';
+                                var tanggal = temuan.created_at ? new Date(temuan.created_at)
+                                    .toLocaleDateString('id-ID', {
+                                        day: '2-digit',
+                                        month: 'short',
+                                        year: 'numeric',
+                                        hour: '2-digit',
+                                        minute: '2-digit'
+                                    }) : '-';
 
-                    // Tombol hapus temuan
-                    var deleteButton = '';
-                    if (!isReadOnly) {
-                        deleteButton = `
+                                // Tombol hapus temuan
+                                var deleteButton = '';
+                                if (!isReadOnly) {
+                                    deleteButton = `
                             <button type="button" 
                                 class="btn btn-sm btn-danger btn-delete-temuan" 
                                 data-id-temuan="${temuan.id_temuan}"
@@ -2680,12 +2677,13 @@
                                 title="Hapus Temuan">
                                 <i class="mdi mdi-delete"></i>
                             </button>`;
-                    } else {
-                        deleteButton = '<span class="text-muted"><i class="mdi mdi-lock"></i></span>';
-                    }
+                                } else {
+                                    deleteButton =
+                                        '<span class="text-muted"><i class="mdi mdi-lock"></i></span>';
+                                }
 
-                    var row = `
-                        <tr data-temuan-id="${temuan.id_temuan}">
+                                var row = `
+                        <tr>
                             <td class="text-center">${index + 1}</td>
                             <td>${temuan.area?.nama_area || '-'}</td>
                             <td>${deskripsi}</td>
@@ -2696,24 +2694,24 @@
                         </tr>
                     `;
 
-                    tbody.append(row);
-                });
+                                tbody.append(row);
+                            });
 
-                $('#tableTemuanContainer' + idPertanyaan).show();
-            } else {
-                $('#emptyStateTemuan' + idPertanyaan).show();
-            }
-        },
-        error: function(xhr) {
-            $('#loadingTemuan' + idPertanyaan).hide();
-            Swal.fire({
-                icon: 'error',
-                title: 'Gagal',
-                text: 'Gagal memuat data temuan',
+                            $('#tableTemuanContainer' + idPertanyaan).show();
+                        } else {
+                            $('#emptyStateTemuan' + idPertanyaan).show();
+                        }
+                    },
+                    error: function(xhr) {
+                        $('#loadingTemuan' + idPertanyaan).hide();
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Gagal',
+                            text: 'Gagal memuat data temuan',
+                        });
+                    }
+                });
             });
-        }
-    });
-});
 
             $(document).on('click', '.btn-delete-single-photo', function() {
                 var button = $(this);
@@ -2721,24 +2719,9 @@
                 var fotoName = button.data('foto-name');
                 var fotoIndex = button.data('foto-index');
 
-                // CRITICAL: Simpan reference ke parent row dan cell
-                var photoWrapper = button.closest('div[style*="position: relative"]');
-                var photoCell = button.closest('td');
-                var tableRow = button.closest('tr');
-
-                console.log('Delete photo clicked:', {
-                    idTemuan: idTemuan,
-                    fotoName: fotoName,
-                    fotoIndex: fotoIndex
-                });
-
                 Swal.fire({
                     title: 'Hapus Foto Ini?',
-                    html: `
-            <p>Foto akan dihapus dari temuan ini.</p>
-            <small class="text-muted">ID Temuan: ${idTemuan}</small><br>
-            <small class="text-muted">File: ${fotoName}</small>
-        `,
+                    text: 'Foto akan dihapus dari temuan ini. Tindakan ini tidak dapat dibatalkan.',
                     icon: 'warning',
                     showCancelButton: true,
                     confirmButtonColor: '#dc3545',
@@ -2762,51 +2745,42 @@
                                 _token: '{{ csrf_token() }}'
                             },
                             success: function(response) {
-                                console.log('Delete response:', response);
-
                                 if (response.status === 'success') {
-                                    // HANYA hapus preview foto dari temuan INI saja
-                                    photoWrapper.fadeOut(300, function() {
-                                        $(this).remove();
+                                    // Animate removal
+                                    button.closest('div[style*="position: relative"]').fadeOut(300,
+                                        function() {
+                                            $(this).remove();
 
-                                        // Cek apakah masih ada foto lain di cell ini
-                                        var remainingPhotos = photoCell.find('img').length;
+                                            // Check if this was the last photo
+                                            var photoContainer = button.closest('td').find(
+                                                'div[style*="flex"]');
+                                            var remainingPhotos = photoContainer.find('img')
+                                                .length;
 
-                                        console.log('Remaining photos in this cell:',
-                                            remainingPhotos);
+                                            if (remainingPhotos === 0) {
+                                                // Update count or show message
+                                                button.closest('td').html(
+                                                    '<span class="text-muted">Semua foto telah dihapus</span>'
+                                                );
+                                            } else {
+                                                // Update photo count
+                                                var countElement = button.closest('td').find(
+                                                    'small.text-muted');
 
-                                        if (remainingPhotos === 0) {
-                                            // Jika tidak ada foto lagi, tampilkan pesan
-                                            photoCell.html(
-                                                '<span class="text-muted">Tidak ada foto</span>'
-                                            );
-                                        } else {
-                                            // Re-number foto yang tersisa di cell ini
-                                            photoCell.find(
-                                                'span[style*="position: absolute"][style*="left"]'
-                                            ).each(function(idx) {
-                                                $(this).text(idx + 1);
-                                            });
-                                        }
-
-                                        // JANGAN reload atau refresh modal
-                                        // JANGAN hapus foto dari temuan lain
-                                    });
-
-                                    // Tampilkan pesan sukses
-                                    var messageHtml = response.message;
-                                    if (response.data.file_preserved) {
-                                        messageHtml += '<br><small class="text-info">' +
-                                            (response.data.preserved_reason ||
-                                                'File masih digunakan di area lain') +
-                                            '</small>';
-                                    }
+                                                // Re-number remaining photos
+                                                photoContainer.find(
+                                                    'span[style*="position: absolute"][style*="left"]'
+                                                ).each(function(idx) {
+                                                    $(this).text(idx + 1);
+                                                });
+                                            }
+                                        });
 
                                     Swal.fire({
                                         icon: 'success',
                                         title: 'Berhasil',
-                                        html: messageHtml,
-                                        timer: 2500,
+                                        text: response.message,
+                                        timer: 1500,
                                         showConfirmButton: false
                                     });
                                 } else {
@@ -2857,18 +2831,9 @@
                 var idPertanyaan = button.data('id-pertanyaan');
                 var row = button.closest('tr');
 
-                console.log('Delete temuan clicked:', {
-                    idTemuan: idTemuan,
-                    idPertanyaan: idPertanyaan
-                });
-
                 Swal.fire({
                     title: 'Hapus Temuan?',
-                    html: `
-            <p>Apakah Anda yakin ingin menghapus temuan ini?</p>
-            <p class="text-danger">Data yang dihapus tidak dapat dikembalikan.</p>
-            <small class="text-muted">ID Temuan: ${idTemuan}</small>
-        `,
+                    text: 'Apakah Anda yakin ingin menghapus temuan ini? Data yang dihapus tidak dapat dikembalikan.',
                     icon: 'warning',
                     showCancelButton: true,
                     confirmButtonColor: '#dc3545',
@@ -2891,44 +2856,31 @@
                                 _token: '{{ csrf_token() }}'
                             },
                             success: function(response) {
-                                console.log('Delete temuan response:', response);
-
                                 if (response.status === 'success') {
-                                    // HANYA hapus row temuan INI saja
+                                    // Animate row removal
                                     row.fadeOut(300, function() {
                                         row.remove();
 
-                                        // Re-number rows yang tersisa
+                                        // Re-number rows
                                         var tbody = $('#tableTemuanBody' + idPertanyaan);
                                         tbody.find('tr').each(function(index) {
                                             $(this).find('td:first').text(index +
-                                            1);
+                                                1);
                                         });
 
                                         // Check if table is empty
                                         if (tbody.find('tr').length === 0) {
                                             $('#tableTemuanContainer' + idPertanyaan)
-                                        .hide();
+                                                .hide();
                                             $('#emptyStateTemuan' + idPertanyaan).show();
                                         }
                                     });
 
-                                    // Tampilkan info detail
-                                    var messageHtml = response.message;
-                                    if (response.data) {
-                                        messageHtml += '<br><small class="text-muted">';
-                                        messageHtml += 'Foto dihapus: ' + response.data
-                                            .deleted_photos + ', ';
-                                        messageHtml += 'Foto dipertahankan: ' + response.data
-                                            .preserved_photos;
-                                        messageHtml += '</small>';
-                                    }
-
                                     Swal.fire({
                                         icon: 'success',
                                         title: 'Berhasil',
-                                        html: messageHtml,
-                                        timer: 2500,
+                                        text: response.message,
+                                        timer: 1500,
                                         showConfirmButton: false
                                     });
                                 } else {
@@ -2942,7 +2894,7 @@
                                 }
                             },
                             error: function(xhr) {
-                                console.error('Delete Temuan Error:', xhr);
+                                console.error('Delete Error:', xhr);
 
                                 Swal.fire({
                                     icon: 'error',
@@ -2958,7 +2910,6 @@
                     }
                 });
             });
-
 
             // Function to show image preview in larger modal
             function showImagePreview(imageUrl) {

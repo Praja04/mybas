@@ -251,9 +251,6 @@ class PenilaianController extends Controller
                 mkdir(public_path('images/5r/temuan'), 0755, true);
             }
 
-            // Generate ID temuan DULU (sebelum save foto)
-            $idTemuan = 'TM' . time() . uniqid('', true) . bin2hex(random_bytes(4));
-
             // Process setiap foto
             foreach ($fotoArray as $index => $base64Image) {
                 // Hapus prefix data:image jika ada
@@ -263,73 +260,19 @@ class PenilaianController extends Controller
 
                 $base64Image = str_replace(' ', '+', $base64Image);
 
-                // Decode image data
+                // Generate unique filename untuk setiap foto
+                $imageName = 'temuan_' . uniqid() . '_' . time() . '_' . ($index + 1) . '.jpg';
+
+                // Decode dan simpan foto
                 $imageData = base64_decode($base64Image);
 
                 if ($imageData === false) {
                     throw new \Exception('Gagal decode base64 image pada foto ke-' . ($index + 1));
                 }
 
-                // ===================================================================
-                // SOLUSI PRODUCTION: Gunakan Str::uuid() atau DB Auto Increment
-                // ===================================================================
-
-                // Method 1: UUID v4 (RECOMMENDED untuk production)
-                // Guaranteed unique secara global, bahkan di distributed system
-                $uuid = \Illuminate\Support\Str::uuid()->toString();
-                $uuidShort = str_replace('-', '', $uuid); // Remove dashes
-
-                // Method 2: Tambahkan random bytes ekstra
-                $extraRandom = bin2hex(random_bytes(8)); // 16 karakter
-
-                // Method 3: Tambahkan process ID (untuk multi-process server)
-                $processId = getmypid(); // Process ID
-
-                // Gabungkan semua untuk MAXIMUM uniqueness
-                $imageName = sprintf(
-                    'tm_%s_%s_%d_%03d_%s.jpg',
-                    $request->area,           // Area ID
-                    $uuidShort,               // UUID (32 chars, guaranteed unique)
-                    $processId,               // Process ID
-                    $index + 1,               // Index foto
-                    $extraRandom              // Extra random (16 chars)
-                );
-
-                // Sanitize (remove special chars jika ada)
-                $imageName = preg_replace('/[^a-zA-Z0-9._-]/', '_', $imageName);
-
-                // FINAL CHECK: Jika masih duplikat (impossible, tapi just in case)
-                $finalPath = public_path('images/5r/temuan/' . $imageName);
-                $retry = 0;
-                while (file_exists($finalPath) && $retry < 3) {
-                    $retry++;
-                    // Regenerate dengan timestamp nano + retry count
-                    $nanoTime = hrtime(true); // Nanosecond precision
-                    $imageName = sprintf(
-                        'tm_%s_%s_%d_%03d_%s_%d_%d.jpg',
-                        $request->area,
-                        $uuidShort,
-                        $processId,
-                        $index + 1,
-                        $extraRandom,
-                        $nanoTime,
-                        $retry
-                    );
-                    $imageName = preg_replace('/[^a-zA-Z0-9._-]/', '_', $imageName);
-                    $finalPath = public_path('images/5r/temuan/' . $imageName);
-                }
-
-                // Simpan foto
-                \File::put($finalPath, $imageData);
+                \File::put(public_path('images/5r/temuan/' . $imageName), $imageData);
 
                 $savedPhotos[] = $imageName;
-
-                // Log untuk debugging di production
-                Log::info('Foto saved', [
-                    'filename' => $imageName,
-                    'size' => strlen($imageData),
-                    'index' => $index
-                ]);
             }
 
             // Gabungkan semua nama foto dengan koma
@@ -337,11 +280,11 @@ class PenilaianController extends Controller
 
             // Create temuan record
             $temuan = Temuan::create([
-                'id_temuan' => $idTemuan,
+                'id_temuan' => 'TM' . uniqid() . time(),
                 'id_pertanyaan' => $request->id_pertanyaan,
                 'id_periode' => $request->id_periode,
                 'id_area' => $request->area,
-                'foto' => $fotoString,
+                'foto' => $fotoString, // Simpan dengan format: foto1.jpg,foto2.jpg,foto3.jpg
                 'deskripsi' => $request->deskripsi_temuan,
                 'created_by' => auth()->user()->name
             ]);
@@ -359,12 +302,6 @@ class PenilaianController extends Controller
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
-
-            Log::error('Save Temuan Error', [
-                'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-                'request' => $request->except(['foto']) // Jangan log base64
-            ]);
 
             // Hapus foto yang sudah tersimpan jika terjadi error
             if (!empty($savedPhotos)) {
@@ -418,200 +355,64 @@ class PenilaianController extends Controller
 
             $id_temuan = $request->id_temuan;
 
-            // CRITICAL FIX: Validasi id_temuan format
-            if (empty($id_temuan)) {
-                throw new \Exception('ID Temuan tidak valid');
-            }
-
-            Log::info('=== DELETE TEMUAN REQUEST ===', [
-                'id_temuan_raw' => $id_temuan,
-                'id_temuan_type' => gettype($id_temuan),
-                'request_all' => $request->all()
-            ]);
-
-            // Lock row untuk mencegah race condition
-            // GUNAKAN whereRaw untuk memastikan exact match
-            $temuan = Temuan::where('id_temuan', '=', $id_temuan)
-                ->lockForUpdate()
-                ->first();
+            $temuan = Temuan::find($id_temuan);
 
             if (!$temuan) {
-                Log::error('Temuan not found', [
-                    'id_temuan' => $id_temuan,
-                    'query' => Temuan::where('id_temuan', '=', $id_temuan)->toSql()
-                ]);
-                throw new \Exception('Temuan tidak ditemukan (ID: ' . $id_temuan . ')');
+                throw new \Exception('Temuan tidak ditemukan');
             }
 
-            // CRITICAL: Simpan data penting sebelum proses apa pun
-            $idPertanyaan = $temuan->id_pertanyaan;
-            $idPeriode = $temuan->id_periode;
-            $idJawaban = $temuan->id_jawaban;
-            $idArea = $temuan->id_area;
             $fotoTemuan = $temuan->foto ? array_map('trim', explode(',', $temuan->foto)) : [];
 
-            Log::info('=== DELETE TEMUAN START ===', [
-                'id_temuan' => $id_temuan,
-                'id_temuan_db' => $temuan->id_temuan,
-                'id_pertanyaan' => $idPertanyaan,
-                'id_periode' => $idPeriode,
-                'id_area' => $idArea,
-                'foto_count' => count($fotoTemuan),
-                'foto_list' => $fotoTemuan
-            ]);
+            $jawaban = null;
+            if ($temuan->id_jawaban) {
+                $jawaban = Jawaban::find($temuan->id_jawaban);
+            }
 
-            // CEK: Apakah foto ini digunakan oleh temuan lain (TANPA BATASAN AREA)
-            // Kita cek SEMUA temuan lain di pertanyaan dan periode yang sama
-            $temuanLainSemua = Temuan::where('id_pertanyaan', $idPertanyaan)
-                ->where('id_periode', $idPeriode)
-                ->where('id_temuan', '!=', $id_temuan) // EXCLUDE temuan yang akan dihapus
-                ->whereNotNull('foto')
-                ->lockForUpdate()
-                ->get();
+            if ($jawaban && $jawaban->foto) {
+                $fotoJawaban = array_map('trim', explode(',', $jawaban->foto));
 
-            Log::info('Found other temuan', [
-                'count' => $temuanLainSemua->count(),
-                'ids' => $temuanLainSemua->pluck('id_temuan')->toArray()
-            ]);
-
-            // Kumpulkan SEMUA foto dari SEMUA temuan lain (termasuk area berbeda)
-            $fotoYangMasihDigunakan = [];
-            foreach ($temuanLainSemua as $temuanLain) {
-                if ($temuanLain->foto) {
-                    $fotoLain = array_map('trim', explode(',', $temuanLain->foto));
-                    foreach ($fotoLain as $foto) {
-                        if (!empty($foto)) {
-                            $fotoYangMasihDigunakan[] = $foto;
-                        }
+                $fotoJawabanBaru = [];
+                foreach ($fotoJawaban as $foto) {
+                    if (!in_array($foto, $fotoTemuan)) {
+                        $fotoJawabanBaru[] = $foto;
                     }
                 }
+
+                if (empty($fotoJawabanBaru)) {
+                    $jawaban->foto = null;
+                } else {
+                    $jawaban->foto = implode(',', $fotoJawabanBaru);
+                }
+
+                $jawaban->save();
             }
-            $fotoYangMasihDigunakan = array_unique($fotoYangMasihDigunakan);
-
-            Log::info('Foto usage check', [
-                'total_temuan_lain' => $temuanLainSemua->count(),
-                'foto_temuan_ini' => $fotoTemuan,
-                'foto_masih_digunakan' => $fotoYangMasihDigunakan
-            ]);
-
-            // HANYA hapus foto yang TIDAK digunakan temuan lain MANA PUN
-            $fotoYangAmanDihapus = [];
-            $fotoYangDipertahankan = [];
 
             foreach ($fotoTemuan as $foto) {
-                if (in_array($foto, $fotoYangMasihDigunakan)) {
-                    $fotoYangDipertahankan[] = $foto;
-                    Log::info('Foto DIPERTAHANKAN (masih digunakan temuan lain)', ['foto' => $foto]);
-                } else {
-                    $fotoYangAmanDihapus[] = $foto;
-                    Log::info('Foto AKAN DIHAPUS (tidak digunakan temuan lain)', ['foto' => $foto]);
-                }
-            }
-
-            // Update field foto di jawaban (jika ada)
-            $jawabanUpdated = false;
-            if ($idJawaban) {
-                $jawaban = Jawaban::where('id', $idJawaban)
-                    ->lockForUpdate()
-                    ->first();
-
-                if ($jawaban && $jawaban->foto) {
-                    $fotoJawaban = array_map('trim', explode(',', $jawaban->foto));
-
-                    Log::info('Updating jawaban', [
-                        'foto_jawaban_before' => $fotoJawaban,
-                        'foto_yang_aman_dihapus' => $fotoYangAmanDihapus
-                    ]);
-
-                    // Hapus HANYA foto yang aman dihapus dari jawaban
-                    $fotoJawabanBaru = [];
-                    foreach ($fotoJawaban as $foto) {
-                        if (!in_array($foto, $fotoYangAmanDihapus)) {
-                            $fotoJawabanBaru[] = $foto;
-                        }
-                    }
-
-                    // Update jawaban
-                    if (empty($fotoJawabanBaru)) {
-                        $jawaban->foto = null;
-                    } else {
-                        $jawaban->foto = implode(',', $fotoJawabanBaru);
-                    }
-
-                    $jawaban->save();
-                    $jawabanUpdated = true;
-
-                    Log::info('Jawaban updated', [
-                        'foto_jawaban_after' => $jawaban->foto
-                    ]);
-                }
-            }
-
-            // Hapus file fisik HANYA yang aman dihapus
-            $deletedFiles = 0;
-            $failedFiles = [];
-
-            foreach ($fotoYangAmanDihapus as $foto) {
                 if (!empty($foto)) {
                     $fotoPath = public_path('images/5r/temuan/' . $foto);
-
                     if (file_exists($fotoPath)) {
-                        try {
-                            if (unlink($fotoPath)) {
-                                $deletedFiles++;
-                                Log::info('File DELETED', ['file' => $foto]);
-                            } else {
-                                $failedFiles[] = $foto;
-                                Log::warning('File DELETE FAILED', ['file' => $foto]);
-                            }
-                        } catch (\Exception $e) {
-                            $failedFiles[] = $foto;
-                            Log::error('File DELETE ERROR', [
-                                'file' => $foto,
-                                'error' => $e->getMessage()
-                            ]);
-                        }
-                    } else {
-                        Log::warning('File NOT FOUND', ['file' => $foto, 'path' => $fotoPath]);
+                        unlink($fotoPath);
                     }
                 }
             }
 
-            // CRITICAL: Hapus data temuan dari database dengan exact match
-            $deleted = Temuan::where('id_temuan', '=', $id_temuan)->delete();
-
-            if ($deleted === 0) {
-                throw new \Exception('Gagal menghapus temuan dari database');
-            }
+            $temuan->delete();
 
             DB::commit();
 
-            Log::info('=== DELETE TEMUAN SUCCESS ===', [
-                'id_temuan' => $id_temuan,
-                'deleted_records' => $deleted,
-                'deleted_files' => $deletedFiles,
-                'preserved_files' => count($fotoYangDipertahankan),
-                'failed_files' => count($failedFiles)
-            ]);
-
             return response()->json([
                 'status' => 'success',
-                'message' => 'Temuan berhasil dihapus',
+                'message' => 'Temuan dan foto terkait berhasil dihapus',
                 'data' => [
-                    'deleted_photos' => $deletedFiles,
-                    'preserved_photos' => count($fotoYangDipertahankan),
-                    'failed_photos' => count($failedFiles),
-                    'jawaban_updated' => $jawabanUpdated
+                    'deleted_photos' => count($fotoTemuan),
+                    'jawaban_updated' => $jawaban ? true : false
                 ]
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
 
-            Log::error('=== DELETE TEMUAN ERROR ===', [
+            Log::error('Delete Temuan Error: ' . $e->getMessage(), [
                 'id_temuan' => $request->id_temuan,
-                'error' => $e->getMessage(),
-                'line' => $e->getLine(),
-                'file' => $e->getFile(),
                 'trace' => $e->getTraceAsString()
             ]);
 
@@ -630,92 +431,26 @@ class PenilaianController extends Controller
             $id_temuan = $request->id_temuan;
             $foto_name = trim($request->foto_name);
 
-            Log::info('=== DELETE SINGLE PHOTO START ===', [
-                'id_temuan' => $id_temuan,
-                'id_temuan_type' => gettype($id_temuan),
-                'foto_name' => $foto_name
-            ]);
-
-            // Validasi input
             if (empty($foto_name)) {
                 throw new \Exception('Nama foto tidak valid');
             }
 
-            if (empty($id_temuan)) {
-                throw new \Exception('ID Temuan tidak valid');
-            }
-
-            // Lock temuan untuk mencegah race condition
-            $temuan = Temuan::where('id_temuan', '=', $id_temuan)
-                ->lockForUpdate()
-                ->first();
+            $temuan = Temuan::find($id_temuan);
 
             if (!$temuan) {
-                Log::error('Temuan not found for photo delete', [
-                    'id_temuan' => $id_temuan,
-                    'foto_name' => $foto_name
-                ]);
-                throw new \Exception('Temuan tidak ditemukan (ID: ' . $id_temuan . ')');
+                throw new \Exception('Temuan tidak ditemukan');
             }
 
-            Log::info('Temuan info', [
-                'id_temuan_db' => $temuan->id_temuan,
-                'id_pertanyaan' => $temuan->id_pertanyaan,
-                'id_periode' => $temuan->id_periode,
-                'id_area' => $temuan->id_area,
-                'current_foto' => $temuan->foto
-            ]);
-
-            // Parse foto yang ada di temuan ini
             $fotoArray = $temuan->foto ? array_map('trim', explode(',', $temuan->foto)) : [];
 
-            Log::info('Photos in current temuan', [
-                'foto_array' => $fotoArray,
-                'count' => count($fotoArray)
-            ]);
-
-            // Cari foto yang diminta
+            // Cari dan hapus foto yang diminta
             $key = array_search($foto_name, $fotoArray);
 
             if ($key === false) {
                 throw new \Exception('Foto tidak ditemukan dalam temuan ini');
             }
 
-            // CRITICAL FIX: Cek apakah foto ini digunakan oleh temuan lain
-            // (TERMASUK AREA BERBEDA dalam pertanyaan dan periode yang sama)
-            $temuanLainDenganFotoSama = Temuan::where('id_temuan', '!=', $id_temuan)
-                ->where('id_pertanyaan', $temuan->id_pertanyaan)
-                ->where('id_periode', $temuan->id_periode)
-                ->whereNotNull('foto')
-                ->lockForUpdate()
-                ->get();
-
-            $fotoDigunakanTemuanLain = false;
-            $temuanLainYangMenggunakanFoto = [];
-
-            foreach ($temuanLainDenganFotoSama as $temuanLain) {
-                if ($temuanLain->foto) {
-                    $fotoTemuanLain = array_map('trim', explode(',', $temuanLain->foto));
-
-                    if (in_array($foto_name, $fotoTemuanLain)) {
-                        $fotoDigunakanTemuanLain = true;
-                        $temuanLainYangMenggunakanFoto[] = [
-                            'id_temuan' => $temuanLain->id_temuan,
-                            'id_area' => $temuanLain->id_area,
-                            'area_nama' => $temuanLain->area->nama_area ?? 'Unknown'
-                        ];
-                    }
-                }
-            }
-
-            Log::info('Photo usage check result', [
-                'foto_name' => $foto_name,
-                'used_by_others' => $fotoDigunakanTemuanLain,
-                'temuan_lain_count' => count($temuanLainYangMenggunakanFoto),
-                'temuan_lain_details' => $temuanLainYangMenggunakanFoto
-            ]);
-
-            // Hapus foto dari array temuan ini
+            // Hapus dari array
             unset($fotoArray[$key]);
             $fotoArray = array_values($fotoArray); // Re-index array
 
@@ -727,116 +462,55 @@ class PenilaianController extends Controller
             }
             $temuan->save();
 
-            Log::info('Temuan updated', [
-                'foto_before' => $request->foto_name,
-                'foto_after' => $temuan->foto,
-                'remaining_count' => count($fotoArray)
-            ]);
-
             // Update jawaban jika ada
             $jawabanUpdated = false;
             if ($temuan->id_jawaban) {
-                $jawaban = Jawaban::where('id', $temuan->id_jawaban)
-                    ->lockForUpdate()
-                    ->first();
+                $jawaban = Jawaban::find($temuan->id_jawaban);
 
                 if ($jawaban && $jawaban->foto) {
                     $fotoJawaban = array_map('trim', explode(',', $jawaban->foto));
 
-                    Log::info('Jawaban before update', [
-                        'foto_jawaban' => $fotoJawaban
-                    ]);
+                    $keyJawaban = array_search($foto_name, $fotoJawaban);
+                    if ($keyJawaban !== false) {
+                        unset($fotoJawaban[$keyJawaban]);
+                        $fotoJawaban = array_values($fotoJawaban);
 
-                    // HANYA hapus dari jawaban jika foto tidak digunakan temuan lain
-                    if (!$fotoDigunakanTemuanLain) {
-                        $keyJawaban = array_search($foto_name, $fotoJawaban);
-
-                        if ($keyJawaban !== false) {
-                            unset($fotoJawaban[$keyJawaban]);
-                            $fotoJawaban = array_values($fotoJawaban);
-
-                            if (empty($fotoJawaban)) {
-                                $jawaban->foto = null;
-                            } else {
-                                $jawaban->foto = implode(',', $fotoJawaban);
-                            }
-                            $jawaban->save();
-                            $jawabanUpdated = true;
-
-                            Log::info('Jawaban updated (foto dihapus)', [
-                                'foto_after' => $jawaban->foto
-                            ]);
+                        if (empty($fotoJawaban)) {
+                            $jawaban->foto = null;
+                        } else {
+                            $jawaban->foto = implode(',', $fotoJawaban);
                         }
-                    } else {
-                        Log::info('Jawaban NOT updated (foto masih digunakan temuan lain)');
+                        $jawaban->save();
+                        $jawabanUpdated = true;
                     }
                 }
             }
 
-            // Hapus file fisik HANYA jika tidak digunakan temuan lain
+            // Hapus file fisik dari storage
+            $fotoPath = public_path('images/5r/temuan/' . $foto_name);
             $fileDeleted = false;
-            if (!$fotoDigunakanTemuanLain) {
-                $fotoPath = public_path('images/5r/temuan/' . $foto_name);
-
-                if (file_exists($fotoPath)) {
-                    try {
-                        if (unlink($fotoPath)) {
-                            $fileDeleted = true;
-                            Log::info('Physical file DELETED', ['file' => $foto_name]);
-                        } else {
-                            Log::warning('Physical file DELETE FAILED', ['file' => $foto_name]);
-                        }
-                    } catch (\Exception $e) {
-                        Log::error('Physical file DELETE ERROR', [
-                            'file' => $foto_name,
-                            'error' => $e->getMessage()
-                        ]);
-                    }
-                } else {
-                    Log::warning('Physical file NOT FOUND', ['file' => $foto_name, 'path' => $fotoPath]);
-                }
-            } else {
-                Log::info('Physical file PRESERVED (still used by other temuan)', [
-                    'file' => $foto_name,
-                    'used_by' => $temuanLainYangMenggunakanFoto
-                ]);
+            if (file_exists($fotoPath)) {
+                unlink($fotoPath);
+                $fileDeleted = true;
             }
 
             DB::commit();
 
-            $message = $fileDeleted
-                ? 'Foto berhasil dihapus dari temuan dan file fisik terhapus'
-                : ($fotoDigunakanTemuanLain
-                    ? 'Foto dihapus dari temuan ini (file dipertahankan karena masih digunakan di area lain)'
-                    : 'Foto dihapus dari temuan ini');
-
-            Log::info('=== DELETE SINGLE PHOTO SUCCESS ===', [
-                'file_deleted' => $fileDeleted,
-                'file_preserved' => $fotoDigunakanTemuanLain,
-                'jawaban_updated' => $jawabanUpdated,
-                'remaining_photos' => count($fotoArray)
-            ]);
-
             return response()->json([
                 'status' => 'success',
-                'message' => $message,
+                'message' => 'Foto berhasil dihapus',
                 'data' => [
                     'remaining_photos' => count($fotoArray),
                     'file_deleted' => $fileDeleted,
-                    'file_preserved' => $fotoDigunakanTemuanLain,
-                    'preserved_reason' => $fotoDigunakanTemuanLain ? 'Foto masih digunakan di: ' . implode(', ', array_column($temuanLainYangMenggunakanFoto, 'area_nama')) : null,
                     'jawaban_updated' => $jawabanUpdated
                 ]
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
 
-            Log::error('=== DELETE SINGLE PHOTO ERROR ===', [
+            Log::error('Delete Single Photo Error: ' . $e->getMessage(), [
                 'id_temuan' => $request->id_temuan,
                 'foto_name' => $request->foto_name,
-                'error' => $e->getMessage(),
-                'line' => $e->getLine(),
-                'file' => $e->getFile(),
                 'trace' => $e->getTraceAsString()
             ]);
 
