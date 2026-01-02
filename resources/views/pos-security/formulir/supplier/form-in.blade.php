@@ -98,7 +98,7 @@
                                     placeholder="Contoh: 081234567890" required>
                             </div>
 
-                            <div class="mb-3">
+                            {{-- <div class="mb-3">
                                 <label class="form-label fw-semibold">Apakah Tamu Menggunakan Kacamata? <span
                                         class="text-danger">*</span></label>
                                 <select name="is_kacamata" id="isKacamata" class="form-select w-100" required>
@@ -117,7 +117,7 @@
                                     <option value="Bagus">Bagus/bisa digunakan</option>
                                     <option value="Rusak">Rusak/pecah/tidak bisa digunakan</option>
                                 </select>
-                            </div>
+                            </div> --}}
 
                             <div class="mb-3">
                                 <label class="form-label fw-semibold">Nomor Kartu ID <span

@@ -52,9 +52,9 @@ function onScanError(errorMessage) {
 }
 function searchVisitorData(keyword) {
     $("#returnCard").removeData("trnvisitorid");
-    $("#kondisiKacamataGroupOut").hide();
-    $("#kondisiKacamataOut").val("");
-    resetFotoOut();
+    // $("#kondisiKacamataGroupOut").hide();
+    // $("#kondisiKacamataOut").val("");
+    // resetFotoOut();
 
     console.log("Keyword pencarian:", keyword);
 
@@ -120,17 +120,17 @@ function searchVisitorData(keyword) {
                     statusKartu;
 
                 // Pakai kacamata
-                let pakaiKacamata = "-";
-                if (response.data.is_kacamata == 0) {
-                    pakaiKacamata = "Tidak";
-                } else if (response.data.is_kacamata == 1) {
-                    pakaiKacamata = "Ya";
-                }
+                // let pakaiKacamata = "-";
+                // if (response.data.is_kacamata == 0) {
+                //     pakaiKacamata = "Tidak";
+                // } else if (response.data.is_kacamata == 1) {
+                //     pakaiKacamata = "Ya";
+                // }
 
-                document.getElementById("visitorIsKacamata").innerText =
-                    pakaiKacamata;
-                document.getElementById("visitorKondisiKacamata").innerText =
-                    response.data.kondisi_kacamata || "-";
+                // document.getElementById("visitorIsKacamata").innerText =
+                //     pakaiKacamata;
+                // document.getElementById("visitorKondisiKacamata").innerText =
+                //     response.data.kondisi_kacamata || "-";
 
                 // Gate info
                 document.getElementById("visitorGateIdOut").innerText =
@@ -194,15 +194,15 @@ function searchVisitorData(keyword) {
                 };
 
                 // Kondisi kacamata (OUT)
-                if (
-                    response.data.is_kacamata === 1 ||
-                    response.data.is_kacamata === "1"
-                ) {
-                    $("#kondisiKacamataGroupOut").show();
-                } else {
-                    $("#kondisiKacamataGroupOut").hide();
-                    $("#kondisiKacamataOut").val("");
-                }
+                // if (
+                //     response.data.is_kacamata === 1 ||
+                //     response.data.is_kacamata === "1"
+                // ) {
+                //     $("#kondisiKacamataGroupOut").show();
+                // } else {
+                //     $("#kondisiKacamataGroupOut").hide();
+                //     $("#kondisiKacamataOut").val("");
+                // }
 
                 // Set trnvisitorid ke tombol "Kartu Dikembalikan"
                 document
@@ -338,35 +338,34 @@ document.addEventListener("DOMContentLoaded", function () {
 
 $("#returnCard").on("click", function () {
     const trnvisitorid = $(this).data("trnvisitorid");
-    const isKacamata = $(this).data("is_kacamata");
-    const fotoOut = $("#fotoOut").val();
-    const kondisiKacamata = $("#kondisiKacamataOut").val();
+    // const isKacamata = $(this).data("is_kacamata");
+    // const fotoOut = $("#fotoOut").val();
+    // const kondisiKacamata = $("#kondisiKacamataOut").val();
 
     console.log("returnCard trnvisitorid: ", trnvisitorid);
-    console.log({ fotoOut, kondisiKacamata });
 
     if (!trnvisitorid) {
         Swal.fire("Error", "Visitor ID tidak ditemukan!", "error");
         return;
     }
 
-    if (!fotoOut) {
-        Swal.fire(
-            "Peringatan",
-            "Silakan ambil foto keluar terlebih dahulu.",
-            "warning"
-        );
-        return;
-    }
+    // if (!fotoOut) {
+    //     Swal.fire(
+    //         "Peringatan",
+    //         "Silakan ambil foto keluar terlebih dahulu.",
+    //         "warning"
+    //     );
+    //     return;
+    // }
 
-    if (isKacamata == 1 && !kondisiKacamata) {
-        Swal.fire(
-            "Peringatan",
-            "Silakan pilih kondisi kacamata terlebih dahulu.",
-            "warning"
-        );
-        return;
-    }
+    // if (isKacamata == 1 && !kondisiKacamata) {
+    //     Swal.fire(
+    //         "Peringatan",
+    //         "Silakan pilih kondisi kacamata terlebih dahulu.",
+    //         "warning"
+    //     );
+    //     return;
+    // }
 
     Swal.fire({
         title: "Konfirmasi",
@@ -384,8 +383,8 @@ $("#returnCard").on("click", function () {
                 dataType: "json",
                 data: {
                     trnvisitorid: trnvisitorid,
-                    foto_out: fotoOut,
-                    kondisi_kacamata_out: kondisiKacamata,
+                    // foto_out: fotoOut,
+                    // kondisi_kacamata_out: kondisiKacamata,
                 },
                 headers: {
                     "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr(
@@ -395,9 +394,9 @@ $("#returnCard").on("click", function () {
                 success: function (data) {
                     if (data.success) {
                         Swal.fire("Berhasil!", data.message, "success");
-                        resetFotoOut();
-                        $("#kondisiKacamataGroupOut").hide();
-                        $("#kondisiKacamataOut").val("");
+                        // resetFotoOut();
+                        // $("#kondisiKacamataGroupOut").hide();
+                        // $("#kondisiKacamataOut").val("");
                         $("#visitorResult").hide();
                     } else {
                         Swal.fire("Gagal!", data.message, "error");
