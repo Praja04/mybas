@@ -154,7 +154,7 @@
 
                     periodeMap[namaPeriode].forEach(item => {
                         const totalGroup = item.group.length;
-                        const presentase = totalGroup * 100;
+                        // const persentase = totalGroup * 100; 
 
                         if (totalGroup === 0) {
                             rows += `
@@ -177,7 +177,7 @@
                         }
 
                         item.group.forEach((g, i) => {
-
+                                                        
                             let printUrl = "{{ route('5r-system.report.print', '') }}/" + g
                                 .encryptedKey;
 
@@ -187,7 +187,7 @@
                                     <td>${i === 0 ? item.department : ''}</td>
                                     <td>${i === 0 ? (item.juri.length ? item.juri.join(', ') : '-') : ''}</td>
                                     <td>${g.nama_group}</td>
-                                    <td>${i === 0 ? presentase + '%' : ''}</td>   
+                                    <td>${g.persentase + '%'}</td>   
                                     <td>${formatNumber(g.nilaiAkhir)}</td>
                                     <td class="text-center">
                                         <div class="d-flex gap-1 justify-content-center">
@@ -220,7 +220,7 @@
                                     <th>Department</th>
                                     <th>Juri</th>
                                     <th>Group</th>
-                                    <th>Presentase</th>
+                                    <th>Persentase</th>
                                     <th>Nilai Akhir</th>
                                     <th class="text-center">Aksi</th>
                                 </tr>

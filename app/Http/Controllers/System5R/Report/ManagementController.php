@@ -81,12 +81,12 @@ class ManagementController extends Controller
 
                             $deptName = strtoupper($dept->nama_department ?? $dept->department_name ?? '');
 
-                            if (str_contains($deptName, 'HRGA') || str_contains($deptName, 'GA')) {
-                                $g->nilaiAkhir = $baseNilai * 105;
-                            } elseif (str_contains($deptName, 'PRD') || str_contains($deptName, 'PROD')) {
-                                $g->nilaiAkhir = $baseNilai * 110;
+                            if (str_contains($deptName, 'HRGA') || str_contains($deptName, 'GA') || str_contains($deptName, 'GENERAL AFFAIR') || str_contains($deptName, 'HRDGA')) {
+                                $g->nilaiAkhir = $baseNilai * 1.05;
+                            } elseif (str_contains($deptName, 'PRD') || str_contains($deptName, 'PROD') || str_contains($deptName, 'PRO')) {
+                                $g->nilaiAkhir = $baseNilai * 1.10;
                             } else {
-                                $g->nilaiAkhir = $baseNilai * 100;
+                                $g->nilaiAkhir = $baseNilai * 1;
                             }
                             // ====================================================
                         }

@@ -107,40 +107,69 @@ class DashboardController extends Controller
             ->get();
 
         // 3. Ambil semua periode
-        $periodes = DB::table('5r_periode_penilaian')
+        // $periodes = DB::table('5r_periode_penilaian')
+        //     ->where('id_jadwal', $jadwalId)
+        //     ->orderBy('nama_periode')
+        //     ->pluck('nama_periode');
+        
+        $periodeMap = DB::table('5r_periode_penilaian')
             ->where('id_jadwal', $jadwalId)
-            ->orderBy('nama_periode')
-            ->pluck('nama_periode');
+            ->select('id_periode', 'nama_periode')
+            ->orderBy('created_at')
+            ->get();
+
 
         // 4. Bangun data chart — semua departemen muncul
         $datasets = [];
 
-        foreach ($periodes as $periode) {
+        // foreach ($periodes as $periode) {
+        //     $data = [];
+
+        //     foreach ($allDepartments as $deptId => $deptName) {
+        //         $row = $rows->first(fn($r) => $r->nama_periode === $periode && $r->id_department == $deptId);
+
+        //         $totalSkor = $row ? (float) $row->total_skor : 0;
+
+        //         // (total + 28) * faktor, tapi kalau total = 0 → nilai akhir = 0 (biar chart kelihatan belum dinilai)
+        //         $baseNilai = $totalSkor > 0 ? ($totalSkor + 28) : 0;
+
+        //         $deptUpper = strtoupper($deptName);
+
+        //         if (str_contains($deptUpper, 'HRGA') || str_contains($deptUpper, 'GA')) {
+        //             $nilaiAkhir = $baseNilai * 1.05;
+        //         } elseif (str_contains($deptUpper, 'PRD') || str_contains($deptUpper, 'PROD')) {
+        //             $nilaiAkhir = $baseNilai * 1.1;
+        //         } else {
+        //             $nilaiAkhir = $baseNilai * 1;
+        //         }
+
+        //         $data[] = round($nilaiAkhir, 2);
+        //     }
+
+        //     $datasets[] = [
+        //         'label' => $periode,
+        //         'data'  => $data
+        //     ];
+        // }
+
+        foreach ($periodeMap as $periodeObj) {
+            $periodeId   = $periodeObj->id_periode;
+            $periodeNama = $periodeObj->nama_periode;
+
             $data = [];
 
             foreach ($allDepartments as $deptId => $deptName) {
-                $row = $rows->first(fn($r) => $r->nama_periode === $periode && $r->id_department == $deptId);
+                $nilaiAkhir = $this->hitungNilai5R(
+                    $periodeId,
+                    $deptId,
+                    $deptName
+                );
 
-                $totalSkor = $row ? (float) $row->total_skor : 0;
-
-                // (total + 28) * faktor, tapi kalau total = 0 → nilai akhir = 0 (biar chart kelihatan belum dinilai)
-                $baseNilai = $totalSkor > 0 ? ($totalSkor + 28) : 0;
-
-                $deptUpper = strtoupper($deptName);
-
-                if (str_contains($deptUpper, 'HRGA') || str_contains($deptUpper, 'GA')) {
-                    $nilaiAkhir = $baseNilai * 105;
-                } elseif (str_contains($deptUpper, 'PRD') || str_contains($deptUpper, 'PROD')) {
-                    $nilaiAkhir = $baseNilai * 110;
-                } else {
-                    $nilaiAkhir = $baseNilai * 100;
-                }
-
-                $data[] = round($nilaiAkhir, 2);
+                $data[] = $nilaiAkhir;
             }
 
             $datasets[] = [
-                'label' => $periode,
+                'label' => $periodeNama,
                 'data'  => $data
             ];
         }
@@ -214,30 +243,47 @@ class DashboardController extends Controller
             ->get();
 
         // 3. Proses nilai akhir untuk semua departemen (termasuk yang nilainya 0)
-        $processed = $allDepartments->map(function ($deptName, $deptId) use ($rows) {
-            // Cari apakah ada data nilai untuk departemen ini
-            $row = $rows->first(fn($r) => $r->id_department == $deptId);
+        // $processed = $allDepartments->map(function ($deptName, $deptId) use ($rows) {
+        //     // Cari apakah ada data nilai untuk departemen ini
+        //     $row = $rows->first(fn($r) => $r->id_department == $deptId);
 
-            $totalSkor = $row ? (float) $row->total_skor : 0;
+        //     $totalSkor = $row ? (float) $row->total_skor : 0;
 
-            // Logika nilai akhir: (total + 28) × faktor, tapi kalau total = 0 → nilai akhir = 0
-            $baseNilai = $totalSkor > 0 ? ($totalSkor + 28) : 0;
+        //     // Logika nilai akhir: (total + 28) × faktor, tapi kalau total = 0 → nilai akhir = 0
+        //     $baseNilai = $totalSkor > 0 ? ($totalSkor + 28) : 0;
 
-            $deptUpper = strtoupper($deptName);
+        //     $deptUpper = strtoupper($deptName);
 
-            if (str_contains($deptUpper, 'HRGA') || str_contains($deptUpper, 'GA')) {
-                $nilaiAkhir = $baseNilai * 105;
-            } elseif (str_contains($deptUpper, 'PRD') || str_contains($deptUpper, 'PROD')) {
-                $nilaiAkhir = $baseNilai * 110;
-            } else {
-                $nilaiAkhir = $baseNilai * 100;
-            }
+        //     if (str_contains($deptUpper, 'HRGA') || str_contains($deptUpper, 'GA')) {
+        //         $nilaiAkhir = $baseNilai * 1.05;
+        //     } elseif (str_contains($deptUpper, 'PRD') || str_contains($deptUpper, 'PROD')) {
+        //         $nilaiAkhir = $baseNilai * 1.1;
+        //     } else {
+        //         $nilaiAkhir = $baseNilai * 1;
+        //     }
 
-            return (object) [
-                'nama_department' => $deptName,
-                'nilai_akhir'     => round($nilaiAkhir, 2)
-            ];
-        })
+        //     return (object) [
+        //         'nama_department' => $deptName,
+        //         'nilai_akhir'     => round($nilaiAkhir, 2)
+        //     ];
+        // })
+            $processed = $allDepartments->map(function ($deptName, $deptId) use ($jadwalId) {
+
+                // ambil semua periode di jadwal ini
+                $periodeIds = DB::table('5r_periode_penilaian')
+                    ->where('id_jadwal', $jadwalId)
+                    ->pluck('id_periode');
+
+                $nilaiTotal = 0;
+                foreach ($periodeIds as $periodeId) {
+                    $nilaiTotal += $this->hitungNilai5R($periodeId, $deptId, $deptName);
+                }
+
+                return (object) [
+                    'nama_department' => $deptName,
+                    'nilai_akhir'     => round($nilaiTotal, 2),
+                ];
+            })
             ->sortByDesc('nilai_akhir') // ranking dari tertinggi
             ->values();
 
@@ -247,4 +293,42 @@ class DashboardController extends Controller
             'data'   => $processed->pluck('nilai_akhir')->toArray()
         ]);
     }
+
+    private function hitungNilai5R($periodeId, $deptId, $deptName)
+    {
+        $rows = DB::table('5r_jawaban as j')
+            ->join('5r_jawaban_group as jg', 'j.id_jawaban_group', '=', 'jg.id_jawaban_group')
+            ->join('5r_master_group as g', 'g.id_group', '=', 'jg.id_group')
+            ->where('jg.id_periode', $periodeId)
+            ->where('g.id_department', $deptId)
+            ->where('jg.status', 'approved')
+            ->select(
+                'g.persentase',
+                DB::raw('SUM(j.nilai) as total_group')
+            )
+            ->groupBy('g.id_group', 'g.persentase')
+            ->get();
+
+        if ($rows->isEmpty()) {
+            return 0;
+        }
+
+        $nilai = 0;
+        foreach ($rows as $row) {
+            $nilai += $row->total_group * ((float) $row->persentase / 100);
+        }
+
+        $nilai += 28;
+
+        // faktor departemen
+        $deptUpper = strtoupper($deptName);
+        if (str_contains($deptUpper, 'HRGA') || str_contains($deptUpper, 'GA') || str_contains($deptUpper, 'GENERAL AFFAIR') || str_contains($deptUpper, 'HRDGA')) {
+            $nilai *= 1.05;
+        } elseif (str_contains($deptUpper, 'PRD') || str_contains($deptUpper, 'PROD') || str_contains($deptUpper, 'PRO')) {
+            $nilai *= 1.10;
+        }
+
+        return round($nilai, 2);
+    }
+
 }
