@@ -599,6 +599,14 @@
                                                                             </button>
                                                                         </span>
 
+                                                                        {{-- @if ($jenis === 'RAJIN' && $incrementTerakhir)
+                                                                            <div class="alert alert-info">
+                                                                                <strong>Nilai R1-R4 Periode
+                                                                                    Sebelumnya:</strong>
+                                                                                {{ $incrementTerakhir->nilai }}
+                                                                            </div>
+                                                                        @endif --}}
+
                                                                         @foreach ($__pertanyaan as $_pertanyaan)
                                                                             <div class="question-card mt-3">
                                                                                 <div class="question-header">
@@ -606,7 +614,8 @@
                                                                                     <p class="mb-0">
                                                                                         {!! str_replace('||--||', '&', $_pertanyaan->item_periksa) !!}
                                                                                     </p>
-                                                                                    @if ($incrementTerakhir)
+                                                                                    
+                                                                                    @if ($jenis === 'RAJIN' && $incrementTerakhir)
                                                                                         <div class="alert alert-info">
                                                                                             <strong>Nilai Periode
                                                                                                 Sebelumnya:</strong>

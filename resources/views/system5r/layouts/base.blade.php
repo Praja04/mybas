@@ -51,6 +51,13 @@ $menus = [
                 'submenu' => [],
             ],
             [
+                'path' => '5r-system/master-increment',
+                'label' => 'Master Increment',
+                'icon' => 'mdi-folder-table',
+                'permission' => '5r_organizer',
+                'submenu' => [],
+            ],
+            [
                 'path' => '5r-system/report/master-committee',
                 'label' => 'Master Committee',
                 'icon' => 'mdi-folder-table',

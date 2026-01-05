@@ -81,11 +81,11 @@ Route::prefix('5r-system')->group(function () {
 
 
         // buat master
-        // index master juri 
+        // index master juri
         Route::get('/master-juri', 'System5R\MasterJuriController@index');
         // api data juri
         Route::get('/data-juri', 'System5R\MasterJuriController@dataJuri')->name('5r-system.data.juri');
-        // create master group juri 
+        // create master group juri
         Route::post('/master-juri/store', 'System5R\MasterJuriController@storeGroupJuri')->name('5r-system.store.group');
         // create post juri anggota
         Route::post('/master-juri/juri-anggota', 'System5R\MasterJuriController@storeGroupAnggota')->name('5r-system.juri.anggota');
@@ -108,6 +108,13 @@ Route::prefix('5r-system')->group(function () {
         // Buat store periode penilaian
         Route::post('/master-penilaian/periode-penilaian', 'System5R\MasterPenilaianController@storePenilaian')->name('5r-system.tambah.periode');
 
+        // Master Increment (Temporary Feature)
+        Route::get('/master-increment', 'System5R\MasterIncrementController@index')->name('5r-system.master-increment');
+        Route::get('/master-increment/periode/by-jadwal/{id_jadwal}', 'System5R\MasterIncrementController@getPeriodeByJadwal')->name('5r-system.master-increment.periode.by-jadwal');
+        Route::get('/master-increment/data', 'System5R\MasterIncrementController@getAll')->name('5r-system.master-increment.data');
+        Route::post('/master-increment/store', 'System5R\MasterIncrementController@store')->name('5r-system.master-increment.store');
+        Route::post('/master-increment/update', 'System5R\MasterIncrementController@update')->name('5r-system.master-increment.update');
+        Route::post('/master-increment/delete', 'System5R\MasterIncrementController@delete')->name('5r-system.master-increment.delete');
 
         // buat master departemen
         // page master departemen index
@@ -146,7 +153,7 @@ Route::prefix('5r-system')->group(function () {
         Route::get('validate-credentials-comittee/{id_group}', 'System5R\PenilaianController@validateCredentials')->name('5r-system.validate-comittee');
 
         Route::get('get-periode-by-id-jadwal/{id_jadwal}', 'System5R\PenilaianController@getPeriode');
-
+        
 
         Route::post('/schedule-juri/create-group-juri', 'System5R\ScheduleJuriController@createGroupJuri');
         Route::post('/schedule-juri/add-jadwal', 'System5R\ScheduleJuriController@addJadwal');
