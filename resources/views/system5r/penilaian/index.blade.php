@@ -783,7 +783,7 @@
                                                                                                 aria-label="Close"></button>
                                                                                         </div>
                                                                                         <div class="modal-body">
-                                                                                            <div class="mb-3">
+                                                                                            {{-- <div class="mb-3">
                                                                                                 <label
                                                                                                     class="form-label">Area
                                                                                                     <span
@@ -800,7 +800,7 @@
                                                                                                         </option>
                                                                                                     @endforeach
                                                                                                 </select>
-                                                                                            </div>
+                                                                                            </div> --}}
 
                                                                                             <div class="mb-3">
                                                                                                 <label
@@ -962,9 +962,6 @@
                                                                                                             <th width="5%"
                                                                                                                 class="text-center">
                                                                                                                 No</th>
-                                                                                                            <th
-                                                                                                                width="12%">
-                                                                                                                Area</th>
                                                                                                             <th
                                                                                                                 width="30%">
                                                                                                                 Deskripsi
@@ -2273,16 +2270,16 @@
                 console.log('Deskripsi:', deskripsi);
 
                 // Validasi area
-                if (!area) {
-                    Swal.fire({
-                        icon: 'warning',
-                        title: 'Area Wajib Diisi',
-                        text: 'Silakan pilih area terlebih dahulu',
-                        confirmButtonText: 'OK',
-                        confirmButtonColor: '#6c5ce7'
-                    });
-                    return;
-                }
+                // if (!area) {
+                //     Swal.fire({
+                //         icon: 'warning',
+                //         title: 'Area Wajib Diisi',
+                //         text: 'Silakan pilih area terlebih dahulu',
+                //         confirmButtonText: 'OK',
+                //         confirmButtonColor: '#6c5ce7'
+                //     });
+                //     return;
+                // }
 
                 // Cari id_periode dari form yang aktif
                 var activeForm = $('.form-pertanyaan').filter(function() {
@@ -2685,7 +2682,6 @@
                                 var row = `
                         <tr>
                             <td class="text-center">${index + 1}</td>
-                            <td>${temuan.area?.nama_area || '-'}</td>
                             <td>${deskripsi}</td>
                             <td>${temuan.created_by || '-'}</td>
                             <td class="text-nowrap">${tanggal}</td>

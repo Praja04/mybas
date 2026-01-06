@@ -238,7 +238,7 @@
                                         <div style="margin-bottom:10px;">
 
                                             {{-- BADGE AREA --}}
-                                            <span
+                                            {{-- <span
                                                 style="
                                                         display:inline-block;
                                                         background:#1d3557;
@@ -249,7 +249,7 @@
                                                         margin-bottom:4px;
                                                     ">
                                                 {{ $areaName }}
-                                            </span>
+                                            </span> --}}
 
                                             <br>
 

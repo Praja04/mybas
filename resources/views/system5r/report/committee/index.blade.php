@@ -338,7 +338,6 @@
 
                                         foto += `
                                     <div class="mb-2 p-2 border rounded bg-light">
-                                        ${areaLabel}
                                         <div class="d-flex justify-content-center">
                                             <img
                                                 src="${fotoPath}"
