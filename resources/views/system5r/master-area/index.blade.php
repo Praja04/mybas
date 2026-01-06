@@ -49,7 +49,8 @@
                     <table class="table table-hover table-striped w-100" id="table-group">
                         <thead>
                             <tr>
-                                <th style="width: 70%">NAMA AREA</th>
+                                <th style="width: 40%">NAMA AREA</th>
+                                <th style="width: 30%">STATUS</th>
                                 <th style="width: 30%">AKSI</th>
                             </tr>
                         </thead>
@@ -140,9 +141,23 @@
             deferLoading: 0,
             autoWidth: false,
             responsive: true,
-            columns: [{
+            columns: [
+                {
                     data: 'nama_area',
                     name: 'nama_area'
+                },
+                 {
+                    data: 'is_active',
+                    name: 'is_active',
+                    orderable: false,
+                    searchable: false,
+                    render: function (data) {
+                        if (data === 'Y') {
+                            return '<span class="badge bg-success">Aktif</span>';
+                        } else {
+                            return '<span class="badge bg-danger">Tidak Aktif</span>';
+                        }
+                    }
                 },
                 {
                     data: null,
@@ -154,7 +169,7 @@
                             <div class="d-flex">
                                 <button onclick="editArea('${row.id_area}')" class="btn btn-sm btn-primary me-1">Edit</button>
                                 <button onclick="deleteArea('${row.id_area}')" class="btn btn-sm btn-danger me-1">Hapus</button>
-                                <button onclick="nonaktifkanArea('${row.id_area}')" class="btn btn-sm btn-warning">Nonaktifkan</button>
+                                <button onclick="toggleStatusArea('${row.id_area}')"  class="btn btn-sm ${row.is_active === 'Y' ? 'btn-warning' : 'btn-success'}">${row.is_active === 'Y' ? 'Nonaktifkan' : 'Aktifkan'}</button>
                             </div>
                         `;
                     }
@@ -197,18 +212,18 @@
         }
 
 
-        function nonaktifkanArea(id_area) {
+        function toggleStatusArea(id_area) {
             Swal.fire({
                 icon: 'warning',
                 title: 'Peringatan',
-                text: 'Apakah anda yakin ingin menonaktifkan area ini?',
+                text: 'Apakah anda yakin ingin mengubah status area ini?',
                 showCancelButton: true,
-                confirmButtonText: 'Ya, Nonaktifkan!',
+                confirmButtonText: 'Ya',
                 cancelButtonText: 'Batal'
             }).then((result) => {
                 if (result.isConfirmed) {
                     $.ajax({
-                        url: "{{ route('5r-system.master-area.nonaktifkan') }}",
+                        url: "{{ route('5r-system.master-area.toggle-status') }}",
                         type: 'POST',
                         data: {
                             _token: "{{ csrf_token() }}",
@@ -222,7 +237,7 @@
                             console.log(err.responseJSON?.message);
                             Swal.fire(
                                 'Error',
-                                'Terjadi kesalahan saat menonaktifkan area',
+                                'Terjadi kesalahan saat mengubah status area',
                                 'error'
                             );
                         }

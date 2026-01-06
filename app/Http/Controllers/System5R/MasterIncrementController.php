@@ -13,7 +13,8 @@ class MasterIncrementController extends Controller
 {
     public function index()
     {
-        $departments = MasterDepartment::all();
+        // $departments = MasterDepartment::all();
+        $departments= MasterDepartment::where('is_active', 'Y')->get();
         $jadwal = Jadwal::all();
 
         return view('system5r.master-increment.index', compact('departments', 'jadwal'));

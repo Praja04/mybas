@@ -16,7 +16,7 @@ Route::prefix('5r-system')->group(function () {
         Route::get('/master-group/data', 'System5R\MasterGroupController@data')->name('5r-system.master-group.data');
         Route::post('/master-group/store', 'System5R\MasterGroupController@store')->name('5r-system.master-group.store');
         Route::get('/master-group/by-department/{id_department}', 'System5R\MasterGroupController@byDepartment')->name('5r-system.master-group.by-department');
-        Route::post('/master-group/nonaktifkan', 'System5R\MasterGroupController@nonaktifkan')->name('5r-system.master-group.nonaktifkan');
+        Route::post('/master-group/toggle', 'System5R\MasterGroupController@toggle')->name('5r-system.master-group.toggle-status');
 
         // Master Area
         Route::get('/master-area', 'System5R\MasterAreaController@index')->name('5r-system.master-area');
@@ -25,7 +25,7 @@ Route::prefix('5r-system')->group(function () {
         Route::post('/master-area/store', 'System5R\MasterAreaController@store')->name('5r-system.master-area.store');
         Route::get('/master-area/edit/{id_area}', 'System5R\MasterAreaController@edit')->name('5r-system.master-area.edit');
         Route::post('/master-area/update', 'System5R\MasterAreaController@update')->name('5r-system.master-area.update');
-        Route::post('/master-area/nonaktifkan', 'System5R\MasterAreaController@nonaktifkan')->name('5r-system.master-area.nonaktifkan');
+        Route::post('/master-area/toggle', 'System5R\MasterAreaController@toggle')->name('5r-system.master-area.toggle-status');
         Route::post('/master-area/delete', 'System5R\MasterAreaController@delete')->name('5r-system.master-area.delete');
 
         // Master Pertanyaan
