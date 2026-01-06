@@ -78,27 +78,28 @@ class ManagementController extends Controller
                             $g->totalNilai = $total;
                             $g->submit_by = $jawabanGroup->submit_by;
 
-                            if ($tahun < 2026) {
+                            // if ($tahun < 2026) {
                                 $nilaiRaw = $total * ((float) $g->persentase / 100);
                                 $g->nilaiAkhir = round($nilaiRaw, 2); 
-                            } else {
-                                $nilaiGroup = round(
-                                    $total * ((float) $g->persentase / 100),
-                                    2
-                                ); 
+                            // } else {
+                            // gak jadi pake ini
+                            //     $nilaiGroup = round(
+                            //         $total * ((float) $g->persentase / 100),
+                            //         2
+                            //     ); 
 
-                                $baseNilai = $nilaiGroup + 28;
+                            //     $baseNilai = $nilaiGroup + 28;
 
-                                $deptName = strtoupper($dept->nama_department ?? $dept->department_name ?? '');
+                            //     $deptName = strtoupper($dept->nama_department ?? $dept->department_name ?? '');
 
-                                if (str_contains($deptName, 'HRGA') || str_contains($deptName, 'GA') || str_contains($deptName, 'GENERAL AFFAIR') || str_contains($deptName, 'HRDGA')) {
-                                    $g->nilaiAkhir = round($baseNilai * 1.05, 2); 
-                                } elseif (str_contains($deptName, 'PRD') || str_contains($deptName, 'PROD') || str_contains($deptName, 'PRO')) {
-                                    $g->nilaiAkhir = round($baseNilai * 1.10, 2); 
-                                } else {
-                                    $g->nilaiAkhir = round($baseNilai, 2); 
-                                }
-                            }
+                            //     if (str_contains($deptName, 'HRGA') || str_contains($deptName, 'GA') || str_contains($deptName, 'GENERAL AFFAIR') || str_contains($deptName, 'HRDGA')) {
+                            //         $g->nilaiAkhir = round($baseNilai * 1.05, 2); 
+                            //     } elseif (str_contains($deptName, 'PRD') || str_contains($deptName, 'PROD') || str_contains($deptName, 'PRO')) {
+                            //         $g->nilaiAkhir = round($baseNilai * 1.10, 2); 
+                            //     } else {
+                            //         $g->nilaiAkhir = round($baseNilai, 2); 
+                            //     }
+                            // }
                             // ====================================================
                         }
 

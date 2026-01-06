@@ -304,7 +304,7 @@ class DashboardController extends Controller
             ->where('jg.status', 'approved')
             ->select(
                 'g.persentase',
-                DB::raw('SUM(j.nilai) as total_group')
+                DB::raw('SUM(j.nilai) as total_nilai')
             )
             ->groupBy('g.id_group', 'g.persentase')
             ->get();
@@ -315,18 +315,18 @@ class DashboardController extends Controller
 
         $nilai = 0;
         foreach ($rows as $row) {
-            $nilai += $row->total_group * ((float) $row->persentase / 100);
+            $nilai += $row->total_nilai * ((float) $row->persentase / 100);
         }
 
-        $nilai += 28;
+        // $nilai += 28;
 
-        // faktor departemen
-        $deptUpper = strtoupper($deptName);
-        if (str_contains($deptUpper, 'HRGA') || str_contains($deptUpper, 'GA') || str_contains($deptUpper, 'GENERAL AFFAIR') || str_contains($deptUpper, 'HRDGA')) {
-            $nilai *= 1.05;
-        } elseif (str_contains($deptUpper, 'PRD') || str_contains($deptUpper, 'PROD') || str_contains($deptUpper, 'PRO')) {
-            $nilai *= 1.10;
-        }
+        // // faktor departemen
+        // $deptUpper = strtoupper($deptName);
+        // if (str_contains($deptUpper, 'HRGA') || str_contains($deptUpper, 'GA') || str_contains($deptUpper, 'GENERAL AFFAIR') || str_contains($deptUpper, 'HRDGA')) {
+        //     $nilai *= 1.05;
+        // } elseif (str_contains($deptUpper, 'PRD') || str_contains($deptUpper, 'PROD') || str_contains($deptUpper, 'PRO')) {
+        //     $nilai *= 1.10;
+        // }
 
         return round($nilai, 2);
     }

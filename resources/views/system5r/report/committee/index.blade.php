@@ -200,6 +200,21 @@
                             `;
                         });
 
+                        if (item.group.length > 1) {
+                            const totalNilai = item.group.reduce((sum, g) => {
+                                return sum + (parseFloat(g.nilaiAkhir) || 0);
+                            }, 0);
+
+                            rows += `
+                                <tr class="fw-bold bg-light">
+                                    <td colspan="4" class="text-end">Total Nilai Akhir</td>
+                                    <td>${formatNumber(totalNilai)}</td>
+                                    <td></td>
+                                </tr>
+                            `;
+                        }
+
+
                         rank++;
                     });
 

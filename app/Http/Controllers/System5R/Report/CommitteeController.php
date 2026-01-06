@@ -80,19 +80,22 @@ class CommitteeController extends Controller
                         )->sum('nilai');
 
                         // === LOGIKA PENGALIAN BERDASARKAN NAMA DEPARTEMEN ===
-                        $deptName = strtoupper($dep->nama_department ??
-                            $dep->department_name ??
-                            $dep->name ?? ''); // sesuaikan dengan kolom nama di tabelmu
+                        // $deptName = strtoupper($dep->nama_department ??
+                        //     $dep->department_name ??
+                        //     $dep->name ?? ''); // sesuaikan dengan kolom nama di tabelmu
 
-                        if (str_contains($deptName, 'HRGA') || str_contains($deptName, 'GA') || str_contains($deptName, 'GENERAL AFFAIR') || str_contains($deptName, 'HRDGA')) {
-                            $faktor = 1.05;
-                        } elseif (str_contains($deptName, 'PRD') || str_contains($deptName, 'PROD') || str_contains($deptName, 'PRO')) {
-                            $faktor = 1.10;
-                        } else {
-                            $faktor = 1;
-                        }
+                        // if (str_contains($deptName, 'HRGA') || str_contains($deptName, 'GA') || str_contains($deptName, 'GENERAL AFFAIR') || str_contains($deptName, 'HRDGA')) {
+                        //     $faktor = 1.05;
+                        // } elseif (str_contains($deptName, 'PRD') || str_contains($deptName, 'PROD') || str_contains($deptName, 'PRO')) {
+                        //     $faktor = 1.10;
+                        // } else {
+                        //     $faktor = 1;
+                        // }
 
-                        $nilaiAkhir = ($totalNilai + 28) * $faktor;
+                        // $nilaiAkhir = ($totalNilai + 28) * $faktor;
+
+                        $nilaiAkhir = $totalNilai * ((float) $g->persentase / 100);
+
                         // ====================================================
 
                         return [
