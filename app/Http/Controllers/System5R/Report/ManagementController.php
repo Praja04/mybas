@@ -79,20 +79,24 @@ class ManagementController extends Controller
                             $g->submit_by = $jawabanGroup->submit_by;
 
                             if ($tahun === 2025) {
-                                    $g->nilaiAkhir = $total * ((float) $g->persentase / 100);
+                                $nilaiRaw = $total * ((float) $g->persentase / 100);
+                                $g->nilaiAkhir = round($nilaiRaw, 2); 
                             } else {
-                                // aturan baru
-                                $nilaiGroup = $total * ((float) $g->persentase / 100);
+                                $nilaiGroup = round(
+                                    $total * ((float) $g->persentase / 100),
+                                    2
+                                ); 
+
                                 $baseNilai = $nilaiGroup + 28;
 
                                 $deptName = strtoupper($dept->nama_department ?? $dept->department_name ?? '');
 
                                 if (str_contains($deptName, 'HRGA') || str_contains($deptName, 'GA') || str_contains($deptName, 'GENERAL AFFAIR') || str_contains($deptName, 'HRDGA')) {
-                                    $g->nilaiAkhir = $baseNilai * 1.05;
+                                    $g->nilaiAkhir = round($baseNilai * 1.05, 2); 
                                 } elseif (str_contains($deptName, 'PRD') || str_contains($deptName, 'PROD') || str_contains($deptName, 'PRO')) {
-                                    $g->nilaiAkhir = $baseNilai * 1.10;
+                                    $g->nilaiAkhir = round($baseNilai * 1.10, 2); 
                                 } else {
-                                    $g->nilaiAkhir = $baseNilai * 1;
+                                    $g->nilaiAkhir = round($baseNilai, 2); 
                                 }
                             }
                             // ====================================================
@@ -111,7 +115,7 @@ class ManagementController extends Controller
 
                     $p->group = $groups->toArray();
                     $p->totalNilai = $groups->sum('totalNilai');
-                    $p->nilaiAkhir = $groups->sum('nilaiAkhir'); // optional: tambah total nilai akhir per periode
+                    $p->nilaiAkhir = round($groups->sum('nilaiAkhir'), 2);
                     $p->juri = $groups
                         ->filter(fn($g) => $g->jawabanGroup)
                         ->pluck('jawabanGroup.submit_by')
@@ -140,7 +144,10 @@ class ManagementController extends Controller
                 $dept->periode = $periode;
 
                 // Rata-rata nilai akhir per periode (atau pakai totalNilai jika mau)
-                $dept->__total = $periode->where('totalNilai', '>', 0)->avg('nilaiAkhir') ?? 0;
+                $dept->__total = round(
+                    $periode->where('totalNilai', '>', 0)->avg('nilaiAkhir') ?? 0,
+                    2
+                );
 
                 return $dept;
             });
