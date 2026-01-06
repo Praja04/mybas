@@ -46,17 +46,19 @@ class ManagementController extends Controller
 
     private function buildReportData($workspace, $jadwalId)
     {
-        return $workspace->map(function ($item) use ($jadwalId) {
+        $jadwal = Jadwal::find($jadwalId);
+        $tahun  = (int) $jadwal->tahun;
 
-            $item->departments = $item->departments->map(function ($dept) use ($jadwalId) {
+        return $workspace->map(function ($item) use ($jadwalId, $tahun) {
+
+            $item->departments = $item->departments->map(function ($dept) use ($jadwalId, $tahun) {
 
                 $periode = Periode::where('id_jadwal', $jadwalId)->get();
 
-                $periode = $periode->map(function ($p) use ($dept, $jadwalId) {
-
+                $periode = $periode->map(function ($p) use ($dept, $jadwalId, $tahun) {
                     $groups = MasterGroup::where('id_department', $dept->id_department)->get();
 
-                    $groups = $groups->map(function ($g) use ($p, $dept, $jadwalId) {
+                    $groups = $groups->map(function ($g) use ($p, $dept, $jadwalId, $tahun) {
 
                         $jawabanGroup = JawabanGroup::where([
                             'id_group'   => $g->id_group,
@@ -76,17 +78,22 @@ class ManagementController extends Controller
                             $g->totalNilai = $total;
                             $g->submit_by = $jawabanGroup->submit_by;
 
-                            // === LOGIKA PENGALIAN BERDASARKAN NAMA DEPARTEMEN ===
-                            $baseNilai = $total + 28;
-
-                            $deptName = strtoupper($dept->nama_department ?? $dept->department_name ?? '');
-
-                            if (str_contains($deptName, 'HRGA') || str_contains($deptName, 'GA') || str_contains($deptName, 'GENERAL AFFAIR') || str_contains($deptName, 'HRDGA')) {
-                                $g->nilaiAkhir = $baseNilai * 1.05;
-                            } elseif (str_contains($deptName, 'PRD') || str_contains($deptName, 'PROD') || str_contains($deptName, 'PRO')) {
-                                $g->nilaiAkhir = $baseNilai * 1.10;
+                            if ($tahun === 2025) {
+                                    $g->nilaiAkhir = $total * ((float) $g->persentase / 100);
                             } else {
-                                $g->nilaiAkhir = $baseNilai * 1;
+                                // aturan baru
+                                $nilaiGroup = $total * ((float) $g->persentase / 100);
+                                $baseNilai = $nilaiGroup + 28;
+
+                                $deptName = strtoupper($dept->nama_department ?? $dept->department_name ?? '');
+
+                                if (str_contains($deptName, 'HRGA') || str_contains($deptName, 'GA') || str_contains($deptName, 'GENERAL AFFAIR') || str_contains($deptName, 'HRDGA')) {
+                                    $g->nilaiAkhir = $baseNilai * 1.05;
+                                } elseif (str_contains($deptName, 'PRD') || str_contains($deptName, 'PROD') || str_contains($deptName, 'PRO')) {
+                                    $g->nilaiAkhir = $baseNilai * 1.10;
+                                } else {
+                                    $g->nilaiAkhir = $baseNilai * 1;
+                                }
                             }
                             // ====================================================
                         }
