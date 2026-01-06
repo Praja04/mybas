@@ -78,7 +78,7 @@ class ManagementController extends Controller
                             $g->totalNilai = $total;
                             $g->submit_by = $jawabanGroup->submit_by;
 
-                            if ($tahun === 2025) {
+                            if ($tahun < 2026) {
                                 $nilaiRaw = $total * ((float) $g->persentase / 100);
                                 $g->nilaiAkhir = round($nilaiRaw, 2); 
                             } else {
