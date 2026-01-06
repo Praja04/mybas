@@ -793,6 +793,8 @@ function checkAllRequiredElements() {
     const nohpdriverInput = document.querySelector('[name="nohpdriver"]');
     const tglLahir = document.querySelector('[name="tgllahir"]');
     const nomorKtp = document.querySelector('[name="nomorktp"]');
+    const isKacamata = document.querySelector('[name="is_kacamata"]');
+    const kondisiKacamata = document.querySelector('[name="kondisi_kacamata"]');
 
     const hasKtp = ktpInput && ktpInput.value.trim() !== "";
     const hasSelfie = Array.isArray(selfiePhotos) && selfiePhotos.length > 0;
@@ -804,6 +806,12 @@ function checkAllRequiredElements() {
         nohpdriverInput && nohpdriverInput.value.trim() !== "";
     const hasTglLahir = tglLahir && tglLahir.value.trim() !== "";
     const hasNomorKtp = nomorKtp && nomorKtp.value.trim() !== "";
+    // const hasIsKacamata = isKacamata && isKacamata.value.trim() !== "";
+
+    // const isUseKacamata = hasIsKacamata && isKacamata.value === "1";
+    // const hasKondisiKacamata =
+    //     !isUseKacamata ||
+    //     (kondisiKacamata && kondisiKacamata.value.trim() !== "");
 
     const allCompleted =
         hasKtp &&
@@ -815,6 +823,8 @@ function checkAllRequiredElements() {
         hasNohpdriver &&
         hasTglLahir &&
         hasNomorKtp;
+    // hasIsKacamata &&
+    // hasKondisiKacamata;
 
     rfidField.disabled = !allCompleted;
 
@@ -828,6 +838,8 @@ function checkAllRequiredElements() {
         hasNohpdriver,
         hasTglLahir,
         hasNomorKtp,
+        // hasIsKacamata,
+        // hasKondisiKacamata,
         allCompleted,
     });
 
@@ -842,6 +854,8 @@ function checkAllRequiredElements() {
         hasNohpdriver,
         hasTglLahir,
         hasNomorKtp
+        // hasIsKacamata,
+        // hasKondisiKacamata
     );
 }
 
@@ -856,6 +870,8 @@ function updateRfidFieldMessage(
     hasNohpdriver,
     hasTglLahir,
     hasNomorKtp
+    // hasIsKacamata,
+    // hasKondisiKacamata
 ) {
     let existingMessage = document.getElementById("rfidFieldMessage");
 
@@ -882,6 +898,8 @@ function updateRfidFieldMessage(
     if (!hasNohpdriver) missingItems.push("No HP");
     if (!hasTglLahir) missingItems.push("Tanggal Lahir");
     if (!hasNomorKtp) missingItems.push("Nomor KTP/SIM");
+    // if (!hasIsKacamata) missingItems.push("Pakai Kacamata");
+    // if (!hasKondisiKacamata) missingItems.push("Kondisi Kacamata");
 
     existingMessage.innerHTML = `<i class="mdi mdi-information-outline me-1"></i> Lengkapi terlebih dahulu: ${missingItems.join(
         ", "
@@ -1534,3 +1552,35 @@ $('a[data-bs-toggle="tab"]').on("shown.bs.tab", function (e) {
 
     checkAllRequiredElements();
 });
+
+// document.addEventListener("DOMContentLoaded", function () {
+//     const isKacamata = document.getElementById("isKacamata");
+//     const kondisiGroup = document.getElementById("kondisiKacamataGroup");
+//     const kondisiSelect = document.getElementById("kondisiKacamata");
+
+//     if (!isKacamata) return;
+
+//     isKacamata.addEventListener("change", function () {
+//         if (this.value === "1") {
+//             kondisiGroup.style.display = "block";
+//             kondisiSelect.setAttribute("required", "required");
+//         } else {
+//             kondisiGroup.style.display = "none";
+//             kondisiSelect.removeAttribute("required");
+//             kondisiSelect.value = "";
+//         }
+
+//         checkAllRequiredElements();
+//     });
+
+//     kondisiSelect?.addEventListener("change", function () {
+//         checkAllRequiredElements();
+//     });
+
+//     window.resetKacamata = function () {
+//         kondisiGroup.style.display = "none";
+//         kondisiSelect.value = "";
+//         kondisiSelect.removeAttribute("required");
+//         isKacamata.value = "";
+//     };
+// });

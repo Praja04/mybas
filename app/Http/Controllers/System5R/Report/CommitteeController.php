@@ -84,19 +84,20 @@ class CommitteeController extends Controller
                             $dep->department_name ??
                             $dep->name ?? ''); // sesuaikan dengan kolom nama di tabelmu
 
-                        if (str_contains($deptName, 'HRGA') || str_contains($deptName, 'GA')) {
-                            $faktor = 105;
-                        } elseif (str_contains($deptName, 'PRD') || str_contains($deptName, 'PROD')) {
-                            $faktor = 110;
+                        if (str_contains($deptName, 'HRGA') || str_contains($deptName, 'GA') || str_contains($deptName, 'GENERAL AFFAIR') || str_contains($deptName, 'HRDGA')) {
+                            $faktor = 1.05;
+                        } elseif (str_contains($deptName, 'PRD') || str_contains($deptName, 'PROD') || str_contains($deptName, 'PRO')) {
+                            $faktor = 1.10;
                         } else {
-                            $faktor = 100;
+                            $faktor = 1;
                         }
 
-                        $nilaiAkhir = $totalNilai * $faktor;
+                        $nilaiAkhir = ($totalNilai + 28) * $faktor;
                         // ====================================================
 
                         return [
                             'id_group'     => $g->id_group,
+                            'persentase'   => $g->persentase,
                             'nama_group'   => $g->nama_group,
                             'nilaiAkhir'   => round($nilaiAkhir, 2),
                             'encryptedKey' => encrypt(

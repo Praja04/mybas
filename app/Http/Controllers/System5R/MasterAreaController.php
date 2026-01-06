@@ -12,6 +12,7 @@ class MasterAreaController extends Controller
     public function index()
     {
         $department = MasterDepartment::where('is_active', 'Y')->get();
+        // $department = MasterDepartment::all();
 
         return view('system5r.master-area.index', compact('department'));
     }
@@ -20,7 +21,7 @@ class MasterAreaController extends Controller
     {
         $id_department = $_GET['department'];
         $data = MasterArea::where('id_department', $id_department)
-            ->where('is_active', 'Y')
+            // ->where('is_active', 'Y')
             ->get();
 
         return response()
@@ -155,7 +156,7 @@ class MasterAreaController extends Controller
     }
 
 
-    public function nonaktifkan(Request $request)
+    public function toggle(Request $request)
     {
         $request->validate([
             'id_area' => 'required'
@@ -170,12 +171,14 @@ class MasterAreaController extends Controller
             ], 404);
         }
 
-        $area->is_active = 'N';
+        $area->is_active = $area->is_active === 'Y' ? 'N' : 'Y';
         $area->save();
 
         return response()->json([
-            'status' => 'success',
-            'message' => 'Data area berhasil dinonaktifkan'
+            'status'  => 'success',
+            'message' => $area->is_active === 'Y'
+                ? 'Data area berhasil diaktifkan'
+                : 'Data area berhasil dinonaktifkan'
         ]);
     }
 }

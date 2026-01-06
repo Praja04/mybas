@@ -15,7 +15,7 @@
         <div class="card">
             <div class="card-body">
                 <div class="row align-items-end g-3">
-                    <div class="col-md-9">
+                    <div class="col-md-12">
                         <div>
                             <label for="filter-department">Pilih Departemen <span class="text-danger">*</span></label>
                             <select name="department" id="filter_department" class="form-control">
@@ -25,12 +25,6 @@
                                 @endforeach
                             </select>
                         </div>
-                    </div>
-                    <div class="col-md-3">
-                        <button type="button" id="btn-pilih-department" class="btn btn-primary waves-effect w-100">
-                            <i class="mdi mdi-magnify"></i>
-                            Pilih
-                        </button>
                     </div>
                 </div>
             </div>
@@ -55,7 +49,8 @@
                     <table class="table table-hover table-striped w-100" id="table-group">
                         <thead>
                             <tr>
-                                <th style="width: 70%">NAMA AREA</th>
+                                <th style="width: 40%">NAMA AREA</th>
+                                <th style="width: 30%">STATUS</th>
                                 <th style="width: 30%">AKSI</th>
                             </tr>
                         </thead>
@@ -146,9 +141,23 @@
             deferLoading: 0,
             autoWidth: false,
             responsive: true,
-            columns: [{
+            columns: [
+                {
                     data: 'nama_area',
                     name: 'nama_area'
+                },
+                 {
+                    data: 'is_active',
+                    name: 'is_active',
+                    orderable: false,
+                    searchable: false,
+                    render: function (data) {
+                        if (data === 'Y') {
+                            return '<span class="badge bg-success">Aktif</span>';
+                        } else {
+                            return '<span class="badge bg-danger">Tidak Aktif</span>';
+                        }
+                    }
                 },
                 {
                     data: null,
@@ -160,7 +169,7 @@
                             <div class="d-flex">
                                 <button onclick="editArea('${row.id_area}')" class="btn btn-sm btn-primary me-1">Edit</button>
                                 <button onclick="deleteArea('${row.id_area}')" class="btn btn-sm btn-danger me-1">Hapus</button>
-                                <button onclick="nonaktifkanArea('${row.id_area}')" class="btn btn-sm btn-warning">Nonaktifkan</button>
+                                <button onclick="toggleStatusArea('${row.id_area}')"  class="btn btn-sm ${row.is_active === 'Y' ? 'btn-warning' : 'btn-success'}">${row.is_active === 'Y' ? 'Nonaktifkan' : 'Aktifkan'}</button>
                             </div>
                         `;
                     }
@@ -203,18 +212,18 @@
         }
 
 
-        function nonaktifkanArea(id_area) {
+        function toggleStatusArea(id_area) {
             Swal.fire({
                 icon: 'warning',
                 title: 'Peringatan',
-                text: 'Apakah anda yakin ingin menonaktifkan area ini?',
+                text: 'Apakah anda yakin ingin mengubah status area ini?',
                 showCancelButton: true,
-                confirmButtonText: 'Ya, Nonaktifkan!',
+                confirmButtonText: 'Ya',
                 cancelButtonText: 'Batal'
             }).then((result) => {
                 if (result.isConfirmed) {
                     $.ajax({
-                        url: "{{ route('5r-system.master-area.nonaktifkan') }}",
+                        url: "{{ route('5r-system.master-area.toggle-status') }}",
                         type: 'POST',
                         data: {
                             _token: "{{ csrf_token() }}",
@@ -228,7 +237,7 @@
                             console.log(err.responseJSON?.message);
                             Swal.fire(
                                 'Error',
-                                'Terjadi kesalahan saat menonaktifkan area',
+                                'Terjadi kesalahan saat mengubah status area',
                                 'error'
                             );
                         }
@@ -236,31 +245,6 @@
                 }
             });
         }
-
-
-        $('#btn-pilih-department').on('click', function() {
-            let department = $('#filter_department').val();
-
-            if (!department) {
-                Swal.fire(
-                    'Perhatian',
-                    'Silakan pilih Departemen terlebih dahulu',
-                    'info'
-                );
-                return;
-            }
-
-            let deptName = $('#filter_department option:selected').text();
-            $('#area-title').text('Area Departemen ' + deptName);
-
-            // Hide alert
-            $('#alert-area').hide();
-
-            // Show table
-            $('#area-table-wrapper').removeClass('d-none');
-
-            table.ajax.reload();
-        });
 
 
         $('#formCreateGroup').on('submit', function(e) {
@@ -339,19 +323,30 @@
             });
         });
 
-        $('#filter_department').on('keydown', function(e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                $('#btn-pilih-department').click();
-            }
-        });
-
         $('#modalCreateGroup').on('show.bs.modal', function() {
             let selectedDepartment = $('#filter_department').val();
 
             if (selectedDepartment) {
                 $('#create_department').val(selectedDepartment);
             }
+        });
+
+        $('#filter_department').on('change', function() {
+            let department = $(this).val();
+
+            if (!department) return;
+
+            let deptName = $('#filter_department option:selected').text();
+            $('#area-title').text('Area Departemen ' + deptName);
+
+            // Hide alert
+            $('#alert-area').hide();
+
+            // Show table
+            $('#area-table-wrapper').removeClass('d-none');
+
+            // Reload datatable with new filter
+            table.ajax.reload();
         });
     </script>
 @endpush

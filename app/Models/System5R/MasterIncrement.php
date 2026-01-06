@@ -10,4 +10,9 @@ class MasterIncrement extends Model
     protected $guarded = [];
     public $ketType = 'string';
     public $incrementing = false;
+
+    public function department()
+    {
+        return $this->belongsTo(MasterDepartment::class, 'id_department');
+    }
 }

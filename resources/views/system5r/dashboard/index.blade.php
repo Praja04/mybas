@@ -243,7 +243,7 @@
                                 scales: {
                                     y: {
                                         beginAtZero: true,
-                                        max: 10000,
+                                        max: 150,
                                         title: {
                                             display: true,
                                             text: 'Nilai'
@@ -346,7 +346,7 @@
                                 scales: {
                                     x: {
                                         beginAtZero: true,
-                                        max: 10000
+                                        max: 150
                                     }
                                 }
                             }

@@ -152,7 +152,6 @@
 
                     periodeMap[namaPeriode].forEach(item => {
                         const totalGroup = item.group.length;
-                        const presentase = totalGroup * 100;
 
                         if (item.group.length === 0) {
                             rows += `
@@ -183,7 +182,7 @@
                                     <td class="text-center">${i === 0 ? rank : ''}</td>
                                     <td>${i === 0 ? item.department : ''}</td>
                                     <td>${g.nama_group}</td>
-                                    <td>${i === 0 ? presentase + '%' : ''}</td>   
+                                    <td>${g.persentase + '%'}</td>   
                                     <td>${formatNumber(g.nilaiAkhir)}</td>
                                     <td class="text-center">
                                         <div class="d-flex gap-1 justify-content-center">
@@ -215,7 +214,7 @@
                                         <th width="5%">#</th>
                                         <th>Department</th>
                                         <th>Group</th>
-                                        <th>Presentase</th>
+                                        <th>Persentase</th>
                                         <th>Nilai Akhir</th>
                                         <th class="text-center">Aksi</th>
                                     </tr>

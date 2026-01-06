@@ -328,3 +328,27 @@ function stopStream() {
         video.srcObject = null;
     }
 }
+
+document.addEventListener("DOMContentLoaded", function () {
+    const isKacamata = document.getElementById("isKacamata");
+    const kondisiGroup = document.getElementById("kondisiKacamataGroup");
+    const kondisiSelect = document.getElementById("kondisiKacamata");
+
+    isKacamata.addEventListener("change", function () {
+        if (this.value === "1") {
+            kondisiGroup.style.display = "block";
+            kondisiSelect.setAttribute("required", "required");
+        } else {
+            kondisiGroup.style.display = "none";
+            kondisiSelect.removeAttribute("required");
+            kondisiSelect.value = "";
+        }
+    });
+
+    window.resetKacamata = function () {
+        kondisiGroup.style.display = "none";
+        kondisiSelect.value = "";
+        kondisiSelect.removeAttribute("required");
+        isKacamata.value = "";
+    };
+});

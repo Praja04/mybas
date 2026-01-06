@@ -281,32 +281,32 @@ class SupplierFormAjax extends Controller
             // }
 
             // validasi apakah kendaraan sudah dilakukan cek kendaraan
-            $cekKendaraan = DB::table('ga_cek_kendaraan')
-                ->whereRaw("
-                    REPLACE(REPLACE(UPPER(nomor_polisi), ' ', ''), '-', '')
-                    =
-                    REPLACE(REPLACE(UPPER(?), ' ', ''), '-', '')
-                ", [$visitor->nopol])
-                // ->where('checked_in_at', '>=', $visitor->createdon)
-                ->where('checked_in_at', '>=', now()->subHours(24))
-                ->orderBy('checked_in_at', 'desc')
-                ->first();
+            // $cekKendaraan = DB::table('ga_cek_kendaraan')
+            //     ->whereRaw("
+            //         REPLACE(REPLACE(UPPER(nomor_polisi), ' ', ''), '-', '')
+            //         =
+            //         REPLACE(REPLACE(UPPER(?), ' ', ''), '-', '')
+            //     ", [$visitor->nopol])
+            //     // ->where('checked_in_at', '>=', $visitor->createdon)
+            //     ->where('checked_in_at', '>=', now()->subHours(24))
+            //     ->orderBy('checked_in_at', 'desc')
+            //     ->first();
 
-            // belum pernah cek kendaraan sama sekali pada kedatangan ini
-            if (!$cekKendaraan) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Kendaraan belum melakukan cek kendaraan masuk & keluar pada kedatangan ini.'
-                ]);
-            }
+            // // belum pernah cek kendaraan sama sekali pada kedatangan ini
+            // if (!$cekKendaraan) {
+            //     return response()->json([
+            //         'success' => false,
+            //         'message' => 'Kendaraan belum melakukan cek kendaraan masuk & keluar pada kedatangan ini.'
+            //     ]);
+            // }
 
-            // sudah cek masuk tapi belum cek keluar
-            if ($cekKendaraan->checked_in_at && is_null($cekKendaraan->checked_out_at)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Kendaraan belum melakukan cek keluar.'
-                ]);
-            }
+            // // sudah cek masuk tapi belum cek keluar
+            // if ($cekKendaraan->checked_in_at && is_null($cekKendaraan->checked_out_at)) {
+            //     return response()->json([
+            //         'success' => false,
+            //         'message' => 'Kendaraan belum melakukan cek keluar.'
+            //     ]);
+            // }
 
             return response()->json([
                 'success' => true,
@@ -339,7 +339,9 @@ class SupplierFormAjax extends Controller
             'sumpeople'         => 'nullable|integer|min:1|max:10',
             'imgvisitorpathin'  => 'required|string',
             'foto'              => 'required|string',
-            'nohpdriver'        => 'nullable|string|max:20'
+            'nohpdriver'        => 'nullable|string|max:20',
+            // 'is_kacamata'       => 'required|boolean',
+
         ], [
             'namavisitor.required'      => 'Nama visitor harus diisi',
             'namacomp.required'         => 'Nama perusahaan harus diisi',
@@ -352,7 +354,8 @@ class SupplierFormAjax extends Controller
             'imgvisitorpathin.required' => 'Foto KTP harus diambil',
             'foto.required'             => 'Foto selfie wajib diambil',
             'sumpeople.min'             => 'Jumlah orang minimal 1',
-            'sumpeople.max'             => 'Jumlah orang maksimal 10'
+            'sumpeople.max'             => 'Jumlah orang maksimal 10',
+            // 'is_kacamata.required'      => 'Pertanyaan kacamata wajib diisi',
         ]);
 
         if ($validator->fails()) {
@@ -453,6 +456,8 @@ class SupplierFormAjax extends Controller
                 'kartu_dikembalikan' => false,
                 'qr_code_saat_ini'   => $request->qr_code_saat_ini,
                 'tgl_lahir'          => $request->tgllahir,
+                // 'is_kacamata'          => $request->is_kacamata,
+                'kondisi_kacamata'     => $request->kondisi_kacamata ?? null,
             ];
 
             // dd($supplier_data);
@@ -536,7 +541,8 @@ class SupplierFormAjax extends Controller
     public function kembali_kartu(Request $request)
     {
         $request->validate([
-            'trnvisitorid' => 'required|string|max:50'
+            'trnvisitorid' => 'required|string|max:50',
+            // 'foto_out'     => 'required|string',
         ]);
 
         try {
@@ -550,6 +556,15 @@ class SupplierFormAjax extends Controller
                 ]);
             }
 
+
+            // $fotoOutUrl = $this->saveImageFromBase64(
+            //     $request->foto_out,
+            //     // 'foto_out_' . $visitor->trnvisitorid . '_' . now()->format('His'),
+            //     // 'visitors/out'
+            //     $visitor->trnvisitorid . '_foto_out',
+            //     'uploads/pos-security/suppliers/selfie_out'
+            // );
+
             $now = now();
 
             $visitor->kartu_dikembalikan = true;
@@ -559,6 +574,8 @@ class SupplierFormAjax extends Controller
             $visitor->timeout = $now->format('H:i:s'); // HH:MM:SS
             $visitor->changedon = $now;
             $visitor->changedby = auth()->user()->username ?? 'system'; // atau session user
+            // $visitor->foto_out = $fotoOutUrl;
+            // $visitor->kondisi_kacamata_out = $request->kondisi_kacamata_out ?? null;
             $visitor->save();
 
             return response()->json([

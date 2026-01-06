@@ -31,6 +31,7 @@
                         <thead>
                             <tr style="background-color: #a80000; color: #fff">
                                 <th style="width: 220px">NAMA GROUP</th>
+                                <th>STATUS</th>
                                 <th>PERSENTASE</th>
                                 <th>DIGITALISASI</th>
                                 <th style="width: 400px">AKSI</th>
@@ -99,6 +100,17 @@
             },
             columns: [
                 {data: 'nama_group', name: 'nama_group'},
+                {
+                    data: 'is_active',
+                    name: 'is_active',
+                    render: function (data) {
+                        if (data === 'Y') {
+                            return '<span class="badge bg-success">Aktif</span>';
+                        } else {
+                            return '<span class="badge bg-danger">Tidak Aktif</span>';
+                        }
+                    }
+                },
                 {data: 'persentase', name: 'persentase', render: function (data, type, row) {
                     return data + '%';
                 }},
@@ -108,7 +120,9 @@
                     <div class="d-flex">
                         <button type="button" onClick="editPersentase('${row.id_group}', '${row.persentase}')" class="btn me-1 btn-sm waves-effect waves-light btn-warning">Edit Persentase</button>
                         <button type="button" onClick="deleteGroup('${row.id_group}')" class="btn me-1 btn-sm waves-effect waves-light btn-danger">Hapus</button>
-                        <button type="button" onClick="nonaktifkanGroup('${row.id_group}')" class="btn btn-sm waves-effect waves-light btn-secondary">Nonaktifkan</button>
+                        <button type="button" onClick="toggleGroup('${row.id_group}')" class="btn btn-sm waves-effect waves-light ${row.is_active === 'Y' ? 'btn-secondary' : 'btn-success'}">
+                            ${row.is_active === 'Y' ? 'Nonaktifkan' : 'Aktifkan'}
+                        </button>
                     </div>
                     `;
                 }},
@@ -163,19 +177,19 @@
             })
         }
 
-        function nonaktifkanGroup(id_group)
+        function toggleGroup(id_group)
         {
             Swal.fire({
                 icon: 'warning',
                 title: 'Peringatan',
-                text: 'Apakah anda yakin ingin menonaktifkan data ini?',
+                text: 'Apakah anda yakin ingin mengubah status data ini?',
                 showCancelButton: true,
-                confirmButtonText: 'Ya, Nonaktifkan!',
+                confirmButtonText: 'Ya',
                 cancelButtonText: 'Batal'
             }).then((result) => {
                 if (result.isConfirmed) {
                     $.ajax({
-                        url: "{{ route('5r-system.master-group.nonaktifkan') }}",
+                        url: "{{ route('5r-system.master-group.toggle-status') }}",
                         type: 'POST',
                         data: {
                             _token: "{{ csrf_token() }}",

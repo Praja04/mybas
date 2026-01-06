@@ -46,17 +46,19 @@ class ManagementController extends Controller
 
     private function buildReportData($workspace, $jadwalId)
     {
-        return $workspace->map(function ($item) use ($jadwalId) {
+        $jadwal = Jadwal::find($jadwalId);
+        $tahun  = (int) $jadwal->tahun;
 
-            $item->departments = $item->departments->map(function ($dept) use ($jadwalId) {
+        return $workspace->map(function ($item) use ($jadwalId, $tahun) {
+
+            $item->departments = $item->departments->map(function ($dept) use ($jadwalId, $tahun) {
 
                 $periode = Periode::where('id_jadwal', $jadwalId)->get();
 
-                $periode = $periode->map(function ($p) use ($dept, $jadwalId) {
-
+                $periode = $periode->map(function ($p) use ($dept, $jadwalId, $tahun) {
                     $groups = MasterGroup::where('id_department', $dept->id_department)->get();
 
-                    $groups = $groups->map(function ($g) use ($p, $dept, $jadwalId) {
+                    $groups = $groups->map(function ($g) use ($p, $dept, $jadwalId, $tahun) {
 
                         $jawabanGroup = JawabanGroup::where([
                             'id_group'   => $g->id_group,
@@ -76,17 +78,26 @@ class ManagementController extends Controller
                             $g->totalNilai = $total;
                             $g->submit_by = $jawabanGroup->submit_by;
 
-                            // === LOGIKA PENGALIAN BERDASARKAN NAMA DEPARTEMEN ===
-                            $baseNilai = $total + 28;
-
-                            $deptName = strtoupper($dept->nama_department ?? $dept->department_name ?? '');
-
-                            if (str_contains($deptName, 'HRGA') || str_contains($deptName, 'GA')) {
-                                $g->nilaiAkhir = $baseNilai * 105;
-                            } elseif (str_contains($deptName, 'PRD') || str_contains($deptName, 'PROD')) {
-                                $g->nilaiAkhir = $baseNilai * 110;
+                            if ($tahun < 2026) {
+                                $nilaiRaw = $total * ((float) $g->persentase / 100);
+                                $g->nilaiAkhir = round($nilaiRaw, 2); 
                             } else {
-                                $g->nilaiAkhir = $baseNilai * 100;
+                                $nilaiGroup = round(
+                                    $total * ((float) $g->persentase / 100),
+                                    2
+                                ); 
+
+                                $baseNilai = $nilaiGroup + 28;
+
+                                $deptName = strtoupper($dept->nama_department ?? $dept->department_name ?? '');
+
+                                if (str_contains($deptName, 'HRGA') || str_contains($deptName, 'GA') || str_contains($deptName, 'GENERAL AFFAIR') || str_contains($deptName, 'HRDGA')) {
+                                    $g->nilaiAkhir = round($baseNilai * 1.05, 2); 
+                                } elseif (str_contains($deptName, 'PRD') || str_contains($deptName, 'PROD') || str_contains($deptName, 'PRO')) {
+                                    $g->nilaiAkhir = round($baseNilai * 1.10, 2); 
+                                } else {
+                                    $g->nilaiAkhir = round($baseNilai, 2); 
+                                }
                             }
                             // ====================================================
                         }
@@ -104,7 +115,7 @@ class ManagementController extends Controller
 
                     $p->group = $groups->toArray();
                     $p->totalNilai = $groups->sum('totalNilai');
-                    $p->nilaiAkhir = $groups->sum('nilaiAkhir'); // optional: tambah total nilai akhir per periode
+                    $p->nilaiAkhir = round($groups->sum('nilaiAkhir'), 2);
                     $p->juri = $groups
                         ->filter(fn($g) => $g->jawabanGroup)
                         ->pluck('jawabanGroup.submit_by')
@@ -133,7 +144,10 @@ class ManagementController extends Controller
                 $dept->periode = $periode;
 
                 // Rata-rata nilai akhir per periode (atau pakai totalNilai jika mau)
-                $dept->__total = $periode->where('totalNilai', '>', 0)->avg('nilaiAkhir') ?? 0;
+                $dept->__total = round(
+                    $periode->where('totalNilai', '>', 0)->avg('nilaiAkhir') ?? 0,
+                    2
+                );
 
                 return $dept;
             });

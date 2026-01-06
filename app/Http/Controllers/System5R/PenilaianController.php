@@ -107,7 +107,8 @@ class PenilaianController extends Controller
             if ($periodeAktif) {
                 $incrementTerakhir = MasterIncrement::where('id_department', $activeDepartment)
                     ->where('id_jadwal', $activeJadwal)
-                    ->where('created_at', '<', $periodeAktif->created_at) // INI KUNCI NYA
+                    ->where('id_periode', $activePeriodeId)
+                    // ->where('created_at', '<', $periodeAktif->created_at) // INI KUNCI NYA
                     ->orderBy('created_at', 'desc')
                     ->first();
             }

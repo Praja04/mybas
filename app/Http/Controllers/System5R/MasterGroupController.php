@@ -22,7 +22,7 @@ class MasterGroupController extends Controller
     {
         $id_department = $_GET['department'];
         $data = MasterGroup::where('id_department', $id_department)
-        ->where('is_active', 'Y')
+        // ->where('is_active', 'Y')
         ->get();
 
         return response()
@@ -123,18 +123,21 @@ class MasterGroupController extends Controller
         ]);
     }
 
-    public function nonaktifkan(Request $request)
+    public function toggle(Request $request)
     {
         $id_group = $request->id_group;
 
-        $group = MasterGroup::find($id_group);
-        $group->is_active = 'N';
+        $group = MasterGroup::findOrFail($id_group);
+
+        $group->is_active = $group->is_active === 'Y' ? 'N' : 'Y';
         $group->save();
 
         return response()
         ->json([
             'status' => 'success',
-            'message' => 'Data berhasil dinonaktifkan'
+            'message' => $group->is_active === 'Y'
+                ? 'Data berhasil diaktifkan'
+                : 'Data berhasil dinonaktifkan'
         ]);
     }
 

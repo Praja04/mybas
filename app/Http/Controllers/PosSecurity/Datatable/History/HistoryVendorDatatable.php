@@ -103,6 +103,10 @@ class HistoryVendorDatatable extends Controller
                 }
                 return $html;
             })
+            ->addColumn('photo_visitor_out', function ($item) {
+                if (empty($item->foto_out)) return '-';
+                return '<img src="' . $item->foto_out . '" style="max-width: 80px; max-height: 80px; border-radius: 6px; cursor: pointer; margin: 3px;" onclick="showImageModal(\'' . $item->foto_out . '\')" />';
+            })
             ->addColumn('img_visitor', function ($item) {
                 if (empty($item->imgvisitorpathin)) return '-';
                 return '<img src="' . $item->imgvisitorpathin . '" style="max-width: 80px; max-height: 80px; border-radius: 6px; cursor: pointer; margin: 3px;" onclick="showImageModal(\'' . $item->imgvisitorpathin . '\')" />';
@@ -121,6 +125,29 @@ class HistoryVendorDatatable extends Controller
           <button type="button" class="btn btn-sm btn-outline-primary mt-2" onclick="downloadQRWithContent('{$containerId}', '{$filename}')">Download</button>
         </div>
       HTML;
+            })
+            ->addColumn('is_kacamata', function ($item) {
+                if ($item->is_kacamata === null) {
+                    return '-';
+                }
+
+                return $item->is_kacamata
+                    ? '<span class="badge bg-success">Ya</span>'
+                    : '<span class="badge bg-secondary">Tidak</span>';
+            })
+            ->addColumn('kondisi_kacamata', function ($item) {
+                if (!$item->is_kacamata) {
+                    return '-';
+                }
+
+                return $item->kondisi_kacamata;
+            })
+            ->addColumn('kondisi_kacamata_out', function ($item) {
+                if (!$item->is_kacamata || !$item->kondisi_kacamata_out) {
+                    return '-';
+                }
+
+                return $item->kondisi_kacamata_out;
             })
             ->editColumn('NAMAVISITOR', fn($item) => $item->NAMAVISITOR ?: '-')
             ->editColumn('NAMACOMP', fn($item) => $item->NAMACOMP ?: '-')
@@ -147,7 +174,7 @@ class HistoryVendorDatatable extends Controller
                 //     </ul>
                 // </div>';
             })
-            ->rawColumns(['photo_visitor', 'img_visitor', 'qr_image', 'namacomp', 'waktu_masuk', 'waktu_keluar', 'namavisitor', 'action'])
+            ->rawColumns(['photo_visitor', 'img_visitor', 'qr_image', 'namacomp', 'waktu_masuk', 'waktu_keluar', 'namavisitor', 'action', "is_kacamata", "kondisi_kacamata", "photo_visitor_out", 'kondisi_kacamata_out'])
             ->make(true);
     }
 

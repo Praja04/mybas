@@ -478,8 +478,8 @@
 // }
 
 // form ajax
-$(document).ready(function() {
-    $("#visitorForm").on("submit", function(e) {
+$(document).ready(function () {
+    $("#visitorForm").on("submit", function (e) {
         e.preventDefault(); // Jangan submit default
 
         // Disable button biar user gak double klik
@@ -502,13 +502,13 @@ $(document).ready(function() {
             data: formData,
             processData: false,
             contentType: false,
-            success: function(response) {
+            success: function (response) {
                 Swal.fire({
                     icon: "success",
                     title: "Berhasil!",
                     text: response.message || "Data berhasil disimpan.",
                     timer: 2000,
-                    showConfirmButton: false
+                    showConfirmButton: false,
                 });
 
                 console.log(response);
@@ -522,7 +522,7 @@ $(document).ready(function() {
                     .fadeIn();
 
                 // Hide alert setelah 2 detik
-                setTimeout(function() {
+                setTimeout(function () {
                     $("#formAlert")
                         .fadeOut()
                         .removeClass("alert-success alert-danger")
@@ -537,6 +537,10 @@ $(document).ready(function() {
                 selfiePhotos = []; // Reset array selfie
                 updateSelfieHiddenInput(); // Sync ke input hidden
                 renderSelfiePreviews();
+
+                if (typeof resetKacamata === "function") {
+                    resetKacamata();
+                }
 
                 // TAMBAHAN: Reset QR Code result
                 if (document.getElementById("qrResultInput")) {
@@ -562,7 +566,7 @@ $(document).ready(function() {
                     document.getElementById("selfiePhotos").value
                 );
             },
-            error: function(xhr) {
+            error: function (xhr) {
                 // Ambil pesan dari response jika tersedia
                 let message = "Terjadi kesalahan. Silakan coba lagi.";
                 if (xhr.responseJSON && xhr.responseJSON.message) {
@@ -575,7 +579,7 @@ $(document).ready(function() {
                     title: "Gagal!",
                     text: message,
                     timer: 2500,
-                    showConfirmButton: false
+                    showConfirmButton: false,
                 });
 
                 // Tampilkan alert inline
@@ -588,7 +592,7 @@ $(document).ready(function() {
                     .fadeIn();
 
                 // Hide alert setelah 3 detik
-                setTimeout(function() {
+                setTimeout(function () {
                     $("#formAlert")
                         .fadeOut()
                         .removeClass("alert-success alert-danger")
@@ -599,7 +603,7 @@ $(document).ready(function() {
                 $("#submitBtn")
                     .prop("disabled", false)
                     .html('<i class="fas fa-save me-2"></i>Simpan Data');
-            }
+            },
         });
     });
 });
@@ -666,7 +670,7 @@ function resetModalKamera() {
 
     if (video && video.srcObject) {
         const stream = video.srcObject;
-        stream.getTracks().forEach(track => track.stop());
+        stream.getTracks().forEach((track) => track.stop());
         video.srcObject = null;
     }
     if (video) video.style.display = "none";
@@ -686,7 +690,7 @@ function resetModalKamera() {
 
     if (selfieVideo && selfieVideo.srcObject) {
         const selfieStream = selfieVideo.srcObject;
-        selfieStream.getTracks().forEach(track => track.stop());
+        selfieStream.getTracks().forEach((track) => track.stop());
         selfieVideo.srcObject = null;
     }
     if (selfieVideo) selfieVideo.style.display = "none";
@@ -710,6 +714,10 @@ function resetForm() {
         selfiePhotos = [];
         updateSelfieHiddenInput?.();
         renderSelfiePreviews?.();
+    }
+
+    if (typeof resetKacamata === "function") {
+        resetKacamata();
     }
 
     // TAMBAHAN: Reset QR Code result
@@ -744,7 +752,7 @@ function resetForm() {
         title: "Form berhasil direset",
         text: "Semua data dan foto sudah dibersihkan.",
         timer: 2000,
-        showConfirmButton: false
+        showConfirmButton: false,
     });
 
     // Reset alert form jika ada
