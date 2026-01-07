@@ -251,16 +251,20 @@
             function formatNumber(num) {
                 if (num === null || num === undefined) return '-';
 
-                // Bulatkan ke 1 desimal dulu
-                let fixed = Number(num).toFixed(1);
+                let str = String(num);
 
-                // Hilangkan .0 jika bulat
-                if (fixed.endsWith('.0')) {
-                    fixed = fixed.slice(0, -2);
+                // Hilangkan .0 jika ada
+                if (str.endsWith('.0')) {
+                    str = str.slice(0, -2);
                 }
 
-                // Format ribuan dengan titik
-                return fixed.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+                // Pisahkan decimal dan integer
+                const [integer, decimal] = str.split('.');
+
+                // Format ribuan
+                const formattedInt = integer.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+
+                return decimal ? `${formattedInt}.${decimal}` : formattedInt;
             }
         });
 
