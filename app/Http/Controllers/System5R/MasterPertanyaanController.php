@@ -170,23 +170,23 @@ class MasterPertanyaanController extends Controller
         $id_department = $request->id_department;
         $id_group = $request->id_group;
 
-        // Get pertanyaan by id_group
-        $pertanyaanTarget = MasterPertanyaan::where('id_group', $id_group_target)->get();
+        $existing = MasterPertanyaan::where('id_group', $id_group)
+            ->where('archive_status', 'N')
+            ->exists();
 
-        // Get pertanyaan by id_group
-        $pertanyaan = MasterPertanyaan::where('id_group', $id_group)
-        ->where('archive_status', 'N')
-        ->count();
-
-        if($pertanyaan > 0) {
-            return response()
-            ->json([
+        if ($existing) {
+            return response()->json([
                 'status' => 'error',
-                'message' => 'Data tidak dapat di clone karena sudah ada pertanyaan di group ini'
+                'message' => 'Data tidak dapat di clone karena sudah ada pertanyaan aktif di group ini'
             ]);
         }
 
-        foreach($pertanyaanTarget as $p) {
+        // Get pertanyaan by id_group
+        $pertanyaanSource = MasterPertanyaan::where('id_group', $id_group_target)
+            ->where('archive_status', 'N')
+            ->get();
+
+        foreach($pertanyaanSource as $p) {
             $pertanyaan = new MasterPertanyaan;
             $pertanyaan->id_pertanyaan = $this->createIdPertanyaan();
             $pertanyaan->id_group = $id_group;
