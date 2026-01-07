@@ -24,11 +24,21 @@ class MasterPertanyaanController extends Controller
     {
         $id_group = $_GET['group'];
         $data = MasterPertanyaan::where('id_group', $id_group)
-        ->where('archive_status', 'N')
-        ->get();
+            ->where('archive_status', 'N')
+            ->orderByRaw("
+                FIELD(jenis,
+                    'RINGKAS',
+                    'RAPI',
+                    'RESIK',
+                    'RAWAT',
+                    'RAJIN',
+                    'DIGITALISASI'
+                )
+            ")
+            // ->orderBy('created_at', 'DESC') // biar data baru tetap kelihatan
+            ->get();
 
-        return response()
-        ->json([
+        return response()->json([
             'data' => $data
         ]);
     }

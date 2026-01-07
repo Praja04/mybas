@@ -150,7 +150,7 @@
                         <table class="table table-hover table-striped shadow" id="table-pertanyaan" style="width: 100% !important">
                             <thead>
                                 <tr style="background-color: #a80000; color: #fff">
-                                    <th style="width: 20px">JENIS</th>
+                                    <th style="width: 10%">JENIS</th>
                                     <th>ITEM PERIKSA</th>
                                     <th>KETERANGAN</th>
                                     <th style="width: 5%">AKSI</th>
@@ -314,7 +314,7 @@
                     <input type="hidden" id="id-group-import" name="id_group_import"> 
                     <div class="mt-3">
                         <h5 class="mb-4">Download Master Excel</h5>
-                        <a href="{{ url('/master_import/template_form_penilaian_5r.xlsx') }}" class="master-excel" download>Download Excel</a>
+                        <a href="{{ url('/master_import/template_form_penilaian_5r_2026.xlsx') }}" class="master-excel" download>Download Excel</a>
                     </div>
                     <div class="mt-4">
                         <button class="btn btn-success" style="font-size: larger;">
@@ -356,6 +356,7 @@
     <script src="{{ asset('assets/velzon/js/pages/form-editor.init.js') }}"></script>
     <script>
         var table = $('#table-pertanyaan').DataTable({
+        ordering: false,
         ajax: {
             url: "{{ route('5r-system.master-pertanyaan.data') }}?department=" + $('#filter_department').val() + "&group=" + $('#filter_group').val(),
         },
@@ -776,8 +777,15 @@
                 },
                 complete: function () {
                     form.find('button').removeAttr('disabled');
-                    table.ajax.reload();
+
+                    // table.ajax.reload();
+
+                    table.ajax.reload(function () {
+                        table.page('last').draw('page');
+                    }, false);
+
                     // form.find('input').val('');
+
                     // Clear editor
                     $('#item_periksa .ql-editor').html('');
                     $('#keterangan .ql-editor').html('');
