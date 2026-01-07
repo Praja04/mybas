@@ -129,14 +129,22 @@ class ManagementController extends Controller
                         ->with('group.anggota') // asumsi relasi: group -> anggota (table user/juri)
                         ->first();
 
-                    if ($juriRecord && $juriRecord->group && $juriRecord->group->anggota) {
+                    if ($juriRecord && $juriRecord->group && $juriRecord->group->anggota->isNotEmpty()) {
                         $p->juri = $juriRecord->group->anggota
                             ->pluck('nama_juri') // atau 'name', 'nama_lengkap', sesuaikan kolom nama
                             ->unique()
                             ->values()
                             ->toArray();
                     } else {
-                        $p->juri = []; // atau fallback ke submit_by jika mau
+                        // $p->juri = [];
+                        
+                        // FALLBACK (2024 & data lama): ambil dari submit_by
+                        $p->juri = $groups
+                            ->pluck('submit_by')
+                            ->filter()
+                            ->unique()
+                            ->values()
+                            ->toArray();
                     }
 
                     return $p;

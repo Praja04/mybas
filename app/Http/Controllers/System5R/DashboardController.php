@@ -297,12 +297,23 @@ class DashboardController extends Controller
     private function hitungNilai5R($periodeId, $deptId, $deptName)
     {
         $rows = DB::table('5r_jawaban as j')
-            ->join('5r_jawaban_group as jg', 'j.id_jawaban_group', '=', 'jg.id_jawaban_group')
+            ->join('5r_jawaban_group as jg', function ($join) use ($periodeId) {
+                $join->on('j.id_jawaban_group', '=', 'jg.id_jawaban_group')
+                    ->where('jg.id_periode', $periodeId)
+                    ->where('jg.status', 'approved')
+                    // cegah double submit dalam periode yg sama
+                    ->whereIn('jg.id_jawaban_group', function ($sub) use ($periodeId) {
+                        $sub->select(DB::raw('MAX(id_jawaban_group)'))
+                            ->from('5r_jawaban_group')
+                            ->where('id_periode', $periodeId)
+                            ->where('status', 'approved')
+                            ->groupBy('id_group');
+                    });
+            })
             ->join('5r_master_group as g', 'g.id_group', '=', 'jg.id_group')
-            ->where('jg.id_periode', $periodeId)
             ->where('g.id_department', $deptId)
-            ->where('jg.status', 'approved')
             ->select(
+                'g.id_group',
                 'g.persentase',
                 DB::raw('SUM(j.nilai) as total_nilai')
             )
@@ -330,5 +341,4 @@ class DashboardController extends Controller
 
         return round($nilai, 2);
     }
-
 }

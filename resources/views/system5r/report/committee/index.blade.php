@@ -129,8 +129,9 @@
                         }
 
                         periodeMap[p.nama_periode].push({
-                            department: dep.id_department,
+                            department: dep.id_department,                          
                             __total: dep.__total,
+                            nilaiAkhirPeriode: p.nilaiAkhir, // total nilai akhir untuk periode ini (PER DEPARTMENT)
                             group: p.group || [],
                             id_periode: p.id_periode,
                             juri: p.juri || []
@@ -201,14 +202,10 @@
                         });
 
                         if (item.group.length > 1) {
-                            const totalNilai = item.group.reduce((sum, g) => {
-                                return sum + (parseFloat(g.nilaiAkhir) || 0);
-                            }, 0);
-
                             rows += `
                                 <tr class="fw-bold bg-light">
                                     <td colspan="4" class="text-end">Total Nilai Akhir</td>
-                                    <td>${formatNumber(totalNilai)}</td>
+                                    <td>${formatNumber(item.nilaiAkhirPeriode)}</td>
                                     <td></td>
                                 </tr>
                             `;
@@ -246,16 +243,20 @@
             function formatNumber(num) {
                 if (num === null || num === undefined) return '-';
 
-                // Bulatkan ke 1 desimal dulu
-                let fixed = Number(num).toFixed(1);
+                let str = String(num);
 
-                // Hilangkan .0 jika bulat
-                if (fixed.endsWith('.0')) {
-                    fixed = fixed.slice(0, -2);
+                // Hilangkan .0 jika ada
+                if (str.endsWith('.0')) {
+                    str = str.slice(0, -2);
                 }
 
-                // Format ribuan dengan titik
-                return fixed.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+                // Pisahkan decimal dan integer
+                const [integer, decimal] = str.split('.');
+
+                // Format ribuan
+                const formattedInt = integer.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+
+                return decimal ? `${formattedInt}.${decimal}` : formattedInt;
             }
         });
 
