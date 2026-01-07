@@ -136,6 +136,7 @@
                             department: dep
                                 .nama_department,
                             __total: dep.__total,
+                            nilaiAkhirPeriode: p.nilaiAkhir, // total nilai akhir untuk periode ini (PER DEPARTMENT)
                             group: groupArray,
                             id_periode: p.id_periode,
                             juri: Array.isArray(p.juri) ? p.juri : []
@@ -206,14 +207,10 @@
                         });
 
                         if (item.group.length > 1) {
-                            const totalNilai = item.group.reduce((sum, g) => {
-                                return sum + (parseFloat(g.nilaiAkhir) || 0);
-                            }, 0);
-
                             rows += `
                                 <tr class="fw-bold bg-light">
                                     <td colspan="5" class="text-end">Total Nilai Akhir</td>
-                                    <td>${formatNumber(totalNilai)}</td>
+                                    <td>${formatNumber(item.nilaiAkhirPeriode)}</td>
                                     <td></td>
                                 </tr>
                             `;
