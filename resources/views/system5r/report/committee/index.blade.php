@@ -131,7 +131,7 @@
                         periodeMap[p.nama_periode].push({
                             department: dep.id_department,                          
                             __total: dep.__total,
-                            nilaiAkhirPeriode: p.nilaiAkhir, // total nilai akhir untuk periode ini (PER DEPARTMENT)
+                            nilaiAkhirPeriode: p.totalNilai, // total nilai akhir untuk periode ini (PER DEPARTMENT)
                             group: p.group || [],
                             id_periode: p.id_periode,
                             juri: p.juri || []
