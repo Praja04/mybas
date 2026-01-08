@@ -9,6 +9,9 @@ document.addEventListener("DOMContentLoaded", function () {
     const nopolGroup = document.getElementById("nopolGroup");
     const purposeSelect = document.getElementById("purposeSelect");
     const nopolInput = document.getElementById("nopolInput");
+    const isKacamataGroup = document.getElementById("isKacamataGroup");
+    const kondisiKacamataGroup = document.getElementById("kondisiKacamataGroup");
+
 
     // Default: RFID disable
     $rfidInput.prop("disabled", true);
@@ -28,6 +31,27 @@ document.addEventListener("DOMContentLoaded", function () {
             nopolInput.removeAttribute("required");
             nopolInput.value = "";
         }
+
+        // pengguna kacamata
+        if (isKacamataGroup) isKacamataGroup.style.display = isTransporter ? "none" : "block";
+            if (kondisiKacamataGroup) kondisiKacamataGroup.style.display = "none"; // default hidden
+
+            if (isTransporter) {
+                // transporter: jangan wajib, set default "Tidak"
+                isKacamataSelect.removeAttribute("required");
+                isKacamataSelect.value = "0"; // dianggap "Tidak"
+
+                kondisiKacamataSelect.removeAttribute("required");
+                kondisiKacamataSelect.value = "";
+            } else {
+                // vendor/tamu: tetap wajib, reset ke default kosong
+                isKacamataSelect.setAttribute("required", "required");
+                if (!isKacamataSelect.value) isKacamataSelect.value = ""; // biar user pilih
+
+                // kondisi_kacamata hanya wajib kalau is_kacamata=1 
+                kondisiKacamataSelect.removeAttribute("required");
+                kondisiKacamataSelect.value = "";
+            }
 
         // Update status RFID setelah toggle
         updateRfidState();
@@ -79,8 +103,8 @@ document.addEventListener("DOMContentLoaded", function () {
             !deptId ||
             !keperluan ||
             !host ||
-            !jenis ||
-            !isKacamataValue
+            !jenis 
+            // || !isKacamataValue
         ) {
             return false;
         }
@@ -89,7 +113,11 @@ document.addEventListener("DOMContentLoaded", function () {
             return false;
         }
 
-        if (isUseKacamata && !kondisiKacamataValue) {
+        if (!isTransporter && !isKacamataValue) {
+            return false;
+        }
+
+        if (!isTransporter && isUseKacamata && !kondisiKacamataValue) {
             return false;
         }
 
@@ -176,6 +204,19 @@ document.addEventListener("DOMContentLoaded", function () {
             }
             if (!nopolInput.value?.trim()) {
                 showError($(nopolInput), "Nomor polisi wajib diisi");
+                isValid = false;
+            }
+        }
+
+        // Validasi khusus kacamata (hanya jika bukan transporter)
+        if (!isTransporter) {
+            if (!isKacamataSelect.value) {
+                showError($(isKacamataSelect), "Wajib dipilih");
+                isValid = false;
+            }
+
+            if (isKacamataSelect.value === "1" && !kondisiKacamataSelect.value) {
+                showError($(kondisiKacamataSelect), "Kondisi kacamata wajib dipilih");
                 isValid = false;
             }
         }

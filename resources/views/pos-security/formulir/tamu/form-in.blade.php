@@ -109,7 +109,7 @@
                                 </select>
                             </div>
 
-                            <div class="mb-3">
+                            <div class="mb-3" id="isKacamataGroup">
                                 <label class="form-label fw-semibold">Apakah Tamu Menggunakan Kacamata? <span
                                         class="text-danger">*</span></label>
                                 <select name="is_kacamata" id="isKacamata" class="form-select w-100" required>

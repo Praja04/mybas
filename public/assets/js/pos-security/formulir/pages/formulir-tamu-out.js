@@ -12,6 +12,8 @@ const capturedImageContainerOut = document.getElementById(
 let html5QrCode;
 const qrRegionId = "qr-reader";
 let isScannerRunning = false;
+let visitorIsKacamata = "0"; 
+
 // Cek apakah browser mendukung getUserMedia
 function isCameraSupported() {
     return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
@@ -28,155 +30,169 @@ function onScanError(errorMessage) {
     alert("Terjadi kesalahan saat memindai: " + errorMessage);
 }
 
-function searchVisitorData(keyword) {
-    $("#returnCard").removeData("trnvisitorid");
-    $("#kondisiKacamataGroupOut").hide();
-    $("#kondisiKacamataOut").val("");
-    resetFotoOut();
+    function searchVisitorData(keyword) {
+        $("#returnCard").removeData("trnvisitorid");
+        $("#kondisiKacamataGroupOut").hide();
+        $("#kondisiKacamataOut").val("");
+        resetFotoOut();
 
-    $.ajax({
-        // url: API_FORM_SEARCH_TAMU,
-        url: "/search-vendor-tamu",
-        method: "POST",
-        data: { keyword: keyword },
-        headers: {
-            "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
-        },
-        beforeSend: function () {
-            // Bisa pasang loading spinner di sini
-        },
-        success: function (response) {
-            console.log(response.data);
+        $.ajax({
+            // url: API_FORM_SEARCH_TAMU,
+            url: "/search-vendor-tamu",
+            method: "POST",
+            data: { keyword: keyword },
+            headers: {
+                "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
+            },
+            beforeSend: function () {
+                // Bisa pasang loading spinner di sini
+            },
+            success: function (response) {
+                if (!response.success || !response.data) {
+                    console.error("Search visitor failed:", response);
 
-            const qrcodeInput = document.getElementById("qrcode_input");
+                    Swal.fire({
+                        icon: "error",
+                        title: "Gagal",
+                        text: response.message || "Data visitor tidak valid.",
+                    });
 
-            if (response.success) {
-                const data = response.data;
-
-                console.log(
-                    "trnvisitorid from search result: ",
-                    data.trnvisitorid
-                );
-
-                qrcodeInput.value = ""; // 🔁 Reset
-                qrcodeInput.focus(); // 👁️ Fokus ulang ke input
-
-                // Isi data ke elemen
-                $("#returnCard").attr("data-trnvisitorid", data.trnvisitorid);
-                $("#visitorName").text(data.namavisitor || "-");
-                $("#visitorCompany").text(data.namacomp || "-");
-                $("#visitorCard").text(data.no_kartu || "-");
-                $("#visitorKTP").text(data.no_ktp_sim || "-");
-                $("#visitorNopol").text(data.nopol || "-");
-                $("#visitorSumPeople").text(data.sumpeople || "1");
-                $("#visitorDateIn").text(data.datein || "-");
-                $("#visitorTimeIn").text(data.timein || "-");
-                $("#visitorDateOut").text(data.dateout || "-");
-                $("#visitorTimeOut").text(data.timeout || "");
-
-                // Status kartu
-                let statusKartu = "-";
-                if (data.kartu_dikembalikan == 0) {
-                    statusKartu = "Active";
-                } else if (data.is_block == 1) {
-                    statusKartu = "Blocked";
-                } else if (data.kartu_dikembalikan == 1) {
-                    statusKartu = "Sudah Dikembalikan";
+                    $("#visitorResult").hide();
+                    return;
                 }
-                $("#visitorCardStatus").text(statusKartu);
+                
+                console.log(response.data);
 
-                // Pakai kacamata
-                let pakaiKacamata = "-";
-                if (data.is_kacamata == 0) {
-                    pakaiKacamata = "Tidak";
-                } else if (data.is_kacamata == 1) {
-                    pakaiKacamata = "Ya";
-                }
+                visitorIsKacamata = response.data.is_kacamata === 1 || response.data.is_kacamata === "1" ? "1" : "0";
+                const qrcodeInput = document.getElementById("qrcode_input");
 
-                $("#visitorIsKacamata").text(pakaiKacamata);
-                $("#visitorKondisiKacamata").text(data.kondisi_kacamata || "-");
+                if (response.success) {
+                    const data = response.data;
 
-                // Info gate keluar
-                $("#visitorGateIdOut").text(data.gateidout || "-");
-                $("#visitorGateLineIdOut").text(data.gatelineidout || "-");
-
-                // Foto KTP
-                const ktpImage = $("#visitorKTPImage");
-                ktpImage.attr("src", data.imgvisitorpathin || "");
-                ktpImage.css("cursor", "pointer");
-                ktpImage.off("click").on("click", function () {
-                    $("#imagePreviewModalImg").attr("src", this.src);
-                    const modal = new bootstrap.Modal(
-                        document.getElementById("imagePreviewModal")
+                    console.log(
+                        "trnvisitorid from search result: ",
+                        data.trnvisitorid
                     );
-                    modal.show();
-                });
 
-                // Foto selfie
-                const selfieContainer = $("#visitorSelfieImages");
-                selfieContainer.empty();
+                    qrcodeInput.value = ""; // 🔁 Reset
+                    qrcodeInput.focus(); // 👁️ Fokus ulang ke input
 
-                if (data.foto) {
-                    let selfiePhotos = [];
-                    try {
-                        selfiePhotos = JSON.parse(data.foto);
-                    } catch (err) {
-                        console.error("Error parsing selfie foto JSON:", err);
+                    // Isi data ke elemen
+                    $("#returnCard").attr("data-trnvisitorid", data.trnvisitorid);
+                    $("#visitorName").text(data.namavisitor || "-");
+                    $("#visitorCompany").text(data.namacomp || "-");
+                    $("#visitorCard").text(data.no_kartu || "-");
+                    $("#visitorKTP").text(data.no_ktp_sim || "-");
+                    $("#visitorNopol").text(data.nopol || "-");
+                    $("#visitorSumPeople").text(data.sumpeople || "1");
+                    $("#visitorDateIn").text(data.datein || "-");
+                    $("#visitorTimeIn").text(data.timein || "-");
+                    $("#visitorDateOut").text(data.dateout || "-");
+                    $("#visitorTimeOut").text(data.timeout || "");
+
+                    // Status kartu
+                    let statusKartu = "-";
+                    if (data.kartu_dikembalikan == 0) {
+                        statusKartu = "Active";
+                    } else if (data.is_block == 1) {
+                        statusKartu = "Blocked";
+                    } else if (data.kartu_dikembalikan == 1) {
+                        statusKartu = "Sudah Dikembalikan";
+                    }
+                    $("#visitorCardStatus").text(statusKartu);
+
+                    // Pakai kacamata
+                    let pakaiKacamata = "-";
+                    if (data.is_kacamata == 0) {
+                        pakaiKacamata = "Tidak";
+                    } else if (data.is_kacamata == 1) {
+                        pakaiKacamata = "Ya";
                     }
 
-                    selfiePhotos.forEach(function (photoUrl) {
-                        const imgEl = $("<img>", {
-                            src: photoUrl,
-                            alt: "Selfie Photo",
-                            class: "img-thumbnail",
-                            css: {
-                                maxWidth: "150px",
-                                margin: "5px",
-                                cursor: "pointer",
-                            },
-                        });
+                    $("#visitorIsKacamata").text(pakaiKacamata);
+                    $("#visitorKondisiKacamata").text(data.kondisi_kacamata || "-");
 
-                        imgEl.on("click", function () {
-                            $("#imagePreviewModalImg").attr("src", this.src);
-                            const modal = new bootstrap.Modal(
-                                document.getElementById("imagePreviewModal")
-                            );
-                            modal.show();
-                        });
+                    // Info gate keluar
+                    $("#visitorGateIdOut").text(data.gateidout || "-");
+                    $("#visitorGateLineIdOut").text(data.gatelineidout || "-");
 
-                        selfieContainer.append(imgEl);
+                    // Foto KTP
+                    const ktpImage = $("#visitorKTPImage");
+                    ktpImage.attr("src", data.imgvisitorpathin || "");
+                    ktpImage.css("cursor", "pointer");
+                    ktpImage.off("click").on("click", function () {
+                        $("#imagePreviewModalImg").attr("src", this.src);
+                        const modal = new bootstrap.Modal(
+                            document.getElementById("imagePreviewModal")
+                        );
+                        modal.show();
                     });
-                }
 
-                // Kondisi kacamata (OUT)
-                if (data.is_kacamata === 1 || data.is_kacamata === "1") {
-                    $("#kondisiKacamataGroupOut").show();
+                    // Foto selfie
+                    const selfieContainer = $("#visitorSelfieImages");
+                    selfieContainer.empty();
+
+                    if (data.foto) {
+                        let selfiePhotos = [];
+                        try {
+                            selfiePhotos = JSON.parse(data.foto);
+                        } catch (err) {
+                            console.error("Error parsing selfie foto JSON:", err);
+                        }
+
+                        selfiePhotos.forEach(function (photoUrl) {
+                            const imgEl = $("<img>", {
+                                src: photoUrl,
+                                alt: "Selfie Photo",
+                                class: "img-thumbnail",
+                                css: {
+                                    maxWidth: "150px",
+                                    margin: "5px",
+                                    cursor: "pointer",
+                                },
+                            });
+
+                            imgEl.on("click", function () {
+                                $("#imagePreviewModalImg").attr("src", this.src);
+                                const modal = new bootstrap.Modal(
+                                    document.getElementById("imagePreviewModal")
+                                );
+                                modal.show();
+                            });
+
+                            selfieContainer.append(imgEl);
+                        });
+                    }
+
+                    // Kondisi kacamata (OUT)
+                    if (data.is_kacamata === 1 || data.is_kacamata === "1") {
+                        $("#kondisiKacamataGroupOut").show();
+                    } else {
+                        $("#kondisiKacamataGroupOut").hide();
+                        $("#kondisiKacamataOut").val("");
+                    }
+
+                    // Show result section
+                    $("#visitorResult").show();
                 } else {
-                    $("#kondisiKacamataGroupOut").hide();
-                    $("#kondisiKacamataOut").val("");
+                    qrcodeInput.value = ""; // 🔁 Reset
+                    qrcodeInput.focus(); // 👁️ Fokus ulang ke input
+                    Swal.fire({
+                        icon: "error",
+                        title: "Oops!",
+                        text: response.message || "Data tidak ditemukan.",
+                        // timer: 2500,
+                        showConfirmButton: true,
+                    });
+                    $("#visitorResult").hide();
                 }
-
-                // Show result section
-                $("#visitorResult").show();
-            } else {
-                qrcodeInput.value = ""; // 🔁 Reset
-                qrcodeInput.focus(); // 👁️ Fokus ulang ke input
-                Swal.fire({
-                    icon: "error",
-                    title: "Oops!",
-                    text: response.message || "Data tidak ditemukan.",
-                    // timer: 2500,
-                    showConfirmButton: true,
-                });
+            },
+            error: function () {
+                alert("Gagal mencari data. Silakan coba lagi.");
                 $("#visitorResult").hide();
-            }
-        },
-        error: function () {
-            alert("Gagal mencari data. Silakan coba lagi.");
-            $("#visitorResult").hide();
-        },
-    });
-}
+            },
+        });
+    }
 
 document.addEventListener("DOMContentLoaded", function () {
     // Event ketika modal muncul
@@ -307,12 +323,11 @@ document.addEventListener("DOMContentLoaded", function () {
 // Tombol Kartu Dikembalikan
 $("#returnCard").on("click", function () {
     const trnvisitorid = $(this).data("trnvisitorid");
-    const isKacamata = $(this).data("is_kacamata");
     const fotoOut = $("#fotoOut").val();
-    const kondisiKacamata = $("#kondisiKacamataOut").val();
 
+    const kondisiKacamata = $("#kondisiKacamataOut").val();
+    
     console.log("returnCard trnvisitorid: ", trnvisitorid);
-    console.log({ fotoOut, kondisiKacamata });
 
     if (!trnvisitorid) {
         Swal.fire("Error", "Visitor ID tidak ditemukan!", "error");
@@ -328,7 +343,7 @@ $("#returnCard").on("click", function () {
         return;
     }
 
-    if (isKacamata == 1 && !kondisiKacamata) {
+    if (visitorIsKacamata === "1" && !kondisiKacamata) {
         Swal.fire(
             "Peringatan",
             "Silakan pilih kondisi kacamata terlebih dahulu.",
