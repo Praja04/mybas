@@ -52,8 +52,12 @@
                              </div>
                          </div>
                          <div class="mb-3">
-                             <label class="form-label">Foto Selfie</label>
+                             <label class="form-label">Foto Diri (Masuk)</label>
                              <div id="detailSelfieContainer" class="d-flex flex-wrap gap-2"></div>
+                         </div>
+                         <div class="mb-3">
+                             <label class="form-label">Foto Diri (Keluar)</label>
+                             <div id="detailSelfieOutContainer" class="d-flex flex-wrap gap-2"></div>
                          </div>
                      </div>
                  </div>

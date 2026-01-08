@@ -19,68 +19,65 @@ class HistorySupplierDatatable extends Controller
 
     private function rawData($request)
     {
-        $filter = $request->query('filter', []);
+        $filter = $request->input('filter', []);
 
         $query = GaVisitorTransaction::query()
             ->whereIn('purpose', ['MUAT', 'BONGKAR'])
-            ->orderBy('createdon', 'desc');
+            ->where('createdon', '>=', Carbon::now()->subDays(7));
 
+        // // 🚫 Exclude blacklist by subquery
+        // $query->whereNotExists(function ($sub) {
+        //     $sub->select(DB::raw(1))
+        //         ->from('ga_lgtk_blacklist_identitas as bl')
+        //         ->whereColumn('bl.tanggal_lahir', 'ga_visitor_transaction.tgl_lahir')
+        //         ->where(DB::raw('LOWER(TRIM(bl.nama))'), DB::raw('LOWER(TRIM(ga_visitor_transaction.namavisitor))'))
+        //         ->where('bl.aktif', true);
+        // });
 
-
-        // 🚫 Exclude blacklist by subquery
-        $query->whereNotExists(function ($sub) {
-            $sub->select(DB::raw(1))
-                ->from('ga_lgtk_blacklist_identitas as bl')
-                ->whereColumn('bl.tanggal_lahir', 'ga_visitor_transaction.tgl_lahir')
-                ->where(DB::raw('LOWER(TRIM(bl.nama))'), DB::raw('LOWER(TRIM(ga_visitor_transaction.namavisitor))'))
-                ->where('bl.aktif', true);
-        });
-
-        // Filters...
         if (!empty($filter['nama_visitor'])) {
-            $query->where('namavisitor', 'like', '%' . $filter['nama_visitor'] . '%');
-        }
-
-        if (!empty($filter['no_ktp_sim'])) {
-            $query->where('no_ktp_sim', 'like', '%' . $filter['no_ktp_sim'] . '%');
+            $query->where('namavisitor', 'like', "%{$filter['nama_visitor']}%");
         }
 
         if (!empty($filter['no_kartu'])) {
-            $query->where('no_kartu', 'like', '%' . $filter['no_kartu'] . '%');
+            $query->where('no_kartu', 'like', "%{$filter['no_kartu']}%");
         }
 
         if (!empty($filter['nopol'])) {
-            $query->where('nopol', 'like', '%' . $filter['nopol'] . '%');
+            $query->where('nopol', 'like', "%{$filter['nopol']}%");
+        }
+
+        if (!empty($filter['no_ktp_sim'])) {
+            $query->where('no_ktp_sim', 'like', "%{$filter['no_ktp_sim']}%");
         }
 
         if (!empty($filter['purpose'])) {
             $query->where('purpose', $filter['purpose']);
         }
 
-        if (isset($filter['kartu_dikembalikan']) && $filter['kartu_dikembalikan'] !== '') {
+        if (
+            isset($filter['kartu_dikembalikan']) &&
+            $filter['kartu_dikembalikan'] !== ''
+        ) {
             $query->where('kartu_dikembalikan', (bool) $filter['kartu_dikembalikan']);
         }
 
         if (!empty($filter['start_date']) && !empty($filter['end_date'])) {
-            try {
-                $start = Carbon::createFromFormat('d-m-Y', $filter['start_date'])->startOfDay();
-                $end = Carbon::createFromFormat('d-m-Y', $filter['end_date'])->endOfDay();
-                $query->whereBetween('createdon', [$start, $end]);
-            } catch (\Exception $e) {
-                // Log error if needed
-            }
+
+            // RANGE tanggal
+            $start = Carbon::createFromFormat('d-m-Y', $filter['start_date'])->startOfDay();
+            $end   = Carbon::createFromFormat('d-m-Y', $filter['end_date'])->endOfDay();
+
+            $query->whereBetween('createdon', [$start, $end]);
+
+        } elseif (!empty($filter['start_date'])) {
+
+            // SATU tanggal saja
+            $date = Carbon::createFromFormat('d-m-Y', $filter['start_date']);
+
+            $query->whereDate('createdon', $date);
         }
 
-
-        // ⏳ Batasi ke 7 hari terakhir
-        $sevenDaysAgo = Carbon::now()->subDays(7);
-        $query->where('createdon', '>=', $sevenDaysAgo);
-
-        // $query->orderBy('id', 'desc');
-        $query->orderBy('createdon', 'desc');
-
-
-        return $query->limit(300)->get();
+        return $query;
     }
 
     private function DrawTable($query)
@@ -118,65 +115,65 @@ class HistorySupplierDatatable extends Controller
                 return '<div style="max-width: 100px; word-wrap: break-word; white-space: normal;">' . e($namaComp) . '</div>';
             })
 
-            ->addColumn('photo_visitor', function ($item) {
-                if (empty($item->foto)) {
-                    return '-';
-                }
+            // ->addColumn('photo_visitor', function ($item) {
+            //     if (empty($item->foto)) {
+            //         return '-';
+            //     }
 
-                // Decode JSON string jadi array
-                $fotoArray = json_decode(html_entity_decode($item->foto), true);
+            //     // Decode JSON string jadi array
+            //     $fotoArray = json_decode(html_entity_decode($item->foto), true);
 
-                if (empty($fotoArray) || !is_array($fotoArray)) {
-                    return '-';
-                }
+            //     if (empty($fotoArray) || !is_array($fotoArray)) {
+            //         return '-';
+            //     }
 
-                $html = '';
+            //     $html = '';
 
-                foreach ($fotoArray as $fotoUrl) {
-                    $html .= '<img src="' . $fotoUrl . '" 
-                      alt="Photo Visitor" 
-                      style="max-width: 80px; max-height: 80px; margin: 3px; border-radius: 6px; cursor: pointer;" 
-                      onclick="showImageModal(\'' . $fotoUrl . '\')" />';
-                }
+            //     foreach ($fotoArray as $fotoUrl) {
+            //         $html .= '<img src="' . $fotoUrl . '" 
+            //           alt="Photo Visitor" 
+            //           style="max-width: 80px; max-height: 80px; margin: 3px; border-radius: 6px; cursor: pointer;" 
+            //           onclick="showImageModal(\'' . $fotoUrl . '\')" />';
+            //     }
 
-                return $html;
-            })
-            ->addColumn('photo_visitor_out', function ($item) {
-                if (empty($item->foto_out)) return '-';
-                return '<img src="' . $item->foto_out . '" style="max-width: 80px; max-height: 80px; border-radius: 6px; cursor: pointer; margin: 3px;" onclick="showImageModal(\'' . $item->foto_out . '\')" />';
-            })
-            ->addColumn('img_visitor', function ($item) {
-                if (empty($item->imgvisitorpathin)) {
-                    return '-';
-                }
-                return '<img src="' . $item->imgvisitorpathin . '" 
-             alt="Image Visitor" 
-             style="max-width: 80px; max-height: 80px; border-radius: 6px; cursor: pointer; margin: 3px;" 
-             onclick="showImageModal(\'' . $item->imgvisitorpathin . '\')" />';
-            })
-            ->addColumn('is_kacamata', function ($item) {
-                if ($item->is_kacamata === null) {
-                    return '-';
-                }
+            //     return $html;
+            // })
+            // ->addColumn('photo_visitor_out', function ($item) {
+            //     if (empty($item->foto_out)) return '-';
+            //     return '<img src="' . $item->foto_out . '" style="max-width: 80px; max-height: 80px; border-radius: 6px; cursor: pointer; margin: 3px;" onclick="showImageModal(\'' . $item->foto_out . '\')" />';
+            // })
+            // ->addColumn('img_visitor', function ($item) {
+            //     if (empty($item->imgvisitorpathin)) {
+            //         return '-';
+            //     }
+            //     return '<img src="' . $item->imgvisitorpathin . '" 
+            //         alt="Image Visitor" 
+            //         style="max-width: 80px; max-height: 80px; border-radius: 6px; cursor: pointer; margin: 3px;" 
+            //         onclick="showImageModal(\'' . $item->imgvisitorpathin . '\')" />';
+            // })
+            // ->addColumn('is_kacamata', function ($item) {
+            //     if ($item->is_kacamata === null) {
+            //         return '-';
+            //     }
 
-                return $item->is_kacamata
-                    ? '<span class="badge bg-success">Ya</span>'
-                    : '<span class="badge bg-secondary">Tidak</span>';
-            })
-            ->addColumn('kondisi_kacamata', function ($item) {
-                if (!$item->is_kacamata) {
-                    return '-';
-                }
+            //     return $item->is_kacamata
+            //         ? '<span class="badge bg-success">Ya</span>'
+            //         : '<span class="badge bg-secondary">Tidak</span>';
+            // })
+            // ->addColumn('kondisi_kacamata', function ($item) {
+            //     if (!$item->is_kacamata) {
+            //         return '-';
+            //     }
 
-                return $item->kondisi_kacamata;
-            })
-            ->addColumn('kondisi_kacamata_out', function ($item) {
-                if (!$item->is_kacamata || !$item->kondisi_kacamata_out) {
-                    return '-';
-                }
+            //     return $item->kondisi_kacamata;
+            // })
+            // ->addColumn('kondisi_kacamata_out', function ($item) {
+            //     if (!$item->is_kacamata || !$item->kondisi_kacamata_out) {
+            //         return '-';
+            //     }
 
-                return $item->kondisi_kacamata_out;
-            })
+            //     return $item->kondisi_kacamata_out;
+            // })
             ->editColumn('NAMAVISITOR', function ($item) {
                 return $item->NAMAVISITOR ?: '-';
             })
@@ -261,7 +258,8 @@ class HistorySupplierDatatable extends Controller
             })
 
 
-            ->rawColumns(['photo_visitor', 'img_visitor', 'namacomp', 'waktu_masuk', 'waktu_keluar', 'namavisitor', 'action', 'keterangan', 'is_kacamata', 'kondisi_kacamata', "photo_visitor_out", 'kondisi_kacamata_out'])
+            // ->rawColumns(['photo_visitor', 'img_visitor', 'namacomp', 'waktu_masuk', 'waktu_keluar', 'namavisitor', 'action', 'keterangan', 'is_kacamata', 'kondisi_kacamata', "photo_visitor_out", 'kondisi_kacamata_out'])
+            ->rawColumns(['namacomp', 'waktu_masuk', 'waktu_keluar', 'namavisitor', 'action', 'keterangan'])
             ->make(true);
     }
 }

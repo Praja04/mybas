@@ -35,6 +35,7 @@ const VisitorDetailModal = {
 
         // Foto KTP
         $("#detailKtpFoto").attr("src", data.imgvisitorpathin || "");
+        $("#detailSelfieOutContainer").attr("src", data.foto_out || "");
 
         // Foto Selfie
         let selfieContainer = $("#detailSelfieContainer");

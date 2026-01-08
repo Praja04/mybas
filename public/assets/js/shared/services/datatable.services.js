@@ -10,8 +10,9 @@ export async function getDatatable(options) {
                     url: options.url,
                     type: options.method,
                     data: function (d) {
-                        return { ...d, ...options.dataSend };
-                    },
+                        d.filter = options.dataSend || {};
+                        return d;
+                    }
                 },
                 columns: options.dataColumns.column,
                 columnDefs: [

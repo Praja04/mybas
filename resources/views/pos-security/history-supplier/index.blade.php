@@ -4,7 +4,7 @@
 
 @section('content')
     <div class="container-fluid">
-        {{-- @include('pos-security.history-supplier.components.filter-supplier') --}}
+        @include('pos-security.history-supplier.components.filter-supplier')
         @include('pos-security.history-supplier.components.modal-detail')
         @include('pos-security.history-supplier.components.modal-lapor-kartu')
         @include('pos-security.history-supplier.components.modal-blacklist')
@@ -34,12 +34,12 @@
                                         <th>Perusahaan</th>
                                         <th>No. Polisi</th>
                                         <th>No. Kartu</th>
-                                        <th>Pakai Kacamata</th>
+                                        {{-- <th>Pakai Kacamata</th>
                                         <th>Kondisi Kacamata (Masuk)</th>
-                                        <th>Kondisi Kacamata (Keluar)</th>
-                                        <th>Foto Tamu (Masuk)</th> <!-- photo_visitor -->
+                                        <th>Kondisi Kacamata (Keluar)</th> --}}
+                                        {{-- <th>Foto Tamu (Masuk)</th> <!-- photo_visitor -->
                                         <th>Foto Tamu (Keluar)</th> <!-- photo_visitor_out -->
-                                        <th>Foto Identitas</th>
+                                        <th>Foto Identitas</th> --}}
                                         <th>Waktu Masuk</th>
                                         <th>Waktu Keluar</th>
                                         {{-- <th>Tanggal Keluar </th>
@@ -74,6 +74,14 @@
             mode: "range",
             dateFormat: "d-m-Y",
             locale: "id",
+            allowInput: true,
+            onChange: function(selectedDates, dateStr, instance) {
+                if (selectedDates.length === 1) {
+                    const singleDate = instance.formatDate(selectedDates[0], "d-m-Y");
+                    instance.input.value = singleDate;
+                    instance.close();
+                }
+            }
         });
     </script>
 @endpush
