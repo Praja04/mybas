@@ -19,7 +19,7 @@ class AbsensiGateDatatable extends Controller
 
     private function rawData($request)
     {
-        $filter = $request->query('filter', []);
+        $filter = $request->input('filter', []);
 
         // Query utama: gabungkan gate log dan visitor log
         $query = DB::table('ga_gate_access_logs_security as security')
@@ -77,13 +77,20 @@ class AbsensiGateDatatable extends Controller
 
         // 🔍 Filter: Rentang Tanggal
         if (!empty($filter['start_date']) && !empty($filter['end_date'])) {
-            try {
-                $start = Carbon::createFromFormat('d-m-Y', $filter['start_date'])->startOfDay();
-                $end = Carbon::createFromFormat('d-m-Y', $filter['end_date'])->endOfDay();
-                $query->whereBetween('security.waktu', [$start, $end]);
-            } catch (\Exception $e) {
-                Log::channel('ga_sistem_tracking')->warning('Date filter error in SecurityGateAccess: ' . $e->getMessage());
-            }
+
+            // RANGE
+            $start = Carbon::createFromFormat('d-m-Y', $filter['start_date'])->startOfDay();
+            $end   = Carbon::createFromFormat('d-m-Y', $filter['end_date'])->endOfDay();
+
+            $query->whereBetween('security.waktu', [$start, $end]);
+
+        } elseif (!empty($filter['start_date'])) {
+
+            // SINGLE DATE
+            $start = Carbon::createFromFormat('d-m-Y', $filter['start_date'])->startOfDay();
+            $end   = Carbon::createFromFormat('d-m-Y', $filter['start_date'])->endOfDay();
+
+            $query->whereBetween('security.waktu', [$start, $end]);
         }
 
         return $query->limit(1000)->get();

@@ -5,7 +5,7 @@
 @section('content')
     <div class="container-fluid">
 
-        {{-- @include('pos-security.absensi.components.filter') --}}
+        @include('pos-security.absensi.components.filter')
 
         <!-- Modal -->
         <div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
@@ -119,6 +119,14 @@
             mode: "range",
             dateFormat: "d-m-Y",
             locale: "id",
+            allowInput: true,
+            onChange: function(selectedDates, dateStr, instance) {
+                if (selectedDates.length === 1) {
+                    const singleDate = instance.formatDate(selectedDates[0], "d-m-Y");
+                    instance.input.value = singleDate;
+                    instance.close();
+                }
+            }
         });
 
         function hotReload() {

@@ -114,22 +114,24 @@ export class ContentDatatable {
     initialize() {
         return new Promise((resolve, reject) => {
             $(() => {
-                const url = new URL(this._datatable.url);
-                const filename = url.pathname.split("/").pop();
-                console.log("Initializing Datatable from:", filename);
+                // const url = new URL(this._datatable.url);
+                // const filename = url.pathname.split("/").pop();
+                // console.log("Initializing Datatable from:", filename);
 
                 getDatatable(this._datatable)
-                    .then(() => {
-                        console.log("✅ Datatable initialized successfully");
+                    .then((table) => {
+                        console.log("datatable content initialized");
+                        this.table = table;
                         resolve();
                     })
-                    .catch((error) => {
-                        console.error(
-                            "❌ Datatable initialization failed:",
-                            error
-                        );
-                        reject(error);
-                    });
+                    // .catch((error) => {
+                    //     console.error(
+                    //         "❌ Datatable initialization failed:",
+                    //         error
+                    //     );
+                    //     reject(error);
+                    // });
+                    .catch(reject);
             });
         });
     }
@@ -139,35 +141,35 @@ export class ContentDatatable {
 const contentDatatable = new ContentDatatable();
 
 // Fungsi reload dengan filter
-function reloadDataTable(filter) {
-    console.log("🔄 Destroying existing DataTable...");
+// function reloadDataTable(filter) {
+//     console.log("🔄 Destroying existing DataTable...");
 
-    const $table = $(contentDatatable._datatable.className);
-    if ($.fn.DataTable.isDataTable($table)) {
-        $table.DataTable().destroy();
-    }
+//     const $table = $(contentDatatable._datatable.className);
+//     if ($.fn.DataTable.isDataTable($table)) {
+//         $table.DataTable().destroy();
+//     }
 
-    // Pastikan struktur dataSend dan dataSend.data ada
-    if (!contentDatatable._datatable.dataSend) {
-        contentDatatable._datatable.dataSend = { data: {} };
-    } else if (!contentDatatable._datatable.dataSend.data) {
-        contentDatatable._datatable.dataSend.data = {};
-    }
+//     // Pastikan struktur dataSend dan dataSend.data ada
+//     if (!contentDatatable._datatable.dataSend) {
+//         contentDatatable._datatable.dataSend = { data: {} };
+//     } else if (!contentDatatable._datatable.dataSend.data) {
+//         contentDatatable._datatable.dataSend.data = {};
+//     }
 
-    // Simpan filter
-    contentDatatable._datatable.dataSend.data.filter = filter;
+//     // Simpan filter
+//     contentDatatable._datatable.dataSend.data.filter = filter;
 
-    console.log("🚀 Reinitializing DataTable with filter:", filter);
+//     console.log("🚀 Reinitializing DataTable with filter:", filter);
 
-    contentDatatable
-        .initialize()
-        .then(() => {
-            console.log("✅ DataTable reloaded with new filter");
-        })
-        .catch((error) => {
-            console.error("❌ Reload failed:", error);
-        });
-}
+//     contentDatatable
+//         .initialize()
+//         .then(() => {
+//             console.log("✅ DataTable reloaded with new filter");
+//         })
+//         .catch((error) => {
+//             console.error("❌ Reload failed:", error);
+//         });
+// }
 
 // Inisialisasi pertama kali
 contentDatatable
@@ -183,30 +185,49 @@ contentDatatable
 $("#filter-form").on("submit", function (e) {
     e.preventDefault();
 
-    const formData = $(this).serializeArray();
+    // const formData = $(this).serializeArray();
     const params = {};
 
-    formData.forEach(({ name, value }) => {
-        if (value) {
-            params[name] = value;
-        }
+    // formData.forEach(({ name, value }) => {
+    //     if (value) {
+    //         params[name] = value;
+    //     }
+    // });
+
+    $(this).serializeArray().forEach(({ name, value }) => {
+        if (value) params[name] = value;
     });
 
+
     // Proses rentang tanggal: "start_date" dan "end_date"
-    if (params.tanggal_masuk && params.tanggal_masuk.includes(" to ")) {
-        const [start, end] = params.tanggal_masuk.split(" to ");
-        params.start_date = start.trim();
-        params.end_date = end.trim();
+    if (params.tanggal_masuk) {
+        
+        if (params.tanggal_masuk.includes(" to ")) {
+            // RANGE
+            const [start, end] = params.tanggal_masuk.split(" to ");
+            params.start_date = start;
+            params.end_date = end;
+        } else {
+            // SATU TANGGAL
+            params.start_date = params.tanggal_masuk;
+            
+        }
+
         delete params.tanggal_masuk;
     }
 
-    reloadDataTable(params);
+    // reloadDataTable(params); // Kirim sebagai filter
+    contentDatatable._datatable.dataSend = params;
+    console.log("FILTER:", contentDatatable._datatable.dataSend);
+    contentDatatable.table.ajax.reload();
 });
 
 // Reset form
 $("#filter-form").on("reset", function () {
     setTimeout(() => {
-        reloadDataTable({});
+        // reloadDataTable({}); // Reset filter jadi kosong
+        contentDatatable._datatable.dataSend = {};
+        contentDatatable.table.ajax.reload();
     }, 100);
 });
 
@@ -225,6 +246,8 @@ document.querySelectorAll(".dropdown-item").forEach((item) => {
 
         document.querySelector(".filter-title").textContent =
             event.target.textContent;
-        reloadDataTable(filter);
+        // reloadDataTable({}); // Reset filter jadi kosong
+        contentDatatable._datatable.dataSend = {};
+        contentDatatable.table.ajax.reload();
     });
 });
