@@ -243,70 +243,67 @@ class SupplierFormAjax extends Controller
         $visitor = DB::table('ga_visitor_transaction')
             ->where(function ($query) use ($keyword) {
                 $query->where('trnvisitorid', $keyword)
+                    ->orWhere('no_ktp_sim', $keyword)
                     ->orWhere('no_kartu', $keyword);
             })
-            ->whereNull('dateout')
+            // ->whereNull('dateout')
+            // ->where(function ($q) {
+            //     $q->whereNull('kartu_dikembalikan')
+            //         ->orWhere('kartu_dikembalikan', false);
+            // })
             ->where(function ($q) {
-                $q->whereNull('kartu_dikembalikan')
-                    ->orWhere('kartu_dikembalikan', false);
+                $q->whereNull('dateout')  // belum keluar
+                    ->orWhere('kartu_dikembalikan', true); // atau sudah dikembalikan
             })
             ->orderBy('createdon', 'desc')
             ->first();
 
         if ($visitor) {
             // cek apakah sudah keluar
-            // if (!is_null($visitor->dateout)) {
-            //     $tanggalMasuk = Carbon::parse($visitor->datein)->translatedFormat('d F Y');
-            //     $jamMasuk = $visitor->timein ?? '-';
+            if (!is_null($visitor->dateout)) {
+                $tanggalMasuk = Carbon::parse($visitor->datein)->translatedFormat('d F Y');
+                $jamMasuk = $visitor->timein ?? '-';
 
-            //     $tanggalKeluar = Carbon::parse($visitor->dateout)->translatedFormat('d F Y');
-            //     $jamKeluar = $visitor->timeout ?? '-';
+                $tanggalKeluar = Carbon::parse($visitor->dateout)->translatedFormat('d F Y');
+                $jamKeluar = $visitor->timeout ?? '-';
 
-            //     return response()->json([
-            //         'success' => false,
-            //         'message' => 'Visitor atas nama ' . ($visitor->namavisitor ?? '-') .
-            //             ' telah keluar pada tanggal ' . $tanggalKeluar . ' pukul ' . $jamKeluar . ' WIB. ' .
-            //             'Kartu dengan nomor ' . ($visitor->no_kartu ?? '-') . ' sebelumnya digunakan untuk kunjungan pada tanggal ' .
-            //             $tanggalMasuk . ' pukul ' . $jamMasuk . ' WIB. ' .
-            //             'Kartu ini sekarang sudah bisa digunakan kembali.',
-            //     ]);
-            // }
-
-            // Jika kartu belum dikembalikan atau masih aktif → valid
-            // if (is_null($visitor->kartu_dikembalikan) || $visitor->kartu_dikembalikan == false) {
-            //     return response()->json([
-            //         'success' => true,
-            //         'data' => $visitor
-            //     ]);
-            // }
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Visitor atas nama ' . ($visitor->namavisitor ?? '-') .
+                        ' telah keluar pada tanggal ' . $tanggalKeluar . ' pukul ' . $jamKeluar . ' WIB. ' .
+                        'Kartu dengan nomor ' . ($visitor->no_kartu ?? '-') . ' sebelumnya digunakan untuk kunjungan pada tanggal ' .
+                        $tanggalMasuk . ' pukul ' . $jamMasuk . ' WIB. ' .
+                        'Kartu ini sekarang sudah bisa digunakan kembali.',
+                ]);
+            }
 
             // validasi apakah kendaraan sudah dilakukan cek kendaraan
-            // $cekKendaraan = DB::table('ga_cek_kendaraan')
-            //     ->whereRaw("
-            //         REPLACE(REPLACE(UPPER(nomor_polisi), ' ', ''), '-', '')
-            //         =
-            //         REPLACE(REPLACE(UPPER(?), ' ', ''), '-', '')
-            //     ", [$visitor->nopol])
-            //     // ->where('checked_in_at', '>=', $visitor->createdon)
-            //     ->where('checked_in_at', '>=', now()->subHours(24))
-            //     ->orderBy('checked_in_at', 'desc')
-            //     ->first();
+            $cekKendaraan = DB::table('ga_cek_kendaraan')
+                ->whereRaw("
+                    REPLACE(REPLACE(UPPER(nomor_polisi), ' ', ''), '-', '')
+                    =
+                    REPLACE(REPLACE(UPPER(?), ' ', ''), '-', '')
+                ", [$visitor->nopol])
+                // ->where('checked_in_at', '>=', $visitor->createdon)
+                ->where('checked_in_at', '>=', now()->subHours(24))
+                ->orderBy('checked_in_at', 'desc')
+                ->first();
 
-            // // belum pernah cek kendaraan sama sekali pada kedatangan ini
-            // if (!$cekKendaraan) {
-            //     return response()->json([
-            //         'success' => false,
-            //         'message' => 'Kendaraan belum melakukan cek kendaraan masuk & keluar pada kedatangan ini.'
-            //     ]);
-            // }
+            // belum pernah cek kendaraan sama sekali pada kedatangan ini
+            if (!$cekKendaraan) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Kendaraan belum melakukan cek kendaraan masuk & keluar pada kedatangan ini.'
+                ]);
+            }
 
-            // // sudah cek masuk tapi belum cek keluar
-            // if ($cekKendaraan->checked_in_at && is_null($cekKendaraan->checked_out_at)) {
-            //     return response()->json([
-            //         'success' => false,
-            //         'message' => 'Kendaraan belum melakukan cek keluar.'
-            //     ]);
-            // }
+            // sudah cek masuk tapi belum cek keluar
+            if ($cekKendaraan->checked_in_at && is_null($cekKendaraan->checked_out_at)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Kendaraan belum melakukan cek keluar.'
+                ]);
+            }
 
             return response()->json([
                 'success' => true,
@@ -316,7 +313,7 @@ class SupplierFormAjax extends Controller
 
         return response()->json([
             'success' => false,
-            'message' => 'Data pengunjung tidak ditemukan atau sudah keluar.'
+            'message' => 'Data pengunjung tidak ditemukan. Pastikan data sudah teregistrasi dan belum keluar.',
         ]);
     }
 

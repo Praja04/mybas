@@ -532,6 +532,7 @@ $(document).ready(function () {
                 // Reset form
                 $("#visitorForm")[0].reset(); // reset semua input biasa
 
+                resetKtpData();
                 resetPreviewImage(); // Reset semua tampilan preview
                 resetModalKamera(); // Stop kamera & clear canvas
                 selfiePhotos = []; // Reset array selfie
@@ -762,3 +763,22 @@ function resetForm() {
         .removeClass("alert-success alert-danger")
         .html("");
 }
+
+function resetKtpData() {
+    // Reset hidden input KTP
+    $("#imgvisitorpathin").val("");
+
+    // Reset preview KTP
+    $("#ktpPreview")
+        .empty()
+        .append(
+            '<div class="text-muted fst-italic mt-2">Tidak ada foto yang diunggah.</div>'
+        );
+
+    // Reset captured image (modal)
+    $("#capturedImage").attr("src", "");
+    $("#capturedImageContainer").hide();
+
+    console.log("🧹 KTP data direset");
+}
+

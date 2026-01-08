@@ -1091,7 +1091,7 @@ function renderSelfiePreviews() {
             "end-0",
             "remove-selfie-btn"
         );
-        removeBtn.innerHTML = '<i class="fas fa-times"></i>';
+        removeBtn.innerHTML = '<i class="mdi mdi-close"></i>';
         removeBtn.setAttribute("aria-label", "Hapus foto");
         removeBtn.onclick = () => removeSelfiePhoto(index);
 
@@ -1552,6 +1552,21 @@ $('a[data-bs-toggle="tab"]').on("shown.bs.tab", function (e) {
 
     checkAllRequiredElements();
 });
+
+document.addEventListener("DOMContentLoaded", function () {
+    const selfieModal = document.getElementById("selfieModal");
+
+    if (selfieModal) {
+        selfieModal.addEventListener("shown.bs.modal", function () {
+            startSelfieWebcam(); // AUTO START CAMERA
+        });
+
+        selfieModal.addEventListener("hidden.bs.modal", function () {
+            stopSelfieStream(); // AUTO STOP CAMERA
+        });
+    }
+});
+
 
 // document.addEventListener("DOMContentLoaded", function () {
 //     const isKacamata = document.getElementById("isKacamata");
