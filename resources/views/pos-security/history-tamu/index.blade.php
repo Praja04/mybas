@@ -5,7 +5,7 @@
 @section('content')
     <div class="container-fluid">
 
-        {{-- @include('pos-security.history-tamu.components.filter-vendor') --}}
+        @include('pos-security.history-tamu.components.filter-vendor')
 
         {{-- Visitor History Table --}}
         <div class="row">
@@ -29,7 +29,7 @@
                                         <th>Perusahaan</th> <!-- namacomp -->
                                         <th>Nama Pengunjung</th> <!-- host -->
                                         <th>Tanggal Lahir</th> <!-- host -->
-                                        <th>Nama PIC</th> <!-- host -->
+                                        <th>Bertemu Dgn</th> <!-- host -->
                                         <th>Keperluan</th> <!-- host -->
                                         <th>Departemen</th> <!-- hostdeptid -->
                                         <th>No Kartu</th> <!-- purpose -->
@@ -94,6 +94,14 @@
             mode: "range",
             dateFormat: "d-m-Y",
             locale: "id",
+            allowInput: true,
+            onChange: function(selectedDates, dateStr, instance) {
+                if (selectedDates.length === 1) {
+                    const singleDate = instance.formatDate(selectedDates[0], "d-m-Y");
+                    instance.input.value = singleDate;
+                    instance.close();
+                }
+            }
         });
 
         function hotReload() {

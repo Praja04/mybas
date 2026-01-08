@@ -18,21 +18,21 @@ class HistoryVendorDatatable extends Controller
 
     private function rawData($request)
     {
-        $filter = $request->query('filter', []);
+        $filter = $request->input('filter', []);
 
         $query = GaVisitorVendorTransaction::query()
-            ->orderBy('createdon', 'desc');
+            ->where('createdon', '>=', Carbon::now()->subDays(7));
 
 
         // Filter nama visitor
         if (!empty($filter['nama_visitor'])) {
-            $query->where('namavisitor', 'like', '%' . $filter['nama_visitor'] . '%');
+            $query->where('namavisitor', 'like', "%{$filter['nama_visitor']}%");
         }
 
 
         // Filter no_kartu
         if (!empty($filter['no_kartu'])) {
-            $query->where('no_kartu', 'like', '%' . $filter['no_kartu'] . '%');
+            $query->where('no_kartu', 'like', "%{$filter['no_kartu']}%");
         }
 
         // Filter type
@@ -47,20 +47,22 @@ class HistoryVendorDatatable extends Controller
 
         // Filter tanggal
         if (!empty($filter['start_date']) && !empty($filter['end_date'])) {
-            try {
-                $start = Carbon::createFromFormat('d-m-Y', $filter['start_date'])->startOfDay();
-                $end = Carbon::createFromFormat('d-m-Y', $filter['end_date'])->endOfDay();
-                $query->whereBetween('createdon', [$start, $end]);
-            } catch (\Exception $e) {
-                // Bisa log error format tanggal jika perlu
-            }
+
+            // RANGE tanggal
+            $start = Carbon::createFromFormat('d-m-Y', $filter['start_date'])->startOfDay();
+            $end   = Carbon::createFromFormat('d-m-Y', $filter['end_date'])->endOfDay();
+
+            $query->whereBetween('createdon', [$start, $end]);
+
+        } elseif (!empty($filter['start_date'])) {
+
+            // SATU tanggal saja
+            $date = Carbon::createFromFormat('d-m-Y', $filter['start_date']);
+
+            $query->whereDate('createdon', $date);
         }
 
-        // Batasi hanya 7 hari terakhir (optional safeguard)
-        $sevenDaysAgo = Carbon::now()->subDays(7);
-        $query->where('createdon', '>=', $sevenDaysAgo);
-
-        return $query->limit(300)->get();
+        return $query;
     }
 
     private function DrawTable($query)

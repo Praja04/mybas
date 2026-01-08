@@ -131,35 +131,25 @@ export class ContentDatatable {
         return new Promise((resolve, reject) => {
             $(() => {
                 // Extracting filename from URL
-                const url = new URL(this._datatable.url);
-                const filename = url.pathname.split("/").pop();
-                console.log("File name:", filename);
+                // const url = new URL(this._datatable.url);
+                // const filename = url.pathname.split("/").pop();
+                // console.log("File name:", filename);
 
                 getDatatable(this._datatable)
-                    .then(() => {
+                    .then((table) => {
                         console.log("datatable content initialized");
-
-                        // // trugger row checkbox
-                        // $(document).on("change", ".row-checkbox", function () {
-                        //     let customerId = $(this).data("id");
-                        //     let isChecked = $(this).prop("checked");
-
-                        //     console.log(
-                        //         `Checkbox for customer ID ${customerId} is ${
-                        //             isChecked ? "checked" : "unchecked"
-                        //         }`
-                        //     );
-                        // });
+                        this.table = table;
 
                         resolve();
                     })
-                    .catch((error) => {
-                        console.error(
-                            "datatable content  initialization failed:",
-                            error
-                        );
-                        reject(error);
-                    });
+                    .catch(reject);
+                    // .catch((error) => {
+                    //     console.error(
+                    //         "datatable content  initialization failed:",
+                    //         error
+                    //     );
+                    //     reject(error);
+                    // });
             });
         });
     }
@@ -168,33 +158,33 @@ export class ContentDatatable {
 const contentDatatable = new ContentDatatable();
 
 // Function to destroy and recreate the datatable
-function reloadDataTable(filter) {
-    console.log("Destroying existing DataTable...");
+// function reloadDataTable(filter) {
+//     console.log("Destroying existing DataTable...");
 
-    // Destroy the current DataTable instance if it exists
-    if ($.fn.DataTable.isDataTable(contentDatatable._datatable.className)) {
-        $(contentDatatable._datatable.className).DataTable().destroy();
-    }
+//     // Destroy the current DataTable instance if it exists
+//     if ($.fn.DataTable.isDataTable(contentDatatable._datatable.className)) {
+//         $(contentDatatable._datatable.className).DataTable().destroy();
+//     }
 
-    console.log("Recreating DataTable with new filter:", filter);
-    if (!contentDatatable._datatable.dataSend) {
-        contentDatatable._datatable.dataSend = { data: {} };
-    }
-    if (!contentDatatable._datatable.dataSend.data) {
-        contentDatatable._datatable.dataSend.data = {};
-    }
+//     console.log("Recreating DataTable with new filter:", filter);
+//     if (!contentDatatable._datatable.dataSend) {
+//         contentDatatable._datatable.dataSend = { data: {} };
+//     }
+//     if (!contentDatatable._datatable.dataSend.data) {
+//         contentDatatable._datatable.dataSend.data = {};
+//     }
 
-    // Set the new filter value
-    contentDatatable._datatable.dataSend.data.filter = filter;
-    contentDatatable
-        .initialize()
-        .then(() => {
-            console.log("Datatable reinitialized with filter:", filter);
-        })
-        .catch((error) => {
-            console.error("Reinitialization failed:", error);
-        });
-}
+//     // Set the new filter value
+//     contentDatatable._datatable.dataSend.data.filter = filter;
+//     contentDatatable
+//         .initialize()
+//         .then(() => {
+//             console.log("Datatable reinitialized with filter:", filter);
+//         })
+//         .catch((error) => {
+//             console.error("Reinitialization failed:", error);
+//         });
+// }
 
 // Initial datatable load
 contentDatatable
@@ -210,30 +200,48 @@ contentDatatable
 $("#filter-form").on("submit", function (e) {
     e.preventDefault();
 
-    const formData = $(this).serializeArray();
+    // const formData = $(this).serializeArray();
     let params = {};
 
-    formData.forEach(({ name, value }) => {
-        if (value) {
-            params[name] = value;
-        }
+    // formData.forEach(({ name, value }) => {
+    //     if (value) {
+    //         params[name] = value;
+    //     }
+    // });
+
+    $(this).serializeArray().forEach(({ name, value }) => {
+        if (value) params[name] = value;
     });
 
     // Handle tanggal range
-    if (params.tanggal_masuk && params.tanggal_masuk.includes(" to ")) {
-        const [start, end] = params.tanggal_masuk.split(" to ");
-        params.start_date = start;
-        params.end_date = end;
+    if (params.tanggal_masuk) {
+        
+        if (params.tanggal_masuk.includes(" to ")) {
+            // RANGE
+            const [start, end] = params.tanggal_masuk.split(" to ");
+            params.start_date = start;
+            params.end_date = end;
+        } else {
+            // SATU TANGGAL
+            params.start_date = params.tanggal_masuk;
+            
+        }
+
         delete params.tanggal_masuk;
     }
 
-    reloadDataTable(params); // Kirim sebagai filter
+    // reloadDataTable(params); // Kirim sebagai filter
+    contentDatatable._datatable.dataSend = params;
+    contentDatatable.table.ajax.reload();
+
 });
 
 // Reset button
 $("#filter-form").on("reset", function () {
     setTimeout(() => {
-        reloadDataTable({}); // Reset filter jadi kosong
+        // reloadDataTable({}); // Reset filter jadi kosong
+        contentDatatable._datatable.dataSend = {};
+        contentDatatable.table.ajax.reload();
     }, 100);
 });
 
@@ -247,6 +255,8 @@ document.querySelectorAll(".dropdown-item").forEach((item) => {
         console.log("Selected Filter:", filter);
         document.querySelector(".filter-title").textContent =
             event.target.textContent;
-        reloadDataTable(filter);
+        // reloadDataTable(filter);
+        contentDatatable._datatable.dataSend = {};
+        contentDatatable.table.ajax.reload();
     });
 });
