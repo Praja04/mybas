@@ -19,7 +19,7 @@ class AbsensiDatatable extends Controller
 
     private function rawData($request)
     {
-        $filter = $request->query('filter', []);
+        $filter = $request->input('filter', []);
 
         // Log::info('Filter received:', $filter); // Opsional: debug
 
@@ -58,18 +58,23 @@ class AbsensiDatatable extends Controller
 
         // Filter: Rentang Tanggal
         if (!empty($filter['start_date']) && !empty($filter['end_date'])) {
-            try {
-                $start = Carbon::createFromFormat('d-m-Y', $filter['start_date'])->startOfDay();
-                $end = Carbon::createFromFormat('d-m-Y', $filter['end_date'])->endOfDay();
+            $start = Carbon::createFromFormat('d-m-Y', $filter['start_date'])->startOfDay();
+            $end = Carbon::createFromFormat('d-m-Y', $filter['end_date'])->endOfDay();
 
-                $query->where(function ($q) use ($start, $end) {
-                    $q->whereBetween('scan_time', [$start, $end])
-                        ->orWhereNull('scan_time')
-                        ->whereBetween('tanggal_log', [$start, $end]);
-                });
-            } catch (\Exception $e) {
-                Log::channel('ga_sistem_tracking')->warning('Date filter error: ' . $e->getMessage());
-            }
+            $query->where(function ($q) use ($start, $end) {
+                $q->whereBetween('scan_time', [$start, $end])
+                    ->orWhereNull('scan_time')
+                    ->whereBetween('tanggal_log', [$start, $end]);
+            });
+        } elseif (!empty($filter['start_date'])) {
+
+            $date = Carbon::createFromFormat('d-m-Y', $filter['start_date'])->startOfDay();
+            $end  = Carbon::createFromFormat('d-m-Y', $filter['start_date'])->endOfDay();
+
+            $query->where(function ($q) use ($date, $end) {
+                $q->whereBetween('scan_time', [$date, $end])
+                ->orWhereBetween('tanggal_log', [$date, $end]);
+            });
         }
 
         return $query->limit(500)->get();
