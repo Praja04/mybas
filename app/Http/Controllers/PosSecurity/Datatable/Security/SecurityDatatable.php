@@ -19,7 +19,7 @@ class SecurityDatatable extends Controller
                     return '-';
                 }
 
-                $url = asset('storage/' . $item->foto);
+                $url = asset($item->foto);
 
                 return '
                     <img src="' . $url . '" 

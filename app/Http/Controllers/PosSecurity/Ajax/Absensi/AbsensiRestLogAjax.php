@@ -223,7 +223,7 @@ class AbsensiRestLogAjax extends Controller
                 ];
             }
 
-            $fotoUrl = $security->foto ? asset('storage/' . $security->foto) : asset('assets/media/images/no-image.jpg');
+            $fotoUrl = $security->foto ? asset($security->foto) : asset('assets/media/images/no-image.jpg');
 
             $dataDetail = [
                 'nik'       => $security->nik,

@@ -280,7 +280,7 @@
                         </div>
                         <div class="info-box">
                             <p class="label">Status Kartu</p>
-                            <span class="badge-status green" id="status-kartu">AKTIF</span>
+                            <span class="badge-status green" id="status-kartu">-</span>
                         </div>
                         <div class="info-box">
                             <p class="label">Status Lokasi</p>
@@ -380,7 +380,7 @@
                         setText('no-polisi', d.no_polisi || '-');
                         setText('keperluan', d.keperluan || '-');
                         setText('waktu-scan', nowFormatted());
-                        setText('status-lokasi', detail.gate || '-');
+                        setText('status-lokasi', "POS CHECK BODY");
 
                         // Status kartu
                         const statusKartuEl = document.getElementById('status-kartu');
