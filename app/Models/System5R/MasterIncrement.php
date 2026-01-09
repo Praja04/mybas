@@ -13,6 +13,11 @@ class MasterIncrement extends Model
 
     public function department()
     {
-        return $this->belongsTo(MasterDepartment::class, 'id_department');
+        return $this->belongsTo(MasterDepartment::class, 'id_department', 'id_department');
+    }
+
+    public function group()
+    {
+        return $this->belongsTo(MasterGroup::class, 'id_group', 'id_group');
     }
 }

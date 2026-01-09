@@ -96,25 +96,23 @@ class PenilaianController extends Controller
         $activeDepartment = request('filter_department');
         $activeJadwal = request('filter_jadwal');
 
-
         $incrementTerakhir = null;
 
-        if ($activePeriodeId && $activeDepartment && $activeJadwal) {
+        if ($activePeriodeId && $activeDepartment && $activeJadwal && $id_group !== '--') {
 
-            // Ambil created_at periode aktif
             $periodeAktif = Periode::where('id_periode', $activePeriodeId)->first();
 
             if ($periodeAktif) {
-                $incrementTerakhir = MasterIncrement::where('id_department', $activeDepartment)
+                $incrementTerakhir = MasterIncrement::where('id_group', $id_group)
+                    ->where('id_department', $activeDepartment)
                     ->where('id_jadwal', $activeJadwal)
                     ->where('id_periode', $activePeriodeId)
-                    // ->where('created_at', '<', $periodeAktif->created_at) // INI KUNCI NYA
                     ->orderBy('created_at', 'desc')
                     ->first();
             }
         }
 
-        // dd($incrementTerakhir, $activePeriodeId, $activeDepartment, $activeJadwal);
+        // dd($incrementTerakhir, $activePeriodeId, $activeDepartment, $activeJadwal, $id_group);
 
         // dd($area);
         return view('system5r.penilaian.index', compact(

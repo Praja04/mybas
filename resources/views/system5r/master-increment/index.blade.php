@@ -53,6 +53,7 @@
                         <thead>
                             <tr>
                                 <th>Departemen</th>
+                                <th>Group</th>
                                 <th>Nilai Increment R1–R4 (Periode Sebelumnya)</th>
                                 <th>Aksi</th>
                             </tr>
@@ -96,6 +97,15 @@
                         </div>
 
                         <div class="mb-3">
+                            <label>Group <span class="text-danger">*</span></label>
+                            <select name="id_group" id="create_group" class="form-control" disabled required>
+                                <option value="" selected disabled>
+                                    -- Pilih Departemen Terlebih Dahulu --
+                                </option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
                             <label>Nilai Increment R1–R4 (Periode Sebelumnya) <span class="text-danger">*</span></label>
                             <input type="number" name="nilai" class="form-control" min="0" required
                                 placeholder="Contoh: 35">
@@ -127,9 +137,24 @@
 
                     <div class="modal-body">
                         <div class="mb-3">
-                            <label>Departemen</label>
-                            <input type="text" id="update_department_name" class="form-control" readonly>
+                            <label>Departemen <span class="text-danger">*</span></label>
+                            <select name="id_department" id="update_department" class="form-control" required>
+                                <option value="" disabled>-- Pilih Departemen --</option>
+                                @foreach ($departments as $dept)
+                                    <option value="{{ $dept->id_department }}">
+                                        {{ $dept->nama_department }}
+                                    </option>
+                                @endforeach
+                            </select>
                         </div>
+
+                        <div class="mb-3">
+                            <label>Group <span class="text-danger">*</span></label>
+                            <select name="id_group" id="update_group" class="form-control" required disabled>
+                                <option value="" disabled selected>-- Pilih Departemen Terlebih Dahulu --</option>
+                            </select>
+                        </div>
+
 
                         <div class="mb-3">
                             <label>Nilai Increment R1–R4 <span class="text-danger">*</span></label>
@@ -139,7 +164,7 @@
                     </div>
 
                     <div class="modal-footer">
-                        <button class="btn btn-success">Simpan Perubahan</button>
+                        <button class="btn btn-success" id="btnUpdateSubmit">Simpan Perubahan</button>
                     </div>
                 </form>
 
@@ -206,7 +231,12 @@
                     }
                 },
                 columns: [{
-                        data: 'department.nama_department'
+                        data: 'department.nama_department',
+                        defaultContent: '-'
+                    },
+                    {
+                        data: 'group.nama_group',
+                        defaultContent: '-'
                     },
                     {
                         data: 'nilai',
@@ -221,20 +251,21 @@
                             }
 
                             return `
-        <button class="btn btn-sm btn-warning me-1"
-            onclick="openUpdate(
-                '${row.id}',
-                '${row.department.nama_department}',
-                '${row.nilai}'
-            )">
-            Edit
-        </button>
+                                <button class="btn btn-sm btn-warning me-1"
+                                    onclick="openUpdate(
+                                        '${row.id}',
+                                        '${row.id_department}',
+                                        '${row.id_group ?? ""}',
+                                        '${row.nilai}'
+                                    )">
+                                    Edit
+                                </button>
 
-        <button class="btn btn-sm btn-danger"
-            onclick="deleteIncrement('${row.id}')">
-            Hapus
-        </button>
-    `;
+                                <button class="btn btn-sm btn-danger"
+                                    onclick="deleteIncrement('${row.id}')">
+                                    Hapus
+                                </button>
+                            `;
                         }
                     }
                 ]
@@ -281,14 +312,29 @@
         $('#btnTambahIncrement').on('click', function() {
             $('#create_jadwal').val($('#filter_jadwal').val());
             $('#create_periode').val($('#filter_periode').val());
+
             $('#create_department').val('');
+            $('#create_group')
+                .prop('disabled', true)
+                .html('<option disabled selected>-- Pilih Departemen Terlebih Dahulu --</option>');
+
             $('#modalCreateIncrement').modal('show');
         });
 
-        function openUpdate(id, deptName, nilai) {
+        function openUpdate(id, deptId, groupId, nilai) {
             $('#update_id').val(id);
-            $('#update_department_name').val(deptName);
+            $('#update_department').val(deptId).trigger('change');
             $('#update_nilai').val(nilai);
+
+            // LOCK STATE
+            $('#update_group')
+                .prop('disabled', true)
+                .html('<option disabled selected>Loading group...</option>');
+
+            $('#btnUpdateSubmit').prop('disabled', true);
+
+            // Load group (ASYNC)
+            loadGroupByDepartment(deptId, '#update_group', groupId);
 
             $('#modalUpdateIncrement').modal('show');
         }
@@ -348,5 +394,91 @@
                 });
             });
         }
+
+        $('#create_department').on('change', function() {
+            const deptId = $(this).val();
+            const $group = $('#create_group');
+
+            $group.prop('disabled', true)
+                .html('<option disabled selected>Loading...</option>');
+
+            if (!deptId) {
+                $group.html('<option disabled selected>-- Pilih Departemen Terlebih Dahulu --</option>');
+                return;
+            }
+
+            $.get(
+                    "{{ route('5r-system.master-group.by-department', ':id') }}"
+                    .replace(':id', deptId)
+                )
+                .done(function(res) {
+                    let opt = '<option disabled selected>-- Pilih Group --</option>';
+
+                    if (res.data.length === 0) {
+                        opt = '<option disabled selected>Tidak ada group aktif</option>';
+                    } else {
+                        res.data.forEach(g => {
+                            opt += `<option value="${g.id_group}">${g.nama_group}</option>`;
+                        });
+                    }
+
+                    $group.html(opt).prop('disabled', false);
+                })
+                .fail(function() {
+                    $group.html('<option disabled selected>Gagal load group</option>');
+                });
+        });
+
+        function loadGroupByDepartment(deptId, groupSelector, selectedGroup = null) {
+            const $group = $(groupSelector);
+
+            $group.prop('disabled', true)
+                .html('<option disabled selected>Loading...</option>');
+
+            $('#btnUpdateSubmit').prop('disabled', true);
+
+            if (!deptId) {
+                $group.html('<option disabled selected>-- Pilih Departemen Terlebih Dahulu --</option>');
+                return;
+            }
+
+            $.get(
+                    "{{ route('5r-system.master-group.by-department', ':id') }}"
+                    .replace(':id', deptId)
+                )
+                .done(function(res) {
+                    let opt = '<option disabled selected>-- Pilih Group --</option>';
+
+                    if (res.data.length === 0) {
+                        opt = '<option disabled selected>Tidak ada group aktif</option>';
+                    } else {
+                        res.data.forEach(g => {
+                            const selected = selectedGroup == g.id_group ? 'selected' : '';
+                            opt += `<option value="${g.id_group}" ${selected}>${g.nama_group}</option>`;
+                        });
+                    }
+
+                    $group.html(opt).prop('disabled', false);
+
+                    // AKTIFKAN submit kalau ada group terpilih
+                    if (selectedGroup) {
+                        $('#btnUpdateSubmit').prop('disabled', false);
+                    }
+                })
+                .fail(function() {
+                    $group.html('<option disabled selected>Gagal load group</option>');
+                });
+        }
+
+
+        $('#update_department').on('change', function() {
+            loadGroupByDepartment($(this).val(), '#update_group');
+        });
+
+        $('#update_group').on('change', function() {
+            if ($(this).val()) {
+                $('#btnUpdateSubmit').prop('disabled', false);
+            }
+        });
     </script>
 @endpush

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\System5R\MasterIncrement;
 use App\Models\System5R\MasterDepartment;
 use App\Models\System5R\Jadwal;
+use App\Models\System5R\MasterGroup;
 use App\Models\System5R\Periode;
 use Illuminate\Http\Request;
 
@@ -14,10 +15,15 @@ class MasterIncrementController extends Controller
     public function index()
     {
         // $departments = MasterDepartment::all();
-        $departments= MasterDepartment::where('is_active', 'Y')->get();
+        $departments = MasterDepartment::where('is_active', 'Y')->get();
         $jadwal = Jadwal::all();
 
         return view('system5r.master-increment.index', compact('departments', 'jadwal'));
+    }
+
+    public function getGroupByDepartment($id_department)
+    {
+        return MasterGroup::where('id_department', $id_department)->where('is_active', 'Y')->get();
     }
 
     public function getPeriodeByJadwal($id_jadwal)
@@ -40,7 +46,10 @@ class MasterIncrementController extends Controller
             'id_periode' => 'required',
         ]);
 
-        $data = MasterIncrement::with('department')->where('id_jadwal', $request->id_jadwal)->where('id_periode', $request->id_periode)->get();
+        $data = MasterIncrement::with(['department', 'group'])
+            ->where('id_jadwal', $request->id_jadwal)
+            ->where('id_periode', $request->id_periode)
+            ->get();
 
         return response()->json(['data' => $data]);
     }
@@ -49,18 +58,19 @@ class MasterIncrementController extends Controller
     {
         $request->validate([
             'id_department' => 'required',
+            'id_group' => 'required',
             'id_jadwal' => 'required',
             'id_periode' => 'required',
             'nilai' => 'required|min:0',
         ]);
 
-        $exists = MasterIncrement::where('id_department', $request->id_department)->where('id_jadwal', $request->id_jadwal)->where('id_periode', $request->id_periode)->exists();
+        $exists = MasterIncrement::where('id_group', $request->id_group)->where('id_jadwal', $request->id_jadwal)->where('id_periode', $request->id_periode)->exists();
 
         if ($exists) {
             return response()->json(
                 [
                     'status' => 'error',
-                    'message' => 'Data increment untuk departemen ini sudah ada',
+                    'message' => 'Data increment untuk departemen dan group ini sudah ada',
                 ],
                 422,
             );
@@ -68,6 +78,7 @@ class MasterIncrementController extends Controller
 
         MasterIncrement::create([
             'id_department' => $request->id_department,
+            'id_group' => $request->id_group,
             'id_jadwal' => $request->id_jadwal,
             'id_periode' => $request->id_periode,
             'nilai' => $request->nilai,
@@ -83,7 +94,6 @@ class MasterIncrementController extends Controller
     {
         $request->validate([
             'id' => 'required',
-            'nilai' => 'required|min:0',
         ]);
 
         $data = MasterIncrement::find($request->id);
@@ -98,7 +108,12 @@ class MasterIncrementController extends Controller
             );
         }
 
-        $data->nilai = $request->nilai;
+        $data->update([
+            'id_department' => $request->id_department,
+            'id_group' => $request->id_group,
+            'nilai' => $request->nilai,
+        ]);
+
         $data->save();
 
         return response()->json([

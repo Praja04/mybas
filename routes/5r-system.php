@@ -115,6 +115,8 @@ Route::prefix('5r-system')->group(function () {
         Route::post('/master-increment/store', 'System5R\MasterIncrementController@store')->name('5r-system.master-increment.store');
         Route::post('/master-increment/update', 'System5R\MasterIncrementController@update')->name('5r-system.master-increment.update');
         Route::post('/master-increment/delete', 'System5R\MasterIncrementController@delete')->name('5r-system.master-increment.delete');
+        Route::get('/master-increment/by-department/{id_department}', 'System5R\MasterIncrementController@getGroupByDepartment')->name('5r-system.master-increment.group-by-department');
+
 
         // buat master departemen
         // page master departemen index
