@@ -32,6 +32,8 @@ class CommitteeController extends Controller
     public function data(Request $request)
     {
         $jadwalId = $request->jadwal_id;
+        $jadwal   = Jadwal::findOrFail($jadwalId);
+        $tahun    = (int) $jadwal->tahun;
 
         // Department yang dipegang oleh committee yang login
         $myDepartments = DepartmentComittee::where(
@@ -39,7 +41,7 @@ class CommitteeController extends Controller
             auth()->user()->username
         )->pluck('id_department')->toArray();
 
-        if (count($myDepartments) === 0) {
+        if (empty($myDepartments)) {
             return response()->json([
                 'status' => 'success',
                 'workspace' => []
@@ -52,13 +54,13 @@ class CommitteeController extends Controller
             $q->whereIn('id_department', $myDepartments);
         }])->get();
 
-        $workspace = $workspace->map(function ($ws) use ($jadwalId) {
+        $workspace = $workspace->map(function ($ws) use ($jadwalId, $tahun) {
 
-            $ws->departments = $ws->departments->map(function ($dep) use ($jadwalId) {
+            $ws->departments = $ws->departments->map(function ($dep) use ($jadwalId, $tahun) {
 
                 $periode = Periode::where('id_jadwal', $jadwalId)->get();
 
-                $periode = $periode->map(function ($p) use ($dep) {
+                $periode = $periode->map(function ($p) use ($dep, $tahun) {
 
                     $groups = MasterGroup::where('id_department', $dep->id_department)->get();
 
@@ -74,38 +76,27 @@ class CommitteeController extends Controller
                             return null;
                         }
 
-                        $totalNilai = Jawaban::where(
+                        $total = Jawaban::where(
                             'id_jawaban_group',
                             $jawabanGroup->id_jawaban_group
                         )->sum('nilai');
 
-                        // === LOGIKA PENGALIAN BERDASARKAN NAMA DEPARTEMEN ===
-                        // $deptName = strtoupper($dep->nama_department ??
-                        //     $dep->department_name ??
-                        //     $dep->name ?? ''); // sesuaikan dengan kolom nama di tabelmu
-
-                        // if (str_contains($deptName, 'HRGA') || str_contains($deptName, 'GA') || str_contains($deptName, 'GENERAL AFFAIR') || str_contains($deptName, 'HRDGA')) {
-                        //     $faktor = 1.05;
-                        // } elseif (str_contains($deptName, 'PRD') || str_contains($deptName, 'PROD') || str_contains($deptName, 'PRO')) {
-                        //     $faktor = 1.10;
-                        // } else {
-                        //     $faktor = 1;
-                        // }
-
-                        // $nilaiAkhir = ($totalNilai + 28) * $faktor;
-
-                        $nilaiAkhir = $totalNilai * ((float) $g->persentase / 100);
-
-                        // ====================================================
+                        // nilai group = total × persentase
+                        $nilaiGroup = round(
+                            $total * ((float) $g->persentase / 100),
+                            2
+                        );
 
                         return [
-                            'id_group'     => $g->id_group,
-                            'persentase'   => $g->persentase,
-                            'nama_group'   => $g->nama_group,
-                            'nilaiAkhir'   => round($nilaiAkhir, 2),
+                            'id_group'   => $g->id_group,
+                            'nama_group' => $g->nama_group,
+                            'persentase' => $g->persentase,
+                            'totalNilai' => $total,
+                            'nilaiAkhir' => $nilaiGroup,
+                            'submit_by'  => $jawabanGroup->submit_by,
                             'encryptedKey' => encrypt(
                                 implode('/', [
-                                    $dep->id_department,  // penting: pakai dari $dep, bukan $g
+                                    $dep->id_department,
                                     $p->id_jadwal,
                                     $p->id_periode,
                                     $g->id_group
@@ -115,17 +106,49 @@ class CommitteeController extends Controller
                     })->filter()->values();
 
                     $p->group = $groups;
-                    $p->totalNilai = $groups->sum('nilaiAkhir');
+                    $nilaiGroupSum = round($groups->sum('nilaiAkhir'), 2);
+
+                    if ($tahun < 2026) {
+
+                        $p->nilaiAkhir = $nilaiGroupSum;
+
+                    } else {
+
+                        $juriDept = MasterGroupJuriDepartment::where(
+                            'id_department',
+                            $dep->id_department
+                        )
+                            ->where('id_periode', $p->id_periode)
+                            ->first();
+
+                        // default bobot
+                        $bobot = 1.00;
+                        if ($juriDept && $juriDept->index_tingkat_kesulitan !== null) {
+                            $bobot = (float) $juriDept->index_tingkat_kesulitan;
+                        }
+
+                        $baseNilai   = $nilaiGroupSum + 28;
+                        $p->nilaiAkhir = round($baseNilai * $bobot, 2);
+                        $p->bobot = $bobot;
+                    }
+
+                    // juri
+                    $p->juri = $groups
+                        ->pluck('submit_by')
+                        ->filter()
+                        ->unique()
+                        ->values()
+                        ->toArray();
 
                     return $p;
                 });
 
                 $dep->periode = $periode;
 
-                // Rata-rata nilai akhir dari periode yang punya nilai > 0
-                $valid = $periode->where('totalNilai', '>', 0);
+                // rata-rata nilai dept
+                $valid = $periode->where('nilaiAkhir', '>', 0);
                 $dep->__total = $valid->count()
-                    ? round($valid->sum('totalNilai') / $valid->count(), 2)
+                    ? round($valid->avg('nilaiAkhir'), 2)
                     : 0;
 
                 return $dep;
@@ -135,7 +158,7 @@ class CommitteeController extends Controller
         });
 
         return response()->json([
-            'status'    => 'success',
+            'status' => 'success',
             'workspace' => $workspace
         ]);
     }

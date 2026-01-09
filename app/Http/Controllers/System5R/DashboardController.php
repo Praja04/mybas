@@ -296,12 +296,27 @@ class DashboardController extends Controller
 
     private function hitungNilai5R($periodeId, $deptId, $deptName)
     {
+        // ambil jadwal & tahun dari periode
+        $periode = DB::table('5r_periode_penilaian')
+            ->where('id_periode', $periodeId)
+            ->first();
+
+        if (!$periode) {
+            return 0;
+        }
+
+        $jadwal = DB::table('5r_jadwal_penilaian')
+            ->where('id_jadwal', $periode->id_jadwal)
+            ->first();
+
+        $tahun = (int) ($jadwal->tahun ?? 0);
+
         $rows = DB::table('5r_jawaban as j')
             ->join('5r_jawaban_group as jg', function ($join) use ($periodeId) {
                 $join->on('j.id_jawaban_group', '=', 'jg.id_jawaban_group')
                     ->where('jg.id_periode', $periodeId)
                     ->where('jg.status', 'approved')
-                    // cegah double submit dalam periode yg sama
+                    // cegah double submit per group dalam periode yang sama
                     ->whereIn('jg.id_jawaban_group', function ($sub) use ($periodeId) {
                         $sub->select(DB::raw('MAX(id_jawaban_group)'))
                             ->from('5r_jawaban_group')
@@ -324,21 +339,31 @@ class DashboardController extends Controller
             return 0;
         }
 
-        $nilai = 0;
+        // Σ (nilai × persentase group)
+        $nilaiGroupSum = 0;
         foreach ($rows as $row) {
-            $nilai += $row->total_nilai * ((float) $row->persentase / 100);
+            $nilaiGroupSum += $row->total_nilai * ((float) $row->persentase / 100);
+        }
+        $nilaiGroupSum = round($nilaiGroupSum, 2);
+
+        if ($tahun < 2026) {
+            return $nilaiGroupSum;
         }
 
-        // $nilai += 28;
+        // ambil bobot 
+        $juriDept = MasterGroupJuriDepartment::where('id_department', $deptId)
+            ->where('id_periode', $periodeId)
+            ->first();
 
-        // // faktor departemen
-        // $deptUpper = strtoupper($deptName);
-        // if (str_contains($deptUpper, 'HRGA') || str_contains($deptUpper, 'GA') || str_contains($deptUpper, 'GENERAL AFFAIR') || str_contains($deptUpper, 'HRDGA')) {
-        //     $nilai *= 1.05;
-        // } elseif (str_contains($deptUpper, 'PRD') || str_contains($deptUpper, 'PROD') || str_contains($deptUpper, 'PRO')) {
-        //     $nilai *= 1.10;
-        // }
+        $bobot = 1.00;
+        if ($juriDept && $juriDept->index_tingkat_kesulitan !== null) {
+            $bobot = (float) $juriDept->index_tingkat_kesulitan;
+        }
 
-        return round($nilai, 2);
+        // (Σ nilai group + 28) × bobot
+        $baseNilai = $nilaiGroupSum + 28;
+        $nilaiAkhir = round($baseNilai * $bobot, 2);
+
+        return $nilaiAkhir;
     }
 }

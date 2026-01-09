@@ -178,7 +178,6 @@
                         }
 
                         item.group.forEach((g, i) => {
-                                                        
                             let printUrl = "{{ route('5r-system.report.print', '') }}/" + g
                                 .encryptedKey;
 
@@ -189,7 +188,7 @@
                                     <td>${i === 0 ? (item.juri.length ? item.juri.join(', ') : '-') : ''}</td>
                                     <td>${g.nama_group}</td>
                                     <td>${g.persentase + '%'}</td>   
-                                    <td>${formatNumber(g.nilaiAkhir)}</td>
+                                    <td>${formatNumber(g.totalNilai)}</td>
                                     <td class="text-center">
                                         <div class="d-flex gap-1 justify-content-center">
                                             <button class="btn btn-sm btn-outline-info"

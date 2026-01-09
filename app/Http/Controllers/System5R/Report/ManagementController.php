@@ -68,7 +68,9 @@ class ManagementController extends Controller
 
                         $g->totalNilai = 0;
                         $g->nilaiAkhir = 0; // default
+                        $g->submit_by  = null;
 
+                        // proses perhitungan nilai utk satu grup
                         if ($jawabanGroup) {
                             $total = Jawaban::where(
                                 'id_jawaban_group',
@@ -78,45 +80,54 @@ class ManagementController extends Controller
                             $g->totalNilai = $total;
                             $g->submit_by = $jawabanGroup->submit_by;
 
-                            // if ($tahun < 2026) {
-                                $nilaiRaw = $total * ((float) $g->persentase / 100);
-                                $g->nilaiAkhir = round($nilaiRaw, 2); 
-                            // } else {
-                            // gak jadi pake ini
-                            //     $nilaiGroup = round(
-                            //         $total * ((float) $g->persentase / 100),
-                            //         2
-                            //     ); 
-
-                            //     $baseNilai = $nilaiGroup + 28;
-
-                            //     $deptName = strtoupper($dept->nama_department ?? $dept->department_name ?? '');
-
-                            //     if (str_contains($deptName, 'HRGA') || str_contains($deptName, 'GA') || str_contains($deptName, 'GENERAL AFFAIR') || str_contains($deptName, 'HRDGA')) {
-                            //         $g->nilaiAkhir = round($baseNilai * 1.05, 2); 
-                            //     } elseif (str_contains($deptName, 'PRD') || str_contains($deptName, 'PROD') || str_contains($deptName, 'PRO')) {
-                            //         $g->nilaiAkhir = round($baseNilai * 1.10, 2); 
-                            //     } else {
-                            //         $g->nilaiAkhir = round($baseNilai, 2); 
-                            //     }
-                            // }
-                            // ====================================================
+                             // nilai group = total × persentase group
+                                $g->nilaiAkhir = round(
+                                    $total * ((float) $g->persentase / 100),
+                                    2
+                                );
                         }
 
-                        // Enkripsi key tetap sama
-                        $g->encryptedKey = encrypt(
-                            $dept->id_department . '/' .
-                                $jadwalId . '/' .
-                                $p->id_periode . '/' .
-                                $g->id_group
-                        );
+                        // $g->encryptedKey = encrypt(
+                        //     $dept->id_department . '/' .
+                        //         $jadwalId . '/' .
+                        //         $p->id_periode . '/' .
+                        //         $g->id_group
+                        // );
 
                         return $g;
+
                     })->filter(fn($g) => $g->totalNilai > 0);
 
                     $p->group = $groups->toArray();
                     $p->totalNilai = $groups->sum('totalNilai');
-                    $p->nilaiAkhir = round($groups->sum('nilaiAkhir'), 2);
+
+                    $nilaiGroupSum = round($groups->sum('nilaiAkhir'), 2);
+
+                    if ($tahun < 2026) {
+                        // sebelum 2026: langsung total nilai group
+                        $p->nilaiAkhir = $nilaiGroupSum;
+
+                    } else {
+                        // Ambil bobot per dept dari master_group_juri_department
+                        $juriDept = MasterGroupJuriDepartment::where('id_department', $dept->id_department)
+                            ->where('id_periode', $p->id_periode)
+                            ->first();
+
+                        // default bobot = 1.00
+                        $bobot = 1.00;
+
+                        if ($juriDept && $juriDept->index_tingkat_kesulitan !== null) {
+                            $bobot = (float) $juriDept->index_tingkat_kesulitan;
+                        }
+
+                        // ( nilai total group + 28 ) × bobot 
+                        $baseNilai = $nilaiGroupSum + 28;
+                        $p->nilaiAkhir = round($baseNilai * $bobot, 2);
+
+                        $p->bobot = $bobot;
+                    }
+
+
                     $p->juri = $groups
                         ->filter(fn($g) => $g->jawabanGroup)
                         ->pluck('jawabanGroup.submit_by')
