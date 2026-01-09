@@ -325,9 +325,13 @@
 @endpush
 
 @php
+    use Illuminate\Support\Str;
+
     $colors = ['#264653', '#2a9d8f', '#e9c46a', '#f4a261', '#e76f51', '#6c5ce7'];
     $textColors = ['#fff', '#fff', '#000', '#000', '#000', '#fff'];
 @endphp
+
+
 
 @section('content')
 
@@ -366,20 +370,87 @@
                             </div>
                         </div>
                         <div class="card-body">
-                            <table class="table table-hover align-middle">
-                                <thead>
-                                    <tr class="pas-background-color text-white">
-                                        <th>TAHUN</th>
-                                        <th>PERIODE</th>
-                                        <th>GROUP</th>
-                                        <th>DEPARTMENT</th>
-                                        <th>PENILAIAN</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach ($department as $item)
-                                        @if (isset($_GET['filter_periode']))
-                                            @if ($_GET['filter_periode'] == $item->id_periode && $_GET['filter_department'] == $item->id_department)
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle">
+                                    <thead>
+                                        <tr class="pas-background-color text-white">
+                                            <th>TAHUN</th>
+                                            <th>PERIODE</th>
+                                            <th>GROUP</th>
+                                            <th>DEPARTMENT</th>
+                                            <th>PENILAIAN</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach ($department as $item)
+                                            @if (isset($_GET['filter_periode']))
+                                                @if ($_GET['filter_periode'] == $item->id_periode && $_GET['filter_department'] == $item->id_department)
+                                                    <tr>
+                                                        <td>{{ $item->periode->jadwal->tahun }}</td>
+                                                        <td>
+                                                            {{ $item->periode->nama_periode }} <br />
+                                                            {{ $item->periode->keterangan }}
+                                                        </td>
+                                                        <td>{{ $item->group->nama_group }}</td>
+                                                        <td>{{ $item->department->nama_department }}</td>
+                                                        <td>
+                                                            <div class="d-flex">
+                                                                <form action="">
+                                                                    <div class="row" style="display: none">
+                                                                        <div class="col-md-2">
+                                                                            <div class="form-group mb-3">
+                                                                                <label for="filter_jadwal">JADWAL</label>
+                                                                                <select required name="filter_jadwal"
+                                                                                    id="filter_jadwal" class="form-control">
+                                                                                    <option
+                                                                                        value="{{ $item->periode->id_jadwal }}">
+                                                                                        {{ $item->periode->id_jadwal }}
+                                                                                    </option>
+                                                                                </select>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div class="col-md-2">
+                                                                            <div class="form-group mb-3">
+                                                                                <label for="filter_periode">PERIODE</label>
+                                                                                <select required name="filter_periode"
+                                                                                    id="filter_periode"
+                                                                                    class="form-control">
+                                                                                    <option value="{{ $item->id_periode }}">
+                                                                                        {{ $item->id_periode }}</option>
+                                                                                </select>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div class="col-md-2">
+                                                                            <div class="form-group mb-3">
+                                                                                <label
+                                                                                    for="filter_department">DEPARTMENT</label>
+                                                                                <select name="filter_department" required
+                                                                                    id="filter_department"
+                                                                                    class="form-control">
+                                                                                    <option
+                                                                                        value="{{ $item->id_department }}">
+                                                                                        {{ $item->id_department }}</option>
+                                                                                </select>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div>
+                                                                        <button type="submit"
+                                                                            class="btn btn-sm btn-primary waves-effect shadow-none">
+                                                                            <i class="mdi mdi-paper-plane"></i>
+                                                                            GO
+                                                                        </button>
+                                                                    </div>
+                                                                </form>
+                                                                <a href="{{ url('5r-system/penilaian') }}"
+                                                                    class="btn btn-light btn-sm ms-2">
+                                                                    <i class="mdi mdi-arrow-left"></i> Kembali
+                                                                </a>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                @endif
+                                            @else
                                                 <tr>
                                                     <td>{{ $item->periode->jadwal->tahun }}</td>
                                                     <td>
@@ -389,7 +460,7 @@
                                                     <td>{{ $item->group->nama_group }}</td>
                                                     <td>{{ $item->department->nama_department }}</td>
                                                     <td>
-                                                        <div class="d-flex">
+                                                        @if ($item->periode->selesai == 'N')
                                                             <form action="">
                                                                 <div class="row" style="display: none">
                                                                     <div class="col-md-2">
@@ -399,7 +470,8 @@
                                                                                 id="filter_jadwal" class="form-control">
                                                                                 <option
                                                                                     value="{{ $item->periode->id_jadwal }}">
-                                                                                    {{ $item->periode->id_jadwal }}</option>
+                                                                                    {{ $item->periode->id_jadwal }}
+                                                                                </option>
                                                                             </select>
                                                                         </div>
                                                                     </div>
@@ -433,77 +505,17 @@
                                                                     </button>
                                                                 </div>
                                                             </form>
-                                                            <a href="{{ url('5r-system/penilaian') }}"
-                                                                class="btn btn-light btn-sm ms-2">
-                                                                <i class="mdi mdi-arrow-left"></i> Kembali
-                                                            </a>
-                                                        </div>
+                                                        @else
+                                                            <i class="mdi mdi-check text-success"></i>
+                                                            <span class="text-success ms-2">Selesai</span>
+                                                        @endif
                                                     </td>
                                                 </tr>
                                             @endif
-                                        @else
-                                            <tr>
-                                                <td>{{ $item->periode->jadwal->tahun }}</td>
-                                                <td>
-                                                    {{ $item->periode->nama_periode }} <br />
-                                                    {{ $item->periode->keterangan }}
-                                                </td>
-                                                <td>{{ $item->group->nama_group }}</td>
-                                                <td>{{ $item->department->nama_department }}</td>
-                                                <td>
-                                                    @if ($item->periode->selesai == 'N')
-                                                        <form action="">
-                                                            <div class="row" style="display: none">
-                                                                <div class="col-md-2">
-                                                                    <div class="form-group mb-3">
-                                                                        <label for="filter_jadwal">JADWAL</label>
-                                                                        <select required name="filter_jadwal"
-                                                                            id="filter_jadwal" class="form-control">
-                                                                            <option
-                                                                                value="{{ $item->periode->id_jadwal }}">
-                                                                                {{ $item->periode->id_jadwal }}</option>
-                                                                        </select>
-                                                                    </div>
-                                                                </div>
-                                                                <div class="col-md-2">
-                                                                    <div class="form-group mb-3">
-                                                                        <label for="filter_periode">PERIODE</label>
-                                                                        <select required name="filter_periode"
-                                                                            id="filter_periode" class="form-control">
-                                                                            <option value="{{ $item->id_periode }}">
-                                                                                {{ $item->id_periode }}</option>
-                                                                        </select>
-                                                                    </div>
-                                                                </div>
-                                                                <div class="col-md-2">
-                                                                    <div class="form-group mb-3">
-                                                                        <label for="filter_department">DEPARTMENT</label>
-                                                                        <select name="filter_department" required
-                                                                            id="filter_department" class="form-control">
-                                                                            <option value="{{ $item->id_department }}">
-                                                                                {{ $item->id_department }}</option>
-                                                                        </select>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                            <div>
-                                                                <button type="submit"
-                                                                    class="btn btn-sm btn-primary waves-effect shadow-none">
-                                                                    <i class="mdi mdi-paper-plane"></i>
-                                                                    GO
-                                                                </button>
-                                                            </div>
-                                                        </form>
-                                                    @else
-                                                        <i class="mdi mdi-check text-success"></i>
-                                                        <span class="text-success ms-2">Selesai</span>
-                                                    @endif
-                                                </td>
-                                            </tr>
-                                        @endif
-                                    @endforeach
-                                </tbody>
-                            </table>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
 
                             @if (isset($_GET['filter_department']))
                                 <div class="row">
@@ -614,10 +626,13 @@
                                                                                     <p class="mb-0">
                                                                                         {!! str_replace('||--||', '&', $_pertanyaan->item_periksa) !!}
                                                                                     </p>
-                                                                                    
-                                                                                    @if ($jenis === 'RAJIN' && $incrementTerakhir)
+
+                                                                                    @if (
+                                                                                        $jenis === 'RAJIN' &&
+                                                                                            Str::contains(Str::lower($_pertanyaan->item_periksa ?? ''), 'increment') &&
+                                                                                            $incrementTerakhir)
                                                                                         <div class="alert alert-info">
-                                                                                            <strong>Nilai Periode
+                                                                                            <strong>Nilai Increment R1-R4
                                                                                                 Sebelumnya:</strong>
                                                                                             {{ $incrementTerakhir->nilai }}
                                                                                         </div>

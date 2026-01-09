@@ -15,7 +15,7 @@ class MasterGroup extends Model
     public function pertanyaan()
     {
         // With order by jenis
-        return $this->hasMany(MasterPertanyaan::class, 'id_group', 'id_group')->orderBy('jenis', 'asc');
+        return $this->hasMany(MasterPertanyaan::class, 'id_group', 'id_group')->orderBy('jenis', 'asc')->orderBy('id_pertanyaan', 'asc');
     }
 
     public function department()

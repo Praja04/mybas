@@ -35,7 +35,7 @@ class MasterPertanyaanController extends Controller
                     'DIGITALISASI'
                 )
             ")
-            // ->orderBy('created_at', 'DESC') // biar data baru tetap kelihatan
+            ->orderBy('id_pertanyaan', 'ASC') 
             ->get();
 
         return response()->json([
