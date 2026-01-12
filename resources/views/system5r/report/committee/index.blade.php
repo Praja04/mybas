@@ -53,16 +53,18 @@
                     <button class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <table class="table table-striped" id="table-detail">
-                        <thead>
-                            <tr class="pas-background-color">
-                                <th class="text-white">GROUP</th>
-                                <th class="text-white">PERTANYAAN</th>
-                                <th class="text-white">NILAI</th>
-                            </tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
+                    <div class="table-responsive">
+                        <table class="table table-striped" id="table-detail">
+                            <thead>
+                                <tr class="pas-background-color">
+                                    <th class="text-white">GROUP</th>
+                                    <th class="text-white">PERTANYAAN</th>
+                                    <th class="text-white">NILAI</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -220,19 +222,21 @@
                             <h5 class="fw-bold text-primary mb-2">
                                 Periode ${namaPeriode}
                             </h5>
-                            <table class="table table-hover align-middle">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th width="5%">#</th>
-                                        <th>Department</th>
-                                        <th>Group</th>
-                                        <th>Persentase</th>
-                                        <th>Nilai Akhir</th>
-                                        <th class="text-center">Aksi</th>
-                                    </tr>
-                                </thead>
-                                <tbody>${rows}</tbody>
-                            </table>
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th width="5%">#</th>
+                                            <th>Department</th>
+                                            <th>Group</th>
+                                            <th>Persentase</th>
+                                            <th>Nilai Akhir</th>
+                                            <th class="text-center">Aksi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>${rows}</tbody>
+                                </table>
+                            </div>
                         </div>
                     `;
                 });

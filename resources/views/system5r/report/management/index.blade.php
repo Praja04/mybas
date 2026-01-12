@@ -53,16 +53,18 @@
                     <button class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <table class="table table-striped" id="table-detail">
-                        <thead>
-                            <tr class="pas-background-color">
-                                <th class="text-white">GROUP</th>
-                                <th class="text-white">PERTANYAAN</th>
-                                <th class="text-white">NILAI</th>
-                            </tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
+                    <div class="table-responsive">
+                        <table class="table table-striped" id="table-detail">
+                            <thead>
+                                <tr class="pas-background-color">
+                                    <th class="text-white">GROUP</th>
+                                    <th class="text-white">PERTANYAAN</th>
+                                    <th class="text-white">NILAI</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -98,7 +100,7 @@
                     }
 
                     res.workspace.forEach(ws => {
-
+                        
                         html += `
                         <div class="card shadow-sm mb-4">
                             <div class="card-body">
@@ -106,6 +108,41 @@
                                 ${buildTable(ws.departments)}
                             </div>
                         </div>`;
+
+                        // const hasValidData = ws.departments?.some(dep => {
+
+                        //     if (dep.is_active !== 'Y') return false;
+                        //     if (!Array.isArray(dep.periode)) return false;
+
+                        //     return dep.periode.some(p => {
+
+                        //         if (!p.group) return false;
+
+                        //         const groups = Array.isArray(p.group)
+                        //             ? p.group
+                        //             : Object.values(p.group);
+
+                        //         return groups.some(g => Number(g.totalNilai) > 0);
+                        //     });
+                        // });
+
+                        //     html += `
+                        //         <div class="card shadow-sm mb-4">
+                        //             <div class="card-body">
+                        //                 <h4 class="mb-3 fw-bold">${ws.name}</h4>
+
+                        //                 ${
+                        //                     hasValidData
+                        //                         ? buildTable(ws.departments)
+                        //                         : `<p class="text-muted fst-italic mb-0">
+                        //                             Belum ada penilaian pada workspace ini
+                        //                         </p>`
+                        //                 }
+
+                        //             </div>
+                        //         </div>
+                        //     `;
+                        // });
                     });
 
                     $('#report-container').html(html);
@@ -223,20 +260,22 @@
                         <h5 class="fw-medium text-primary mb-2">
                             Periode ${namaPeriode}
                         </h5>
-                        <table class="table table-hover align-middle">
-                            <thead class="table-light">
-                                <tr>
-                                    <th width="5%">#</th>
-                                    <th>Department</th>
-                                    <th>Juri</th>
-                                    <th>Group</th>
-                                    <th>Persentase</th>
-                                    <th>Nilai Akhir</th>
-                                    <th class="text-center">Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody>${rows}</tbody>
-                        </table>
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th width="5%">#</th>
+                                        <th>Department</th>
+                                        <th>Juri</th>
+                                        <th>Group</th>
+                                        <th>Persentase</th>
+                                        <th>Nilai Akhir</th>
+                                        <th class="text-center">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody>${rows}</tbody>
+                            </table>
+                        </div>
                     </div>
                 `;
                 });

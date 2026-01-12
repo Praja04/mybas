@@ -70,10 +70,34 @@ class DashboardController extends Controller
         }
 
         // 1. Ambil semua departemen di workspace
-        $allDepartments = DB::table('5r_master_department')
-            ->where('id_workspace', $workspaceId)
-            ->orderBy('nama_department')
-            ->pluck('nama_department', 'id_department');
+        // $allDepartments = DB::table('5r_master_department')
+        //     ->where('id_workspace', $workspaceId)
+        //     ->orderBy('nama_department')
+        //     ->pluck('nama_department', 'id_department');
+
+        $isLatest = $this->isLatestJadwal($jadwalId);
+
+        $allDepartments = DB::table('5r_master_department as d')
+            ->where('d.id_workspace', $workspaceId)
+            ->when($isLatest, function ($q) {
+                // ✅ TAHUN TERAKHIR → hanya dept aktif
+                $q->where('d.is_active', 'Y');
+            })
+            ->when(!$isLatest, function ($q) use ($jadwalId) {
+                // ✅ BUKAN TAHUN TERAKHIR → hanya dept yang SUDAH DINILAI
+                $q->whereExists(function ($sub) use ($jadwalId) {
+                    $sub->select(DB::raw(1))
+                        ->from('5r_master_group as g')
+                        ->join('5r_jawaban_group as jg', 'jg.id_group', '=', 'g.id_group')
+                        ->join('5r_periode_penilaian as p', 'p.id_periode', '=', 'jg.id_periode')
+                        ->whereColumn('g.id_department', 'd.id_department')
+                        ->where('jg.status', 'approved')
+                        ->where('p.id_jadwal', $jadwalId);
+                });
+            })
+            ->orderBy('d.nama_department')
+            ->pluck('d.nama_department', 'd.id_department');
+
 
         if ($allDepartments->isEmpty()) {
             return response()->json([
@@ -206,10 +230,33 @@ class DashboardController extends Controller
         }
 
         // 1. Ambil SEMUA departemen di workspace ini (wajib muncul semua di ranking)
-        $allDepartments = DB::table('5r_master_department')
-            ->where('id_workspace', $workspaceId)
-            ->orderBy('nama_department')
-            ->pluck('nama_department', 'id_department');
+        // $allDepartments = DB::table('5r_master_department')
+        //     ->where('id_workspace', $workspaceId)
+        //     ->orderBy('nama_department')
+        //     ->pluck('nama_department', 'id_department');
+
+        $isLatest = $this->isLatestJadwal($jadwalId);
+
+        $allDepartments = DB::table('5r_master_department as d')
+            ->where('d.id_workspace', $workspaceId)
+            ->when($isLatest, function ($q) {
+                // ✅ TAHUN TERAKHIR → hanya dept aktif
+                $q->where('d.is_active', 'Y');
+            })
+            ->when(!$isLatest, function ($q) use ($jadwalId) {
+                // ✅ BUKAN TAHUN TERAKHIR → hanya dept yang SUDAH DINILAI
+                $q->whereExists(function ($sub) use ($jadwalId) {
+                    $sub->select(DB::raw(1))
+                        ->from('5r_master_group as g')
+                        ->join('5r_jawaban_group as jg', 'jg.id_group', '=', 'g.id_group')
+                        ->join('5r_periode_penilaian as p', 'p.id_periode', '=', 'jg.id_periode')
+                        ->whereColumn('g.id_department', 'd.id_department')
+                        ->where('jg.status', 'approved')
+                        ->where('p.id_jadwal', $jadwalId);
+                });
+            })
+            ->orderBy('d.nama_department')
+            ->pluck('d.nama_department', 'd.id_department');
 
         if ($allDepartments->isEmpty()) {
             return response()->json([
@@ -365,5 +412,14 @@ class DashboardController extends Controller
         $nilaiAkhir = round($baseNilai * $bobot, 2);
 
         return $nilaiAkhir;
+    }
+
+    private function isLatestJadwal($jadwalId)
+    {
+        $latest = DB::table('5r_jadwal_penilaian')
+            ->orderByDesc('tahun')
+            ->value('id_jadwal');
+
+        return $jadwalId === $latest;
     }
 }

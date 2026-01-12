@@ -49,9 +49,34 @@ class ManagementController extends Controller
         $jadwal = Jadwal::find($jadwalId);
         $tahun  = (int) $jadwal->tahun;
 
-        return $workspace->map(function ($item) use ($jadwalId, $tahun) {
+        $latestJadwalId = Jadwal::orderByDesc('tahun')->value('id_jadwal');
+        $isLatest = $jadwalId == $latestJadwalId;
 
-            $item->departments = $item->departments->map(function ($dept) use ($jadwalId, $tahun) {
+        return $workspace->map(function ($item) use ($jadwalId, $tahun, $isLatest) {
+
+            $item->departments = $item->departments
+                ->filter(function ($dept) use ($jadwalId, $isLatest) {
+                    // ===== JIKA TAHUN TERAKHIR =====
+                    if ($isLatest) {
+                        // tampilkan dept AKTIF meskipun belum dinilai
+                        return $dept->is_active === 'Y';
+                    }
+
+                    // ===== JIKA BUKAN TAHUN TERAKHIR =====
+                    // tampilkan hanya dept yang SUDAH DINILAI
+                    return JawabanGroup::where('status', 'approved')
+                        ->whereHas('periode', function ($q) use ($jadwalId) {
+                            $q->where('id_jadwal', $jadwalId);
+                        })
+                        ->whereIn('id_group', function ($q) use ($dept) {
+                            $q->select('id_group')
+                            ->from('5r_master_group')
+                            ->where('id_department', $dept->id_department);
+                        })
+                        ->exists();
+                })
+                ->values() // reset index    
+            ->map(function ($dept) use ($jadwalId, $tahun) {
 
                 $periode = Periode::where('id_jadwal', $jadwalId)->get();
 
