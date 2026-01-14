@@ -47,7 +47,7 @@
                     <!-- Row Pertama -->
                     <div class="row">
                         {{-- Left --}}
-                        <div class="col-md-12 col-12">
+                        <div class="col-md-8 col-12">
                             <div class="row g-3 mb-4">
 
                                 <!-- Informasi Pengunjung -->
@@ -66,11 +66,11 @@
                                                 <li><strong>No Kartu:</strong> <span id="visitorCard"></span></li>
                                                 <li><strong>No KTP/SIM:</strong> <span id="visitorKTP"></span></li>
                                                 <li><strong>No Polisi:</strong> <span id="visitorNopol"></span></li>
-                                                {{-- <li><strong>Pakai Kacamata:</strong> <span
+                                                <li><strong>Pakai Kacamata:</strong> <span
                                                         id="visitorIsKacamata"></span></li>
                                                 <li><strong>Kondisi Kacamata:</strong> <span
                                                         id="visitorKondisiKacamata"></span>
-                                                </li> --}}
+                                                </li>
 
                                             </ul>
                                         </div>
@@ -147,15 +147,8 @@
                             </div>
                         </div>
 
-                        <div class="text-start mt-3">
-                            <button type="button" class="btn btn-outline-primary rounded-pill px-4 py-2 shadow-sm"
-                                id="returnCard" data-trnvisitorid="TRN-ID-DARI-RESPONSE">
-                                <i class="fas fa-undo me-2"></i> Tandai Kartu Dikembalikan
-                            </button>
-                        </div>
-
                         {{-- Right --}}
-                        {{-- <div class="col-md-4 col-12">
+                        <div class="col-md-4 col-12">
 
                             <div class="alert alert-warning">
                                 <i class="mdi mdi-information-outline"></i>
@@ -163,7 +156,7 @@
                                 <p>Silakan ambil foto pengunjung sebelum mengembalikan kartu.</p>
                             </div>
 
-                            <div class="mb-3" id="kondisiKacamataGroupOut" style="display: none;">
+                            {{-- <div class="mb-3" id="kondisiKacamataGroupOut" style="display: none;">
                                 <label class="form-label fw-semibold">Bagaimana kondisi kacamata saat ini?
                                     <span class="text-danger">*</span></label>
                                 <select name="kondisi_kacamata_out" id="kondisiKacamataOut" class="form-select w-100">
@@ -171,7 +164,7 @@
                                     <option value="Bagus">Bagus/bisa digunakan</option>
                                     <option value="Rusak">Rusak/pecah/tidak bisa digunakan</option>
                                 </select>
-                            </div>
+                            </div> --}}
 
                             <div class="d-flex flex-column align-items-center mb-4">
                                 <label class="form-label fw-semibold mb-2">Foto Diri (Keluar) <span
@@ -179,6 +172,7 @@
 
                                 <div id="fotoDiriOut" class="d-flex flex-wrap gap-2 justify-content-center mb-2"
                                     style="width: 100%; min-height: 180px; background-color: #f8f9fa; padding: 10px; border-radius: 6px; border: 1px solid #dee2e6;">
+                                    {{-- Thumbnail diisi dengan JS --}}
                                 </div>
 
                                 <button type="button" class="btn btn-sm btn-primary w-100" data-bs-toggle="modal"
@@ -197,13 +191,13 @@
                                     <i class="fas fa-undo me-2"></i> Tandai Kartu Dikembalikan
                                 </button>
                             </div>
-                        </div> --}}
+                        </div>
                     </div>
                 </div>
 
                 <!-- Modal Preview Image -->
-                <div class="modal fade" id="imagePreviewModal" tabindex="-1" aria-labelledby="imagePreviewModalLabel"
-                    aria-hidden="true">
+                <div class="modal fade" id="imagePreviewModal" tabindex="-1"
+                    aria-labelledby="imagePreviewModalLabel" aria-hidden="true">
                     <div class="modal-dialog modal-dialog-centered modal-lg">
                         <div class="modal-content">
                             <div class="modal-body text-center p-0">

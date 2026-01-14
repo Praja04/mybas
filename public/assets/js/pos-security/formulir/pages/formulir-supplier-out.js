@@ -54,7 +54,7 @@ function searchVisitorData(keyword) {
     $("#returnCard").removeData("trnvisitorid");
     // $("#kondisiKacamataGroupOut").hide();
     // $("#kondisiKacamataOut").val("");
-    // resetFotoOut();
+    resetFotoOut();
 
     console.log("Keyword pencarian:", keyword);
 
@@ -339,24 +339,26 @@ document.addEventListener("DOMContentLoaded", function () {
 $("#returnCard").on("click", function () {
     const trnvisitorid = $(this).data("trnvisitorid");
     // const isKacamata = $(this).data("is_kacamata");
-    // const fotoOut = $("#fotoOut").val();
     // const kondisiKacamata = $("#kondisiKacamataOut").val();
+    const fotoOut = $("#fotoOut").val();
 
     console.log("returnCard trnvisitorid: ", trnvisitorid);
+    console.log({fotoOut});
+    
 
     if (!trnvisitorid) {
         Swal.fire("Error", "Visitor ID tidak ditemukan!", "error");
         return;
     }
 
-    // if (!fotoOut) {
-    //     Swal.fire(
-    //         "Peringatan",
-    //         "Silakan ambil foto keluar terlebih dahulu.",
-    //         "warning"
-    //     );
-    //     return;
-    // }
+    if (!fotoOut) {
+        Swal.fire(
+            "Peringatan",
+            "Silakan ambil foto keluar terlebih dahulu.",
+            "warning"
+        );
+        return;
+    }
 
     // if (isKacamata == 1 && !kondisiKacamata) {
     //     Swal.fire(
@@ -383,7 +385,7 @@ $("#returnCard").on("click", function () {
                 dataType: "json",
                 data: {
                     trnvisitorid: trnvisitorid,
-                    // foto_out: fotoOut,
+                    foto_out: fotoOut,
                     // kondisi_kacamata_out: kondisiKacamata,
                 },
                 headers: {
@@ -394,7 +396,7 @@ $("#returnCard").on("click", function () {
                 success: function (data) {
                     if (data.success) {
                         Swal.fire("Berhasil!", data.message, "success");
-                        // resetFotoOut();
+                        resetFotoOut();
                         // $("#kondisiKacamataGroupOut").hide();
                         // $("#kondisiKacamataOut").val("");
                         $("#visitorResult").hide();
@@ -581,7 +583,6 @@ function stopStreamOut() {
 
 function resetFotoOut() {
     $("#fotoOut").val("");
-
     $("#fotoDiriOut").html("").hide();
 
     $("#capturedImageOut").attr("src", "");

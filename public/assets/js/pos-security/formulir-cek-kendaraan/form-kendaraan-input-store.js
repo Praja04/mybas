@@ -173,7 +173,7 @@ $(document).ready(function () {
                 Swal.fire({
                     icon: "error",
                     title: "Error!",
-                    text: message,
+                    text: xhr.responseJSON?.message || message,
                 });
 
                 $("#formAlert")

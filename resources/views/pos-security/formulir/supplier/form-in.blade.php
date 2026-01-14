@@ -29,13 +29,6 @@
                         <div class="col-lg-6">
 
                             <div class="mb-3">
-                                <label class="form-label fw-semibold" for="namavisitor">Nama Supir / Kernet <span
-                                        class="text-danger">*</span></label>
-                                <input type="text" class="form-control" name="namavisitor" id="namavisitor" required
-                                    placeholder="Masukkan nama supir/kernet">
-                            </div>
-
-                            <div class="mb-3">
                                 <label class="form-label fw-semibold" for="keterangan">Keterangan Pengunjung <span
                                         class="text-danger">*</span></label>
                                 {{-- <input type="text" class="form-control" name="namakernet" id="nama-kernet"
@@ -45,6 +38,14 @@
                                     <option value="supir">Supir</option>
                                     <option value="kernet">Kernet</option>
                                 </select>
+                            </div>
+
+
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold" for="namavisitor">Nama Supir / Kernet <span
+                                        class="text-danger">*</span></label>
+                                <input type="text" class="form-control" name="namavisitor" id="namavisitor" required
+                                    placeholder="Masukkan nama supir/kernet">
                             </div>
 
                             <div class="mb-3">
