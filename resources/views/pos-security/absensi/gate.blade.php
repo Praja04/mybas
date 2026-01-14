@@ -5,7 +5,27 @@
 @section('content')
     <div class="container-fluid">
 
-        @include('pos-security.absensi.components.filter')
+        <div class="d-block d-lg-none mb-3">
+            <div class="accordion" id="filterAccordion">
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#collapseFilter">
+                            Filter Pencarian
+                        </button>
+                    </h2>
+                    <div id="collapseFilter" class="accordion-collapse collapse">
+                        <div class="accordion-body p-0">
+                            @include('pos-security.absensi.components.filter')
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-none d-lg-block">
+            @include('pos-security.absensi.components.filter')
+        </div>
 
         <!-- Modal -->
         <div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">

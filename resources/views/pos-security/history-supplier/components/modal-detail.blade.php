@@ -57,7 +57,7 @@
                          </div>
                          <div class="mb-3">
                              <label class="form-label">Foto Diri (Keluar)</label>
-                             <div id="detailSelfieOutContainer" class="d-flex flex-wrap gap-2"></div>
+                                <img id="detailSelfieOutContainer" src="" alt="Foto Out" class="img-thumbnail d-flex flex-wrap" style="max-width: 120px;" />
                          </div>
                      </div>
                  </div>

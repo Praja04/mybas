@@ -9,12 +9,12 @@
                         <div class="col-xl-3 col-md-6">
                             <label class="form-label fw-semibold text-muted">Tanggal Masuk</label>
                             <input type="text" class="form-control flatpickr-range" name="tanggal_masuk"
-                                placeholder="Pilih rentang tanggal" />
+                                placeholder="Pilih tanggal" />
                         </div>
 
                         <!-- Nama Visitor -->
                         <div class="col-xl-3 col-md-6">
-                            <label class="form-label fw-semibold text-muted">Nama Visitor</label>
+                            <label class="form-label fw-semibold text-muted">Nama Pengunjung</label>
                             <input type="text" class="form-control" name="nama_visitor"
                                 placeholder="Contoh: Budi Santoso" />
                         </div>
@@ -39,7 +39,7 @@
 
                         <!-- Purpose -->
                         <div class="col-xl-3 col-md-6">
-                            <label class="form-label fw-semibold text-muted">Purpose</label>
+                            <label class="form-label fw-semibold text-muted">Tujuan</label>
                             <select class="form-select" name="purpose">
                                 <option value="">Semua</option>
                                 <option value="BONGKAR">BONGKAR</option>
