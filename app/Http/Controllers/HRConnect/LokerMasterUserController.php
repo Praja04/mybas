@@ -64,29 +64,68 @@ class LokerMasterUserController extends Controller
             'divisi' => 'required',
             'jk' => 'required|in:L,P',
             'no_loker' => 'required|integer',
-            'staff' => 'required',
+            'staff' => 'required|in:staff,non_staff,mitra_kerja',
         ]);
 
-        // Tentukan rak utama berdasarkan jenis kelamin
-        if ($request->jk === 'L') {
-            $kodeRak = 'PB';
-        } elseif ($request->jk === 'P') {
-            $kodeRak = 'WB';
-        } else {
-            return response()->json(
-                [
-                    'status' => 'error',
-                    'message' => 'Jenis kelamin tidak valid.',
-                ],
-                400,
-            );
-        }
-        // Tentukan rak pasangan
+        $kodeRak = $request->jk === 'L' ? 'PB' : 'WB';
         $pairRak = $this->pairRak($kodeRak);
+        $rakDicek = array_filter([$kodeRak, $pairRak]);
 
         try {
-            DB::transaction(function () use ($request, $kodeRak, $pairRak) {
-                // Simpan loker utama
+            DB::transaction(function () use ($request, $kodeRak, $pairRak, $rakDicek) {
+
+                // Cegah karyawan punya lebih dari 1 loker aktif
+                $hasActive = DB::table('loker_penghuni')
+                    ->where('nik', $request->nik)
+                    ->where('is_active', 'Y')
+                    ->lockForUpdate()
+                    ->exists();
+
+                if ($hasActive) {
+                    throw new \Exception("NIK {$request->nik} sudah memiliki loker aktif.");
+                }
+
+                // Cek kapasitas dan tipe penghuni loker
+                $rows = DB::table('loker_penghuni')
+                    ->select('staff', DB::raw('COUNT(DISTINCT nik) as cnt'))
+                    ->whereIn('kode_rak', $rakDicek)
+                    ->where('no_loker', (int) $request->no_loker)
+                    ->groupBy('staff')
+                    ->lockForUpdate()
+                    ->get();
+
+                // tidak boleh campur kategori
+                if ($rows->count() > 1) {
+                    throw new \Exception("Loker {$kodeRak}-{$request->no_loker} tidak valid karena terdapat campuran kategori.");
+                }
+
+                $existingType  = $rows->first()->staff ?? null;
+                $existingCount = (int) ($rows->first()->cnt ?? 0);
+
+                // cek tipe penghuni 
+                if ($existingType !== null && $existingType !== $request->staff) {
+                    $staffLabel = ucwords(str_replace('_', ' ', $existingType));
+                    throw new \Exception("Loker {$kodeRak}-{$request->no_loker} sudah dipakai oleh {$staffLabel}.");
+                }
+
+                // cek kapasitas berdasarkan tipe penghuni
+                switch ($request->staff) {
+                    case 'staff':
+                        $maxCapacity = 1;
+                        break;
+                    case 'non_staff':
+                    case 'mitra_kerja':
+                        $maxCapacity = 2;
+                        break;
+                    default:
+                        throw new \Exception('Kategori karyawan tidak valid.');
+                }
+
+                if ($existingCount >= $maxCapacity) {
+                    throw new \Exception("Loker {$kodeRak}-{$request->no_loker} sudah penuh.");
+                }
+
+                // Insert rak utama
                 DB::table('loker_penghuni')->insert([
                     'nik' => $request->nik,
                     'nama' => $request->nama,
@@ -101,7 +140,7 @@ class LokerMasterUserController extends Controller
                     'updated_at' => now(),
                 ]);
 
-                // Simpan rak pasangan (jika ada)
+                // Insert rak pasangan (jika ada)
                 if ($pairRak) {
                     DB::table('loker_penghuni')->insert([
                         'nik' => $request->nik,
@@ -127,9 +166,9 @@ class LokerMasterUserController extends Controller
             return response()->json(
                 [
                     'status' => 'error',
-                    'message' => 'Gagal menyimpan loker . ' . $e->getMessage(),
+                    'message' => $e->getMessage(),
                 ],
-                500,
+                422,
             );
         }
     }
@@ -174,54 +213,126 @@ class LokerMasterUserController extends Controller
             'divisi' => 'required',
             'jk' => 'required|in:L,P',
             'no_loker' => 'required|integer|min:1',
-            'staff' => 'required',
+            'staff' => 'required|in:staff,non_staff,mitra_kerja',
         ]);
 
         // Rak baru
         $kodeRakUtama = $request->jk === 'L' ? 'PB' : 'WB';
-        $kodeRakPair = $this->pairRak($kodeRakUtama);
+        $kodeRakPair  = $this->pairRak($kodeRakUtama);
+        $rakDicek    = array_filter([$kodeRakUtama, $kodeRakPair]);
 
-        DB::transaction(function () use ($request, $kodeRakUtama, $kodeRakPair) {
-            // 1️⃣ HAPUS SEMUA LOKER AKTIF LAMA (UTAMA + PASANGAN)
-            DB::table('loker_penghuni')->where('nik', $request->nik)->where('is_active', 'Y')->delete();
+        try {
+            DB::transaction(function () use ($request, $kodeRakUtama, $kodeRakPair, $rakDicek) {
 
-            // 2️⃣ CREATE RAK UTAMA BARU
-            DB::table('loker_penghuni')->insert([
-                'nik' => $request->nik,
-                'nama' => $request->nama,
-                'divisi' => $request->divisi,
-                'jk' => $request->jk,
-                'staff' => $request->staff,
-                'kode_rak' => $kodeRakUtama,
-                'no_loker' => $request->no_loker,
-                'is_active' => 'Y',
-                'tgl_masuk' => now(),
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
+                // Ambil data lama user
+                $oldRecord = DB::table('loker_penghuni')
+                    ->where('nik', $request->nik)
+                    ->where('is_active', 'Y')
+                    ->first();
 
-            // 3️⃣ CREATE RAK PASANGAN
-            if ($kodeRakPair) {
+                if (!$oldRecord) {
+                    throw new \Exception("Data loker lama tidak ditemukan.");
+                }
+
+                // Cek isi loker TUJUAN (kecuali NIK ini sendiri)
+                $rows = DB::table('loker_penghuni')
+                    ->select('staff', DB::raw('COUNT(DISTINCT nik) as cnt'))
+                    ->whereIn('kode_rak', $rakDicek)
+                    ->where('no_loker', (int) $request->no_loker)
+                    ->where('nik', '!=', $request->nik)
+                    ->groupBy('staff')
+                    ->lockForUpdate()
+                    ->get();
+
+                // tidak boleh campur kategori
+                if ($rows->count() > 1) {
+                    throw new \Exception(
+                        "Loker {$kodeRakUtama}-{$request->no_loker} tidak valid karena terdapat campuran kategori."
+                    );
+                }
+
+                $existingType  = $rows->first()->staff ?? null;
+                $existingCount = (int) ($rows->first()->cnt ?? 0);
+
+                // tipe berbeda
+                if ($existingType !== null && $existingType !== $request->staff) {
+                    $staffLabel = ucwords(str_replace('_', ' ', $existingType));
+                    throw new \Exception(
+                        "Loker {$kodeRakUtama}-{$request->no_loker} sudah dipakai oleh {$staffLabel}."
+                    );
+                }
+
+                // Cek kapasitas
+                switch ($request->staff) {
+                    case 'staff':
+                        $maxCapacity = 1;
+                        break;
+                    case 'non_staff':
+                    case 'mitra_kerja':
+                        $maxCapacity = 2;
+                        break;
+                    default:
+                        throw new \Exception('Kategori karyawan tidak valid.');
+                }
+
+                if ($existingCount >= $maxCapacity) {
+                    throw new \Exception(
+                        "Loker {$kodeRakUtama}-{$request->no_loker} sudah penuh."
+                    );
+                }
+
+                // Hapus loker lama (UTAMA + PASANGAN)
+                DB::table('loker_penghuni')
+                    ->where('nik', $request->nik)
+                    ->where('is_active', 'Y')
+                    ->delete();
+
+                // Insert rak utama baru
                 DB::table('loker_penghuni')->insert([
                     'nik' => $request->nik,
                     'nama' => $request->nama,
                     'divisi' => $request->divisi,
                     'jk' => $request->jk,
                     'staff' => $request->staff,
-                    'kode_rak' => $kodeRakPair,
-                    'no_loker' => $request->no_loker,
+                    'kode_rak' => $kodeRakUtama,
+                    'no_loker' => (int) $request->no_loker,
                     'is_active' => 'Y',
-                    'tgl_masuk' => now(),
-                    'created_at' => now(),
+                    'tgl_masuk' => $oldRecord->tgl_masuk,
+                    'created_at' => $oldRecord->created_at,
                     'updated_at' => now(),
                 ]);
-            }
-        });
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Data loker user berhasil diperbarui',
-        ]);
+                // Insert rak pasangan
+                if ($kodeRakPair) {
+                    DB::table('loker_penghuni')->insert([
+                        'nik' => $request->nik,
+                        'nama' => $request->nama,
+                        'divisi' => $request->divisi,
+                        'jk' => $request->jk,
+                        'staff' => $request->staff,
+                        'kode_rak' => $kodeRakPair,
+                        'no_loker' => (int) $request->no_loker,
+                        'is_active' => 'Y',
+                        'tgl_masuk' => $oldRecord->tgl_masuk,
+                        'created_at' => $oldRecord->created_at,
+                        'updated_at' => now(),
+                    ]);
+                }
+            });
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Data loker user berhasil diperbarui',
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json(
+                [
+                    'status' => 'error',
+                    'message' => $e->getMessage(),
+                ],
+                422,
+            );
+        }
     }
 
     public function destroy($id)

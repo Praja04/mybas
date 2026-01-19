@@ -29,7 +29,14 @@ $menus = [
                 'permission' => 'hr_connect_master',
                 'icon' => 'mdi-account-cog',
                 'submenu' => []
-            ]
+            ],
+            [
+                'path' => 'hr-connect/masters/loker-user',
+                'label' => 'Loker User',
+                'permission' => 'hr_connect_master',
+                'icon' => 'mdi-account-cog',
+                'submenu' => []
+            ],
         ],
     ],
     [
@@ -176,7 +183,7 @@ $menus = [
 ];
 
 ?>
-<x-templates.velzon.base :nameIcon="'user'" :menus="json_encode(array_filter($menus))">
+<x-templates.velzon-hs.base :nameIcon="'user'" :menus="json_encode(array_filter($menus))">
     <x-slot name="title">HRConnect</x-slot>
 
 
@@ -185,4 +192,4 @@ $menus = [
 
     <x-slot name="styles">@stack('styles')</x-slot>
     <x-slot name="scripts">@stack('scripts')</x-slot>
-</x-templates.velzon.base>
+</x-templates.velzon-hs.base>

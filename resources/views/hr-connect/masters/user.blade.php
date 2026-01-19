@@ -11,7 +11,7 @@
                     <tr>
                         <th>NIK</th>
                         <th>Nama</th>
-                        <th>Divisi</th>
+                        <th>Dept</th>
                         <th>Jenis Kelamin</th>
                         <th>Loker Baju</th>
                         <th>Loker Sepatu</th>
@@ -41,14 +41,16 @@
                             <input type="hidden" id="editId">
 
                             <div class="mb-2">
-                                <label for="nik" class="form-label">NIK</label>
-                                <input type="text" class="form-control" id="nik" placeholder="Masukkan NIK">
+                                <label for="nik" class="form-label">NIK <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="nik" placeholder="Masukkan NIK"
+                                    required>
                                 {{-- disabled kl edit --}}
                             </div>
 
                             <div class="mb-2">
-                                <label for="nama" class="form-label">Nama</label>
-                                <input type="text" class="form-control" id="nama" placeholder="Masukkan Nama">
+                                <label for="nama" class="form-label">Nama <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="nama" placeholder="Masukkan Nama"
+                                    required>
                             </div>
 
                             {{-- <div class="mb-2">
@@ -57,8 +59,9 @@
                             </div> --}}
 
                             <div class="mb-2">
-                                <label for="divisi" class="form-label">Departemen</label>
-                                <select class="form-control" id="divisi">
+                                <label for="divisi" class="form-label">Departemen <span
+                                        class="text-danger">*</span></label>
+                                <select class="form-control" id="divisi" required>
                                     <option value="">Pilih Departemen</option>
                                     @foreach ($departments as $dept)
                                         <option value="{{ $dept->name }}">{{ $dept->name }}</option>
@@ -75,8 +78,9 @@
 
 
                             <div class="mb-2">
-                                <label for="jk" class="form-label">Jenis Kelamin</label>
-                                <select class="form-control" id="jk">
+                                <label for="jk" class="form-label">Jenis Kelamin <span
+                                        class="text-danger">*</span></label>
+                                <select class="form-control" id="jk" required>
                                     <option value="">Pilih Jenis Kelamin</option>
                                     <option value="L">Pria</option>
                                     <option value="P">Wanita</option>
@@ -84,18 +88,20 @@
                             </div>
 
                             <div class="mb-2">
-                                <label for="no_loker" class="form-label">Nomor Loker</label>
+                                <label for="no_loker" class="form-label">Nomor Loker <span
+                                        class="text-danger">*</span></label>
                                 {{-- <select class="form-control" id="no_loker">
                                     <option value="">Pilih No Loker</option>
                                 </select> --}}
-                                <input type="number" class="form-control" id="no_loker"
-                                    placeholder="Masukkan Nomor Loker">
+                                <input type="number" class="form-control" id="no_loker" placeholder="Masukkan Nomor Loker"
+                                    required>
 
                             </div>
 
                             <div class="mb-2">
-                                <label for="staff" class="form-label">Kategori Karyawan</label>
-                                <select class="form-control" id="staff">
+                                <label for="staff" class="form-label">Kategori Karyawan <span
+                                        class="text-danger">*</span></label>
+                                <select class="form-control" id="staff" required>
                                     <option value="">Pilih Kategori</option>
                                     <option value="staff">Staff</option>
                                     <option value="non_staff">Non Staff</option>
@@ -143,7 +149,12 @@
                         data: 'loker_sepatu'
                     },
                     {
-                        data: 'staff'
+                        data: 'staff',
+                        render: function(data) {
+                            return data
+                                .replace(/_/g, ' ')
+                                .replace(/\b\w/g, c => c.toUpperCase());
+                        }
                     },
                     {
                         data: 'action',
@@ -167,13 +178,28 @@
                 $('#modalData').modal('show');
 
                 $.get('/hr-connect/masters/loker-user/get-by-nik/' + nik, function(res) {
+                    let divisiOptions = $('#divisi option')
+                        .map(function() {
+                            return $(this).val();
+                        })
+                        .get();
+
                     $('#editId').val(res.nik);
                     $('#nik').val(res.nik);
                     $('#nama').val(res.nama);
-                    $('#divisi').val(res.divisi);
                     $('#staff').val(res.staff);
                     $('#no_loker').val(res.no_loker);
                     $('#jk').val(res.jk);
+
+                    if (divisiOptions.includes(res.divisi)) {
+                        $('#divisi').val(res.divisi);
+                        $('#divisiLainnyaWrapper').addClass('d-none');
+                        $('#divisi_lainnya').val('');
+                    } else {
+                        $('#divisi').val('__other__').trigger('change');
+                        $('#divisi_lainnya').val(res.divisi);
+                    }
+
                 });
             });
 
@@ -194,51 +220,49 @@
                     $('#divisi').val();
 
                 divisi: divisiFinal,
+                $.ajax({
+                    type: 'POST',
+                    url: url,
+                    data: {
+                        nik: $('#nik').val(),
+                        nama: $('#nama').val(),
+                        divisi: divisiFinal,
+                        jk: $('#jk').val(),
+                        no_loker: $('#no_loker').val(),
+                        staff: $('#staff').val(),
+                        is_active: $('#is_active').val(),
+                    },
+                    success: function(res) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Berhasil',
+                            text: res.message || (isEdit ? 'Data berhasil diperbarui' :
+                                'Data berhasil ditambahkan'),
+                            timer: 1500,
+                            showConfirmButton: false
+                        });
 
+                        $('#modalData').modal('hide');
+                        table.ajax.reload(null, false);
+                    },
+                    error: function(xhr) {
+                        let msg = 'Terjadi kesalahan';
 
-                    $.ajax({
-                        type: 'POST',
-                        url: url,
-                        data: {
-                            nik: $('#nik').val(),
-                            nama: $('#nama').val(),
-                            divisi: divisiFinal,
-                            jk: $('#jk').val(),
-                            no_loker: $('#no_loker').val(),
-                            staff: $('#staff').val(),
-                            is_active: $('#is_active').val(),
-                        },
-                        success: function(res) {
-                            Swal.fire({
-                                icon: 'success',
-                                title: 'Berhasil',
-                                text: res.message || (isEdit ? 'Data berhasil diperbarui' :
-                                    'Data berhasil ditambahkan'),
-                                timer: 1500,
-                                showConfirmButton: false
-                            });
-
-                            $('#modalData').modal('hide');
-                            table.ajax.reload(null, false);
-                        },
-                        error: function(xhr) {
-                            let msg = 'Terjadi kesalahan';
-
-                            if (xhr.responseJSON) {
-                                if (xhr.responseJSON.message) {
-                                    msg = xhr.responseJSON.message;
-                                } else if (xhr.responseJSON.errors) {
-                                    msg = Object.values(xhr.responseJSON.errors).join('\n');
-                                }
+                        if (xhr.responseJSON) {
+                            if (xhr.responseJSON.message) {
+                                msg = xhr.responseJSON.message;
+                            } else if (xhr.responseJSON.errors) {
+                                msg = Object.values(xhr.responseJSON.errors).join('\n');
                             }
-
-                            Swal.fire({
-                                icon: 'error',
-                                title: 'Gagal',
-                                text: msg
-                            });
                         }
-                    });
+
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Gagal',
+                            text: msg
+                        });
+                    }
+                });
             });
 
             $(document).on('click', '.btnDelete', function() {
