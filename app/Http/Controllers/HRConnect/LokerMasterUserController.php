@@ -25,16 +25,12 @@ class LokerMasterUserController extends Controller
                 'divisi',
                 'jk',
                 'staff',
-
-                // no_loker INTEGER untuk sorting
                 DB::raw("
                     MAX(CASE
                         WHEN kode_rak IN ('PB','WB')
                         THEN no_loker
                     END) AS no_loker
                 "),
-
-                // untuk display
                 DB::raw("
                     MAX(CASE
                         WHEN kode_rak IN ('PB','WB')
@@ -49,6 +45,11 @@ class LokerMasterUserController extends Controller
                 ")
             )
             ->where('is_active', 'Y')
+
+            ->when($request->jk, function ($q) use ($request) {
+                $q->where('jk', $request->jk);
+            })
+
             ->groupBy('nik', 'nama', 'divisi', 'jk', 'staff');
 
         $query = DB::query()->fromSub($subQuery, 'locker_view');

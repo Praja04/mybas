@@ -5,6 +5,17 @@
         <button id="btnStore" class="btn btn-primary mb-3">Tambah</button>
 
         <div class="card p-4 table-responsive">
+            <ul class="nav nav-tabs mb-3" id="jkTabs">
+                <li class="nav-item">
+                    <a class="nav-link active" data-jk="">Semua</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-jk="L">Pria</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-jk="P">Wanita</a>
+                </li>
+            </ul>
 
             <table id="tableAjax" class="table table-bordered">
                 <thead>
@@ -124,9 +135,16 @@
     <script>
         $(function() {
             /* ================= DATATABLE ================= */
+            let selectedJK = '';
+
             let table = $('#tableAjax').DataTable({
                 serverSide: true,
-                ajax: '/hr-connect/masters/loker-user/getData',
+                ajax: {
+                    url: '/hr-connect/masters/loker-user/getData',
+                    data: function(d) {
+                        d.jk = selectedJK;
+                    }
+                },
                 columns: [{
                         data: 'nik'
                     },
@@ -138,12 +156,13 @@
                     },
                     {
                         data: 'jk',
-                        render: function(data, type, row) {
+                        render: function(data) {
                             return data === 'L' ? 'Pria' : 'Wanita';
                         }
                     },
                     {
-                        data: 'loker_baju'
+                        data: 'loker_baju',
+                        name: 'no_loker'
                     },
                     {
                         data: 'loker_sepatu'
@@ -151,9 +170,7 @@
                     {
                         data: 'staff',
                         render: function(data) {
-                            return data
-                                .replace(/_/g, ' ')
-                                .replace(/\b\w/g, c => c.toUpperCase());
+                            return data.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
                         }
                     },
                     {
@@ -162,6 +179,7 @@
                     }
                 ]
             });
+
 
             /* ================= ADD ================= */
             $('#btnStore').on('click', function() {
@@ -220,49 +238,49 @@
                     $('#divisi').val();
 
                 divisi: divisiFinal,
-                $.ajax({
-                    type: 'POST',
-                    url: url,
-                    data: {
-                        nik: $('#nik').val(),
-                        nama: $('#nama').val(),
-                        divisi: divisiFinal,
-                        jk: $('#jk').val(),
-                        no_loker: $('#no_loker').val(),
-                        staff: $('#staff').val(),
-                        is_active: $('#is_active').val(),
-                    },
-                    success: function(res) {
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Berhasil',
-                            text: res.message || (isEdit ? 'Data berhasil diperbarui' :
-                                'Data berhasil ditambahkan'),
-                            timer: 1500,
-                            showConfirmButton: false
-                        });
+                    $.ajax({
+                        type: 'POST',
+                        url: url,
+                        data: {
+                            nik: $('#nik').val(),
+                            nama: $('#nama').val(),
+                            divisi: divisiFinal,
+                            jk: $('#jk').val(),
+                            no_loker: $('#no_loker').val(),
+                            staff: $('#staff').val(),
+                            is_active: $('#is_active').val(),
+                        },
+                        success: function(res) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Berhasil',
+                                text: res.message || (isEdit ? 'Data berhasil diperbarui' :
+                                    'Data berhasil ditambahkan'),
+                                timer: 1500,
+                                showConfirmButton: false
+                            });
 
-                        $('#modalData').modal('hide');
-                        table.ajax.reload(null, false);
-                    },
-                    error: function(xhr) {
-                        let msg = 'Terjadi kesalahan';
+                            $('#modalData').modal('hide');
+                            table.ajax.reload(null, false);
+                        },
+                        error: function(xhr) {
+                            let msg = 'Terjadi kesalahan';
 
-                        if (xhr.responseJSON) {
-                            if (xhr.responseJSON.message) {
-                                msg = xhr.responseJSON.message;
-                            } else if (xhr.responseJSON.errors) {
-                                msg = Object.values(xhr.responseJSON.errors).join('\n');
+                            if (xhr.responseJSON) {
+                                if (xhr.responseJSON.message) {
+                                    msg = xhr.responseJSON.message;
+                                } else if (xhr.responseJSON.errors) {
+                                    msg = Object.values(xhr.responseJSON.errors).join('\n');
+                                }
                             }
-                        }
 
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Gagal',
-                            text: msg
-                        });
-                    }
-                });
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Gagal',
+                                text: msg
+                            });
+                        }
+                    });
             });
 
             $(document).on('click', '.btnDelete', function() {
@@ -309,6 +327,14 @@
                     $('#divisiLainnyaWrapper').addClass('d-none');
                     $('#divisi_lainnya').val('');
                 }
+            });
+
+            $(document).on('click', '#jkTabs .nav-link', function() {
+                $('#jkTabs .nav-link').removeClass('active');
+                $(this).addClass('active');
+
+                selectedJK = $(this).data('jk'); // '', 'L', 'P'
+                table.ajax.reload();
             });
 
         });
