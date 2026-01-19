@@ -18,39 +18,47 @@ class LokerMasterUserController extends Controller
 
     public function getData(Request $request)
     {
-        $query = DB::table('loker_penghuni')
+        $subQuery = DB::table('loker_penghuni')
             ->select(
                 'nik',
                 'nama',
                 'divisi',
                 'jk',
                 'staff',
+
+                // no_loker INTEGER untuk sorting
                 DB::raw("
-                MAX(CASE
-                    WHEN kode_rak IN ('PB','WB')
-                    THEN CONCAT(kode_rak, '-', no_loker)
-                END) AS loker_baju
-            "),
+                    MAX(CASE
+                        WHEN kode_rak IN ('PB','WB')
+                        THEN no_loker
+                    END) AS no_loker
+                "),
+
+                // untuk display
                 DB::raw("
-                MAX(CASE
-                    WHEN kode_rak IN ('PS','WS')
-                    THEN CONCAT(kode_rak, '-', no_loker)
-                END) AS loker_sepatu
-            "),
+                    MAX(CASE
+                        WHEN kode_rak IN ('PB','WB')
+                        THEN CONCAT(kode_rak, '-', no_loker)
+                    END) AS loker_baju
+                "),
+                DB::raw("
+                    MAX(CASE
+                        WHEN kode_rak IN ('PS','WS')
+                        THEN CONCAT(kode_rak, '-', no_loker)
+                    END) AS loker_sepatu
+                ")
             )
             ->where('is_active', 'Y')
             ->groupBy('nik', 'nama', 'divisi', 'jk', 'staff');
 
+        $query = DB::query()->fromSub($subQuery, 'locker_view');
+
         return DataTables::of($query)
             ->addColumn('action', function ($row) {
                 return '
-                <button class="btn btn-sm btn-success btnEdit" data-nik="' .
-                    $row->nik .
-                    '">Edit</button>
-                <button class="btn btn-sm btn-danger btnDelete" data-nik="' .
-                    $row->nik .
-                    '">Delete</button>
-            ';
+                    <button class="btn btn-sm btn-success btnEdit" data-nik="' . $row->nik . '">Edit</button>
+                    <button class="btn btn-sm btn-danger btnDelete" data-nik="' . $row->nik . '">Delete</button>
+                ';
             })
             ->rawColumns(['action'])
             ->make(true);
