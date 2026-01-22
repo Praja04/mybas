@@ -30,8 +30,8 @@
                                         <th>NIK</th>
                                         <th>Nama Security</th>
                                         <th>Nomor Kartu</th>
-                                        <th>Foto</th>
                                         <th>Status</th>
+                                        <th>Foto</th>
                                         <th>Aksi</th>
                                     </tr>
                                 </thead>

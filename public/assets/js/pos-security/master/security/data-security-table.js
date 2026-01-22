@@ -27,14 +27,14 @@ export class ContentDatatable {
                         name: "nomor_kartu",
                     },
                     {
-                        data: "foto",
-                        name: "foto",
+                        data: "status",
+                        name: "status",
                         orderable: false,
                         searchable: false,
                     },
                     {
-                        data: "status",
-                        name: "status",
+                        data: "foto",
+                        name: "foto",
                         orderable: false,
                         searchable: false,
                     },

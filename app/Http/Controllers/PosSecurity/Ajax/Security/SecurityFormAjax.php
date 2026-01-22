@@ -113,9 +113,22 @@ class SecurityFormAjax extends Controller
             ];
 
             if ($request->hasFile('foto')) {
-                $fotoPath = $request->file('foto')->store('security', 'public');
+                $foto = $request->file('foto');
+
+                $destinationPath = public_path('uploads/pos-security/security');
+
+                if (!file_exists($destinationPath)) {
+                    mkdir($destinationPath, 0755, true);
+                }
+
+                $filename = uniqid('security_') . '.' . $foto->getClientOriginalExtension();
+
+                $foto->move($destinationPath, $filename);
+
+                $fotoPath = 'uploads/pos-security/security/' . $filename;
                 $dataUpdate['foto'] = $fotoPath;
             }
+
 
             $security->update($dataUpdate);
 

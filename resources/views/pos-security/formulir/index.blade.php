@@ -59,7 +59,7 @@
                     <div class="card border-0 rounded-4 shadow-lg h-100 position-relative">
                         <div class="card-body py-5 d-flex flex-column align-items-center text-center">
                             <i class="mdi mdi-truck fs-1 mb-3" style="font-size: 4rem;"></i>
-                            <h4 class="fw-bold mb-2">Supplier / Transporter</h4>
+                            <h4 class="fw-bold mb-2">Supplier / Transporter Besar</h4>
                             <span class="badge bg-light text-primary mb-3 fw-semibold">Mobil • Truk • Kontainer</span>
                             <p class="mb-0 small">
                                 Formulir untuk aktivitas bongkar muat kendaraan besar
@@ -75,7 +75,7 @@
                     <div class="card border-0 rounded-4 shadow-lg h-100 position-relative">
                         <div class="card-body py-5 d-flex flex-column align-items-center text-center">
                             <i class="mdi mdi-car fs-1 mb-3" style="font-size: 4rem;"></i>
-                            <h4 class="fw-bold mb-2">Tamu / Vendor / Transporter</h4>
+                            <h4 class="fw-bold mb-2">Tamu Umum / Vendor / Transporter Kecil</h4>
                             <span class="badge bg-light text-success mb-3 fw-semibold">Sepeda Motor</span>
                             <p class="mb-0 small">
                                 Formulir untuk Tamu, Vendor, Kontraktor, dan bongkar muat kendaraan kecil

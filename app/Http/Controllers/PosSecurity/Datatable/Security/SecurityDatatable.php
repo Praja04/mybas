@@ -22,11 +22,12 @@ class SecurityDatatable extends Controller
                 $url = asset($item->foto);
 
                 return '
-                    <img src="' . $url . '" 
-                        class="img-thumbnail preview-image" 
-                        style="max-height:80px; cursor:pointer"
-                        data-preview="' . $url . '"
-                        alt="Foto Security">
+                    <button 
+                        type="button"
+                        class="btn btn-sm btn-primary preview-image"
+                        data-preview="' . $url . '">
+                        Lihat Foto
+                    </button>               
                 ';
             })
             ->addColumn('status', function ($item) {
