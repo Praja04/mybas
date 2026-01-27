@@ -29,10 +29,18 @@
 
             <div style="width: 220px">
                 <label class="form-label mb-0">Jadwal Penilaian</label>
-                <select id="filter_jadwal" class="form-control form-control-sm">
+                {{-- <select id="filter_jadwal" class="form-control form-control-sm">
                     @foreach ($allJadwal as $jadwal)
                         <option value="{{ $jadwal->id_jadwal }}"
                             {{ $jadwal->id_jadwal == $latestJadwal->id_jadwal ? 'selected' : '' }}>
+                            {{ $jadwal->tahun }}
+                        </option>
+                    @endforeach
+                </select> --}}
+                <select id="filter_jadwal" class="form-control form-control-sm">
+                    <option value="">-- Pilih Tahun --</option>
+                    @foreach ($allJadwal as $jadwal)
+                        <option value="{{ $jadwal->id_jadwal }}">
                             {{ $jadwal->tahun }}
                         </option>
                     @endforeach
@@ -40,7 +48,11 @@
             </div>
         </div>
 
-        <div id="report-container"></div>
+        <div id="report-container">
+            <div class="alert alert-info">
+                Silakan pilih <strong>tahun penilaian</strong> untuk menampilkan report.
+            </div>
+        </div>
 
     </div>
 
@@ -76,9 +88,18 @@
 @push('scripts')
     <script>
         $(document).ready(function() {
-            loadReport($('#filter_jadwal').val());
+            // loadReport($('#filter_jadwal').val());
 
             $('#filter_jadwal').change(function() {
+                let jadwalId = $(this).val();
+
+                if (!jadwalId) {
+                    $('#report-container').html(
+                        '<div class="alert alert-info">Silakan pilih tahun terlebih dahulu</div>'
+                    );
+                    return;
+                }
+
                 loadReport($(this).val());
             });
 
@@ -131,9 +152,10 @@
                         }
 
                         periodeMap[p.nama_periode].push({
-                            department: dep.id_department,                          
+                            department: dep.id_department,
                             __total: dep.__total,
-                            nilaiAkhirPeriode: p.nilaiAkhir, // total nilai akhir untuk periode ini (PER DEPARTMENT)
+                            nilaiAkhirPeriode: p
+                                .nilaiAkhir, // total nilai akhir untuk periode ini (PER DEPARTMENT)
                             group: p.group || [],
                             id_periode: p.id_periode,
                             juri: p.juri || []
@@ -176,7 +198,7 @@
                         }
 
                         item.group.forEach((g, i) => {
-                            
+
                             let printUrl = "{{ route('5r-system.report.print', '') }}/" + g
                                 .encryptedKey;
 
