@@ -230,6 +230,13 @@ class DashboardController extends Controller
 
         $rawNilai = $this->getNilaiRaw($jadwalId, $workspaceId);
 
+        $bobotMap = MasterGroupJuriDepartment::whereIn(
+                'id_periode',
+                $periodes->pluck('id_periode')
+            )
+            ->get()
+            ->groupBy(fn ($r) => $r->id_periode . '-' . $r->id_department);
+
         $datasets = [];
         foreach ($periodes as $periode) {
             $data = [];
@@ -238,10 +245,13 @@ class DashboardController extends Controller
                 $key = $periode->id_periode.'-'.$deptId;
                 $rows = $rawNilai->get($key, collect());
 
-                $bobot = MasterGroupJuriDepartment::where([
-                    'id_department' => $deptId,
-                    'id_periode'    => $periode->id_periode
-                ])->value('index_tingkat_kesulitan') ?? 1;
+                $bobot = 1;
+                if ($bobotMap->has($key)) {
+                    $row = $bobotMap->get($key)->first();
+                    if ($row && $row->index_tingkat_kesulitan !== null) {
+                        $bobot = (float) $row->index_tingkat_kesulitan;
+                    }
+                }
 
                 $data[] = $this->hitungNilaiFromRaw($rows, (float)$bobot, $jadwalTahun);
             }
@@ -589,26 +599,44 @@ class DashboardController extends Controller
             ->pluck('d.nama_department', 'd.id_department');
     }
 
-    private function getNilaiRaw($jadwalId, $workspaceId)
+   private function getNilaiRaw($jadwalId)
     {
         return DB::table('5r_jawaban as j')
-            ->join('5r_jawaban_group as jg', 'j.id_jawaban_group', '=', 'jg.id_jawaban_group')
-            ->join('5r_periode_penilaian as p', 'p.id_periode', '=', 'jg.id_periode')
+            ->join('5r_jawaban_group as jg', function ($join) use ($jadwalId) {
+                $join->on('j.id_jawaban_group', '=', 'jg.id_jawaban_group')
+                    ->where('jg.status', 'approved')
+                    ->whereExists(function ($q) use ($jadwalId) {
+                        $q->select(DB::raw(1))
+                            ->from('5r_periode_penilaian as p')
+                            ->whereColumn('p.id_periode', 'jg.id_periode')
+                            ->where('p.id_jadwal', $jadwalId);
+                    })
+                    // 🔥 FILTER LATEST APPROVED PER GROUP PER PERIODE
+                    ->whereIn('jg.id_jawaban_group', function ($sub) {
+                        $sub->select(DB::raw('MAX(jg2.id_jawaban_group)'))
+                            ->from('5r_jawaban_group as jg2')
+                            ->where('jg2.status', 'approved')
+                            ->groupBy('jg2.id_group', 'jg2.id_periode');
+                    });
+            })
             ->join('5r_master_group as g', 'g.id_group', '=', 'jg.id_group')
-            ->join('5r_master_department as d', 'd.id_department', '=', 'g.id_department')
-            ->where('p.id_jadwal', $jadwalId)
-            ->where('d.id_workspace', $workspaceId)
-            ->where('jg.status', 'approved')
             ->select(
-                'p.id_periode',
+                'jg.id_periode',
                 'g.id_department',
+                'g.id_group',
                 'g.persentase',
                 DB::raw('SUM(j.nilai) as total_nilai')
             )
-            ->groupBy('p.id_periode', 'g.id_department', 'g.persentase')
+            ->groupBy(
+                'jg.id_periode',
+                'g.id_department',
+                'g.id_group',
+                'g.persentase'
+            )
             ->get()
-            ->groupBy(fn ($r) => $r->id_periode.'-'.$r->id_department);
+            ->groupBy(fn ($r) => $r->id_periode . '-' . $r->id_department);
     }
+
 
     private function hitungNilaiFromRaw($rows, float $bobot, int $tahun): float
     {

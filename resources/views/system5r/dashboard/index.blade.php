@@ -355,10 +355,10 @@
                 });
             }
 
-            $('.jadwal-rank').each(function() {
-                const ws = $(this).data('workspace');
-                loadRankingChart('rank-' + ws, ws, '');
-            });
+            // $('.jadwal-rank').each(function() {
+            //     const ws = $(this).data('workspace');
+            //     loadRankingChart('rank-' + ws, ws, '');
+            // });
 
             $('.jadwal-rank').on('change', function() {
                 const ws = $(this).data('workspace');
