@@ -30,9 +30,9 @@
             <div style="width: 220px">
                 <label class="form-label mb-0">Jadwal Penilaian</label>
                 <select id="filter_jadwal" class="form-control form-control-sm">
+                    <option value="">-- Pilih Tahun --</option>
                     @foreach ($allJadwal as $jadwal)
-                        <option value="{{ $jadwal->id_jadwal }}"
-                            {{ $jadwal->id_jadwal == $latestJadwal->id_jadwal ? 'selected' : '' }}>
+                        <option value="{{ $jadwal->id_jadwal }}" {{-- {{ $jadwal->id_jadwal == $latestJadwal->id_jadwal ? 'selected' : '' }} --}}>
                             {{ $jadwal->tahun }}
                         </option>
                     @endforeach
@@ -40,7 +40,11 @@
             </div>
         </div>
 
-        <div id="report-container"></div>
+        <div id="report-container">
+            <div class="alert alert-info">
+                Silakan pilih <strong>tahun penilaian</strong> untuk menampilkan report.
+            </div>
+        </div>
 
     </div>
 
@@ -75,9 +79,18 @@
 @push('scripts')
     <script>
         $(document).ready(function() {
-            loadReport($('#filter_jadwal').val());
+            // loadReport($('#filter_jadwal').val());
 
             $('#filter_jadwal').change(function() {
+                let jadwalId = $(this).val();
+
+                if (!jadwalId) {
+                    $('#report-container').html(
+                        '<div class="alert alert-info">Silakan pilih tahun terlebih dahulu</div>'
+                    );
+                    return;
+                }
+
                 loadReport($(this).val());
             });
 
@@ -100,7 +113,7 @@
                     }
 
                     res.workspace.forEach(ws => {
-                        
+
                         html += `
                         <div class="card shadow-sm mb-4">
                             <div class="card-body">
@@ -127,21 +140,21 @@
                         // });
 
                         //     html += `
-                        //         <div class="card shadow-sm mb-4">
-                        //             <div class="card-body">
-                        //                 <h4 class="mb-3 fw-bold">${ws.name}</h4>
+                    //         <div class="card shadow-sm mb-4">
+                    //             <div class="card-body">
+                    //                 <h4 class="mb-3 fw-bold">${ws.name}</h4>
 
-                        //                 ${
-                        //                     hasValidData
-                        //                         ? buildTable(ws.departments)
-                        //                         : `<p class="text-muted fst-italic mb-0">
+                    //                 ${
+                    //                     hasValidData
+                    //                         ? buildTable(ws.departments)
+                    //                         : `<p class="text-muted fst-italic mb-0">
                         //                             Belum ada penilaian pada workspace ini
                         //                         </p>`
-                        //                 }
+                    //                 }
 
-                        //             </div>
-                        //         </div>
-                        //     `;
+                    //             </div>
+                    //         </div>
+                    //     `;
                         // });
                     });
 
@@ -173,7 +186,8 @@
                             department: dep
                                 .nama_department,
                             __total: dep.__total,
-                            nilaiAkhirPeriode: p.nilaiAkhir, // total nilai akhir untuk periode ini (PER DEPARTMENT)
+                            nilaiAkhirPeriode: p
+                                .nilaiAkhir, // total nilai akhir untuk periode ini (PER DEPARTMENT)
                             group: groupArray,
                             id_periode: p.id_periode,
                             juri: Array.isArray(p.juri) ? p.juri : []
