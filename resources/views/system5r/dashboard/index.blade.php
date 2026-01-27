@@ -1,7 +1,7 @@
 @extends('system5r.layouts.base')
 
 @push('styles')
-    <link href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ asset('assets/vendor/aos/aos.css') }}">
 @endpush
 
 @section('content')
@@ -141,7 +141,8 @@
 @endsection
 
 @push('scripts')
-    <script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
+    <script src="{{ asset('assets/vendor/aos/aos.js') }}"></script>
+    <script src="{{ asset('assets/vendor/chartjs/chart.min.js') }}"></script>
     <script>
         AOS.init({
             duration: 800,
@@ -149,7 +150,6 @@
             once: true
         });
     </script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
     <script>
         $(document).ready(function() {
             const chartPerPeriode = {};
