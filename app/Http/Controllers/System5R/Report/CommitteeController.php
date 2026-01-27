@@ -36,10 +36,10 @@ class CommitteeController extends Controller
         $tahun    = (int) $jadwal->tahun;
 
         // Department yang dipegang oleh committee yang login
-        $myDepartments = DepartmentComittee::where(
-            'nik_committee',
-            auth()->user()->username
-        )->pluck('id_department')->toArray();
+        $myDepartments = DepartmentComittee::where('nik_committee', auth()->user()->username)
+            ->where('is_active', 'Y')
+            ->pluck('id_department')
+            ->toArray();
 
         if (empty($myDepartments)) {
             return response()->json([
