@@ -28,12 +28,13 @@
             </div>
 
             <div style="width: 220px">
-                <label class="form-label mb-0">Jadwal Penilaian</label>
-                <select id="filter_jadwal" class="form-control form-control-sm">
-                    <option value="">-- Pilih Tahun --</option>
-                    @foreach ($allJadwal as $jadwal)
-                        <option value="{{ $jadwal->id_jadwal }}" {{-- {{ $jadwal->id_jadwal == $latestJadwal->id_jadwal ? 'selected' : '' }} --}}>
-                            {{ $jadwal->tahun }}
+                <label class="form-label mb-0">Periode Penilaian</label>
+                <select id="filter_periode" class="form-control form-control-sm">
+                    <option value="">-- Pilih Periode --</option>
+                    @foreach ($allPeriode as $p)
+                        <option value="{{ $p->id_periode }}" data-jadwal="{{ $p->id_jadwal }}"
+                            data-tahun="{{ $p->jadwal->tahun }}">
+                            {{ $p->nama_periode }} ({{ $p->jadwal->tahun }})
                         </option>
                     @endforeach
                 </select>
@@ -81,24 +82,28 @@
         $(document).ready(function() {
             // loadReport($('#filter_jadwal').val());
 
-            $('#filter_jadwal').change(function() {
-                let jadwalId = $(this).val();
+            $('#filter_periode').change(function() {
+                const $opt = $(this).find(':selected');
 
-                if (!jadwalId) {
+                const periodeId = $opt.val();
+                const jadwalId = $opt.data('jadwal');
+
+                if (!periodeId || !jadwalId) {
                     $('#report-container').html(
-                        '<div class="alert alert-info">Silakan pilih tahun terlebih dahulu</div>'
+                        '<div class="alert alert-info">Silakan pilih periode penilaian</div>'
                     );
                     return;
                 }
 
-                loadReport($(this).val());
+                loadReport(periodeId, jadwalId);
             });
 
-            function loadReport(jadwalId) {
+            function loadReport(periodeId, jadwalId) {
                 $('#report-container').html('<div class="text-center p-5">Loading...</div>');
 
                 $.post("{{ route('5r-system.report.management.data') }}", {
                     _token: "{{ csrf_token() }}",
+                    periode_id: periodeId,
                     jadwal_id: jadwalId
                 }, function(res) {
 

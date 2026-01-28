@@ -23,12 +23,17 @@ class ManagementController extends Controller
     {
         $allJadwal = Jadwal::orderBy('tahun', 'desc')->get();
 
+        $allPeriode = Periode::with('jadwal')
+            ->orderByDesc('id_periode')
+            ->get();
+
         // jadwal terbaru
         $latestJadwal = $allJadwal->first();
 
         return view('system5r.report.management.index', compact(
             'allJadwal',
-            'latestJadwal'
+            'latestJadwal',
+            'allPeriode'
         ));
     }
 
@@ -36,7 +41,7 @@ class ManagementController extends Controller
     {
         $workspace = MasterWorkspace::with('departments')->get();
 
-        $workspace = $this->buildReportData($workspace, $request->jadwal_id);
+        $workspace = $this->buildReportData($workspace, $request->periode_id, $request->jadwal_id);
 
         return response()->json([
             'status' => 'success',
@@ -44,30 +49,29 @@ class ManagementController extends Controller
         ]);
     }
 
-    private function buildReportData($workspace, $jadwalId)
+    private function buildReportData($workspace, $periodeId, $jadwalId)
     {
-        $jadwal = Jadwal::find($jadwalId);
+        $jadwal = Jadwal::findOrFail($jadwalId);
         $tahun  = (int) $jadwal->tahun;
 
         $latestJadwalId = Jadwal::orderByDesc('tahun')->value('id_jadwal');
-        $isLatest = $jadwalId == $latestJadwalId;
+        $isLatest = $jadwalId === $latestJadwalId;
 
-        return $workspace->map(function ($item) use ($jadwalId, $tahun, $isLatest) {
+        return $workspace->map(function ($item) use ($jadwalId, $periodeId, $tahun, $isLatest) {
 
             $item->departments = $item->departments
-                ->filter(function ($dept) use ($jadwalId, $isLatest) {
+                ->filter(function ($dept) use ($jadwalId, $periodeId, $isLatest) {
+
                     // ===== JIKA TAHUN TERAKHIR =====
                     if ($isLatest) {
-                        // tampilkan dept AKTIF meskipun belum dinilai
+                        // tampilkan dept aktif meskipun periode ini belum dinilai
                         return $dept->is_active === 'Y';
                     }
 
                     // ===== JIKA BUKAN TAHUN TERAKHIR =====
                     // tampilkan hanya dept yang SUDAH DINILAI
                     return JawabanGroup::where('status', 'approved')
-                        ->whereHas('periode', function ($q) use ($jadwalId) {
-                            $q->where('id_jadwal', $jadwalId);
-                        })
+                        ->where('id_periode', $periodeId)
                         ->whereIn('id_group', function ($q) use ($dept) {
                             $q->select('id_group')
                             ->from('5r_master_group')
@@ -75,15 +79,15 @@ class ManagementController extends Controller
                         })
                         ->exists();
                 })
-                ->values() // reset index    
-            ->map(function ($dept) use ($jadwalId, $tahun) {
+                ->values()
+                ->map(function ($dept) use ($jadwalId, $periodeId, $tahun) {
 
-                $periode = Periode::where('id_jadwal', $jadwalId)->get();
+                    // ===== SATU PERIODE SAJA =====
+                    $p = Periode::find($periodeId);
 
-                $periode = $periode->map(function ($p) use ($dept, $jadwalId, $tahun) {
                     $groups = MasterGroup::where('id_department', $dept->id_department)->get();
 
-                    $groups = $groups->map(function ($g) use ($p, $dept, $jadwalId, $tahun) {
+                    $groups = $groups->map(function ($g) use ($p, $dept, $tahun) {
 
                         $jawabanGroup = JawabanGroup::where([
                             'id_group'   => $g->id_group,
@@ -92,10 +96,9 @@ class ManagementController extends Controller
                         ])->first();
 
                         $g->totalNilai = 0;
-                        $g->nilaiAkhir = 0; // default
+                        $g->nilaiAkhir = 0;
                         $g->submit_by  = null;
 
-                        // proses perhitungan nilai utk satu grup
                         if ($jawabanGroup) {
                             $total = Jawaban::where(
                                 'id_jawaban_group',
@@ -103,99 +106,49 @@ class ManagementController extends Controller
                             )->sum('nilai');
 
                             $g->totalNilai = $total;
-                            $g->submit_by = $jawabanGroup->submit_by;
+                            $g->submit_by  = $jawabanGroup->submit_by;
 
-                             // nilai group = total × persentase group
-                                $g->nilaiAkhir = round(
-                                    $total * ((float) $g->persentase / 100),
-                                    2
-                                );
+                            $g->nilaiAkhir = round(
+                                $total * ((float) $g->persentase / 100),
+                                2
+                            );
                         }
 
                         $g->encryptedKey = encrypt(
                             $dept->id_department . '/' .
-                                $jadwalId . '/' .
-                                $p->id_periode . '/' .
-                                $g->id_group
+                            $p->id_jadwal . '/' .
+                            $p->id_periode . '/' .
+                            $g->id_group
                         );
 
                         return $g;
-
-                    })->filter(fn($g) => $g->totalNilai > 0);
+                    })->filter(fn ($g) => $g->totalNilai > 0)->values();
 
                     $p->group = $groups->toArray();
                     $p->totalNilai = $groups->sum('totalNilai');
 
                     $nilaiGroupSum = round($groups->sum('nilaiAkhir'), 2);
 
+                    // ===== ATURAN NILAI TETAP =====
                     if ($tahun < 2026) {
-                        // sebelum 2026: langsung total nilai group
                         $p->nilaiAkhir = $nilaiGroupSum;
-
                     } else {
-                        // Ambil bobot per dept dari master_group_juri_department
                         $juriDept = MasterGroupJuriDepartment::where('id_department', $dept->id_department)
                             ->where('id_periode', $p->id_periode)
                             ->first();
 
-                        // default bobot = 1.00
-                        $bobot = 1.00;
+                        $bobot = $juriDept && $juriDept->index_tingkat_kesulitan !== null
+                            ? (float) $juriDept->index_tingkat_kesulitan
+                            : 1.00;
 
-                        if ($juriDept && $juriDept->index_tingkat_kesulitan !== null) {
-                            $bobot = (float) $juriDept->index_tingkat_kesulitan;
-                        }
-
-                        // ( nilai total group + 28 ) × bobot 
-                        $baseNilai = $nilaiGroupSum + 28;
-                        $p->nilaiAkhir = round($baseNilai * $bobot, 2);
-
-                        $p->bobot = $bobot;
+                        $p->nilaiAkhir = round(($nilaiGroupSum + 28) * $bobot, 2);
                     }
 
+                    $dept->periode = collect([$p]);
+                    $dept->__total = round($p->nilaiAkhir ?? 0, 2);
 
-                    $p->juri = $groups
-                        ->filter(fn($g) => $g->jawabanGroup)
-                        ->pluck('jawabanGroup.submit_by')
-                        ->unique()
-                        ->values()
-                        ->toArray();
-
-                    $juriRecord = MasterGroupJuriDepartment::where('id_department', $dept->id_department)
-                        ->where('id_periode', $p->id_periode)
-                        ->with('group.anggota') // asumsi relasi: group -> anggota (table user/juri)
-                        ->first();
-
-                    if ($juriRecord && $juriRecord->group && $juriRecord->group->anggota->isNotEmpty()) {
-                        $p->juri = $juriRecord->group->anggota
-                            ->pluck('nama_juri') // atau 'name', 'nama_lengkap', sesuaikan kolom nama
-                            ->unique()
-                            ->values()
-                            ->toArray();
-                    } else {
-                        // $p->juri = [];
-                        
-                        // FALLBACK (2024 & data lama): ambil dari submit_by
-                        $p->juri = $groups
-                            ->pluck('submit_by')
-                            ->filter()
-                            ->unique()
-                            ->values()
-                            ->toArray();
-                    }
-
-                    return $p;
+                    return $dept;
                 });
-
-                $dept->periode = $periode;
-
-                // Rata-rata nilai akhir per periode (atau pakai totalNilai jika mau)
-                $dept->__total = round(
-                    $periode->where('totalNilai', '>', 0)->avg('nilaiAkhir') ?? 0,
-                    2
-                );
-
-                return $dept;
-            });
 
             return $item;
         });

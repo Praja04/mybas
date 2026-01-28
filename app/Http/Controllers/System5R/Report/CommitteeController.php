@@ -21,21 +21,36 @@ class CommitteeController extends Controller
     public function index()
     {
         $allJadwal = Jadwal::orderBy('tahun', 'desc')->get();
+        $allPeriode = Periode::with('jadwal')
+            ->orderByDesc('id_periode')
+            ->get();
+
         $latestJadwal = $allJadwal->first();
 
         return view(
             'system5r.report.committee.index',
-            compact('allJadwal', 'latestJadwal')
+            compact('allJadwal', 'latestJadwal', 'allPeriode')
         );
     }
 
     public function data(Request $request)
     {
-        $jadwalId = $request->jadwal_id;
-        $jadwal   = Jadwal::findOrFail($jadwalId);
-        $tahun    = (int) $jadwal->tahun;
+        $jadwalId  = $request->jadwal_id;
+        $periodeId = $request->periode_id;
 
-        // Department yang dipegang oleh committee yang login
+        $jadwal = Jadwal::findOrFail($jadwalId);
+        $tahun  = (int) $jadwal->tahun;
+
+        // pastikan periode milik jadwal tsb
+        Periode::where('id_periode', $periodeId)
+            ->where('id_jadwal', $jadwalId)
+            ->firstOrFail();
+
+        // ================= IS LATEST YEAR =================
+        $latestJadwalId = Jadwal::orderByDesc('tahun')->value('id_jadwal');
+        $isLatestYear   = $jadwalId == $latestJadwalId;
+
+        // ================= MY DEPARTMENTS =================
         $myDepartments = DepartmentComittee::where('nik_committee', auth()->user()->username)
             ->where('is_active', 'Y')
             ->pluck('id_department')
@@ -48,108 +63,103 @@ class CommitteeController extends Controller
             ]);
         }
 
-        $workspace = MasterWorkspace::whereHas('departments', function ($q) use ($myDepartments) {
+        // ================= WORKSPACE QUERY =================
+        $workspace = MasterWorkspace::whereHas('departments', function ($q) use (
+            $myDepartments,
+            $isLatestYear,
+            $periodeId
+        ) {
             $q->whereIn('id_department', $myDepartments);
-        })->with(['departments' => function ($q) use ($myDepartments) {
-            $q->whereIn('id_department', $myDepartments);
-        }])->get();
 
-        $workspace = $workspace->map(function ($ws) use ($jadwalId, $tahun) {
+            // TAHUN LAMA → hanya dept yg sudah dinilai
+            if (!$isLatestYear) {
+                $q->whereExists(function ($sq) use ($periodeId) {
+                    $sq->select(DB::raw(1))
+                        ->from('5r_master_group as mg')
+                        ->join('5r_jawaban_group as jg', 'jg.id_group', '=', 'mg.id_group')
+                        ->whereColumn('mg.id_department', '5r_master_department.id_department')
+                        ->where('jg.status', 'approved')
+                        ->where('jg.id_periode', $periodeId);
+                });
+}
+        })
+            ->with(['departments' => function ($q) use ($myDepartments) {
+                $q->whereIn('id_department', $myDepartments);
+            }])
+            ->get();
 
-            $ws->departments = $ws->departments->map(function ($dep) use ($jadwalId, $tahun) {
+        // ================= BUILD REPORT =================
+        $workspace = $workspace->map(function ($ws) use ($periodeId, $tahun) {
 
-                $periode = Periode::where('id_jadwal', $jadwalId)->get();
+            $ws->departments = $ws->departments->map(function ($dep) use ($periodeId, $tahun) {
 
-                $periode = $periode->map(function ($p) use ($dep, $tahun) {
+                $periode = Periode::find($periodeId);
 
-                    $groups = MasterGroup::where('id_department', $dep->id_department)->get();
+                // ================= GROUP =================
+                $groups = MasterGroup::where('id_department', $dep->id_department)->get();
 
-                    $groups = $groups->map(function ($g) use ($p, $dep) {
+                $groups = $groups->map(function ($g) use ($periode, $dep) {
 
-                        $jawabanGroup = JawabanGroup::where([
-                            'id_group'   => $g->id_group,
-                            'id_periode' => $p->id_periode,
-                            'status'     => 'approved'
-                        ])->first();
+                    $jawabanGroup = JawabanGroup::where([
+                        'id_group'   => $g->id_group,
+                        'id_periode' => $periode->id_periode,
+                        'status'     => 'approved'
+                    ])->first();
 
-                        if (!$jawabanGroup) {
-                            return null;
-                        }
-
-                        $total = Jawaban::where(
-                            'id_jawaban_group',
-                            $jawabanGroup->id_jawaban_group
-                        )->sum('nilai');
-
-                        // nilai group = total × persentase
-                        $nilaiGroup = round(
-                            $total * ((float) $g->persentase / 100),
-                            2
-                        );
-
-                        return [
-                            'id_group'   => $g->id_group,
-                            'nama_group' => $g->nama_group,
-                            'persentase' => $g->persentase,
-                            'totalNilai' => $total,
-                            'nilaiAkhir' => $nilaiGroup,
-                            'submit_by'  => $jawabanGroup->submit_by,
-                            'encryptedKey' => encrypt(
-                                implode('/', [
-                                    $dep->id_department,
-                                    $p->id_jadwal,
-                                    $p->id_periode,
-                                    $g->id_group
-                                ])
-                            )
-                        ];
-                    })->filter()->values();
-
-                    $p->group = $groups;
-                    $nilaiGroupSum = round($groups->sum('nilaiAkhir'), 2);
-
-                    if ($tahun < 2026) {
-
-                        $p->nilaiAkhir = $nilaiGroupSum;
-
-                    } else {
-
-                        $juriDept = MasterGroupJuriDepartment::where(
-                            'id_department',
-                            $dep->id_department
-                        )
-                            ->where('id_periode', $p->id_periode)
-                            ->first();
-
-                        // default bobot
-                        $bobot = 1.00;
-                        if ($juriDept && $juriDept->index_tingkat_kesulitan !== null) {
-                            $bobot = (float) $juriDept->index_tingkat_kesulitan;
-                        }
-
-                        $baseNilai   = $nilaiGroupSum + 28;
-                        $p->nilaiAkhir = round($baseNilai * $bobot, 2);
-                        $p->bobot = $bobot;
+                    if (!$jawabanGroup) {
+                        return null;
                     }
 
-                    // juri
-                    $p->juri = $groups
-                        ->pluck('submit_by')
-                        ->filter()
-                        ->unique()
-                        ->values()
-                        ->toArray();
+                    $total = Jawaban::where(
+                        'id_jawaban_group',
+                        $jawabanGroup->id_jawaban_group
+                    )->sum('nilai');
 
-                    return $p;
-                });
+                    return [
+                        'id_group'   => $g->id_group,
+                        'nama_group' => $g->nama_group,
+                        'persentase' => $g->persentase,
+                        'totalNilai' => $total,
+                        'nilaiAkhir' => round($total * ((float) $g->persentase / 100), 2),
+                        'submit_by'  => $jawabanGroup->submit_by,
+                        'encryptedKey' => encrypt(
+                            "{$dep->id_department}/{$periode->id_jadwal}/{$periode->id_periode}/{$g->id_group}"
+                        )
+                    ];
+                })->filter()->values();
 
-                $dep->periode = $periode;
+                // ================= PERIODE RESULT =================
+                $periode->group = $groups;
+                $nilaiGroupSum  = round($groups->sum('nilaiAkhir'), 2);
 
-                // rata-rata nilai dept
-                $valid = $periode->where('nilaiAkhir', '>', 0);
-                $dep->__total = $valid->count()
-                    ? round($valid->avg('nilaiAkhir'), 2)
-                    : 0;
+                if ($tahun < 2026) {
+
+                    $periode->nilaiAkhir = $nilaiGroupSum;
+
+                } else {
+
+                    $juriDept = MasterGroupJuriDepartment::where('id_department', $dep->id_department)
+                        ->where('id_periode', $periode->id_periode)
+                        ->first();
+
+                    $bobot = ($juriDept && $juriDept->index_tingkat_kesulitan !== null)
+                        ? (float) $juriDept->index_tingkat_kesulitan
+                        : 1.00;
+
+                    $periode->nilaiAkhir = round(($nilaiGroupSum + 28) * $bobot, 2);
+                    $periode->bobot = $bobot;
+                }
+
+                $periode->juri = $groups
+                    ->pluck('submit_by')
+                    ->filter()
+                    ->unique()
+                    ->values()
+                    ->toArray();
+
+                // ================= DEPARTMENT RESULT =================
+                $dep->periode = [$periode];
+                $dep->__total = $periode->nilaiAkhir ?? 0;
 
                 return $dep;
             });
