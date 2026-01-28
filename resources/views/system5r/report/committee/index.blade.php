@@ -123,10 +123,10 @@
 
                     res.workspace.forEach(ws => {
 
+                        // <h4 class="mb-3">${ws.name}</h4>
                         html += `
                         <div class="card shadow-sm mb-4">
                             <div class="card-body">
-                                <h4 class="mb-3">${ws.name}</h4>
                                 ${buildTable(ws.departments)}
                             </div>
                         </div>`;
