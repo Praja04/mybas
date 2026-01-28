@@ -203,6 +203,15 @@ class ManagementController extends Controller
 
     public function detail(Request $request)
     {
+        $urutanJenis = [
+            'RINGKAS',
+            'RAPI',
+            'RESIK',
+            'RAWAT',
+            'RAJIN',
+            'DIGITALISASI',
+        ];
+
         $group = JawabanGroup::where('id_group', $request->id_group)
             ->where('id_periode', $request->id_periode)
             ->first();
@@ -214,10 +223,22 @@ class ManagementController extends Controller
             ]);
         }
 
+        // $data = Jawaban::where('id_jawaban_group', $group->id_jawaban_group)
+        //     ->with(['pertanyaan', 'temuan.area'])
+        //     ->get()
+        //     ->groupBy('pertanyaan.jenis');
+
         $data = Jawaban::where('id_jawaban_group', $group->id_jawaban_group)
             ->with(['pertanyaan', 'temuan.area'])
             ->get()
+            ->sortBy(function ($item) use ($urutanJenis) {
+                return array_search(
+                    strtoupper($item->pertanyaan->jenis),
+                    $urutanJenis
+                );
+            })
             ->groupBy('pertanyaan.jenis');
+
 
 
         return response()->json([
