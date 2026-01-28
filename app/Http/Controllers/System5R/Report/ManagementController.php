@@ -112,12 +112,12 @@ class ManagementController extends Controller
                                 );
                         }
 
-                        // $g->encryptedKey = encrypt(
-                        //     $dept->id_department . '/' .
-                        //         $jadwalId . '/' .
-                        //         $p->id_periode . '/' .
-                        //         $g->id_group
-                        // );
+                        $g->encryptedKey = encrypt(
+                            $dept->id_department . '/' .
+                                $jadwalId . '/' .
+                                $p->id_periode . '/' .
+                                $g->id_group
+                        );
 
                         return $g;
 
