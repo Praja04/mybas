@@ -63,6 +63,7 @@ class CommitteeController extends Controller
             ]);
         }
 
+        // ================= WORKSPACE QUERY =================
         $workspace = MasterWorkspace::whereHas('departments', function ($q) use (
             $myDepartments,
             $isLatestYear,
@@ -70,12 +71,7 @@ class CommitteeController extends Controller
         ) {
             $q->whereIn('id_department', $myDepartments);
 
-            // TAHUN TERBARU (2026) → tampilkan hanya dept AKTIF
-            if ($isLatestYear) {
-                $q->where('is_active', 'Y');
-            }
-
-            // TAHUN LAMA → hanya dept yg SUDAH DINILAI
+            // TAHUN LAMA → hanya dept yg sudah dinilai
             if (!$isLatestYear) {
                 $q->whereExists(function ($sq) use ($periodeId) {
                     $sq->select(DB::raw(1))
@@ -85,39 +81,21 @@ class CommitteeController extends Controller
                         ->where('jg.status', 'approved')
                         ->where('jg.id_periode', $periodeId);
                 });
-            }
-        })->with(['departments' => function ($q) use (
-            $myDepartments,
-            $isLatestYear,
-            $periodeId
-        ) {
-            // committee scope
-            $q->whereIn('id_department', $myDepartments);
+}
+        })
+            ->with(['departments' => function ($q) use ($myDepartments) {
+                $q->whereIn('id_department', $myDepartments);
+            }])
+            ->get();
 
-            // tahun terbaru → aktif saja
-            if ($isLatestYear) {
-                $q->where('is_active', 'Y');
-            }
-
-            // tahun lama → sudah dinilai
-            if (!$isLatestYear) {
-                $q->whereExists(function ($sq) use ($periodeId) {
-                    $sq->select(DB::raw(1))
-                        ->from('5r_master_group as mg')
-                        ->join('5r_jawaban_group as jg', 'jg.id_group', '=', 'mg.id_group')
-                        ->whereColumn('mg.id_department', '5r_master_department.id_department')
-                        ->where('jg.status', 'approved')
-                        ->where('jg.id_periode', $periodeId);
-                });
-            }
-        }])->get();
-
+        // ================= BUILD REPORT =================
         $workspace = $workspace->map(function ($ws) use ($periodeId, $tahun) {
 
             $ws->departments = $ws->departments->map(function ($dep) use ($periodeId, $tahun) {
 
                 $periode = Periode::find($periodeId);
 
+                // ================= GROUP =================
                 $groups = MasterGroup::where('id_department', $dep->id_department)->get();
 
                 $groups = $groups->map(function ($g) use ($periode, $dep) {
@@ -150,12 +128,16 @@ class CommitteeController extends Controller
                     ];
                 })->filter()->values();
 
+                // ================= PERIODE RESULT =================
                 $periode->group = $groups;
                 $nilaiGroupSum  = round($groups->sum('nilaiAkhir'), 2);
 
                 if ($tahun < 2026) {
+
                     $periode->nilaiAkhir = $nilaiGroupSum;
+
                 } else {
+
                     $juriDept = MasterGroupJuriDepartment::where('id_department', $dep->id_department)
                         ->where('id_periode', $periode->id_periode)
                         ->first();
@@ -175,6 +157,7 @@ class CommitteeController extends Controller
                     ->values()
                     ->toArray();
 
+                // ================= DEPARTMENT RESULT =================
                 $dep->periode = [$periode];
                 $dep->__total = $periode->nilaiAkhir ?? 0;
 
