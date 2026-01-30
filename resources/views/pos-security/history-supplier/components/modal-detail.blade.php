@@ -31,8 +31,8 @@
                              <dt class="col-sm-4">Nopol</dt>
                              <dd class="col-sm-8" id="detailNopol"></dd>
 
-                             <dt class="col-sm-4">Nama Kernet</dt>
-                             <dd class="col-sm-8" id="detailNamaKernet"></dd>
+                             {{-- <dt class="col-sm-4">Nama Kernet</dt>
+                             <dd class="col-sm-8" id="detailNamaKernet"></dd> --}}
 
                              <dt class="col-sm-4">No HP Driver</dt>
                              <dd class="col-sm-8" id="detailNoHpDriver"></dd>

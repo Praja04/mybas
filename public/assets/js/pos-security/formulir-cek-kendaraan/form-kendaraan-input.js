@@ -204,7 +204,11 @@
             LIQUID: [
                 {
                     value: "TRUK MUAT GULA CAIR",
-                    text: "Truk Muat Gula Cair",
+                    text: "Truk Muat Gula Cair (Glukosa)",
+                },
+                {
+                    value: "FRUKTOSA",
+                    text: "Truk Muat Fruktosa",
                 },
                 {
                     value: "LAINNYA (LIQUID)",
@@ -244,6 +248,7 @@
 
         // render jenis truk setelah pilih jenis muatan
         $muatan.on("change", function () {
+            resetAlertFoto();
             const selected = $(this).val();
 
             // reset jenis truck
@@ -276,8 +281,11 @@
 
         // render foto section berdasarkan jenis truk
         $truck.on("change", function () {
+            resetAlertFoto();
             const value = $(this).val();
             const sections = fotoConfig[value] || [];
+
+            renderAlertFoto(sections);
 
             $fotoSection.html(
                 sections
@@ -438,6 +446,7 @@
         }
 
         setStep("form");
+        resetAlertFoto();
     };
 
     window.backToTable = function () {
@@ -485,5 +494,39 @@
             input.value = JSON.stringify(photoStore[key]);
             input.dispatchEvent(new Event("change"));
         }
+    }
+
+    function renderAlertFoto(sections) {
+        const alertBox = document.getElementById("alertFotoWajib");
+        const ul = alertBox.querySelector("ul");
+
+        ul.innerHTML = "";
+
+        sections.forEach((label) => {
+            const li = document.createElement("li");
+            
+            if (/temuan barang mencurigakan/i.test(label)) {
+                li.innerHTML = `${label} <em class="text-muted">(jika ada)</em>`;
+            } else {
+                li.textContent = label;
+            }
+
+            ul.appendChild(li);
+        });
+
+        if (ul.children.length > 0) {
+            alertBox.classList.remove("d-none");
+        } else {
+            alertBox.classList.add("d-none");
+        }
+    }
+
+    function resetAlertFoto() {
+        const alertBox = document.getElementById("alertFotoWajib");
+        if (!alertBox) return;
+
+        const ul = alertBox.querySelector("ul");
+        ul.innerHTML = "";
+        alertBox.classList.add("d-none");
     }
 })();

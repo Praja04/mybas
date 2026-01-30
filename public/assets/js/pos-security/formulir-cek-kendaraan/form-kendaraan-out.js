@@ -158,6 +158,8 @@
         const $fotoSection = $("#fotoSectionOut");
         const sections = fotoConfig[truckType] || [];
 
+        renderAlertFoto(sections);
+
         $fotoSection.html(
             sections
                 .map((label) => {
@@ -409,6 +411,31 @@
         if (input) {
             input.value = JSON.stringify(photoStore[key]);
             input.dispatchEvent(new Event("change"));
+        }
+    }
+
+     function renderAlertFoto(sections) {
+        const alertBox = document.getElementById("alertFotoWajibOut");
+        const ul = alertBox.querySelector("ul");
+
+        ul.innerHTML = "";
+
+        sections.forEach((label) => {
+            const li = document.createElement("li");
+            
+            if (/temuan barang mencurigakan/i.test(label)) {
+                li.innerHTML = `${label} <em class="text-muted">(jika ada)</em>`;
+            } else {
+                li.textContent = label;
+            }
+
+            ul.appendChild(li);
+        });
+
+        if (ul.children.length > 0) {
+            alertBox.classList.remove("d-none");
+        } else {
+            alertBox.classList.add("d-none");
         }
     }
 })();

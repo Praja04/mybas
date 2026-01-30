@@ -164,6 +164,12 @@
                             </div>
                         </div>
 
+                        {{-- Alert foto --}}
+                        <div id="alertFotoWajibOut" class="alert alert-primary d-none">
+                            <strong>Mohon ambil foto bagian:</strong>
+                            <ul class="mb-0 mt-2"></ul>
+                        </div>
+
                         {{-- Foto Section --}}
                         <div class="row">
                             <div id="fotoSectionOut" class="row my-3"></div>
