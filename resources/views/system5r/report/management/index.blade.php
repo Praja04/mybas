@@ -43,7 +43,7 @@
 
         <div id="report-container">
             <div class="alert alert-info">
-                Silakan pilih <strong>jadwal penilaian</strong>terlebih dahulu untuk menampilkan report.
+                Silakan pilih <strong>jadwal penilaian </strong>terlebih dahulu untuk menampilkan report.
             </div>
         </div>
 
