@@ -62,7 +62,7 @@ class ManagementController extends Controller
             $item->departments = $item->departments
                 ->filter(function ($dept) use ($jadwalId, $periodeId, $isLatest) {
 
-                    // ===== JIKA TAHUN TERAKHIR =====
+                    // ===== JIKA TAHUN 2026 =====
                     if ($isLatest) {
                         // tampilkan dept aktif meskipun periode ini belum dinilai
                         return $dept->is_active === 'Y';
@@ -82,7 +82,6 @@ class ManagementController extends Controller
                 ->values()
                 ->map(function ($dept) use ($jadwalId, $periodeId, $tahun) {
 
-                    // ===== SATU PERIODE SAJA =====
                     $p = Periode::find($periodeId);
 
                     $groups = MasterGroup::where('id_department', $dept->id_department)->get();
@@ -129,7 +128,6 @@ class ManagementController extends Controller
 
                     $nilaiGroupSum = round($groups->sum('nilaiAkhir'), 2);
 
-                    // ===== ATURAN NILAI TETAP =====
                     if ($tahun < 2026) {
                         $p->nilaiAkhir = $nilaiGroupSum;
                     } else {
@@ -219,21 +217,18 @@ class ManagementController extends Controller
             abort(403, 'Invalid token');
         }
 
-        // Ambil jawaban group (SAMA)
         $group = JawabanGroup::where('id_group', $id_group)
             ->where('id_periode', $id_periode)
             ->firstOrFail();
 
-        // Ambil JAWABAN + PERTANYAAN + TEMUAN (SAMA PERSIS DETAIL)
         $data = Jawaban::where('id_jawaban_group', $group->id_jawaban_group)
             ->with([
                 'pertanyaan',
                 'temuan.area'
             ])
             ->get()
-            ->groupBy('pertanyaan.jenis'); // kalau mau sama persis
+            ->groupBy('pertanyaan.jenis');
 
-        // Info header PDF
         $info = [
             'tahun'      => Jadwal::findOrFail($id_jadwal)->tahun,
             'periode'    => Periode::findOrFail($id_periode)->nama_periode,
@@ -248,9 +243,9 @@ class ManagementController extends Controller
             ->setPaper('A4', 'portrait')
             ->setOptions([
                 'isHtml5ParserEnabled' => true,
-                'isRemoteEnabled' => true,       // tetap biar aman
-                'isPhpEnabled' => true,          // penting untuk @php di blade
-                'defaultFont' => 'DejaVu Sans',  // karena kamu pakai font itu
+                'isRemoteEnabled' => true,       
+                'isPhpEnabled' => true,          
+                'defaultFont' => 'DejaVu Sans',  
             ]);
 
         return $pdf->stream('Report-5R.pdf');

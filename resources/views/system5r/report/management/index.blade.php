@@ -28,9 +28,9 @@
             </div>
 
             <div style="width: 220px">
-                <label class="form-label mb-0">Periode Penilaian</label>
+                <label class="form-label mb-0">Jadwal Penilaian</label>
                 <select id="filter_periode" class="form-control form-control-sm">
-                    <option value="">-- Pilih Periode --</option>
+                    <option value="">-- Pilih Jadwal --</option>
                     @foreach ($allPeriode as $p)
                         <option value="{{ $p->id_periode }}" data-jadwal="{{ $p->id_jadwal }}"
                             data-tahun="{{ $p->jadwal->tahun }}">
@@ -43,13 +43,12 @@
 
         <div id="report-container">
             <div class="alert alert-info">
-                Silakan pilih <strong>tahun penilaian</strong> untuk menampilkan report.
+                Silakan pilih <strong>jadwal penilaian</strong>terlebih dahulu untuk menampilkan report.
             </div>
         </div>
 
     </div>
 
-    {{-- MODAL DETAIL (TETAP DIPAKAI) --}}
     <div class="modal fade" id="detailModal" tabindex="-1">
         <div class="modal-dialog modal-xl">
             <div class="modal-content">

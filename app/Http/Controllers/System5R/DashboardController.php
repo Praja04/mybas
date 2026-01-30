@@ -46,6 +46,7 @@ class DashboardController extends Controller
         ]);
     }
 
+    // n + 1 problem jika dipakai
     // public function getDataPeriodeByWorkspace(Request $request)
     // {
     //     $workspaceId = $request->id_workspace;
@@ -269,6 +270,7 @@ class DashboardController extends Controller
         ]);
     }
 
+    // n + 1 problem jika dipakai
     // public function getDataRankPeriodeByWorkspace(Request $request)
     // {
     //     $workspaceId = $request->id_workspace;
@@ -486,6 +488,7 @@ class DashboardController extends Controller
         ]);
     }
 
+    // n + 1 problem jika dipakai
     // private function hitungNilai5R($periodeId, $deptId, $deptName)
     // {
     //     // ambil jadwal & tahun dari periode
