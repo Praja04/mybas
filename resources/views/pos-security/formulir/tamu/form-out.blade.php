@@ -49,9 +49,8 @@
                         </div>
                         
                         <small class="text-muted"><i class="mdi mdi-infomation"></i> Apabila data tidak ditemukan,
-                            silakan masukkan NIK secara manual.
+                            silakan ketik NIK atau nomor kartu yang tertera (SPxxxx/MKxxxx) secara manual.
                         </small>
-
                     </div>
                 </form>
 
