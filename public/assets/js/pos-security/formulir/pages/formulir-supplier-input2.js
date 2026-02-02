@@ -1153,7 +1153,7 @@ function saveAllSelfies() {
         icon: "success",
         title: "Berhasil!",
         text: "Semua foto diri berhasil disimpan.",
-        confirmButtonText: "Lanjutkan",
+        // confirmButtonText: "Lanjutkan",
         timer: 2000,
         timerProgressBar: true,
         showConfirmButton: false,
@@ -1281,7 +1281,10 @@ function saveCaptureIdentitas() {
             icon: "success",
             title: "Berhasil!",
             text: "Foto berhasil disimpan.",
-            confirmButtonText: "Lanjutkan",
+            // confirmButtonText: "Lanjutkan",
+            timer: 2000,
+            timerProgressBar: true,
+            showConfirmButton: false,
         });
     } catch (err) {
         Swal.fire({
