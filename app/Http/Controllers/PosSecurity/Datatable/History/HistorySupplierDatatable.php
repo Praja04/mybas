@@ -23,7 +23,8 @@ class HistorySupplierDatatable extends Controller
 
         $query = GaVisitorTransaction::query()
             ->whereIn('purpose', ['MUAT', 'BONGKAR'])
-            ->where('createdon', '>=', Carbon::now()->subDays(7));
+            ->where('createdon', '>=', Carbon::now()->subDays(7))
+            ->orderBy('createdon', 'desc');
 
         // // 🚫 Exclude blacklist by subquery
         // $query->whereNotExists(function ($sub) {
