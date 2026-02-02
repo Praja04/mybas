@@ -16,6 +16,9 @@
                              <dt class="col-sm-4">No Identitas</dt>
                              <dd class="col-sm-8" id="detailNoIdentitas"></dd>
 
+                             <dt class="col-sm-4">No Kartu</dt>
+                             <dd class="col-sm-8" id="detailNoKartu"></dd>
+
                              <dt class="col-sm-4">Tanggal Lahir</dt>
                              <dd class="col-sm-8" id="detailTglLahir"></dd>
 
@@ -57,7 +60,8 @@
                          </div>
                          <div class="mb-3">
                              <label class="form-label">Foto Diri (Keluar)</label>
-                                <img id="detailSelfieOutContainer" src="" alt="Foto Out" class="img-thumbnail d-flex flex-wrap" style="max-width: 120px;" />
+                             <img id="detailSelfieOutContainer" src="" alt="Foto Out"
+                                 class="img-thumbnail d-flex flex-wrap" style="max-width: 120px;" />
                          </div>
                      </div>
                  </div>

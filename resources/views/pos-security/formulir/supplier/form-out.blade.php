@@ -8,7 +8,7 @@
                         <!-- Input QR / No Kartu -->
                         <div class="col-md-8">
                             <label for="qrcode_input" class="form-label fw-semibold">
-                                Visitor ID / Nomor Kartu
+                                Nomor Kartu
                             </label>
                             <input type="text" class="form-control form-control-lg text-center" id="qrcode_input"
                                 name="qrcode_input" placeholder="Ketik nomor kartu atau scan kartu">
@@ -35,6 +35,10 @@
                                 </button>
                             </div>
                         </div>
+
+                        <small class="text-muted"><i class="mdi mdi-infomation"></i> Apabila data tidak ditemukan,
+                            silakan masukkan NIK secara manual.
+                        </small>
 
                     </div>
                 </form>
