@@ -328,12 +328,12 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     // Mode input timeout (card reader tanpa Enter)
-    qrcodeInput.addEventListener("input", function () {
-        clearTimeout(typingTimer);
-        typingTimer = setTimeout(() => {
-            doSearch();
-        }, typingInterval);
-    });
+    // qrcodeInput.addEventListener("input", function () {
+    //     clearTimeout(typingTimer);
+    //     typingTimer = setTimeout(() => {
+    //         doSearch();
+    //     }, typingInterval);
+    // });
 });
 
 $("#returnCard").on("click", function () {
@@ -608,3 +608,36 @@ document
     .addEventListener("shown.bs.modal", function () {
         startWebcamOut();
     });
+
+
+function focusQrInputSafe() {
+    const input = document.getElementById("qrcode_input");
+    const anyModalOpen = document.querySelector('.modal.show');
+
+    if (!input) return;
+
+    if (anyModalOpen) {
+        return;
+    }
+
+    if (!$('#supplier-out').hasClass('active')) {
+        return;
+    }
+
+    input.focus();
+    input.select();
+}
+
+$('button[data-bs-toggle="tab"]').on('shown.bs.tab', function (e) {
+    const target = $(e.target).data('bs-target');
+
+    if (target === '#supplier-out') {
+        setTimeout(focusQrInputSafe, 300);
+    }
+});
+
+
+$('#panduanModal').on('hidden.bs.modal', function () {
+    setTimeout(focusQrInputSafe, 300);
+});
+
