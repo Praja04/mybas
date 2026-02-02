@@ -122,6 +122,29 @@ export class ContentDatatable {
                     // },
                 ],
             },
+            // priority column
+            columnDefs: [
+                {
+                    targets: 1, // kolom Nama Perusahaan
+                    responsivePriority: 1,
+                },
+                {
+                    targets: 2, // kolom Nama Pengunjung  
+                    responsivePriority: 2,
+                },
+                {
+                    targets: 9, // kolom Jenis Tamu  
+                    responsivePriority: 3,
+                },
+                {
+                    targets: -2, // kolom Waktu Masuk
+                    responsivePriority: 4,
+                },
+                {
+                    targets: -1, // kolom Waktu Keluar
+                    responsivePriority: 5,
+                },
+            ],
             dataSend: {},
             excludeSearchColumns: [0, 5, 8, 9, 10, 11, 12, 13],
         };
