@@ -356,8 +356,9 @@
                     if (response.status === 403 || response.status === 422) {
                         Swal.fire({
                             icon: 'error',
-                            title: response.status === 403 ? 'Akses Ditolak' : 'Data Tidak Valid',
-                            text: data.message || 'Terjadi kesalahan.',
+                            title: data.message,
+                            // title: response.status === 403 ? 'Akses Ditolak' : 'Data Tidak Valid',
+                            // text: data.message || 'Terjadi kesalahan.',
                             timer: 2000,
                             showConfirmButton: false
                         });
@@ -408,8 +409,8 @@
                     } else {
                         Swal.fire({
                             icon: 'error',
-                            title: 'Akses Ditolak',
-                            text: data.message,
+                            title: data.message,
+                            // text: data.message,
                             timer: 2000,
                             showConfirmButton: false
                         });

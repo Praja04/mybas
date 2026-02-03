@@ -123,7 +123,7 @@ class AbsensiRestLogAjax extends Controller
             if (!$securityResult || empty($securityResult['data_detail'])) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Anda bukan petugas security atau security sudah tidak aktif',
+                    'message' => 'Anda bukan petugas security',
                 ], 403);
             }
         }
@@ -143,7 +143,7 @@ class AbsensiRestLogAjax extends Controller
         if ((int)$visitor->kartu_dikembalikan === 1) {
             return response()->json([
                 'success' => false,
-                'message' => 'Kartu sudah dikembalikan atau kunjungan selesai.',
+                'message' => 'Kartu sudah dikembalikan.',
             ]);
         }
 
