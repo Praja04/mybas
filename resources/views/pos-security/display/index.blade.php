@@ -443,8 +443,14 @@
             const el = document.getElementById(id);
             if (el) el.textContent = text;
         }
-    </script>
 
+        // Auto refresh halaman setiap 10 menit
+        const AUTO_REFRESH_MINUTES = 10;
+
+        setTimeout(() => {
+            window.location.reload(true);
+        }, AUTO_REFRESH_MINUTES * 60 * 1000);
+    </script>
 </body>
 
 </html>

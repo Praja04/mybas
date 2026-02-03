@@ -193,8 +193,8 @@ class TamuFormAjax extends Controller
                             =
                             REPLACE(REPLACE(UPPER(?), ' ', ''), '-', '')
                         ", [$visitor->nopol])
-                    // ->where('checked_in_at', '>=', $visitor->createdon)
-                    ->where('checked_in_at', '>=', now()->subHours(24))
+                    ->where('checked_in_at', '>=', $visitor->createdon)
+                    // ->where('checked_in_at', '>=', now()->subHours(24))
                     ->orderBy('checked_in_at', 'desc')
                     ->first();
 
