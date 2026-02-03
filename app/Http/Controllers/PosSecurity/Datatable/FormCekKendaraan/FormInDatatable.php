@@ -25,6 +25,7 @@ class FormInDatatable extends Controller
                 'nopol',
                 'namavisitor',
                 'namacomp',
+                'kartu_dikembalikan',
                 DB::raw("'transaction' as source"),
                 'created_at',
             ])
@@ -37,6 +38,7 @@ class FormInDatatable extends Controller
                 'nopol',
                 'namavisitor',
                 'namacomp',
+                'kartu_dikembalikan',
                 DB::raw("'vendor' as source"),
                 'created_at',
             ])
@@ -62,10 +64,19 @@ class FormInDatatable extends Controller
         // LEFT JOIN cek kendaraan
         return DB::query()
             ->fromSub($visitors, 'v')
+            // ->leftJoin('ga_cek_kendaraan as c', function ($join) {
+            //     $join->on('c.trnvisitorid', '=', 'v.trnvisitorid');
+            // })
             ->leftJoin('ga_cek_kendaraan as c', function ($join) {
-                $join->on('c.trnvisitorid', '=', 'v.trnvisitorid');
+                $join->on('c.trnvisitorid', '=', 'v.trnvisitorid')
+                    ->whereColumn('c.created_at', '>=', 'v.created_at');
             })
+
             ->whereNull('c.trncekid') // tampilkan yang belum cek sama sekali
+            ->where(function ($q) {
+                $q->whereNull('v.kartu_dikembalikan')
+                ->orWhere('v.kartu_dikembalikan', 0);
+            })
             ->select([
                 'v.trnvisitorid',
                 'v.nopol as nomor_polisi',
@@ -82,6 +93,13 @@ class FormInDatatable extends Controller
             ])
             ->orderByRaw('IFNULL(c.created_at, v.created_at) DESC')
             ->limit(300);
+
+        // dd([
+        //     'sql' => $query->toSql(),
+        //     'bindings' => $query->getBindings(),
+        // ]);
+
+        // return $query;
     }
 
     private function DrawTable($query)

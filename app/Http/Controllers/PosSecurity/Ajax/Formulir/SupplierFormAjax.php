@@ -278,36 +278,56 @@ class SupplierFormAjax extends Controller
             }
 
             // validasi apakah kendaraan sudah dilakukan cek kendaraan
+            // $cekKendaraan = DB::table('ga_cek_kendaraan')
+            //     ->whereRaw("
+            //         REPLACE(REPLACE(UPPER(nomor_polisi), ' ', ''), '-', '')
+            //         =
+            //         REPLACE(REPLACE(UPPER(?), ' ', ''), '-', '')
+            //     ", [$visitor->nopol])
+            //     ->where('checked_in_at', '>=', $visitor->createdon)
+            //     // ->where('checked_in_at', '>=', now()->subHours(24))
+            //     ->orderBy('checked_in_at', 'desc')
+            //     ->first();
+
+            // // belum pernah cek kendaraan sama sekali pada kedatangan ini
+            // if (!$cekKendaraan) {
+            //     return response()->json([
+            //         'success' => false,
+            //         'message' => 'Kendaraan belum melakukan cek kendaraan masuk & keluar pada kedatangan ini.'
+            //     ]);
+            // }
+
+            // // sudah cek masuk tapi belum cek keluar
+            // if ($cekKendaraan->checked_in_at && is_null($cekKendaraan->checked_out_at)) {
+            //     return response()->json([
+            //         'success' => false,
+            //         'message' => 'Kendaraan belum melakukan cek keluar.'
+            //     ]);
+            // }
+
             $cekKendaraan = DB::table('ga_cek_kendaraan')
-                ->whereRaw("
-                    REPLACE(REPLACE(UPPER(nomor_polisi), ' ', ''), '-', '')
-                    =
-                    REPLACE(REPLACE(UPPER(?), ' ', ''), '-', '')
-                ", [$visitor->nopol])
-                ->where('checked_in_at', '>=', $visitor->createdon)
-                // ->where('checked_in_at', '>=', now()->subHours(24))
+                ->where('trnvisitorid', $visitor->trnvisitorid)
                 ->orderBy('checked_in_at', 'desc')
                 ->first();
 
-            // belum pernah cek kendaraan sama sekali pada kedatangan ini
-            if (!$cekKendaraan) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Kendaraan belum melakukan cek kendaraan masuk & keluar pada kedatangan ini.'
-                ]);
-            }
+            $vehicleCheckStatus = 'NOT_CHECKED';
 
-            // sudah cek masuk tapi belum cek keluar
-            if ($cekKendaraan->checked_in_at && is_null($cekKendaraan->checked_out_at)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Kendaraan belum melakukan cek keluar.'
-                ]);
+            if ($cekKendaraan) {
+                if ($cekKendaraan->checked_in_at && $cekKendaraan->checked_out_at) {
+                    $vehicleCheckStatus = 'COMPLETE';
+                } elseif ($cekKendaraan->checked_in_at && is_null($cekKendaraan->checked_out_at)) {
+                    $vehicleCheckStatus = 'IN_ONLY';
+                }
             }
 
             return response()->json([
                 'success' => true,
-                'data' => $visitor
+                'data' => $visitor,
+                'vehicle_check' => [
+                    'status' => $vehicleCheckStatus,
+                    'checked_in_at' => $cekKendaraan->checked_in_at ?? null,
+                    'checked_out_at' => $cekKendaraan->checked_out_at ?? null,
+                ]
             ]);
         }
 
@@ -539,7 +559,7 @@ class SupplierFormAjax extends Controller
     {
         $request->validate([
             'trnvisitorid' => 'required|string|max:50',
-            'foto_out'     => 'required|string',
+            'foto_out'     => 'nullable|string',
         ]);
 
         try {

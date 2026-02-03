@@ -37,7 +37,7 @@
                         </div>
 
                         <small class="text-muted"><i class="mdi mdi-infomation"></i> Apabila data tidak ditemukan,
-                            silakan ketik NIK atau nomor kartu yang tertera (SPxxxx/MKxxxx) secara manual.
+                            silakan ketik NIK secara manual.
                         </small>
 
                     </div>
@@ -61,7 +61,7 @@
                                             <h6 class="text-muted mb-3">
                                                 Informasi Transporter
                                             </h6>
-                                            <ul class="list-unstyled mb-0 small">
+                                            <ul class="list-unstyled mb-0">
                                                 <li><strong>Nama Supir/Kernet:</strong> <span id="visitorName"></span>
                                                 </li>
                                                 <li><strong>Sebagai Apa:</strong> <span id="visitorKeterangan"></span>
@@ -88,17 +88,29 @@
                                             <h6 class="text-muted mb-3">
                                                 Status Kunjungan
                                             </h6>
-                                            <ul class="list-unstyled mb-0 small">
-                                                <li><strong>Masuk:</strong> <span id="visitorDateIn"></span> <span
-                                                        id="visitorTimeIn"></span></li>
-                                                <li><strong>Keluar:</strong> <span id="visitorDateOut"></span> <span
-                                                        id="visitorTimeOut"></span></li>
+                                            <ul class="list-unstyled mb-0">
                                                 <li><strong>Status Kartu:</strong>
                                                     <span id="visitorCardStatus"
                                                         class="badge bg-warning text-dark"></span>
                                                 </li>
-                                                <li><strong>Gate ID:</strong> <span id="visitorGateIdOut"></span></li>
+                                                <li><strong>Masuk:</strong> <span id="visitorDateIn"></span> <span
+                                                        id="visitorTimeIn"></span></li>
+                                                <li><strong>Keluar:</strong> <span id="visitorDateOut"></span> <span
+                                                        id="visitorTimeOut"></span></li>
+                                                {{-- <li><strong>Gate ID:</strong> <span id="visitorGateIdOut"></span></li>
                                                 <li><strong>Gate Line:</strong> <span id="visitorGateLineIdOut"></span>
+                                                </li> --}}
+                                                {{-- <li>
+                                                    <strong>Status Cek Kendaraan:</strong>
+                                                    <span id="vehicleCheckBadge" class="badge bg-secondary fs-5 px-4 py-2">-</span>
+                                                </li> --}}
+                                                <li class="mt-2">
+                                                    <strong>Status Cek Kendaraan:</strong>
+                                                    <div class="mt-2">
+                                                        <span id="vehicleCheckBadge"
+                                                            class="badge bg-danger text-white text-center">
+                                                        </span>
+                                                    </div>
                                                 </li>
                                             </ul>
                                         </div>

@@ -177,9 +177,15 @@ class CekKendaraanFormAjax extends Controller
         try {
             $keyword = strtoupper(str_replace(' ', '', $request->nomor_polisi));
 
+            // $alreadyChecked = DB::table('ga_cek_kendaraan')
+            //     ->whereRaw("REPLACE(UPPER(nomor_polisi),' ','') = ?", [$keyword])
+            //     ->where('checked_in_at', '>=', now()->subHours(24))
+            //     // ->where('checked_in_at', '>=', $visitor->created_at)
+            //     ->exists();
+
             $alreadyChecked = DB::table('ga_cek_kendaraan')
-                ->whereRaw("REPLACE(UPPER(nomor_polisi),' ','') = ?", [$keyword])
-                ->where('checked_in_at', '>=', now()->subHours(24))
+                ->where('trnvisitorid', $request->trnvisitorid)
+                ->whereNotNull('checked_in_at')
                 ->exists();
 
             if ($alreadyChecked) {

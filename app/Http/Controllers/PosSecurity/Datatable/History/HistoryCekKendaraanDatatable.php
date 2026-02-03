@@ -42,6 +42,7 @@ class HistoryCekKendaraanDatatable extends Controller
                 'nopol',
                 'namavisitor',
                 'namacomp',
+                'kartu_dikembalikan',
                 DB::raw("'transaction' as source"),
                 'created_at',
             ])
@@ -55,6 +56,7 @@ class HistoryCekKendaraanDatatable extends Controller
                 'nopol',
                 'namavisitor',
                 'namacomp',
+                'kartu_dikembalikan',
                 DB::raw("'vendor' as source"),
                 'created_at',
             ])
@@ -82,9 +84,13 @@ class HistoryCekKendaraanDatatable extends Controller
         // LEFT JOIN cek kendaraan
         return DB::query()
             ->fromSub($visitors, 'v')
-            ->leftJoin('ga_cek_kendaraan as c', function ($join) use ($sevenDaysAgo) {
+            // ->leftJoin('ga_cek_kendaraan as c', function ($join) use ($sevenDaysAgo) {
+            //     $join->on('c.trnvisitorid', '=', 'v.trnvisitorid')
+            //         ->where('c.created_at', '>=', $sevenDaysAgo);
+            // })
+            ->leftJoin('ga_cek_kendaraan as c', function ($join) {
                 $join->on('c.trnvisitorid', '=', 'v.trnvisitorid')
-                    ->where('c.created_at', '>=', $sevenDaysAgo);
+                    ->whereColumn('c.created_at', '>=', 'v.created_at');
             })
             ->select([
                 'v.trnvisitorid',
@@ -92,6 +98,7 @@ class HistoryCekKendaraanDatatable extends Controller
                 'v.namavisitor',
                 'v.namacomp',
                 'v.source',
+                'v.kartu_dikembalikan',
 
                 'c.trncekid',
                 'c.truck_type',
@@ -102,6 +109,13 @@ class HistoryCekKendaraanDatatable extends Controller
             ])
             ->orderByRaw('IFNULL(c.created_at, v.created_at) DESC')
             ->limit(300);
+
+        // dd([
+        //     'sql' => $query->toSql(),
+        //     'bindings' => $query->getBindings(),
+        // ]);
+
+        // return $query;
     }
 
     private function DrawTable($query)
@@ -193,18 +207,37 @@ class HistoryCekKendaraanDatatable extends Controller
                 return implode(' ', $result) ?: '0 menit';
             })
             ->addColumn('status', function ($item) {
+                // 1. Tidak dilakukan cek kendaraan (historis)
+                if (
+                    $item->kartu_dikembalikan == 1 &&
+                    !$item->trncekid
+                ) {
+                    return '<span class="badge bg-danger">
+                        Tidak Dilakukan Cek Kendaraan
+                    </span>';
+                }
 
-                // 1. Belum cek kendaraan
+                // 2. Tidak cek keluar
+                if (
+                    $item->kartu_dikembalikan == 1 &&
+                    !empty($item->checked_in_at) && empty($item->checked_out_at)
+                ) {
+                    return '<span class="badge bg-danger">
+                        Tidak Dilakukan Cek Keluar
+                    </span>';
+                }
+
+                // 2. Belum cek kendaraan
                 if (empty($item->checked_in_at)) {
                     return '<span class="badge bg-danger">Belum Cek Kendaraan</span>';
                 }
 
-                // 2. Sudah cek tapi belum keluar
+                // 3. Sudah cek tapi belum keluar
                 if (!empty($item->checked_in_at) && empty($item->checked_out_at)) {
                     return '<span class="badge bg-warning">Belum Cek Keluar</span>';
                 }
 
-                // 3. Sudah keluar
+                // 4. Sudah keluar (lengkap)
                 return '<span class="badge bg-success">Sudah Cek Keluar</span>';
             })
             ->rawColumns(['nomor_polisi', 'jenis', 'action', 'durasi', 'waktu', 'status'])

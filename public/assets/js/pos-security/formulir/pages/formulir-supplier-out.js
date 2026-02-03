@@ -133,10 +133,37 @@ function searchVisitorData(keyword) {
                 //     response.data.kondisi_kacamata || "-";
 
                 // Gate info
-                document.getElementById("visitorGateIdOut").innerText =
-                    response.data.gateidout || "-";
-                document.getElementById("visitorGateLineIdOut").innerText =
-                    response.data.gatelineidout || "-";
+                // document.getElementById("visitorGateIdOut").innerText =
+                //     response.data.gateidout || "-";
+                // document.getElementById("visitorGateLineIdOut").innerText =
+                //     response.data.gatelineidout || "-";
+
+                const badge = document.getElementById("vehicleCheckBadge");
+
+                if (response.vehicle_check) {
+                    badge.className = "badge text-white";
+
+                    switch (response.vehicle_check.status) {
+                        case "COMPLETE":
+                            badge.textContent = "LENGKAP";
+                            badge.classList.add("bg-success");
+                            break;
+
+                        case "IN_ONLY":
+                            badge.textContent = "BELUM CEK KELUAR";
+                            badge.classList.add("bg-warning");
+                            break;
+
+                        case "NOT_CHECKED":
+                            badge.textContent = "BELUM CEK MASUK";
+                            badge.classList.add("bg-danger");
+                            break;
+
+                        default:
+                            badge.textContent = "-";
+                            badge.classList.add("bg-secondary");
+                    }
+                }
 
                 // Foto KTP
                 document.getElementById("visitorKTPImage").src =
@@ -340,25 +367,21 @@ $("#returnCard").on("click", function () {
     const trnvisitorid = $(this).data("trnvisitorid");
     // const isKacamata = $(this).data("is_kacamata");
     // const kondisiKacamata = $("#kondisiKacamataOut").val();
-    const fotoOut = $("#fotoOut").val();
-
-    console.log("returnCard trnvisitorid: ", trnvisitorid);
-    console.log({fotoOut});
-    
+    const fotoOut = $("#fotoOut").val() ?? null;
 
     if (!trnvisitorid) {
         Swal.fire("Error", "Visitor ID tidak ditemukan!", "error");
         return;
     }
 
-    if (!fotoOut) {
-        Swal.fire(
-            "Peringatan",
-            "Silakan ambil foto keluar terlebih dahulu.",
-            "warning"
-        );
-        return;
-    }
+    // if (!fotoOut) {
+    //     Swal.fire(
+    //         "Peringatan",
+    //         "Silakan ambil foto keluar terlebih dahulu.",
+    //         "warning"
+    //     );
+    //     return;
+    // }
 
     // if (isKacamata == 1 && !kondisiKacamata) {
     //     Swal.fire(
@@ -434,8 +457,8 @@ $('a[data-bs-toggle="tab"]').on("shown.bs.tab", function (e) {
         .text("-")
         .removeClass()
         .addClass("badge bg-secondary");
-    $("#visitorGateIdOut").text("-");
-    $("#visitorGateLineIdOut").text("-");
+    // $("#visitorGateIdOut").text("-");
+    // $("#visitorGateLineIdOut").text("-");
     $("#visitorKTPImage").attr("src", "");
     $("#visitorSelfieImages").empty(); // Kosongkan kontainer selfie
 });

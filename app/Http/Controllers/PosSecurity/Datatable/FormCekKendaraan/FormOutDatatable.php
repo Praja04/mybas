@@ -25,6 +25,7 @@ class FormOutDatatable extends Controller
                 'nopol',
                 'namavisitor',
                 'namacomp',
+                'kartu_dikembalikan',
                 DB::raw("'transaction' as source"),
                 'created_at',
             ])
@@ -37,6 +38,7 @@ class FormOutDatatable extends Controller
                 'nopol',
                 'namavisitor',
                 'namacomp',
+                'kartu_dikembalikan',
                 DB::raw("'vendor' as source"),
                 'created_at',
             ])
@@ -62,11 +64,20 @@ class FormOutDatatable extends Controller
         // LEFT JOIN cek kendaraan
         return DB::query()
             ->fromSub($visitors, 'v')
+            // ->leftJoin('ga_cek_kendaraan as c', function ($join) {
+            //     $join->on('c.trnvisitorid', '=', 'v.trnvisitorid');
+            // })
             ->leftJoin('ga_cek_kendaraan as c', function ($join) {
-                $join->on('c.trnvisitorid', '=', 'v.trnvisitorid');
+                $join->on('c.trnvisitorid', '=', 'v.trnvisitorid')
+                    ->whereColumn('c.created_at', '>=', 'v.created_at');
             })
             ->whereNotNull('c.checked_in_at') // sudah cek masuk
             ->whereNull('c.checked_out_at') // tapi belum cek keluar
+            ->where(function ($q) {
+                $q->whereNull('v.kartu_dikembalikan')
+                ->orWhere('v.kartu_dikembalikan', 0);
+            })
+
             ->select([
                 'v.trnvisitorid',
                 'v.nopol as nomor_polisi',
@@ -77,6 +88,7 @@ class FormOutDatatable extends Controller
                 'c.trncekid',
                 'c.truck_type',
                 'c.muatan_type',
+                'c.truck_type_other',
                 'c.checked_in_at',
                 'c.checked_out_at',
                 'c.created_at as cek_created_at',

@@ -49,7 +49,7 @@
                         </div>
                         
                         <small class="text-muted"><i class="mdi mdi-infomation"></i> Apabila data tidak ditemukan,
-                            silakan ketik NIK atau nomor kartu yang tertera (SPxxxx/MKxxxx) secara manual.
+                            silakan ketik NIK secara manual.
                         </small>
                     </div>
                 </form>
