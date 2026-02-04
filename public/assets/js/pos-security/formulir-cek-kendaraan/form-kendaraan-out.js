@@ -13,6 +13,7 @@
     let activePhotoKey = null;
     let photoStore = {};
     let tempPhotos = [];
+    let photoSessionId = null; 
 
     // window.setActivePhotoKey = function (value) {
     //     activePhotoKey = value;
@@ -163,7 +164,8 @@
         $fotoSection.html(
             sections
                 .map((label) => {
-                    const key = label.replace(/\s+/g, "_").toLowerCase();
+                    const baseKey = label.replace(/\s+/g, "_").toLowerCase();
+                    const key = `${photoSessionId}__${baseKey}`;
 
                     const isOptional = key.includes(
                         "temuan_barang_mencurigakan"
@@ -296,6 +298,7 @@
 
     window.openFormOut = function (
         trncekid,
+        trnvisitorid,
         nomor_polisi,
         nama_supir,
         company,
@@ -304,6 +307,11 @@
         truck_type_other,
         checked_in_at
     ) {
+        photoStore = {};
+        tempPhotos = [];
+        activePhotoKey = null;
+        photoSessionId = trnvisitorid;
+        
         const checkedIn = new Date(checked_in_at);
 
         const formattedDate = new Intl.DateTimeFormat("id-ID", {
@@ -368,6 +376,11 @@
     };
 
     window.backToTableOut = function () {
+        photoStore = {};
+        tempPhotos = [];
+        activePhotoKey = null;
+        photoSessionId = trnvisitorid;
+
         $("#formWrapperOut").hide();
         $("#headerFormOut").hide();
 

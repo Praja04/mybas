@@ -13,6 +13,7 @@
     let activePhotoKey = null;
     let photoStore = {};
     let tempPhotos = [];
+    let photoSessionId = null; 
 
     window.setActivePhotoKey = function (value) {
         activePhotoKey = value;
@@ -294,7 +295,8 @@
             $fotoSection.html(
                 sections
                     .map((label) => {
-                        const key = label.replace(/\s+/g, "_").toLowerCase();
+                        const baseKey = label.replace(/\s+/g, "_").toLowerCase();
+                        const key = `${photoSessionId}__${baseKey}`;
 
                         // kecuali "temuan barang mencurigakan"
                         const isOptional = key.includes(
@@ -421,6 +423,11 @@
         nama_supir,
         company
     ) {
+        photoStore = {};
+        tempPhotos = [];
+        activePhotoKey = null;
+        photoSessionId = trnvisitorid;
+        
         $("#tableWrapper").hide();
         $("#headerTable").hide();
 
@@ -454,6 +461,11 @@
     };
 
     window.backToTable = function () {
+        photoStore = {};
+        tempPhotos = [];
+        activePhotoKey = null;
+        photoSessionId = null;
+
         $("#formWrapper").hide();
         $("#headerForm").hide();
 

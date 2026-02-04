@@ -136,7 +136,9 @@ function renderFoto(container, fotoJson) {
     Object.entries(fotoObj).forEach(([key, images]) => {
         if (!Array.isArray(images) || images.length === 0) return;
 
-        const label = key
+        const cleanKey = key.includes("__") ? key.split("__")[1] : key;
+
+        const label = cleanKey
             .replace(/_/g, " ")
             .replace(/\b\w/g, (c) => c.toUpperCase());
 

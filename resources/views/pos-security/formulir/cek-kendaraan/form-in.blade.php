@@ -202,8 +202,7 @@
 
                             <!-- Submit Button -->
                             <button type="submit" class="btn btn-primary px-4 py-2 d-flex align-items-center gap-2"
-                                id="submitBtn" data-bs-toggle="tooltip" data-bs-placement="top"
-                                title="Simpan data pengecekan ke sistem">
+                                id="submitBtn" data-bs-toggle="tooltip" data-bs-placement="top">
                                 <i class="mdi mdi-content-save"></i>
                                 <span>Simpan Data</span>
                             </button>

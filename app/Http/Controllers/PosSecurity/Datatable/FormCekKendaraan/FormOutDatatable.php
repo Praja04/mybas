@@ -111,6 +111,7 @@ class FormOutDatatable extends Controller
                         class="btn btn-sm btn-primary"
                         onclick="openFormOut(
                             \'' . $item->trncekid . '\',
+                            \'' . $item->trnvisitorid . '\',
                             \'' . e($item->nomor_polisi) . '\',
                             \'' . e($item->namavisitor) . '\',
                             \'' . e($item->namacomp) . '\',

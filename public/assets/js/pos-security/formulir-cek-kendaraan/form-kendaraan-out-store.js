@@ -65,6 +65,11 @@ $(document).ready(function () {
             contentType: false,
             success: function (response) {
                 if (response.success) {
+                    photoStore = {};
+                    tempPhotos = [];
+                    activePhotoKey = null;
+                    photoSessionId = null;
+
                     Swal.fire({
                         icon: "success",
                         title: "Berhasil!",
