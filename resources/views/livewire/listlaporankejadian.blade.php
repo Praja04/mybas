@@ -119,6 +119,7 @@
                         <tr>
                             <th scope="col" class="text-center">No</th>
                             <th scope="col" class="text-center">ID Kejadian</th>
+                            <th scope="col" class="text-center">Tanggal Kejadian</th>
                             <th scope="col" class="text-center">Jenis Kejadian</th>
                             <th scope="col" class="text-center">Nama Korban</th>
                             <th scope="col" class="text-center">Nik Korban</th>
@@ -134,6 +135,9 @@
                             <tr>
                                 <td scope="row" class="text-center">{{ $loop->iteration }}</td>
                                 <td scope="row" class="text-center">{{ $item->lk_id }}</td>
+                                <td class="text-center">
+                                    {{ $item->created_at->locale('id')->translatedFormat('d F Y') }}
+                                </td>
                                 <td scope="row" class="text-center">{{ $item->jenis_kejadian }}</td>
                                 <td scope="row" class="text-center">{{ $item->nama_korban }}</td>
                                 <td scope="row" class="text-center">{{ $item->nik_korban }}</td>

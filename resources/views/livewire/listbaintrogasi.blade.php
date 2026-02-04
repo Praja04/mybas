@@ -147,6 +147,7 @@
                         <tr>
                             <th scope="col" class="text-center">No</th>
                             <th scope="col" class="text-center">ID Introgasi</th>
+                            <th scope="col" class="text-center">Tanggal Kejadian</th>
                             <th scope="col" class="text-center">Jenis Kejadian</th>
                             <th scope="col" class="text-center">Nama Introgasi</th>
                             <th scope="col" class="text-center">Nama Pelapor</th>
@@ -163,6 +164,9 @@
                             <tr id="bid{{ $item->bai_id }}">
                                 <td scope="row" class="text-center">{{ $loop->iteration }}</td>
                                 <td scope="row" class="text-center">{{ $item->bai_id }}</td>
+                                <td class="text-center">
+                                    {{ $item->created_at->locale('id')->translatedFormat('d F Y') }}
+                                </td>
                                 <td scope="row" class="text-center">{{ $item->jenis_kejadian }}</td>
                                 <td scope="row" class="text-center">{{ $item->nama_introgasi }}</td>
                                 <td scope="row" class="text-center">{{ $item->nama_pelapor }}</td>

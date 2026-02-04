@@ -127,6 +127,7 @@
                     <thead>
                         <tr>
                             <th scope="col" class="text-center">No</th>
+                            <th scope="col" class="text-center">Tanggal Kejadian</th>
                             <th scope="col" class="text-center">Nama</th>
                             <th scope="col" class="text-center">Nik</th>
                             <th scope="col" class="text-center">Jabatan</th>
@@ -143,6 +144,9 @@
                         @forelse ($basopkaryawan as $item)
                             <tr>
                                 <td scope="row" class="text-center">{{ $loop->iteration }}</td>
+                                <td class="text-center">
+                                    {{ $item->created_at->locale('id')->translatedFormat('d F Y') }}
+                                </td>
                                 <td scope="row" class="text-center">{{ $item->nama }}</td>
                                 <td scope="row" class="text-center">{{ $item->nik }}</td>
                                 <td scope="row" class="text-center">{{ $item->jabatan }}</td>

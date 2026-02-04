@@ -132,6 +132,9 @@
                         @forelse ($basopsupir as $item)
                             <tr>
                                 <td scope="row" class="text-center">{{ $loop->iteration }}</td>
+                                <td class="text-center">
+                                    {{ $item->created_at->locale('id')->translatedFormat('d F Y') }}
+                                </td>
                                 <td scope="row" class="text-center">{{ $item->nama }}</td>
                                 <td scope="row" class="text-center">{{ $item->ekspedisi }}</td>
                                 <td scope="row" class="text-center">{{ $item->no_ktp }}</td>
