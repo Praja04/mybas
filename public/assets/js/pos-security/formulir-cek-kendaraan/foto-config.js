@@ -12,7 +12,7 @@ window.fotoConfig = {
         "Kolong Mobil Truck Belakang",
         "Kotak Toolkit dan Dongkrak",
         // "Kolong Belakang",
-        "Temuan Barang Mencurigakan",
+        "Temuan Barang Mencurigakan (Tidak Wajib)",
     ],
     "FRUKTOSA": [
         "Kondisi Segel 1 (Belakang)",
@@ -26,7 +26,7 @@ window.fotoConfig = {
         "Kolong Mobil Truck Belakang",
         "Kotak Toolkit dan Dongkrak",
         // "Kolong Belakang",
-        "Temuan Barang Mencurigakan",
+        "Temuan Barang Mencurigakan (Tidak Wajib)",
     ],
     "LAINNYA (LIQUID)": [
         "Kondisi Segel 1 (Atas)",
@@ -41,36 +41,41 @@ window.fotoConfig = {
         "Kolong Mobil Truck Belakang",
         "Kotak Toolkit dan Dongkrak",
         // "Kolong Belakang",
-        "Temuan Barang Mencurigakan",
+        "Temuan Barang Mencurigakan (Tidak Wajib)",
     ],
-    "TRUK BONGKAR MATERIAL": [
+    "TRUK RAW MATERIAL": [
         "Kabin Depan Mobil",
         "Kondisi Dalam Bak Truck",
-        "Temuan Barang Mencurigakan",
+        "Temuan Barang Mencurigakan (Tidak Wajib)",
+    ],
+    "TRUK BONGKAR FINISH GOOD": [
+        "Kabin Depan Mobil",
+        "Kondisi Bak Truck",
+        "Temuan Barang Mencurigakan (Tidak Wajib)",
     ],
     "TRUK MUAT FINISH GOOD": [
         "Kabin Depan Mobil",
         "Kondisi Bak Truck",
-        "Temuan Barang Mencurigakan",
+        "Temuan Barang Mencurigakan (Tidak Wajib)",
     ],
     "MOBIL SPAREPART": [
         "Surat Jalan atau Pembelian Barang",
         "Kondisi Dalam Kendaraan atau Bak Kendaraan",
-        "Temuan Barang Mencurigakan",
+        "Temuan Barang Mencurigakan (Tidak Wajib)",
     ],
     "MOBIL VENDOR": [
         "Surat Jalan atau Pembelian Barang",
         "Kondisi Dalam Kendaraan atau Bak Kendaraan",
-        "Temuan Barang Mencurigakan",
+        "Temuan Barang Mencurigakan (Tidak Wajib)",
     ],
     "MOBIL PENGANGKUT SAMPAH": [
         "Surat Jalan atau Pembelian Barang",
         "Kondisi Dalam Kendaraan atau Bak Kendaraan",
-        "Temuan Barang Mencurigakan",
+        "Temuan Barang Mencurigakan (Tidak Wajib)",
     ],
     "LAINNYA (NONLIQUID)": [
         "Surat Jalan atau Pembelian Barang",
         "Kondisi Dalam Kendaraan atau Bak Kendaraan",
-        "Temuan Barang Mencurigakan",
+        "Temuan Barang Mencurigakan (Tidak Wajib)",
     ],
 };

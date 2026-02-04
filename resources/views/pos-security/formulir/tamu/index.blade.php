@@ -26,6 +26,22 @@
             transform: translateY(-2px);
             box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
         }
+
+        #vehicleCheckBadge {
+            display: block;
+            width: 100%;
+            text-align: center;
+            white-space: normal;
+
+            font-weight: 800;
+            letter-spacing: 0.5px;
+
+            /* RESPONSIVE FONT */
+            font-size: clamp(1rem, 2.5vw, 1.8rem);
+
+            padding: 14px 16px;
+            border-radius: 12px;
+        }
     </style>
 @endpush
 

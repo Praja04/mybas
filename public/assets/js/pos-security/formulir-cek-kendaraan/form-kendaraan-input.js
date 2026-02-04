@@ -217,12 +217,16 @@
             ],
             NONLIQUID: [
                 {
-                    value: "TRUK BONGKAR MATERIAL",
-                    text: "Truck Bongkar Material",
+                    value: "TRUK RAW MATERIAL",
+                    text: "Truk Raw Material (Bahan Mentah)",
+                },
+                {
+                    value: "TRUK BONGKAR FINISH GOOD",
+                    text: "Truk BONGKAR Finish Good (WFG)",
                 },
                 {
                     value: "TRUK MUAT FINISH GOOD",
-                    text: "Truck Muat Finish Good (WFG)",
+                    text: "Truk MUAT Finish Good (WFG)",
                 },
                 {
                     value: "MOBIL SPAREPART",

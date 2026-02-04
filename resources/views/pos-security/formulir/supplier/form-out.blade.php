@@ -117,26 +117,6 @@
                                     </div>
                                 </div>
 
-                                {{-- Status Cek Kendaraan --}}
-                                {{-- <div class="col-md-3 col-6">
-                            <div class="card bg-light border-0 shadow-sm rounded-4 h-100">
-                                <div class="card-body">
-                                    <h6 class="text-muted mb-3">
-                                        <i class="fas fa-clock text-danger"></i>Status Pengecekan Kendaraan
-                                    </h6>
-                                    <ul class="list-unstyled mb-0 small">
-                                        <li><strong>Nama Petugas:</strong> <span id="visitorNamaPetugas"></span></li>
-                                        <li><strong>Jenis Muatan:</strong> <span id="visitorJenisMuatan"></span></li>
-                                        <li><strong>Jenis Truk:</strong> <span id="visitorJenisTruk"></span></li>
-                                        <li><strong>Jam Pengecekan Masuk:</strong> <span id="visitorCheckDate"></span>
-                                            <span id="visitorCheckTime"></span>
-                                        </li>
-                                    </ul>
-                                </div>
-                            </div>
-                        </div>
- --}}
-
                                 <!-- Foto KTP -->
                                 <div class="col-md-4 col-12">
                                     <div class="card bg-light bg-light border-0 shadow-sm rounded-4 h-100 text-center">

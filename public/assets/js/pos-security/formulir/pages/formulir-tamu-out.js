@@ -113,8 +113,43 @@ function onScanError(errorMessage) {
                     $("#visitorKondisiKacamata").text(data.kondisi_kacamata || "-");
 
                     // Info gate keluar
-                    $("#visitorGateIdOut").text(data.gateidout || "-");
-                    $("#visitorGateLineIdOut").text(data.gatelineidout || "-");
+                    // $("#visitorGateIdOut").text(data.gateidout || "-");
+                    // $("#visitorGateLineIdOut").text(data.gatelineidout || "-");
+
+                    const vehicleWrapper = document.getElementById("vehicleCheckWrapper");
+                    const badge = document.getElementById("vehicleCheckBadge");
+
+                    if (data.type === "TRANSPORTER") {
+                        vehicleWrapper.classList.remove("d-none");
+
+                        if (response.vehicle_check) {
+                            badge.className = "badge text-white fs-5";
+
+                            switch (response.vehicle_check.status) {
+                                case "COMPLETE":
+                                    badge.textContent = "LENGKAP";
+                                    badge.classList.add("bg-success");
+                                    break;
+
+                                case "IN_ONLY":
+                                    badge.textContent = "BELUM CEK KELUAR";
+                                    badge.classList.add("bg-warning");
+                                    break;
+
+                                case "NOT_CHECKED":
+                                    badge.textContent = "BELUM CEK KENDARAAN";
+                                    badge.classList.add("bg-danger");
+                                    break;
+
+                                default:
+                                    badge.textContent = "-";
+                                    badge.classList.add("bg-secondary");
+                            }
+                        }
+                    } else {
+                        // bukan transporter → sembunyikan
+                        vehicleWrapper.classList.add("d-none");
+                    }
 
                     // Foto KTP
                     const ktpImage = $("#visitorKTPImage");

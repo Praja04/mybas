@@ -73,7 +73,7 @@
                                             <h6 class="text-muted mb-3">
                                                 <i class="fas fa-user text-primary"></i>Informasi Tamu
                                             </h6>
-                                            <ul class="list-unstyled mb-0 small">
+                                            <ul class="list-unstyled mb-0">
                                                 <li><strong>Nama:</strong> <span id="visitorName"></span></li>
                                                 <li><strong>Perusahaan:</strong> <span id="visitorCompany"></span></li>
                                                 <li><strong>No Kartu:</strong> <span id="visitorCard"></span></li>
@@ -99,41 +99,30 @@
                                             <h6 class="text-muted mb-3">
                                                 <i class="fas fa-clock text-danger"></i>Status Kunjungan
                                             </h6>
-                                            <ul class="list-unstyled mb-0 small">
-                                                <li><strong>Masuk:</strong> <span id="visitorDateIn"></span> <span
-                                                        id="visitorTimeIn"></span></li>
-                                                <li><strong>Keluar:</strong> <span id="visitorDateOut"></span> <span
-                                                        id="visitorTimeOut"></span></li>
+                                            <ul class="list-unstyled mb-0">
                                                 <li><strong>Status Kartu:</strong>
                                                     <span id="visitorCardStatus"
                                                         class="badge bg-warning text-dark"></span>
                                                 </li>
-                                                <li><strong>Gate ID:</strong> <span id="visitorGateIdOut"></span></li>
+                                                <li><strong>Masuk:</strong> <span id="visitorDateIn"></span> <span
+                                                        id="visitorTimeIn"></span></li>
+                                                <li><strong>Keluar:</strong> <span id="visitorDateOut"></span> <span
+                                                        id="visitorTimeOut"></span></li>
+                                                {{-- <li><strong>Gate ID:</strong> <span id="visitorGateIdOut"></span></li>
                                                 <li><strong>Gate Line:</strong> <span id="visitorGateLineIdOut"></span>
+                                                </li> --}}
+                                                <li class="mt-2 d-none" id="vehicleCheckWrapper">
+                                                    <strong>Status Cek Kendaraan:</strong>
+                                                    <div class="mt-2">
+                                                        <span id="vehicleCheckBadge"
+                                                            class="badge bg-danger text-white text-center">
+                                                        </span>
+                                                    </div>
                                                 </li>
                                             </ul>
                                         </div>
                                     </div>
                                 </div>
-
-                                {{-- Status Cek Kendaraan --}}
-                                {{-- <div class="col-lg-4 col-6">
-                            <div class="card bg-light border-0 shadow-sm rounded-4 h-100">
-                                <div class="card-body">
-                                    <h6 class="text-muted mb-3">
-                                        <i class="fas fa-clock text-danger"></i>Status Pengecekan Kendaraan
-                                    </h6>
-                                    <ul class="list-unstyled mb-0 small">
-                                        <li><strong>Nama Petugas:</strong> <span id="visitorGateIdOut">-</span></li>
-                                        <li><strong>Jenis Muatan:</strong> <span id="visitorGateLineIdOut">-</span></li>
-                                        <li><strong>Jenis Truk:</strong> <span id="visitorGateLineIdOut">-</span></li>
-                                        <li><strong>Jam Pengecekan Masuk:</strong> <span id="visitorTimeIn">-</span>
-                                            <span id="visitorTimeIn"></span>
-                                        </li>
-                                    </ul>
-                                </div>
-                            </div>
-                        </div> --}}
 
                                 <!-- Foto KTP -->
                                 <div class="col-md-4 col-12">

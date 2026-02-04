@@ -420,7 +420,7 @@ class AbsensiRestLogAjax extends Controller
 
     protected function handleAbsensi($visitor, $sourceOrigin, $now)
     {
-        $gracePeriod = 30;
+        $gracePeriod = 7;
         $lastLog = AbsensiRestLog::where('trnvisitorid', $visitor->trnvisitorid)
             ->where('source_origin', $sourceOrigin)
             ->orderBy('scan_time', 'desc')

@@ -187,31 +187,46 @@ class TamuFormAjax extends Controller
 
             // Cek apakah sudah cek kendaraan jika jenis kunjungannya transporter kecil
             if ($visitor->type === 'TRANSPORTER') {
+                // $cekKendaraan = DB::table('ga_cek_kendaraan')
+                //     ->whereRaw("
+                //             REPLACE(REPLACE(UPPER(nomor_polisi), ' ', ''), '-', '')
+                //             =
+                //             REPLACE(REPLACE(UPPER(?), ' ', ''), '-', '')
+                //         ", [$visitor->nopol])
+                //     ->where('checked_in_at', '>=', $visitor->createdon)
+                //     // ->where('checked_in_at', '>=', now()->subHours(24))
+                //     ->orderBy('checked_in_at', 'desc')
+                //     ->first();
+
+                // // belum pernah cek kendaraan sama sekali pada kedatangan ini
+                // if (!$cekKendaraan) {
+                //     return response()->json([
+                //         'success' => false,
+                //         'message' => 'Tamu ini menggunakan kendaraan dan belum melakukan pengecekan kendaraan masuk & keluar.'
+                //     ]);
+                // }
+
+                // // sudah cek masuk tapi belum cek keluar
+                // if ($cekKendaraan->checked_in_at && is_null($cekKendaraan->checked_out_at)) {
+                //     return response()->json([
+                //         'success' => false,
+                //         'message' => 'Tamu ini menggunakan kendaraan belum melakukan cek kendaraan keluar.'
+                //     ]);
+                // }
+                
                 $cekKendaraan = DB::table('ga_cek_kendaraan')
-                    ->whereRaw("
-                            REPLACE(REPLACE(UPPER(nomor_polisi), ' ', ''), '-', '')
-                            =
-                            REPLACE(REPLACE(UPPER(?), ' ', ''), '-', '')
-                        ", [$visitor->nopol])
-                    ->where('checked_in_at', '>=', $visitor->createdon)
-                    // ->where('checked_in_at', '>=', now()->subHours(24))
+                    ->where('trnvisitorid', $visitor->trnvisitorid)
                     ->orderBy('checked_in_at', 'desc')
                     ->first();
 
-                // belum pernah cek kendaraan sama sekali pada kedatangan ini
-                if (!$cekKendaraan) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Tamu ini menggunakan kendaraan dan belum melakukan pengecekan kendaraan masuk & keluar.'
-                    ]);
-                }
+                $vehicleCheckStatus = 'NOT_CHECKED';
 
-                // sudah cek masuk tapi belum cek keluar
-                if ($cekKendaraan->checked_in_at && is_null($cekKendaraan->checked_out_at)) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Tamu ini menggunakan kendaraan belum melakukan cek kendaraan keluar.'
-                    ]);
+                if ($cekKendaraan) {
+                    if ($cekKendaraan->checked_in_at && $cekKendaraan->checked_out_at) {
+                        $vehicleCheckStatus = 'COMPLETE';
+                    } elseif ($cekKendaraan->checked_in_at && is_null($cekKendaraan->checked_out_at)) {
+                        $vehicleCheckStatus = 'IN_ONLY';
+                    }
                 }
             }
 
@@ -219,7 +234,14 @@ class TamuFormAjax extends Controller
             if (is_null($visitor->kartu_dikembalikan) || $visitor->kartu_dikembalikan == false) {
                 return response()->json([
                     'success' => true,
-                    'data' => $visitor
+                    'data' => $visitor,
+                    'vehicle_check' => $visitor->type === 'TRANSPORTER'
+                    ? [
+                        'status' => $vehicleCheckStatus,
+                        'checked_in_at'  => $cekKendaraan ? $cekKendaraan->checked_in_at : null,
+                        'checked_out_at' => $cekKendaraan ? $cekKendaraan->checked_out_at : null,
+                    ]
+                    : null
                 ]);
             }
 
