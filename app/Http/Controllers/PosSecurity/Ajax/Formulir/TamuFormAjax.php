@@ -187,32 +187,32 @@ class TamuFormAjax extends Controller
 
             // Cek apakah sudah cek kendaraan jika jenis kunjungannya transporter kecil
             if ($visitor->type === 'TRANSPORTER') {
-                // $cekKendaraan = DB::table('ga_cek_kendaraan')
-                //     ->whereRaw("
-                //             REPLACE(REPLACE(UPPER(nomor_polisi), ' ', ''), '-', '')
-                //             =
-                //             REPLACE(REPLACE(UPPER(?), ' ', ''), '-', '')
-                //         ", [$visitor->nopol])
-                //     ->where('checked_in_at', '>=', $visitor->createdon)
-                //     // ->where('checked_in_at', '>=', now()->subHours(24))
-                //     ->orderBy('checked_in_at', 'desc')
-                //     ->first();
+                $cekKendaraan = DB::table('ga_cek_kendaraan')
+                    ->whereRaw("
+                            REPLACE(REPLACE(UPPER(nomor_polisi), ' ', ''), '-', '')
+                            =
+                            REPLACE(REPLACE(UPPER(?), ' ', ''), '-', '')
+                        ", [$visitor->nopol])
+                    ->where('checked_in_at', '>=', $visitor->createdon)
+                    // ->where('checked_in_at', '>=', now()->subHours(24))
+                    ->orderBy('checked_in_at', 'desc')
+                    ->first();
 
-                // // belum pernah cek kendaraan sama sekali pada kedatangan ini
-                // if (!$cekKendaraan) {
-                //     return response()->json([
-                //         'success' => false,
-                //         'message' => 'Tamu ini menggunakan kendaraan dan belum melakukan pengecekan kendaraan masuk & keluar.'
-                //     ]);
-                // }
+                // belum pernah cek kendaraan sama sekali pada kedatangan ini
+                if (!$cekKendaraan) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Tamu ini menggunakan kendaraan dan belum melakukan pengecekan kendaraan masuk & keluar.'
+                    ]);
+                }
 
-                // // sudah cek masuk tapi belum cek keluar
-                // if ($cekKendaraan->checked_in_at && is_null($cekKendaraan->checked_out_at)) {
-                //     return response()->json([
-                //         'success' => false,
-                //         'message' => 'Tamu ini menggunakan kendaraan belum melakukan cek kendaraan keluar.'
-                //     ]);
-                // }
+                // sudah cek masuk tapi belum cek keluar
+                if ($cekKendaraan->checked_in_at && is_null($cekKendaraan->checked_out_at)) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Tamu ini menggunakan kendaraan belum melakukan cek kendaraan keluar.'
+                    ]);
+                }
                 
                 $cekKendaraan = DB::table('ga_cek_kendaraan')
                     ->where('trnvisitorid', $visitor->trnvisitorid)
