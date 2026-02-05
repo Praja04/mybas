@@ -278,32 +278,32 @@ class SupplierFormAjax extends Controller
             }
 
             // validasi apakah kendaraan sudah dilakukan cek kendaraan
-            // $cekKendaraan = DB::table('ga_cek_kendaraan')
-            //     ->whereRaw("
-            //         REPLACE(REPLACE(UPPER(nomor_polisi), ' ', ''), '-', '')
-            //         =
-            //         REPLACE(REPLACE(UPPER(?), ' ', ''), '-', '')
-            //     ", [$visitor->nopol])
-            //     ->where('checked_in_at', '>=', $visitor->createdon)
-            //     // ->where('checked_in_at', '>=', now()->subHours(24))
-            //     ->orderBy('checked_in_at', 'desc')
-            //     ->first();
+            $cekKendaraan = DB::table('ga_cek_kendaraan')
+                ->whereRaw("
+                    REPLACE(REPLACE(UPPER(nomor_polisi), ' ', ''), '-', '')
+                    =
+                    REPLACE(REPLACE(UPPER(?), ' ', ''), '-', '')
+                ", [$visitor->nopol])
+                ->where('checked_in_at', '>=', $visitor->createdon)
+                // ->where('checked_in_at', '>=', now()->subHours(24))
+                ->orderBy('checked_in_at', 'desc')
+                ->first();
 
-            // // belum pernah cek kendaraan sama sekali pada kedatangan ini
-            // if (!$cekKendaraan) {
-            //     return response()->json([
-            //         'success' => false,
-            //         'message' => 'Kendaraan belum melakukan cek kendaraan masuk & keluar pada kedatangan ini.'
-            //     ]);
-            // }
+            // belum pernah cek kendaraan sama sekali pada kedatangan ini
+            if (!$cekKendaraan) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Kendaraan belum melakukan cek kendaraan masuk & keluar pada kedatangan ini.'
+                ]);
+            }
 
-            // // sudah cek masuk tapi belum cek keluar
-            // if ($cekKendaraan->checked_in_at && is_null($cekKendaraan->checked_out_at)) {
-            //     return response()->json([
-            //         'success' => false,
-            //         'message' => 'Kendaraan belum melakukan cek keluar.'
-            //     ]);
-            // }
+            // sudah cek masuk tapi belum cek keluar
+            if ($cekKendaraan->checked_in_at && is_null($cekKendaraan->checked_out_at)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Kendaraan belum melakukan cek keluar.'
+                ]);
+            }
 
             $cekKendaraan = DB::table('ga_cek_kendaraan')
                 ->where('trnvisitorid', $visitor->trnvisitorid)
@@ -710,6 +710,25 @@ class SupplierFormAjax extends Controller
                     'message' => 'Visitor sudah checkout sebelumnya'
                 ], 400);
             }
+
+            // $cekKendaraan = DB::table('ga_cek_kendaraan')
+            //     ->where('trnvisitorid', $visitor->trnvisitorid)
+            //     ->orderBy('checked_in_at', 'desc')
+            //     ->first();
+
+            // if (!$cekKendaraan) {
+            //     return response()->json([
+            //         'success' => false,
+            //         'message' => 'Kendaraan belum melakukan cek kendaraan masuk & keluar.'
+            //     ], 400);
+            // }
+
+            // if ($cekKendaraan->checked_in_at && is_null($cekKendaraan->checked_out_at)) {
+            //     return response()->json([
+            //         'success' => false,
+            //         'message' => 'Kendaraan belum melakukan cek keluar.'
+            //     ], 400);
+            // }
 
             $now = Carbon::now();
 
