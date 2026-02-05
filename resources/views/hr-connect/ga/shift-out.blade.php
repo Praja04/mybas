@@ -20,14 +20,14 @@
                 <label>.</label><br>
                 <button class="btn btn-primary" onclick="tampilkanSemua()">Show All</button>
             </div>
-            <div class="col-6">
+            {{-- <div class="col-6">
                 <label>.</label><br>
                 <button class="btn btn-success" onClick="uploadExcelModal()">Upload Excel</button>
                 &nbsp;&nbsp;
                 <a href="/assets/media/hr_connect/ga_shift_out.xlsx" class="btn btn-info"
                     download="GA - Shift Out.xlsx">Template</a>&nbsp;&nbsp;
                 <button class="btn btn-primary" onClick="ketentuanUploadModal()">Ketentuan Upload</button>
-            </div>
+            </div> --}}
         </div>
         <div class="row">
             <div class="col-lg-12">
@@ -357,6 +357,11 @@
                         $("#btnSubmit").hide();
                     },
                     error: function(xhr, status, error) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'Terjadi kesalahan saat memperbarui data.',
+                        });
                         console.error(xhr.responseText);
                     }
                 })

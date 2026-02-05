@@ -15,14 +15,14 @@
                 <label>.</label><br>
                 <button class="btn btn-primary" onclick="tampilkanSemua()">Show All</button>
             </div>
-            <div class="col-lg-6">
+            {{-- <div class="col-lg-6">
                 <label>.</label><br>
                 <button class="btn btn-success" onClick="uploadExcelModal()">Upload Excel</button>
                 &nbsp;&nbsp;
                 <a href="/assets/media/hr_connect/ga_shift_in.xlsx" download="GA - Shift In.xlsx"
                     class="btn btn-info">Template</a>&nbsp;&nbsp;
                 <button class="btn btn-primary" onClick="ketentuanUploadModal()">Ketentuan Upload</button>
-            </div>
+            </div> --}}
         </div>
         <div class="row">
             <div class="col-lg-12">
@@ -34,10 +34,18 @@
                         <table id="tableAjax" class="table table-bordered" style="width:100%">
                             <thead>
                                 <tr>
-                                    <th style="width: 30%;">Nama</th>
-                                    <th style="width: 20%;">NIK</th>
-                                    <th style="width: 10%;">Loker</th>
-                                    <th style="width: 10%;">ID Card</th>
+                                    <th style="width: 25%;">Nama</th>
+                                    <th style="width: 10%;">NIK</th>
+                                    <th style="width: 13%;">Kategori</th>
+                                    <th style="width: 25%;">
+                                        Loker Baju <br>
+                                        <small class="text-muted">
+                                            <i>
+                                                *Otomatis pilih loker sepatu
+                                            </i>
+                                        </small>
+                                    </th>
+                                    <th style="width: 7%;">ID Card</th>
                                     <th style="width: 10%;">Dept</th>
                                     <th style="width: 10%;">Tgl Join</th>
                                 </tr>
@@ -126,6 +134,9 @@
     <script src="{{ asset('assets/velzon/libs/moment/moment.js') }}"></script>
     <script>
         $(document).ready(function() {
+            const lokersPria = {!! json_encode($lokers_pria->sortBy('no_loker')->values()) !!};
+            const lokersWanita = {!! json_encode($lokers_wanita->sortBy('no_loker')->values()) !!};
+
             let containerPria = {!! json_encode($lokers_pria->toArray()) !!};
             let lokers_pria = containerPria;
 
@@ -194,50 +205,50 @@
                     },
                     {
                         render: function(data, type, row) {
-                            let lokers_wanita = {!! json_encode($lokers_wanita->toArray()) !!};
+                            return `
+                                <select class="js-example-basic-single staff-select" data-id="${row.id}">
+                                    <option value="">-- Pilih --</option>
+                                    <option value="staff">Staff</option>
+                                    <option value="non_staff">Non Staff</option>
+                                    <option value="mitra_kerja">Mitra Kerja</option>
+                                </select>
+                            `;
+                        }
+                    },
+                    {
+                        render: function (data, type, row) {
 
                             let selectBox =
-                                '<select class="js-example-basic-single lokerNo" data-loker="' + row
-                                .id + '">';
+                                '<select class="js-example-basic-single lokerNo" disabled>' +
+                                '<option value="">-- Pilih --</option>';
 
-                            let [selectedLokerPria] = lokers_pria;
+                            let lockers = row.jenis_kelamin === 'L'
+                                ? lokersPria
+                                : lokersWanita;
 
-                            lokers_wanita = lokers_wanita.sort(() => Math.random() - 0.5);
-
-                            if (row.jenis_kelamin === 'L') {
-                                $.each(lokers_pria, function(index, loker) {
-                                    // console.log(loker);
-                                    // selectBox += '<option value="' + loker.id + '">' + loker.kode_blok + ' - ' + loker.no_loker + '</option>';                       
-                                    selectBox +=
-                                        `<option value="${loker.id}" data-kode-area="${loker.kode_area}" data-nik="${row.nik}" data-nama="${row.nama}" data-jk="L" data-divisi="${row.kode_divisi}" data-bagian="${row.kode_bagian}" data-group="${row.kode_group}" data-kodekontrak="${row.kode_kontrak}">${loker.kode_blok} -  ${loker.no_loker}</option>`;
-                                });
-                            } else {
-                                $.each(lokers_wanita, function(index, loker) {
-                                    // selectBox += '<option value="' + loker.id + '">' + loker.kode_blok + ' - ' + loker.no_loker + '</option>';                       
-                                    selectBox +=
-                                        `<option value="${loker.id}" data-kode-area="${loker.kode_area}" data-nik="${row.nik}" data-nama="${row.nama}" data-jk="P" data-divisi="${row.kode_divisi}" data-bagian="${row.kode_bagian}" data-group="${row.kode_group}" data-kodekontrak="${row.kode_kontrak}">${loker.kode_blok} - ${loker.no_loker}</option>`;
-                                });
-                            }
-
-                            lokers_pria = lokers_pria.filter(function(__item) {
-                                return __item.id != selectedLokerPria.id;
-                            });
-
-                            lokers_wanita = lokers_wanita.filter(function(__item) {
-                                return __item.id != lokers_wanita.id;
+                            lockers.forEach(function (loker) {
+                                selectBox += `
+                                    <option value="${loker.id}"
+                                        data-nik="${row.nik}"
+                                        data-nama="${row.nama}"
+                                        data-divisi="${row.kode_bagian}"
+                                        data-jk="${row.jenis_kelamin}"
+                                        data-kode-rak="${loker.kode_rak}"
+                                        data-no-loker="${loker.no_loker}">
+                                        ${loker.kode_rak}-${loker.no_loker}
+                                    </option>`;
                             });
 
                             selectBox += '</select>';
-
                             return selectBox;
                         }
                     },
                     {
                         render: function(data, type, row) {
                             return `
-                <center>
-                    <input type="checkbox" class="check_id_card" value="${row.id}" data-nik="${row.nik}">
-                </center>`;
+                            <center>
+                                <input type="checkbox" class="check_id_card" value="${row.id}" data-nik="${row.nik}">
+                            </center>`;
                         }
                     },
                     {
@@ -254,6 +265,23 @@
             });
 
             $("#btnSubmit").hide();
+
+            $(document).on('change', '.staff-select', function() {
+                let row = $(this).closest('tr');
+                let lokerSelect = row.find('.lokerNo');
+
+                if ($(this).val()) {
+                    lokerSelect.prop('disabled', false);
+                    lokerSelect.find('option:first').text('-- Pilih --');
+                } else {
+                    lokerSelect.prop('disabled', true);
+                    lokerSelect.val('');
+                    lokerSelect.find('option:first').text('-- Pilih --');
+                }
+
+                // refresh select2
+                lokerSelect.trigger('change.select2');
+            });
 
             $(document).on('change', '.check_id_card', function() {
                 $("#btnSubmit").show();
@@ -283,53 +311,79 @@
                 $("#tableAjax tbody input[type=checkbox]:checked").each(function() {
                     let row = $(this).closest('tr');
                     let idCard = $(this).val();
-                    let lokerId = row.find('.lokerNo').val();
-                    let lokerText = row.find('.lokerNo option:selected').text();
-                    let kodeArea = row.find('.lokerNo option:selected').data('kode-area');
                     let nik = row.find('.lokerNo option:selected').data('nik');
                     let nama = row.find('.lokerNo option:selected').data('nama');
-                    let jk = row.find('.lokerNo option:selected').data('jk');
                     let divisi = row.find('.lokerNo option:selected').data('divisi');
-                    let bagian = row.find('.lokerNo option:selected').data('bagian');
-                    let group = row.find('.lokerNo option:selected').data('group');
-                    let kodekontrak = row.find('.lokerNo option:selected').data('kodekontrak');
-                    let [namaLoker, nomorLoker] = lokerText.split(" - ");
+                    let jk = row.find('.lokerNo option:selected').data('jk');
+                    let kodeRak = row.find('.lokerNo option:selected').data('kode-rak');
+                    let noLoker = row.find('.lokerNo option:selected').data('no-loker');
+                    let lokerId = row.find('.lokerNo').val();
+                    let staff = row.find('.staff-select').val();
 
                     dataToSend.push({
                         lokerId: lokerId,
                         idCard: idCard,
-                        namaLoker: namaLoker,
-                        nomorLoker: nomorLoker,
-                        kodeArea: kodeArea,
+                        kodeRak: kodeRak,
+                        noLoker: noLoker,
                         nik: nik,
                         nama: nama,
                         jk: jk,
                         divisi: divisi,
-                        bagian: bagian,
-                        group: group,
-                        kodekontrak: kodekontrak,
+                        staff: staff
                     });
+
+                    console.log({dataToSend});
                 });
 
-                let lokerIds = [];
-                let duplicateFound = false;
+                let lokerMap = {};
+                let errorMessage = null;
 
                 $.each(dataToSend, function(index, data) {
-                    if (lokerIds.includes(data.lokerId)) {
-                        duplicateFound = true;
-                        return false;
+                    console.log({data});
+                    
+                    if (!lokerMap[data.lokerId]) {
+                        lokerMap[data.lokerId] = {
+                            staffTypes: []
+                        };
                     }
-                    lokerIds.push(data.lokerId);
+
+                    lokerMap[data.lokerId].staffTypes.push(data.staff);
                 });
 
-                if (duplicateFound) {
+                // validasi per loker
+                $.each(lokerMap, function(lokerId, info) {
+                    let uniqueTypes = [...new Set(info.staffTypes)];
+
+                    // tidak boleh campur kategori
+                    if (uniqueTypes.length > 1) {
+                        errorMessage = 'Tidak boleh memilih loker yang sama dengan kategori staff yang berbeda.';
+                        return false;
+                    }
+
+                    let type = uniqueTypes[0];
+
+                    // staff max 1 orang
+                    if (type === 'staff' && info.staffTypes.length > 1) {
+                        errorMessage = 'Loker staff hanya boleh dipilih oleh 1 orang.';
+                        return false;
+                    }
+
+                    // non staff / mitra kerja max 2 orang
+                    if ((type === 'non_staff' || type === 'mitra_kerja') && info.staffTypes.length > 2) {
+                        errorMessage = 'Loker non staff / mitra kerja maksimal 2 orang.';
+                        return false;
+                    }
+                });
+
+                if (errorMessage) {
                     Swal.fire({
-                        title: "Error",
+                        title: "Gagal!",
                         icon: "error",
-                        text: "Anda memilih loker yang sama."
+                        text: errorMessage
                     });
 
                     $("#btnSubmit").hide();
+                    return;
                 } else {
                     $.ajax({
                         url: "{{ url('/hr-connect/dept-ga/karyawan-masuk/updateStatus') }}",
@@ -352,7 +406,12 @@
                             $("#btnSubmit").hide();
                         },
                         error: function(xhr, status, error) {
-                            console.error(xhr.responseText);
+                            console.error(xhr.responseJSON.message);
+                            Swal.fire({
+                                title: "Error",
+                                icon: "error",
+                                text: xhr.responseJSON.message || "Terjadi kesalahan saat memproses data."
+                            });
                         }
                     });
                 }

@@ -62,7 +62,7 @@ Route::middleware(['auth', 'rules'])->group(function(){
 				Route::get('/getData', 'HRConnect\GAShiftInController@getData');
 				// Route::get('/updateStatus', 'HRConnect\GAShiftInController@updateStatus');
 				Route::post('/updateStatus', 'HRConnect\GAShiftInController@updateStatus');
-				Route::post('/uploadExcel', 'HRConnect\GAShiftInController@uploadExcel');
+				Route::post('/uploadExcel', 'HRConnect\GAShiftInController@uploadExcel');				
 			});
 
 			// [x] Goodie Bag & APD

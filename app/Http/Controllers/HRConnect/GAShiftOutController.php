@@ -11,6 +11,8 @@ use App\Imports\HRConnect\GaShiftOut;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\Validator;
 use App\Jobs\HRConnect\KaryawanKeluarSelesaiToHR;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class GAShiftOutController extends Controller
 {
@@ -45,7 +47,6 @@ class GAShiftOutController extends Controller
     public function update(Request $req)
     {
         $data = $req->input('data');
-        // dd($data);
         if(!empty($data)){
             // [x] Uncomment ketika selesai testing email 
             foreach ($data as $item) {
@@ -53,10 +54,13 @@ class GAShiftOutController extends Controller
                     $nik = $item['nik'];
                     $alasan_keluar = $item['alasankeluar'];
 
-                    $sebelumnya = \DB::table('loker_master_user')
+                    $sebelumnya = DB::table('loker_master_user')
                         ->where('nik', $nik)->first();
 
-                    if($sebelumnya != null){
+                    $sebelumnya = DB::table('loker_penghuni')
+                        ->where('nik', $nik)->first();
+
+                    if ($sebelumnya != null){
                         $data = [
                             'nik' => $sebelumnya->nik,
                             'no_loker' => $sebelumnya->no_loker,
@@ -68,26 +72,29 @@ class GAShiftOutController extends Controller
                             'jam_pengisi' => date('H:i:s'),
                             'penghuni_sebelumnya' => $sebelumnya->nama,
                             'alasan' => $alasan_keluar,
-                            'kode_area' => $sebelumnya->kode_area,
-                            'kode_blok' => $sebelumnya->kode_blok,
-
+                            'kode_area' => $sebelumnya->kode_area ?? '',
+                            'kode_blok' => $sebelumnya->kode_blok ?? '',
+                            'kode_rak' => $sebelumnya->kode_rak ?? '',
                         ];
     
-                        \DB::table('loker_user_transaksi')->insert($data);
+                        DB::table('loker_user_transaksi')->insert($data);
                         
-                        \DB::table('loker_master_nomer')
-                            ->where([
-                                'kode_blok' => $sebelumnya->kode_blok,
-                                'no_loker' => $sebelumnya->no_loker,
-                                'kode_area' => $sebelumnya->kode_area
-                            ])->update(['status' => 0]);
+                        // DB::table('loker_master_nomer')
+                        //     ->where([
+                        //         'kode_blok' => $sebelumnya->kode_blok,
+                        //         'no_loker' => $sebelumnya->no_loker,
+                        //         'kode_area' => $sebelumnya->kode_area
+                        //     ])->update(['status' => 0]);
     
-                        // Senin tanya ke mas her soal ini!
-                        \DB::table('loker_master_user')->where('nik', $nik)
-                                ->update([
-                                    'nik' => '',
-                                    'nama' => ''
-                                ]); 
+                        // DB::table('loker_master_user')->where('nik', $nik)
+                        //     ->update([
+                        //         'nik' => '',
+                        //         'nama' => ''
+                        //     ]); 
+
+                        DB::transaction(function () use ($nik) {
+                            DB::table('loker_penghuni')->where('nik', $nik)->delete();
+                        });
                     }
 
                     HrKaryawan::where('id', $item['checklistId'])
@@ -140,7 +147,7 @@ class GAShiftOutController extends Controller
 
                 return response()->json(['message' => 'Data berhasil diunggah dan diproses.'], 200);
             } catch (\Exception $e) {
-                \Log::error('Error during file upload: ' . $e->getMessage());
+                Log::error('Error during file upload: ' . $e->getMessage());
 
                 return response()->json(['message' => 'Terjadi kesalahan saat mengimpor data.'], 500);
             }

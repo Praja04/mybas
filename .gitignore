@@ -10,6 +10,8 @@
 /public/e-doc
 /public/pos-security
 /public/uploads
+/public/baioneimage-halosecurity
+/public/webcam-halosecurity
 /storage
 /vendor
 .env

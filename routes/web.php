@@ -632,35 +632,45 @@ Route::group(['middleware' => ['auth', 'rules', 'access_log']], function () {
 
     Route::prefix('loker/')->group(function () {
         Route::get('/', 'LokerController@index');
-        Route::post('/post_user_loker', 'LokerController@post_user_loker');
-        Route::get('cari_blok/{kategori}', 'LokerController@cari_blok');
-        Route::get('cek_loker_kosong', 'LokerController@cek_loker_kosong');
-        Route::get('cari_no_loker/{kode_area}/{kode_blok}', 'LokerController@cari_no_loker');
-        Route::get('cek_penghuni_loker/{no_loker}/{kode_area}/{kode_blok}', 'LokerController@cek_penghuni_loker');
-        Route::get('get_foto_user/{nik}', 'LokerController@get_foto_user');
-        Route::get('tarik_kunci/{kode_loker}/{nik}/{keterangan}/{kode_blok}/{kode_area}', 'LokerController@tarik_kunci');
-        Route::get('tarik_kunci_manual/{no_loker}/{kode_blok}/{kode_area}/{nik}/{keterangan}', 'LokerController@tarik_kunci_manual');
-        Route::get('history_loker/{kategori}', 'LokerController@history_loker');
-        Route::get('history_loker_karyawan/{nik}', 'LokerController@history_loker_karyawan');
-        Route::get('export_history_karyawan/{nik}', 'LokerController@export_history_karyawan');
-        Route::post('pencarian_history_loker', 'LokerController@pencarian_history_loker');
-        Route::get('database/{kategori}', 'LokerController@database');
-        Route::post('import_blok_loker', 'LokerController@import_blok_loker');
-        Route::post('import_loker_user', 'LokerController@import_loker_user');
-        Route::post('post_master_loker', 'LokerController@post_master_loker');
-        Route::get('hapus_master_blok/{id}', 'LokerController@hapus_master_blok');
-        Route::get('export_loker_spesifik/{kode_area}/{tgl_mulai}/{tgl_selesai}', 'LokerController@export_loker_spesifik');
-        Route::get('last_number_loker/{kode_area}/{kode_blok}', 'LokerController@last_number_loker');
-        Route::get('tandai_rusak/{kode_blok}/{kode_area}/{no_loker}', 'LokerController@tandai_rusak');
-        Route::get('sudah_benar/{kode_blok}/{kode_area}/{no_loker}', 'LokerController@sudah_benar');
-        Route::get('edit_loker/{kode_area}', 'LokerController@edit_loker');
+        // Route::get('/old', 'LokerControllerOld@index');
+        // Route::post('/post_user_loker', 'LokerControllerOld@post_user_loker');
+        // Route::get('cari_blok/{kategori}', 'LokerControllerOld@cari_blok');
+        // Route::get('cek_loker_kosong', 'LokerControllerOld@cek_loker_kosong');
+        // Route::get('cari_no_loker/{kode_area}/{kode_blok}', 'LokerControllerOld@cari_no_loker');
+        // Route::get('cek_penghuni_loker/{no_loker}/{kode_area}/{kode_blok}', 'LokerControllerOld@cek_penghuni_loker');
+        // Route::get('get_foto_user/{nik}', 'LokerControllerOld@get_foto_user');
+        // Route::get('tarik_kunci/{kode_loker}/{nik}/{keterangan}/{kode_blok}/{kode_area}', 'LokerControllerOld@tarik_kunci');
+        // Route::get('tarik_kunci_manual/{no_loker}/{kode_blok}/{kode_area}/{nik}/{keterangan}', 'LokerControllerOld@tarik_kunci_manual');
+        // Route::get('history_loker/{kategori}', 'LokerControllerOld@history_loker');
+        // Route::get('history_loker_karyawan/{nik}', 'LokerControllerOld@history_loker_karyawan');
+        // Route::get('export_history_karyawan/{nik}', 'LokerControllerOld@export_history_karyawan');
+        // Route::post('pencarian_history_loker', 'LokerControllerOld@pencarian_history_loker');
+        // Route::get('database/{kategori}', 'LokerControllerOld@database');
+        // Route::post('import_blok_loker', 'LokerControllerOld@import_blok_loker');
+        // Route::post('import_loker_user', 'LokerControllerOld@import_loker_user');
+        // Route::post('post_master_loker', 'LokerControllerOld@post_master_loker');
+        // Route::get('hapus_master_blok/{id}', 'LokerControllerOld@hapus_master_blok');
+        // Route::get('export_loker_spesifik/{kode_area}/{tgl_mulai}/{tgl_selesai}', 'LokerControllerOld@export_loker_spesifik');
+        // Route::get('last_number_loker/{kode_area}/{kode_blok}', 'LokerControllerOld@last_number_loker');
+        // Route::get('tandai_rusak/{kode_blok}/{kode_area}/{no_loker}', 'LokerControllerOld@tandai_rusak');
+        // Route::get('sudah_benar/{kode_blok}/{kode_area}/{no_loker}', 'LokerControllerOld@sudah_benar');
+        // Route::get('edit_loker/{kode_area}', 'LokerControllerOld@edit_loker');
+        // Route::get('export_excel/{kode_area}', 'LokerControllerOld@export_excel');
+        // Route::get('data-karyawan-belum-punya-loker/{jenis_kelamin}', 'LokerControllerOld@dataKaryawanBelumPunyaLoker');
+        // Route::post('data-karyawan-belum-punya-loker/store', 'LokerControllerOld@storeKaryawanBelumPunyaLoker');
+        // Route::get('data-karyawan-keluar-masih-punya-loker', 'LokerControllerOld@dataKaryawanMasihPunyaLoker');
+        // Route::post('data-karyawan-phk/copot', 'LokerControllerOld@copotKaryawanPHK');
 
-        Route::get('export_excel/{kode_area}', 'LokerController@export_excel');
-
-        Route::get('data-karyawan-belum-punya-loker/{jenis_kelamin}', 'LokerController@dataKaryawanBelumPunyaLoker');
-        Route::post('data-karyawan-belum-punya-loker/store', 'LokerController@storeKaryawanBelumPunyaLoker');
-        Route::get('data-karyawan-keluar-masih-punya-loker', 'LokerController@dataKaryawanMasihPunyaLoker');
-        Route::post('data-karyawan-phk/copot', 'LokerController@copotKaryawanPHK');
+        Route::get('{gender}/blok', 'LokerController@getBlokByGender')->name('loker.blok');
+        Route::get('{gender}/blok/{blok}', 'LokerController@getNomorByBlok')->name('loker.blok.nomor');
+        Route::get('{gender}/blok/{blok}/nomor/{no_loker}', 'LokerController@getPenghuni')->name('loker.blok.penghuni');
+        Route::get('{gender}/blok/{blok}/nomor/{no_loker}/detail', 'LokerController@getDetailLoker')->name('loker.blok.detail');
+        Route::get('/foto/{nik}', 'LokerController@getFoto')->name('loker.foto');
+        Route::post('/tandai-rusak', 'LokerController@tandaiRusak')->name('loker.tandai-rusak');
+        Route::post('/tandai-aktif', 'LokerController@tandaiAktif')->name('loker.tandai-aktif');
+        Route::post('/tarik-kunci', 'LokerController@tarikKunci')->name('loker.tarik-kunci');
+        Route::get('/available', 'LokerController@getAvailableLoker')->name('loker.available');
+        Route::post('/import', 'HRConnect\LokerMasterUserController@import');
     });
 
     Route::group(['middleware' => ['auth', 'rules', 'access_log']], function () {

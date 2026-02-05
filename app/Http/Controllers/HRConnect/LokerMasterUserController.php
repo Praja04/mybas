@@ -4,12 +4,25 @@ namespace App\Http\Controllers\HRConnect;
 
 use App\Department;
 use App\Http\Controllers\Controller;
+use App\Imports\LokerUserImportNew;
+use App\Services\LokerAssignmentService;
+use App\Services\LokerCapacityService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Facades\Excel;
 use Yajra\DataTables\DataTables;
 
 class LokerMasterUserController extends Controller
 {
+
+    protected $capacityService;
+
+    public function __construct(LokerCapacityService $capacityService)
+    {
+        $this->capacityService = $capacityService;
+    }
+
+
     public function index()
     {
         $departments = Department::where('status', '1')->get();
@@ -28,7 +41,7 @@ class LokerMasterUserController extends Controller
                 DB::raw("
                     MAX(CASE
                         WHEN kode_rak IN ('PB','WB')
-                        THEN no_loker
+                        THEN CAST(no_loker AS UNSIGNED)
                     END) AS no_loker
                 "),
                 DB::raw("
@@ -52,9 +65,14 @@ class LokerMasterUserController extends Controller
 
             ->groupBy('nik', 'nama', 'divisi', 'jk', 'staff');
 
-        $query = DB::query()->fromSub($subQuery, 'locker_view');
+        $query = DB::query()
+            ->fromSub($subQuery, 'locker_view')
+            ->orderBy('no_loker', 'asc');
 
         return DataTables::of($query)
+            ->orderColumn('loker_baju', function ($q, $order) {
+                $q->orderBy('no_loker', $order);
+            })
             ->addColumn('action', function ($row) {
                 return '
                     <button class="btn btn-sm btn-success btnEdit" data-nik="' . $row->nik . '">Edit</button>
@@ -76,110 +94,14 @@ class LokerMasterUserController extends Controller
             'staff' => 'required|in:staff,non_staff,mitra_kerja',
         ]);
 
-        $kodeRak = $request->jk === 'L' ? 'PB' : 'WB';
-        $pairRak = $this->pairRak($kodeRak);
-        $rakDicek = array_filter([$kodeRak, $pairRak]);
-
-        try {
-            DB::transaction(function () use ($request, $kodeRak, $pairRak, $rakDicek) {
-
-                // Cegah karyawan punya lebih dari 1 loker aktif
-                $hasActive = DB::table('loker_penghuni')
-                    ->where('nik', $request->nik)
-                    ->where('is_active', 'Y')
-                    ->lockForUpdate()
-                    ->exists();
-
-                if ($hasActive) {
-                    throw new \Exception("NIK {$request->nik} sudah memiliki loker aktif.");
-                }
-
-                // Cek kapasitas dan tipe penghuni loker
-                $rows = DB::table('loker_penghuni')
-                    ->select('staff', DB::raw('COUNT(DISTINCT nik) as cnt'))
-                    ->whereIn('kode_rak', $rakDicek)
-                    ->where('no_loker', (int) $request->no_loker)
-                    ->groupBy('staff')
-                    ->lockForUpdate()
-                    ->get();
-
-                // tidak boleh campur kategori
-                if ($rows->count() > 1) {
-                    throw new \Exception("Loker {$kodeRak}-{$request->no_loker} tidak valid karena terdapat campuran kategori.");
-                }
-
-                $existingType  = $rows->first()->staff ?? null;
-                $existingCount = (int) ($rows->first()->cnt ?? 0);
-
-                // cek tipe penghuni 
-                if ($existingType !== null && $existingType !== $request->staff) {
-                    $staffLabel = ucwords(str_replace('_', ' ', $existingType));
-                    throw new \Exception("Loker {$kodeRak}-{$request->no_loker} sudah dipakai oleh {$staffLabel}.");
-                }
-
-                // cek kapasitas berdasarkan tipe penghuni
-                switch ($request->staff) {
-                    case 'staff':
-                        $maxCapacity = 1;
-                        break;
-                    case 'non_staff':
-                    case 'mitra_kerja':
-                        $maxCapacity = 2;
-                        break;
-                    default:
-                        throw new \Exception('Kategori karyawan tidak valid.');
-                }
-
-                if ($existingCount >= $maxCapacity) {
-                    throw new \Exception("Loker {$kodeRak}-{$request->no_loker} sudah penuh.");
-                }
-
-                // Insert rak utama
-                DB::table('loker_penghuni')->insert([
-                    'nik' => $request->nik,
-                    'nama' => $request->nama,
-                    'divisi' => $request->divisi,
-                    'jk' => $request->jk,
-                    'kode_rak' => $kodeRak,
-                    'no_loker' => (int) $request->no_loker,
-                    'staff' => $request->staff,
-                    'is_active' => 'Y',
-                    'tgl_masuk' => now(),
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-
-                // Insert rak pasangan (jika ada)
-                if ($pairRak) {
-                    DB::table('loker_penghuni')->insert([
-                        'nik' => $request->nik,
-                        'nama' => $request->nama,
-                        'divisi' => $request->divisi,
-                        'jk' => $request->jk,
-                        'kode_rak' => $pairRak,
-                        'no_loker' => (int) $request->no_loker,
-                        'staff' => $request->staff,
-                        'is_active' => 'Y',
-                        'tgl_masuk' => now(),
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ]);
-                }
-            });
-
-            return response()->json([
-                'status' => 'success',
-                'message' => 'Data loker penghuni berhasil ditambahkan',
-            ]);
-        } catch (\Throwable $e) {
-            return response()->json(
-                [
-                    'status' => 'error',
-                    'message' => $e->getMessage(),
-                ],
-                422,
-            );
-        }
+        app(LokerAssignmentService::class)->assign([
+            'nik' => $request->nik,
+            'nama' => $request->nama,
+            'divisi' => $request->divisi,
+            'jk' => $request->jk,
+            'no_loker' => $request->no_loker,
+            'staff' => $request->staff,
+        ]);
     }
 
     public function show($id)
@@ -374,5 +296,30 @@ class LokerMasterUserController extends Controller
         ];
 
         return $map[$kodeRak] ?? null;
+    }
+
+    public function import(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|mimes:xlsx,xls'
+        ]);
+
+        try {
+            Excel::import(
+                new LokerUserImportNew($this),
+                $request->file('file')
+            );
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Import data loker berhasil'
+            ]);
+
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Error import loker: ' . $e->getMessage()
+            ], 422);
+        }
     }
 }

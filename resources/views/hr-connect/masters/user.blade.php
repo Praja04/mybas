@@ -4,6 +4,14 @@
     <div class="container-fluid">
         <button id="btnStore" class="btn btn-primary mb-3">Tambah</button>
 
+        <div class="p-2">
+            <form id="importForm" enctype="multipart/form-data">
+                @csrf
+                <input type="file" name="file" accept=".xlsx,.xls" required>
+                <button class="btn btn-success">Import Excel</button>
+            </form>
+        </div>
+
         <div class="card p-4 table-responsive">
             <ul class="nav nav-tabs mb-3" id="jkTabs">
                 <li class="nav-item">
@@ -337,6 +345,34 @@
                 table.ajax.reload();
             });
 
+            $('#importForm').on('submit', function(e) {
+                e.preventDefault();
+
+                let formData = new FormData(this);
+
+                $.ajax({
+                    url: '/loker/import',
+                    method: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function(res) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Import Selesai',
+                            text: res.message
+                        });
+                        table.ajax.reload();
+                    },
+                    error: function(xhr) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Import Gagal',
+                            text: xhr.responseJSON?.message || 'Terjadi kesalahan saat import data'
+                        });
+                    }
+                });
+            });
         });
     </script>
 @endpush

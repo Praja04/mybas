@@ -24,7 +24,7 @@
                                 <div class="card-header">
                                     <div class="card-toolbar"></div>
                                       <div class="card-toolbar">
-                                        <a href="{{ url('loker/export_loker_spesifik/'.$result[0]->kode_area.'/'.$tgl_mulai.'/'.$tgl_selesai) }}" class="btn btn-sm"  style="background-color: rgb(143, 238, 0)"><i class="fas fa-file-excel text-dark"></i> Export To Excel </a>
+                                        {{-- <a href="{{ url('loker/export_loker_spesifik/'.$result[0]->kode_area.'/'.$tgl_mulai.'/'.$tgl_selesai) }}" class="btn btn-sm"  style="background-color: rgb(143, 238, 0)"><i class="fas fa-file-excel text-dark"></i> Export To Excel </a> --}}
                                     </div>
                                 </div>
                                 <form action="{{ url('loker/pencarian_history_loker')}}" method="post">
