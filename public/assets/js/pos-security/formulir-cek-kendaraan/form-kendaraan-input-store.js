@@ -16,22 +16,18 @@ $(document).ready(function () {
         let valid = true;
         let firstEmptyLabel = "";
 
-        $("#fotoSection input[required]").each(function () {
-            const rawValue = $(this).val();
-            let photos = [];
+        $("#fotoSection .foto-slot").each(function () {
+            const key = $(this).data("key");
+            const isRequired = $(this).find("input[required]").length > 0;
 
-            try {
-                photos = JSON.parse(rawValue || "[]");
-            } catch (e) {
-                photos = [];
-            }
+            if (!isRequired) return;
 
-            // validasi foto kosong
+            const photos = photoStore[key] || [];
+
             if (!Array.isArray(photos) || photos.length === 0) {
                 valid = false;
 
                 const label = $(this)
-                    .closest(".foto-slot")
                     .find("label")
                     .clone()
                     .children()
@@ -41,7 +37,6 @@ $(document).ready(function () {
                     .trim();
 
                 firstEmptyLabel = label || "Foto";
-
                 return false;
             }
         });
@@ -73,8 +68,12 @@ $(document).ready(function () {
             data: formData,
             processData: false,
             contentType: false,
-            success: function (response) {
+            success: async function (response) {
                 if (response.success) {
+                    if (photoSessionId && window.IDBDraft) {
+                        await window.IDBDraft.deleteDraft(photoSessionId);
+                    }
+                    
                     photoStore = {};
                     tempPhotos = [];
                     activePhotoKey = null;
@@ -180,18 +179,20 @@ $(document).ready(function () {
 
                 let message = "Terjadi kesalahan. Silakan coba lagi.";
 
-                // Koneksi putus / request gagal kirim
-                if (!navigator.onLine || status === "error") {
-                    message = "Koneksi internet terputus. Silakan coba lagi.";
+                if (xhr.status === 0) {
+                    message = "Koneksi internet terputus. Silakan coba lagi";
                 }
-                // timeout
                 else if (status === "timeout") {
                     message = "Koneksi terlalu lambat. Silakan coba lagi.";
                 }
-
-                // 409: conflict
-                if (xhr.status === 409 && xhr.responseJSON?.message) {
+                else if (
+                    [422, 409, 404].includes(xhr.status) &&
+                    xhr.responseJSON?.message
+                ) {
                     message = xhr.responseJSON.message;
+                }
+                else if (xhr.status >= 500) {
+                    message = "Terjadi kesalahan pada server. Silakan coba lagi.";
                 }
 
                 Swal.fire({

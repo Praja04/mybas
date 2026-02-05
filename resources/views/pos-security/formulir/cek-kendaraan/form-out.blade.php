@@ -243,6 +243,7 @@
 @push('scripts')
     <script type="module" src="{{ asset('assets/js/pos-security/formulir-cek-kendaraan/cek-kendaraan-out-table.js') }}">
     </script>
+    <script src="{{ asset('assets/js/pos-security/formulir-cek-kendaraan/indexeddb-helper.js') }}"></script>
     <script src="{{ asset('assets/js/pos-security/formulir-cek-kendaraan/form-kendaraan-out.js') }}"></script>
     <script src="{{ asset('assets/js/pos-security/formulir-cek-kendaraan/form-kendaraan-out-store.js') }}"></script>
     <script src="{{ asset('assets/js/pos-security/formulir-cek-kendaraan/foto-config.js') }}"></script>

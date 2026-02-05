@@ -73,7 +73,11 @@ $(document).ready(function () {
             data: formData,
             processData: false,
             contentType: false,
-            success: function (response) {
+            success: async function (response) {
+                if (photoSessionId && window.IDBDraft) {
+                    await window.IDBDraft.deleteDraft(photoSessionId);
+                }
+
                 if (response.success) {
                     photoStore = {};
                     tempPhotos = [];
@@ -174,23 +178,20 @@ $(document).ready(function () {
 
                 let message = "Terjadi kesalahan. Silakan coba lagi.";
 
-                 // Koneksi putus / request gagal kirim
-                if (!navigator.onLine || status === "error") {
-                    message = "Koneksi internet terputus. Silakan coba lagi.";
+                if (xhr.status === 0) {
+                    message = "Koneksi internet terputus. Silakan coba lagi";
                 }
-                // timeout
                 else if (status === "timeout") {
                     message = "Koneksi terlalu lambat. Silakan coba lagi.";
                 }
-
-                // 409: conflict
-                if (xhr.status === 409 && xhr.responseJSON?.message) {
+                else if (
+                    [422, 409, 404].includes(xhr.status) &&
+                    xhr.responseJSON?.message
+                ) {
                     message = xhr.responseJSON.message;
                 }
-
-                // 404: not found
-                else if (xhr.status === 404 && xhr.responseJSON?.message) {
-                    message = xhr.responseJSON.message;
+                else if (xhr.status >= 500) {
+                    message = "Terjadi kesalahan pada server. Silakan coba lagi.";
                 }
 
                 Swal.fire({

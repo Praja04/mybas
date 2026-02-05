@@ -11,9 +11,9 @@
     );
 
     let activePhotoKey = null;
-    let photoStore = {};
+    window.photoStore = {};
     let tempPhotos = [];
-    let photoSessionId = null; 
+    window.photoSessionId = null; 
 
     window.setActivePhotoKey = function (value) {
         activePhotoKey = value;
@@ -102,7 +102,7 @@
         }
     }
 
-    function saveCapture() {
+    async function saveCapture() {
         if (!activePhotoKey || tempPhotos.length === 0) {
             Swal.fire({
                 icon: "warning",
@@ -113,6 +113,7 @@
         }
 
         photoStore[activePhotoKey].push(...tempPhotos);
+        await window.IDBDraft.saveDraft(collectDraftData());
 
         renderPhotoPreview(activePhotoKey);
         updateHiddenInput(activePhotoKey);
@@ -164,6 +165,8 @@
             });
 
             modalElement.addEventListener("hidden.bs.modal", () => {
+                tempPhotos = [];
+                activePhotoKey = null;
                 resetCameraModal();
             });
         }
@@ -201,15 +204,31 @@
         const $otherTruckContainer = $("#otherTruckContainer");
         const $otherTruckInput = $("#otherTruckType");
 
+        // ==============================
+        // KONFIGURASI DROPDOWN JENIS TRUK
+        // ==============================
+        // ⚠️ PENTING:
+        // - Object ini HANYA UNTUK DROPDOWN UI
+        // - Label foto dan kewajiban foto TIDAK berasal dari sini
+        // - Label foto berasal dari window.fotoConfig (foto-config.js)
+        //
+        // 🚫 JANGAN:
+        // - Mengubah value (string) yang sudah ada
+        //   karena value ini dipakai sebagai KEY ke fotoConfig
+        //
+        // ✅ BOLEH:
+        // - Mengubah text (label tampilan dropdown)
+        // - Menambah opsi BARU (tambahkan juga label fotonya di fotoConfig)        
+        
         const options = {
             LIQUID: [
                 {
                     value: "TRUK MUAT GULA CAIR",
-                    text: "Truk Muat Gula Cair (Glukosa)",
+                    text: "Truk Glukosa",
                 },
                 {
                     value: "FRUKTOSA",
-                    text: "Truk Muat Fruktosa",
+                    text: "Truk Fruktosa",
                 },
                 {
                     value: "LAINNYA (LIQUID)",
@@ -223,11 +242,11 @@
                 },
                 {
                     value: "TRUK BONGKAR FINISH GOOD",
-                    text: "Truk BONGKAR Finish Good (WFG)",
+                    text: "Truk Bongkar Finish Good (WFG)",
                 },
                 {
                     value: "TRUK MUAT FINISH GOOD",
-                    text: "Truk MUAT Finish Good (WFG)",
+                    text: "Truk Bongkar Finish Good (WFG)",
                 },
                 {
                     value: "MOBIL SPAREPART",
@@ -448,6 +467,52 @@
         $("#card-nama-supir").text(nama_supir);
         $("#card-perusahaan").text(company);
 
+        setStep("form");
+        resetAlertFoto();
+
+        (async () => {
+            const draft = await window.IDBDraft.getDraft(trnvisitorid);
+            if (!draft) return;
+
+            // restore input
+            $("#nama_petugas").val(draft.nama_petugas);
+            $("#muatanType").val(draft.muatan_type).trigger("change");
+
+            setTimeout(() => {
+                $("#truckType").val(draft.truck_type).trigger("change");
+
+                photoStore = draft.photos || {};
+
+                setTimeout(() => {
+                    Object.keys(photoStore).forEach((key) => {
+                        renderPhotoPreview(key);
+                        updateHiddenInput(key);
+                    });
+                }, 100);
+
+                $("#otherTruckType").val(draft.other_truck_type);
+            }, 300);
+
+            const lastSaved = draft.updatedAt
+                ? formatTime(draft.updatedAt)
+                : "waktu tidak diketahui";
+
+            Swal.fire({
+                icon: "info",
+                title: "Draft ditemukan",
+                html: `
+                    <div>
+                        Data pengecekan sebelumnya dipulihkan.<br>
+                        <small class="text-muted">
+                            Terakhir disimpan: <b>${lastSaved}</b>
+                        </small>
+                    </div>
+                `,
+                timer: 2500,
+                showConfirmButton: false,
+            });
+        })();
+
         const target = document.getElementById("section-pemeriksaan");
         if (target) {
             target.scrollIntoView({
@@ -455,9 +520,6 @@
                 block: "start",
             });
         }
-
-        setStep("form");
-        resetAlertFoto();
     };
 
     window.backToTable = function () {
@@ -498,16 +560,20 @@
         });
     }
 
-    window.removePhoto = function (key, index) {
+    window.removePhoto = async function (key, index) {
         photoStore[key].splice(index, 1);
         renderPhotoPreview(key);
         updateHiddenInput(key);
+
+        if (photoSessionId) {
+            await window.IDBDraft.saveDraft(collectDraftData());
+        }
     };
 
     function updateHiddenInput(key) {
         const input = document.getElementById(`input-${key}`);
         if (input) {
-            input.value = JSON.stringify(photoStore[key]);
+            input.value = JSON.stringify(photoStore[key] || []);
             input.dispatchEvent(new Event("change"));
         }
     }
@@ -544,5 +610,44 @@
         const ul = alertBox.querySelector("ul");
         ul.innerHTML = "";
         alertBox.classList.add("d-none");
+    }
+
+    function collectDraftData() {
+        return {
+            sessionId: photoSessionId, // trnvisitorid
+            nomor_polisi: $("#nomor-polisi").val(),
+            nama_supir: $("#nama-supir").val(),
+            company: $("#company").val(),
+
+            nama_petugas: $("#nama_petugas").val(),
+            muatan_type: $("#muatanType").val(),
+            truck_type: $("#truckType").val(),
+            other_truck_type: $("#otherTruckType").val() || null,
+
+            photos: structuredClone(photoStore),
+
+            updatedAt: Date.now(), 
+        };
+    }
+
+    let draftTimer;
+    $("#cekKendaraanForm").on("input change", function () {
+        if (!photoSessionId) return;
+
+        clearTimeout(draftTimer);
+        draftTimer = setTimeout(() => {
+            window.IDBDraft.saveDraft(collectDraftData());
+        }, 500);
+    });
+
+    function formatTime(ts) {
+        const d = new Date(ts);
+        return d.toLocaleString("id-ID", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+        });
     }
 })();

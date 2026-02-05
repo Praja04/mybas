@@ -156,7 +156,7 @@ class CekKendaraanFormAjax extends Controller
             'muatan_type'   => 'required|string|max:50',
             'truck_type'    => 'required|string|max:50',
             'otherTruckType' => 'nullable|string|max:50',
-            // 'foto_in'   => 'required|array|min:1',
+            'photos'   => 'required',
         ], [
             'nama_supir.required'   => 'Nama supir harus diisi',
             'company.required'      => 'Nama perusahaan harus diisi',
@@ -164,12 +164,13 @@ class CekKendaraanFormAjax extends Controller
             'nama_petugas.required' => 'Nama petugas wajib diisi',
             'muatan_type.required'  => 'Jenis muatan wajib diisi',
             'truck_type.required'   => 'Jenis truk wajib diisi',
-            // 'foto_in.required' => 'Minimal 1 foto kendaraan wajib diambil',
+            'photos.required' => 'Foto kendaraan tidak terdeteksi',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
-                'message' => 'Validasi gagal',
+                'success' => false,
+                'message' => $validator->errors()->first(),
                 'errors'  => $validator->errors()
             ], 422);
         }
@@ -264,17 +265,18 @@ class CekKendaraanFormAjax extends Controller
         $validator = Validator::make($request->all(), [
             'trncekid'      => 'required|exists:ga_cek_kendaraan,trncekid',
             'nama_petugas'  => 'required|string|max:100',
-            // 'foto_out'   => 'required|array|min:1',
+            'photos'   => 'required'
 
         ], [
             'trncekid.required' => 'Data cek kendaraan tidak valid',
             'nama_petugas.required'     => 'Nama petugas wajib diisi',
-            // 'foto_out.required' => 'Minimal 1 foto kendaraan wajib diambil',
+            'photos.required' => 'Foto kendaraan tidak terdeteksi',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
+                'message' => $validator->errors()->first(),
                 'errors'  => $validator->errors()
             ], 422);
         }

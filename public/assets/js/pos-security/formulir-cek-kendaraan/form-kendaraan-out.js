@@ -11,9 +11,9 @@
     );
 
     let activePhotoKey = null;
-    let photoStore = {};
+    window.photoStore = {};
     let tempPhotos = [];
-    let photoSessionId = null; 
+    window.photoSessionId = null; 
 
     // window.setActivePhotoKey = function (value) {
     //     activePhotoKey = value;
@@ -102,7 +102,7 @@
         }
     }
 
-    function saveCaptureOut() {
+    async function saveCaptureOut() {
         if (!activePhotoKey || tempPhotos.length === 0) {
             Swal.fire({
                 icon: "warning",
@@ -113,6 +113,7 @@
         }
 
         photoStore[activePhotoKey].push(...tempPhotos);
+        await window.IDBDraft.saveDraft(collectDraftDataOut());
 
         renderPhotoPreviewOut(activePhotoKey);
         updateHiddenInputOut(activePhotoKey);
@@ -192,7 +193,7 @@
                                 </div>
 
                                 <button type="button"
-                                    class="btn btn-sm btn-primary w-100 open-camera"
+                                    class="btn btn-sm btn-primary w-100 open-camera-out"
                                     data-key="${key}"
                                     data-bs-toggle="modal"
                                     data-bs-target="#myModalOut">
@@ -221,6 +222,8 @@
             });
 
             modalElement.addEventListener("hidden.bs.modal", () => {
+                tempPhotos = [];
+                activePhotoKey = null;
                 resetCameraModal();
             });
         }
@@ -263,7 +266,7 @@
     });
 
     // slot handler
-    $(document).on("click", ".open-camera", function () {
+    $(document).on("click", ".open-camera-out", function () {
         activePhotoKey = $(this).data("key");
         // setActivePhotoKey($(this).data("key"));
         if (!photoStore[activePhotoKey]) {
@@ -354,8 +357,6 @@
             $("#formWrapperOut").fadeIn();
             $("#headerFormOut").fadeIn();
 
-            setStepOut("form");
-
             $("#cekKendaraanFormOut")[0].reset();
             $("#fotoSectionOut").html("");
 
@@ -371,7 +372,45 @@
                 truck_type + (truck_type_other ? ` (${truck_type_other})` : "")
             );
 
+            setStepOut("form");
             renderFotoSectionOut(truck_type);
+
+            (async () => {
+                const draft = await window.IDBDraft.getDraft(trnvisitorid);
+                if (!draft) return;
+
+                // restore nama petugas
+                $("#nama_petugas-out").val(draft.nama_petugas_out);
+
+                // restore foto
+                photoStore = draft.photos || {};
+                
+                // renderFotoSectionOut(truck_type);
+
+                Object.keys(photoStore).forEach((key) => {
+                    renderPhotoPreviewOut(key); 
+                    updateHiddenInputOut(key);
+                });
+
+                const lastSaved = draft.updatedAt
+                    ? formatTime(draft.updatedAt)
+                    : "waktu tidak diketahui";
+
+                Swal.fire({
+                    icon: "info",
+                    title: "Draft ditemukan",
+                    html: `
+                        <div>
+                            Data pengecekan sebelumnya dipulihkan<br>
+                            <small class="text-muted">
+                                Terakhir disimpan: <b>${lastSaved}</b>
+                            </small>
+                        </div>
+                    `,
+                    timer: 2500,
+                    showConfirmButton: false,
+                });
+            })();
         }
     };
 
@@ -413,10 +452,15 @@
         });
     }
 
-    window.removePhotoOut = function (key, index) {
+    window.removePhotoOut = async function (key, index) {
         photoStore[key].splice(index, 1);
         renderPhotoPreviewOut(key);
         updateHiddenInputOut(key);
+
+        if (photoSessionId) {
+            await window.IDBDraft.saveDraft(collectDraftDataOut());
+        }
+
     };
 
     function updateHiddenInputOut(key) {
@@ -451,4 +495,35 @@
             alertBox.classList.add("d-none");
         }
     }
+
+    function collectDraftDataOut() {
+        return {
+            sessionId: photoSessionId,
+            nama_petugas_out: $("#nama_petugas-out").val(),
+            photos: structuredClone(photoStore),
+            updatedAt: Date.now(),
+        };
+    }
+
+    let draftTimer;
+    $("#cekKendaraanFormOut").on("input change", function () {
+        if (!photoSessionId) return;
+
+        clearTimeout(draftTimer);
+        draftTimer = setTimeout(() => {
+            window.IDBDraft.saveDraft(collectDraftDataOut());
+        }, 500);
+    });
+
+    function formatTime(ts) {
+        const d = new Date(ts);
+        return d.toLocaleString("id-ID", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+        });
+    }
+
 })();
