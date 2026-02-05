@@ -3,6 +3,16 @@ $(document).ready(function () {
     $("#cekKendaraanFormOut").on("submit", function (e) {
         e.preventDefault();
 
+        if (!navigator.onLine) {
+            Swal.fire({
+                icon: "error",
+                title: "Koneksi Internet Terputus",
+                text: "Periksa koneksi internet Anda lalu coba kembali.",
+                confirmButtonText: "OK",
+            });
+            return false;
+        }
+
         let valid = true;
         let firstEmptyLabel = "";
 
@@ -159,10 +169,19 @@ $(document).ready(function () {
                     );
             },
 
-            error: function (xhr) {
+            error: function (xhr, status) {
                 console.log(xhr.responseJSON?.message);
 
                 let message = "Terjadi kesalahan. Silakan coba lagi.";
+
+                 // Koneksi putus / request gagal kirim
+                if (!navigator.onLine || status === "error") {
+                    message = "Koneksi internet terputus. Silakan coba lagi.";
+                }
+                // timeout
+                else if (status === "timeout") {
+                    message = "Koneksi terlalu lambat. Silakan coba lagi.";
+                }
 
                 // 409: conflict
                 if (xhr.status === 409 && xhr.responseJSON?.message) {
