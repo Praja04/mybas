@@ -104,7 +104,7 @@
                                                     <strong>Status Cek Kendaraan:</strong>
                                                     <span id="vehicleCheckBadge" class="badge bg-secondary fs-5 px-4 py-2">-</span>
                                                 </li> --}}
-                                                <li class="mt-2">
+                                                <li class="mt-2 d-none" id="vehicleCheckWrapper">
                                                     <strong>Status Cek Kendaraan:</strong>
                                                     <div class="mt-2">
                                                         <span id="vehicleCheckBadge"

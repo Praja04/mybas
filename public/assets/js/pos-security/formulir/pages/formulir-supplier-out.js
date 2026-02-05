@@ -138,31 +138,46 @@ function searchVisitorData(keyword) {
                 // document.getElementById("visitorGateLineIdOut").innerText =
                 //     response.data.gatelineidout || "-";
 
+                const vehicleWrapper = document.getElementById("vehicleCheckWrapper");
                 const badge = document.getElementById("vehicleCheckBadge");
+                const isSupir =
+                (response.data.keterangan || "")
+                    .toString()
+                    .trim()
+                    .toUpperCase() === "SUPIR";
 
-                if (response.vehicle_check) {
-                    badge.className = "badge text-white";
+                if (isSupir){
+                    vehicleWrapper.classList.remove("d-none");
 
-                    switch (response.vehicle_check.status) {
-                        case "COMPLETE":
-                            badge.textContent = "LENGKAP";
-                            badge.classList.add("bg-success");
-                            break;
-
-                        case "IN_ONLY":
-                            badge.textContent = "BELUM CEK KELUAR";
-                            badge.classList.add("bg-warning");
-                            break;
-
-                        case "NOT_CHECKED":
-                            badge.textContent = "BELUM CEK MASUK";
-                            badge.classList.add("bg-danger");
-                            break;
-
-                        default:
-                            badge.textContent = "-";
-                            badge.classList.add("bg-secondary");
+                    if (response.vehicle_check) {
+                        badge.className = "badge text-white";
+    
+                        switch (response.vehicle_check.status) {
+                            case "COMPLETE":
+                                badge.textContent = "LENGKAP";
+                                badge.classList.add("bg-success");
+                                break;
+    
+                            case "IN_ONLY":
+                                badge.textContent = "BELUM CEK KELUAR";
+                                badge.classList.add("bg-warning");
+                                break;
+    
+                            case "NOT_CHECKED":
+                                badge.textContent = "BELUM CEK MASUK";
+                                badge.classList.add("bg-danger");
+                                break;
+    
+                            default:
+                                badge.textContent = "-";
+                                badge.classList.add("bg-secondary");
+                        }
                     }
+                } else {
+                    // bukan supir → sembunyikan
+                    vehicleWrapper.classList.add("d-none");
+                    badge.textContent = "";
+                    badge.className = "badge bg-secondary";
                 }
 
                 // Foto KTP
