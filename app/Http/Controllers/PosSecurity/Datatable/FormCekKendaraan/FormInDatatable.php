@@ -113,13 +113,11 @@ class FormInDatatable extends Controller
                 return '
                     <button 
                         type="button"
-                        class="btn btn-sm btn-primary"
-                        onclick="openMainForm(
-                            \'' . $item->trnvisitorid . '\',
-                            \'' . e($item->nomor_polisi) . '\',
-                            \'' . e($item->namavisitor) . '\',
-                            \'' . e($item->namacomp) . '\'
-                        )">
+                        class="btn btn-sm btn-primary open-main-form"
+                        data-trnvisitorid="' . e($item->trnvisitorid) . '"
+                        data-nomor-polisi="' . e($item->nomor_polisi) . '"
+                        data-nama-supir="' . e($item->namavisitor) . '"
+                        data-company="' . e($item->namacomp) . '">
                             Lakukan Cek Masuk
                     </button>
                 ';

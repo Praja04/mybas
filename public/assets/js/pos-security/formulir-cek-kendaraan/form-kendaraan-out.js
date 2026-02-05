@@ -526,4 +526,19 @@
         });
     }
 
+    $(document).on("click", ".open-form-out", function () {
+        const $btn = $(this);
+
+        openFormOut(
+            $btn.data("trncekid"),
+            $btn.data("trnvisitorid"),
+            $btn.data("nomor-polisi"),
+            $btn.data("nama-supir"),
+            $btn.data("company"),
+            $btn.data("muatan-type"),
+            $btn.data("truck-type"),
+            $btn.data("truck-type-other"),
+            $btn.data("checked-in-at")
+        );
+    });
 })();

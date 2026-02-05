@@ -650,4 +650,15 @@
             minute: "2-digit",
         });
     }
+
+    $(document).on("click", ".open-main-form", function () {
+        const $btn = $(this);
+
+        openMainForm(
+            $btn.data("trnvisitorid"),
+            $btn.data("nomor-polisi"),
+            $btn.data("nama-supir"),
+            $btn.data("company")
+        );
+    });
 })();

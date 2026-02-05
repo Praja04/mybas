@@ -108,19 +108,18 @@ class FormOutDatatable extends Controller
                 return '
                     <button 
                         type="button"
-                        class="btn btn-sm btn-primary"
-                        onclick="openFormOut(
-                            \'' . $item->trncekid . '\',
-                            \'' . $item->trnvisitorid . '\',
-                            \'' . e($item->nomor_polisi) . '\',
-                            \'' . e($item->namavisitor) . '\',
-                            \'' . e($item->namacomp) . '\',
-                            \'' . e($item->muatan_type) . '\',
-                            \'' . e($item->truck_type) . '\',
-                            \'' . e($item->truck_type_other ?? null) . '\',
-                            \'' . e($item->checked_in_at) . '\',
-                        )">
-                            Lakukan Cek Keluar
+                        class="btn btn-sm btn-primary open-form-out"
+                        data-trncekid="' . e($item->trncekid) . '"
+                        data-trnvisitorid="' . e($item->trnvisitorid) . '"
+                        data-nomor-polisi="' . e($item->nomor_polisi) . '"
+                        data-nama-supir="' . e($item->namavisitor) . '"
+                        data-company="' . e($item->namacomp) . '"
+                        data-muatan-type="' . e($item->muatan_type) . '"
+                        data-truck-type="' . e($item->truck_type) . '"
+                        data-truck-type-other="' . e($item->truck_type_other) . '"
+                        data-checked-in-at="' . e($item->checked_in_at) . '"
+                    >
+                        Lakukan Cek Keluar
                     </button>
                 ';
             })
