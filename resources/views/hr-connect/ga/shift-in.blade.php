@@ -231,7 +231,7 @@
                                     <option value="${loker.id}"
                                         data-nik="${row.nik}"
                                         data-nama="${row.nama}"
-                                        data-divisi="${row.kode_bagian}"
+                                        data-divisi="${row.kode_divisi}"
                                         data-jk="${row.jenis_kelamin}"
                                         data-kode-rak="${loker.kode_rak}"
                                         data-no-loker="${loker.no_loker}">
@@ -252,7 +252,7 @@
                         }
                     },
                     {
-                        data: 'kode_bagian'
+                        data: 'kode_divisi'
                     },
                     {
                         data: 'tanggal_masuk'

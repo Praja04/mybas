@@ -2,14 +2,14 @@
 
 @section('content')
     <div class="container-fluid">
-        <button id="btnStore" class="btn btn-primary mb-3">Tambah</button>
 
-        <div class="p-2">
-            <form id="importForm" enctype="multipart/form-data">
-                @csrf
-                <input type="file" name="file" accept=".xlsx,.xls" required>
-                <button class="btn btn-success">Import Excel</button>
-            </form>
+        <div class="d-flex p-2 align-items-center">
+            <button id="btnStore" class="btn btn-primary mb-3 me-3">Tambah</button>
+
+            <button class="btn btn-success mb-3" data-toggle="modal" data-target="#modalImportLoker">
+                <i class="fas fa-file-excel mr-1"></i>
+                Import Excel
+            </button>
         </div>
 
         <div class="card p-4 table-responsive">
@@ -132,6 +132,50 @@
 
                     <div class="modal-footer">
                         <button class="btn btn-primary" type="submit" id="btnSubmit">Submit</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {{-- modal import --}}
+    <div class="modal fade" id="modalImportLoker">
+        <div class="modal-dialog" role="document">
+            <form id="importForm" enctype="multipart/form-data">
+                @csrf
+
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Import Data Loker</h5>
+                        <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    </div>
+
+                    <div class="modal-body">
+                        <div class="alert alert-info">
+                            Gunakan template Excel berikut agar format sesuai sistem.
+                        </div>
+
+                        <div class="mb-3">
+                            <a href="{{ asset('templates/template-loker.xlsx') }}" class="btn btn-outline-primary"
+                                target="_blank">
+                                <i class="fas fa-download mr-1"></i>
+                                Download Template Excel
+                            </a>
+                        </div>
+
+                        <div class="form-group">
+                            <label>
+                                File Excel <span class="text-danger">*</span>
+                            </label>
+                            <input type="file" class="form-control" name="file" accept=".xlsx,.xls" required>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-upload mr-1"></i>
+                            Import
+                        </button>
                     </div>
                 </div>
             </form>
@@ -348,30 +392,56 @@
             $('#importForm').on('submit', function(e) {
                 e.preventDefault();
 
-                let formData = new FormData(this);
+                let form = this;
+                let formData = new FormData(form);
+                let btn = $('#modalImportLoker button[type="submit"]');
+
+                btn.prop('disabled', true).text('Mengimpor...');
 
                 $.ajax({
                     url: '/loker/import',
-                    method: 'POST',
+                    type: 'POST',
                     data: formData,
                     processData: false,
                     contentType: false,
                     success: function(res) {
                         Swal.fire({
                             icon: 'success',
-                            title: 'Import Selesai',
-                            text: res.message
+                            title: 'Berhasil',
+                            text: res.message || 'Data berhasil diimport',
+                            timer: 1500,
+                            showConfirmButton: false
                         });
-                        table.ajax.reload();
+
+                        $('#modalImportLoker').modal('hide');
+                        form.reset();
+                        $('#tableAjax').DataTable().ajax.reload(null, false);
                     },
                     error: function(xhr) {
+                        let msg = 'Terjadi kesalahan saat import';
+
+                        if (xhr.responseJSON) {
+                            if (xhr.responseJSON.message) {
+                                msg = xhr.responseJSON.message;
+                            } else if (xhr.responseJSON.errors) {
+                                msg = Object.values(xhr.responseJSON.errors).join('\n');
+                            }
+                        }
+
                         Swal.fire({
                             icon: 'error',
                             title: 'Import Gagal',
-                            text: xhr.responseJSON?.message || 'Terjadi kesalahan saat import data'
+                            text: msg
                         });
+                    },
+                    complete: function() {
+                        btn.prop('disabled', false).text('Import');
                     }
                 });
+            });
+
+            $(document).on('click', '[data-target="#modalImportLoker"]', function() {
+                $('#modalImportLoker').modal('show');
             });
         });
     </script>

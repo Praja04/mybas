@@ -289,12 +289,12 @@
 
                         <div class="mb-2">
                             <label>NIK <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="tp_nik" required>
+                            <input type="text" class="form-control" id="tp_nik" required placeholder="NIK">
                         </div>
 
                         <div class="mb-2">
                             <label>Nama <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="tp_nama" required>
+                            <input type="text" class="form-control" id="tp_nama" required placeholder="Nama">
                         </div>
 
                         <div class="mb-2">
@@ -315,6 +315,16 @@
                                 <option value="non_staff">Non Staff</option>
                                 <option value="mitra_kerja">Mitra Kerja</option>
                             </select>
+                        </div>
+
+                        <div class="mb-2">
+                            <label>Jenis Kelamin</label>
+                            <input type="text" class="form-control bg-light" id="tp_gender_label" readonly>
+                        </div>
+
+                        <div class="mb-2">
+                            <label>Nomor Loker</label>
+                            <input type="text" class="form-control bg-light" id="tp_no_loker_label" readonly>
                         </div>
 
                     </div>
@@ -408,8 +418,8 @@
     </div>
 
     {{-- Modal import --}}
-    <div class="modal fade" id="modalImportLoker" tabindex="-1" role="dialog">
-        <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
+    <div class="modal fade" id="modalImportLoker">
+        <div class="modal-dialog" role="document">
             <form id="importForm" enctype="multipart/form-data">
                 @csrf
 
@@ -420,6 +430,18 @@
                     </div>
 
                     <div class="modal-body">
+                        <div class="alert alert-info">
+                            Download template Excel terlebih dahulu, lalu isi sesuai format.
+                        </div>
+
+                        <div class="form-group">
+                            <a href="{{ asset('templates/template-loker.xlsx') }}" class="btn btn-outline-primary mb-3"
+                                target="_blank">
+                                <i class="fas fa-download mr-1"></i>
+                                Download Template Excel
+                            </a>
+                        </div>
+
                         <div class="form-group">
                             <label>
                                 File Excel <span class="text-danger">*</span>
@@ -429,7 +451,7 @@
                     </div>
 
                     <div class="modal-footer">
-                        <button type="submit" class="btn btn-success btn-block" id="btnImportSubmit">
+                        <button type="submit" class="btn btn-success" id="btnImportSubmit">
                             <i class="fas fa-upload mr-1"></i>
                             Import
                         </button>
@@ -438,6 +460,7 @@
             </form>
         </div>
     </div>
+
 
 @endsection
 
@@ -625,7 +648,11 @@
                 no_loker: noLoker
             };
 
+
             $('#modalLokerDetail').modal('show');
+
+            $('#btnTambahPenghuni').addClass('d-none');
+            $('#btnTandaiRusak').addClass('d-none');
 
             $('#penghuniContainer').html(
                 '<div class="text-muted text-center">Memuat data...</div>'
@@ -635,9 +662,13 @@
                 url: `/loker/${gender}/blok/${blok}/nomor/${noLoker}/detail`,
                 type: 'GET',
                 success: function(data) {
-                    console.log({
-                        data
-                    });
+                    $('#btnTandaiRusak')
+                        .prop('disabled', false)
+                        .removeClass('disabled');
+
+                    $('#btnTambahPenghuni')
+                        .prop('disabled', false)
+                        .removeClass('disabled');
 
                     // ===== HEADER MODAL =====
                     $('#mKodeBlok').text(data.kode_blok);
@@ -804,20 +835,36 @@
             $('#modalLokerDetail').modal('hide');
 
             setTimeout(() => {
-                $('#modalTambahPenghuni').modal('show');
-                $('#tp_gender').val(currentLoker.gender);
-                $('#tp_blok').val(currentLoker.blok);
-                $('#tp_no_loker').val(currentLoker.no_loker);
 
                 $('#formTambahPenghuni')[0].reset();
+                $('#modalTambahPenghuni').modal('show');
+
+                // Mapping gender pria/wanita → L/P
+                let jkValue = currentLoker.gender === 'pria' ? 'L' : 'P';
+                let jkText = currentLoker.gender === 'pria' ? 'Pria' : 'Wanita';
+
+                // hidden input (buat dikirim ke backend)
+                $('#tp_gender').val(jkValue);
+
+                // label input (buat display)
+                $('#tp_gender_label').val(jkText);
+
+                // nomor loker
+                $('#tp_no_loker').val(currentLoker.no_loker);
+                $('#tp_no_loker_label').val(currentLoker.no_loker);
+
+                // blok kalau perlu
+                $('#tp_blok').val(currentLoker.blok);
+
             }, 300);
         }
 
+
         $('#modalTambahPenghuni').on('show.bs.modal', function() {
-            $(this).find('input, select, textarea')
-                .prop('disabled', false)
-                .prop('readonly', false)
-                .val('');
+            $('#tp_nik').val('');
+            $('#tp_nama').val('');
+            $('#tp_divisi').val('');
+            $('#tp_staff').val('');
         });
 
         $('#formTambahPenghuni').on('submit', function(e) {
@@ -839,6 +886,10 @@
                 divisi: $('#tp_divisi').val(),
                 staff: $('#tp_staff').val(),
             };
+
+            console.log({
+                dataToSend
+            });
 
             $.ajax({
                 url: '/hr-connect/masters/loker-user/store',
@@ -1062,7 +1113,7 @@
                         },
                         {
                             data: 'jk',
-                            render: d => d === 'L' ? 'Pria' : 'Wanita'
+                            render: d => d === 'pria' ? 'Pria' : 'Wanita'
                         },
                         {
                             data: 'loker_baju'
