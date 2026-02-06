@@ -26,10 +26,13 @@ export class ContentDatatable {
                         orderable: false,
                     },
                     {
-                        data: "status",
-                        name: "status",
-                        orderable: false,
-                        searchable: false,
+                    data: null,
+                    name: "status",
+                    orderable: false,
+                    searchable: false,
+                    render: function (data, type, row) {
+                        return window.getStatusWithDraft(row);
+                    }
                     },
                     {
                         data: "action",
@@ -53,6 +56,7 @@ export class ContentDatatable {
         };
     }
 
+    
     initialize() {
         return new Promise((resolve, reject) => {
             $(() => {
@@ -78,14 +82,59 @@ export class ContentDatatable {
     }
 }
 
+async function preloadDraftCache() {
+
+    if (!window.IDBDraft) {
+        console.warn("IDBDraft belum siap");
+        return;
+    }
+
+    window.draftCache = window.draftCache || {};
+
+    const drafts = await window.IDBDraft.getAllDrafts();
+
+    drafts.forEach(d => {
+        window.draftCache[d.sessionId] = true;
+    });
+
+    console.log("Draft cache loaded:", window.draftCache);
+}
+
+
+
 const contentDatatable = new ContentDatatable();
 
 // Initial datatable load
-contentDatatable
-    .initialize()
-    .then(() => {
-        console.log("All datatables initialized successfully");
-    })
-    .catch((error) => {
-        console.error("Initialization failed:", error);
-    });
+(async () => {
+    await preloadDraftCache();
+
+    contentDatatable
+        .initialize()
+        .then(() => {
+            console.log("All datatables initialized successfully");
+        })
+        .catch((error) => {
+            console.error("Initialization failed:", error);
+        });
+})();
+
+window.getStatusWithDraft = function (row) {
+    const trnId = row.trnvisitorid;
+
+    console.log("DraftCache:", window.draftCache);
+    console.log("Row trnvisitorid:", row.trnvisitorid);
+
+    // kalau ada draft
+    if (window.draftCache[trnId]) {
+        return `
+          <span class="badge bg-warning text-dark">
+            Sudah Dicek (Belum Disimpan)
+          </span>
+        `;
+    }
+
+    // status normal dari backend
+    return `
+        ${row.status}
+    `;
+};

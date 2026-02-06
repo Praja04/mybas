@@ -50,9 +50,23 @@
         tx.objectStore(STORE).delete(sessionId);
     }
 
+    async function getAllDrafts() {
+        const db = await openDB();
+        const tx = db.transaction(STORE, "readonly");
+        const store = tx.objectStore(STORE);
+
+        return new Promise((resolve) => {
+            const req = store.getAll();
+
+            req.onsuccess = () => resolve(req.result || []);
+            req.onerror = () => resolve([]);
+        });
+    }
+
     window.IDBDraft = {
         saveDraft,
         getDraft,
         deleteDraft,
+        getAllDrafts
     };
 })();
