@@ -42,6 +42,12 @@
             padding: 14px 16px;
             border-radius: 12px;
         }
+
+        .bg-supplier {
+            background: #e3f2fd;
+            /* biru muda */
+            border-left: 6px solid #2196f3;
+        }
     </style>
 @endpush
 
