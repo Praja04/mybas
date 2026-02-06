@@ -69,6 +69,12 @@ export class ContentDatatable {
                         searchable: false,
                     },
                     {
+                        data: "nopol",
+                        name: "nopol",
+                        orderable: false,
+                        searchable: false,
+                    },
+                    {
                         data: "is_kacamata",
                         name: "is_kacamata",
                         orderable: false,

@@ -55,6 +55,7 @@
                                         <th>No Kartu</th> <!-- purpose -->
                                         <th>No Identitas</th> <!-- purpose -->
                                         <th>Jenis Kartu</th>
+                                        <th>Nomor Polisi</th>
                                         <th>Pakai Kacamata</th>
                                         <th>Kondisi Kacamata (Masuk)</th>
                                         <th>Kondisi Kacamata (Keluar)</th>
