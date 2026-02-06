@@ -72,7 +72,6 @@ export class ContentDatatable {
                         data: "nopol",
                         name: "nopol",
                         orderable: false,
-                        searchable: false,
                     },
                     {
                         data: "is_kacamata",
