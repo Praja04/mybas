@@ -121,6 +121,17 @@
                                     </div>
                                 </div>
 
+                                <div class="col-lg-3 col-md-4 col-sm-6">
+                                    <div class="card shadow-sm h-100">
+                                        <div class="card-body">
+                                            <small class="text-muted">Waktu Masuk POS 1</small>
+                                            <h6 class="fw-bold mb-0" id="card-waktu-daftar">-</h6>
+                                            <small class="text-muted" id="card-waktu-lalu"></small>
+                                        </div>
+                                    </div>
+                                </div>
+
+
                             </div>
                         </div>
 
@@ -249,10 +260,9 @@
 </div>
 
 @push('scripts')
+    <script src="{{ asset('assets/js/pos-security/formulir-cek-kendaraan/indexeddb-helper.js') }}"></script>
     <script type="module" src="{{ asset('assets/js/pos-security/formulir-cek-kendaraan/cek-kendaraan-in-table.js') }}">
     </script>
-
-    <script src="{{ asset('assets/js/pos-security/formulir-cek-kendaraan/indexeddb-helper.js') }}"></script>
     <script src="{{ asset('assets/js/pos-security/formulir-cek-kendaraan/form-kendaraan-input.js') }}"></script>
     <script src="{{ asset('assets/js/pos-security/formulir-cek-kendaraan/form-kendaraan-input-store.js') }}"></script>
     <script src="{{ asset('assets/js/pos-security/formulir-cek-kendaraan/foto-config.js') }}"></script>

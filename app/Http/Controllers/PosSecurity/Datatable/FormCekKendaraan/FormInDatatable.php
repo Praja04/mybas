@@ -83,6 +83,7 @@ class FormInDatatable extends Controller
                 'v.namavisitor',
                 'v.namacomp',
                 'v.source',
+                'v.created_at as visitor_created_at',
 
                 'c.trncekid',
                 'c.truck_type',
@@ -117,7 +118,8 @@ class FormInDatatable extends Controller
                         data-trnvisitorid="' . e($item->trnvisitorid) . '"
                         data-nomor-polisi="' . e($item->nomor_polisi) . '"
                         data-nama-supir="' . e($item->namavisitor) . '"
-                        data-company="' . e($item->namacomp) . '">
+                        data-company="' . e($item->namacomp) . '"
+                        data-created-at="' . e($item->visitor_created_at) . '">
                             Lakukan Cek Masuk
                     </button>
                 ';

@@ -440,7 +440,8 @@
         trnvisitorid,
         nomor_polisi,
         nama_supir,
-        company
+        company,
+        created_at
     ) {
         photoStore = {};
         tempPhotos = [];
@@ -466,6 +467,12 @@
         $("#card-nopol").text(nomor_polisi);
         $("#card-nama-supir").text(nama_supir);
         $("#card-perusahaan").text(company);
+        $("#card-waktu-daftar").text(
+            created_at ? formatTime(created_at) : "-"
+        );      
+        $("#card-waktu-lalu").text(
+            created_at ? timeAgo(created_at) : ""
+        );
 
         setStep("form");
         resetAlertFoto();
@@ -656,9 +663,49 @@
 
         openMainForm(
             $btn.data("trnvisitorid"),
-            $btn.data("nomor-polisi"),
-            $btn.data("nama-supir"),
-            $btn.data("company")
+            $btn.data("nomorPolisi"),
+            $btn.data("namaSupir"),
+            $btn.data("company"),
+            $btn.data("createdAt")
         );
     });
+    
+    function formatTime(value) {
+        const d = new Date(value);
+        if (isNaN(d)) return "-";
+
+        return d.toLocaleString("id-ID", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+        });
+    }
+
+    function timeAgo(value) {
+        const date = new Date(value);
+        if (isNaN(date)) return "";
+
+        const now = new Date();
+        const diffMs = now - date;
+
+        const diffMinutes = Math.floor(diffMs / 60000);
+        const diffHours   = Math.floor(diffMinutes / 60);
+        const diffDays    = Math.floor(diffHours / 24);
+
+        if (diffMinutes < 1) {
+            return "Baru saja";
+        }
+
+        if (diffMinutes < 60) {
+            return `${diffMinutes} menit lalu`;
+        }
+
+        if (diffHours < 24) {
+            return `${diffHours} jam lalu`;
+        }
+
+        return `${diffDays} hari lalu`;
+    }
 })();
