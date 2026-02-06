@@ -102,6 +102,7 @@ class HistoryCekKendaraanDatatable extends Controller
 
                 'c.trncekid',
                 'c.truck_type',
+                'c.truck_type_other',
                 'c.muatan_type',
                 'c.checked_in_at',
                 'c.checked_out_at',
@@ -130,9 +131,20 @@ class HistoryCekKendaraanDatatable extends Controller
                 $truck  = $item->truck_type ?: '-';
                 $muatan = $item->muatan_type ?: '-';
 
-                // jika jenis truk "LAINNYA", jangan tampilkan muatan
+                // kalau truck_type = LAINNYA
                 if (stripos($truck, 'LAINNYA') !== false) {
-                    return "<span>{$truck}</span>";
+
+                    // ambil truck_type_other
+                    $other = $item->truck_type_other ?: '';
+
+                    // tampilkan: LAINNYA (truck_type_other)
+                    $truckText = $other
+                        ? "{$truck} ({$other})"
+                        : $truck;
+
+                    return "
+                        <span>{$truckText}</span><br>
+                    ";
                 }
 
                 return "<span>{$truck}</span><br><span>({$muatan})</span>";

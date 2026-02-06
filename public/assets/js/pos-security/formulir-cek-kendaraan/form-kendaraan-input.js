@@ -246,7 +246,7 @@
                 },
                 {
                     value: "TRUK MUAT FINISH GOOD",
-                    text: "Truk Bongkar Finish Good (WFG)",
+                    text: "Truk Muat Finish Good (WFG)",
                 },
                 {
                     value: "MOBIL SPAREPART",
