@@ -220,24 +220,24 @@ class HistoryCekKendaraanDatatable extends Controller
             })
             ->addColumn('status', function ($item) {
                 // 1. Tidak dilakukan cek kendaraan (historis)
-                if (
-                    $item->kartu_dikembalikan == 1 &&
-                    !$item->trncekid
-                ) {
-                    return '<span class="badge bg-danger">
-                        Tidak Dilakukan Cek Kendaraan
-                    </span>';
-                }
+                // if (
+                //     $item->kartu_dikembalikan == 1 &&
+                //     !$item->trncekid
+                // ) {
+                //     return '<span class="badge bg-danger">
+                //         Tidak Dilakukan Cek Kendaraan
+                //     </span>';
+                // }
 
                 // 2. Tidak cek keluar
-                if (
-                    $item->kartu_dikembalikan == 1 &&
-                    !empty($item->checked_in_at) && empty($item->checked_out_at)
-                ) {
-                    return '<span class="badge bg-danger">
-                        Tidak Dilakukan Cek Keluar
-                    </span>';
-                }
+                // if (
+                //     $item->kartu_dikembalikan == 1 &&
+                //     !empty($item->checked_in_at) && empty($item->checked_out_at)
+                // ) {
+                //     return '<span class="badge bg-danger">
+                //         Tidak Dilakukan Cek Keluar
+                //     </span>';
+                // }
 
                 // 2. Belum cek kendaraan
                 if (empty($item->checked_in_at)) {
