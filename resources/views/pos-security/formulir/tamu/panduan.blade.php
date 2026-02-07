@@ -164,7 +164,7 @@
         <!-- Info Card -->
         <div class="col">
             <div class="card overflow-hidden h-100">
-                <div class="card-body bg-marketplace d-flex flex-column justify-content-between">
+                <div class="card-body bg-marketplace bg-tamu d-flex flex-column justify-content-between">
                     <div>
                         <h4 class="fs-18 lh-base mb-0">Formulir Tamu / Vendor
                         </h4>

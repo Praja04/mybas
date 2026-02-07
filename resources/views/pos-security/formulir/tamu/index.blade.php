@@ -42,6 +42,12 @@
             padding: 14px 16px;
             border-radius: 12px;
         }
+
+        .bg-tamu {
+            background: #e8f5e9;
+            /* hijau muda */
+            border-left: 6px solid #4caf50;
+        }
     </style>
 @endpush
 

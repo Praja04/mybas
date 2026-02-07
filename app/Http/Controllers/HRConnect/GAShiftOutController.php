@@ -54,8 +54,8 @@ class GAShiftOutController extends Controller
                     $nik = $item['nik'];
                     $alasan_keluar = $item['alasankeluar'];
 
-                    $sebelumnya = DB::table('loker_master_user')
-                        ->where('nik', $nik)->first();
+                    // $sebelumnya = DB::table('loker_master_user')
+                    //     ->where('nik', $nik)->first();
 
                     $sebelumnya = DB::table('loker_penghuni')
                         ->where('nik', $nik)->first();
@@ -92,6 +92,7 @@ class GAShiftOutController extends Controller
                         //         'nama' => ''
                         //     ]); 
 
+                        // TODO: Harusnya set is_active N dan tanggal keluar
                         DB::transaction(function () use ($nik) {
                             DB::table('loker_penghuni')->where('nik', $nik)->delete();
                         });

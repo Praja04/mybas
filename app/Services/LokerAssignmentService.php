@@ -45,6 +45,7 @@ class LokerAssignmentService
                 ->select('staff', DB::raw('COUNT(DISTINCT nik) as cnt'))
                 ->whereIn('kode_rak', $rakDicek)
                 ->where('no_loker', $noLoker)
+                ->where('is_active', 'Y')
                 ->groupBy('staff')
                 ->lockForUpdate()
                 ->get();
