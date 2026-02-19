@@ -1610,6 +1610,16 @@
                                             </a>
                                         </li>
                                     </ul>
+                                    <ul class="menu-subnav">
+                                        <li class="menu-item" aria-haspopup="true">
+                                            <a href="{{ url('/ecafesedaap-scan/non-staff-snack') }}" class="menu-link">
+                                                <i class="menu-bullet menu-bullet-line">
+                                                    <span></span>
+                                                </i>
+                                                <span class="menu-text">Scan Pengambilan Snack (Non-staff)</span>
+                                            </a>
+                                        </li>
+                                    </ul>
 
                                     <ul class="menu-subnav">
                                         @if (in_array('ga_upload_pesanan', $permissions))

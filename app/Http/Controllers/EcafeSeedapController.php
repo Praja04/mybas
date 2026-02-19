@@ -35,7 +35,7 @@ class EcafeSeedapController extends Controller
     // new ver
     public function showDisplay($kategori)
     {
-        if (!in_array($kategori, ['staff', 'non-staff'])) {
+        if (!in_array($kategori, ['staff', 'non-staff', 'non-staff-snack'])) {
             abort(404);
         }
 
@@ -47,7 +47,7 @@ class EcafeSeedapController extends Controller
     {
         $kategori = $request->kategori;
         $request->validate([
-            'kategori' => 'required|in:staff,non-staff',
+            'kategori' => 'required|in:staff,non-staff,non-staff-snack',
         ]);
 
         $rfid = (int) $request->rfid;
@@ -309,6 +309,8 @@ class EcafeSeedapController extends Controller
                     $id_pesanan .= 'S';
                 } elseif ($category == 'non-staff') {
                     $id_pesanan .= 'N';
+                } elseif ($category == 'non-staff-snack') {
+                    $id_pesanan .= 'NS';
                 }
 
                 // Check if ID_PESANAN already exists

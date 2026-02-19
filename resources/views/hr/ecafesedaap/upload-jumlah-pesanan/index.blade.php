@@ -94,19 +94,19 @@
                                 <i class="la la-file-download"></i>Import Excel
                             </button>
                             {{-- <button type="submit" class="btn btn-info btn-lg">+ Import Excel</button> --}}
-                        {{-- </div> --}} 
+                        {{-- </div> --}}
                         <div class="card-body">
                             <form action="{{ url('/PostPesananCatering') }}" method="POST">
                                 @csrf
                                 <div class="row">
                                     <!-- Input Tanggal Umum -->
-                                    <div class="form-group col-7">
+                                    <div class="form-group col-12">
                                         <label for="tanggal">Tanggal Upload Pesanan</label>
                                         <input type="date" name="tanggal" class="form-control" id="tanggal">
                                     </div>
 
                                     <!-- Kolom Kiri untuk Staff -->
-                                    <div class="col-md-6">
+                                    <div class="col-md-4">
                                         <h3>Staff</h3>
                                         <input type="hidden" name="kategori[staff]" value="staff">
 
@@ -130,7 +130,7 @@
                                     </div>
 
                                     <!-- Kolom Kanan untuk Non-Staff -->
-                                    <div class="col-md-6">
+                                    <div class="col-md-4">
                                         <h3>Non-Staff</h3>
                                         <input type="hidden" name="kategori[non-staff]" value="non-staff">
 
@@ -150,6 +150,32 @@
                                         <div class="form-group">
                                             <label>Total Keseluruhan Non Staff</label>
                                             <input type="number" id="sum_non_shift_qty" class="form-control" disabled>
+                                        </div>
+                                    </div>
+
+                                    <!-- Kolom Kanan untuk Non-Staff Snack -->
+                                    <div class="col-md-4">
+                                        <h3>Non-Staff Snack</h3>
+                                        <input type="hidden" name="kategori[non-staff-snack]" value="non-staff-snack">
+
+                                        <!-- Input Shift dan Jumlah untuk Non-Staff Snack -->
+                                        @for ($i = 1; $i <= 3; $i++)
+                                            <div class="form-group">
+                                                <label for="shift{{ $i }}-non-staff-snack">Shift
+                                                    {{ $i }}</label>
+                                                <input type="hidden" name="shift[non-staff-snack][{{ $i }}]"
+                                                    value="{{ $i }}">
+                                                <input type="number" class="form-control"
+                                                    name="shift_qty[non-staff-snack][{{ $i }}]"
+                                                    placeholder="Jumlah Porsi"
+                                                    id="shift{{ $i }}-non-staff-snack">
+                                            </div>
+                                        @endfor
+
+                                        <div class="form-group">
+                                            <label>Total Keseluruhan Non Staff Snack</label>
+                                            <input type="number" id="sum_non_shift_qty_snack" class="form-control"
+                                                disabled>
                                         </div>
                                     </div>
                                 </div>
@@ -204,23 +230,35 @@
 
                 $(document).on('input', 'input[name^="shift_qty[non-staff]"]', hitungTotalNonShift);
 
+                function hitungTotalNonShiftSnack() {
+                    var total = 0;
+
+                    $('input[name^="shift_qty[non-staff-snack]"]').each(function() {
+                        total += parseInt($(this).val()) || 0;
+                    });
+
+                    $('#sum_non_shift_qty_snack').val(total);
+                }
+
+                $(document).on('input', 'input[name^="shift_qty[non-staff-snack]"]', hitungTotalNonShiftSnack);
+
                 // wajib isi semua field
                 document.querySelector('form').addEventListener('submit', function(e) {
-                var tanggal = document.getElementById('tanggal').value;
-                var inputsRequired = document.querySelectorAll('input[type="number"]'); 
-                var isAllFilled = Array.from(inputsRequired).every(function(input) {
-                    return input.value !== ''; 
-                });
-
-                if (!tanggal || !isAllFilled) {
-                    e.preventDefault(); 
-                    Swal.fire({
-                        title: 'Error!',
-                        text: 'Harap Lengkapi Data Jumlah Pesanan.',
-                        icon: 'error',
-                        confirmButtonText: 'Ok'
+                    var tanggal = document.getElementById('tanggal').value;
+                    var inputsRequired = document.querySelectorAll('input[type="number"]');
+                    var isAllFilled = Array.from(inputsRequired).every(function(input) {
+                        return input.value !== '';
                     });
-                }
-            });
+
+                    if (!tanggal || !isAllFilled) {
+                        e.preventDefault();
+                        Swal.fire({
+                            title: 'Error!',
+                            text: 'Harap Lengkapi Data Jumlah Pesanan.',
+                            icon: 'error',
+                            confirmButtonText: 'Ok'
+                        });
+                    }
+                });
             </script>
         @endpush
