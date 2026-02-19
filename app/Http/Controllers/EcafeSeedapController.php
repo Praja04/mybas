@@ -301,6 +301,9 @@ class EcafeSeedapController extends Controller
         $shiftQtyData = $request->input('shift_qty');
 
         foreach ($shiftData as $category => $indexes) {
+            if (!isset($shiftQtyData[$category])) {
+                continue;
+            }
             foreach ($indexes as $index => $value) {
                 $quantity = $shiftQtyData[$category][$index];
                 $id_pesanan = $id_pesanan_base . $index;
@@ -386,6 +389,9 @@ class EcafeSeedapController extends Controller
         $isUpdated = false;
 
         foreach ($shiftData as $category => $indexes) {
+            if (!isset($shiftQtyData[$category])) {
+                continue;
+            }
             foreach ($indexes as $index => $value) {
                 $quantity = $shiftQtyData[$category][$index];
 
