@@ -287,27 +287,53 @@
 
                 document.querySelector('form').addEventListener('submit', function(e) {
                     var tanggal = document.getElementById('tanggal').value;
-                    var inputsRequired = document.querySelectorAll(
-                    'input[type="number"]:not(.snack-input):not([disabled])');
-                    var isAllFilled = Array.from(inputsRequired).every(function(input) {
-                        return input.value !== '';
-                    });
-
-                    // Jika snack aktif, validasi juga input snack
                     var snackChecked = document.getElementById('toggle-snack').checked;
-                    if (snackChecked) {
-                        var snackInputs = document.querySelectorAll('.snack-input');
-                        var snackFilled = Array.from(snackInputs).every(function(input) {
-                            return input.value !== '';
-                        });
-                        isAllFilled = isAllFilled && snackFilled;
-                    }
 
-                    if (!tanggal || !isAllFilled) {
+                    // Cek Staff — semua shift harus diisi jika salah satu diisi
+                    var staffInputs = Array.from(document.querySelectorAll('input[name^="shift_qty[staff]"]'));
+                    var nonStaffInputs = Array.from(document.querySelectorAll(
+                        'input[name^="shift_qty[non-staff]"]:not([name*="snack"])'));
+                    var snackInputs = Array.from(document.querySelectorAll('.snack-input'));
+
+                    var staffFilled = staffInputs.every(i => i.value !== '');
+                    var nonStaffFilled = nonStaffInputs.every(i => i.value !== '');
+                    var snackFilled = snackChecked ? snackInputs.every(i => i.value !== '') : true;
+
+                    // Minimal 1 kategori harus lengkap terisi
+                    var atLeastOneFilled = staffFilled || nonStaffFilled || (snackChecked && snackFilled);
+
+                    // Jika salah satu kategori ada yang diisi sebagian (tidak lengkap), tolak
+                    var staffPartial = staffInputs.some(i => i.value !== '') && !staffFilled;
+                    var nonStaffPartial = nonStaffInputs.some(i => i.value !== '') && !nonStaffFilled;
+                    var snackPartial = snackChecked && snackInputs.some(i => i.value !== '') && !snackFilled;
+
+                    if (!tanggal) {
                         e.preventDefault();
                         Swal.fire({
                             title: 'Error!',
-                            text: 'Harap Lengkapi Data Jumlah Pesanan' + (snackChecked ? ' dan Snack.' : '.'),
+                            text: 'Harap isi tanggal pesanan.',
+                            icon: 'error',
+                            confirmButtonText: 'Ok'
+                        });
+                        return;
+                    }
+
+                    if (staffPartial || nonStaffPartial || snackPartial) {
+                        e.preventDefault();
+                        Swal.fire({
+                            title: 'Error!',
+                            text: 'Kategori yang diisi harus lengkap semua shiftnya.',
+                            icon: 'error',
+                            confirmButtonText: 'Ok'
+                        });
+                        return;
+                    }
+
+                    if (!atLeastOneFilled) {
+                        e.preventDefault();
+                        Swal.fire({
+                            title: 'Error!',
+                            text: 'Harap isi minimal 1 kategori (Staff, Non-Staff, atau Non-Staff Snack).',
                             icon: 'error',
                             confirmButtonText: 'Ok'
                         });
