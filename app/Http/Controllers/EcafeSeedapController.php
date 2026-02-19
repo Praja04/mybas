@@ -316,22 +316,20 @@ class EcafeSeedapController extends Controller
                     $id_pesanan .= 'NS';
                 }
 
-                // Check if ID_PESANAN already exists
                 $existingEntry = ecafeSedaapBas::where('id_pesanan', $id_pesanan)->first();
 
                 if ($existingEntry) {
-                    Session::flash('error', "pesanan pada tanggal ({$request->tanggal}) sudah ada.");
-                    return back();
-                } else {
-                    // If ID_PESANAN does not exist, create a new one
-                    ecafeSedaapBas::create([
-                        'id_pesanan' => $id_pesanan,
-                        'tanggal' => $request->tanggal,
-                        'kategori' => $category,
-                        'shift' => $index,
-                        'jumlah' => $quantity,
-                    ]);
+                    continue;
                 }
+
+                // Jika belum ada, buat baru
+                ecafeSedaapBas::create([
+                    'id_pesanan' => $id_pesanan,
+                    'tanggal'    => $request->tanggal,
+                    'kategori'   => $category,
+                    'shift'      => $index,
+                    'jumlah'     => $quantity,
+                ]);
             }
         }
 
