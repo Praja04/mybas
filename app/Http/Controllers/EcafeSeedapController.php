@@ -35,7 +35,7 @@ class EcafeSeedapController extends Controller
     // new ver
     public function showDisplay($kategori)
     {
-        if (!in_array($kategori, ['staff', 'non-staff'])) {
+        if (!in_array($kategori, ['staff', 'non-staff', 'non-staff-snack'])) {
             abort(404);
         }
 
@@ -47,7 +47,7 @@ class EcafeSeedapController extends Controller
     {
         $kategori = $request->kategori;
         $request->validate([
-            'kategori' => 'required|in:staff,non-staff',
+            'kategori' => 'required|in:staff,non-staff,non-staff-snack',
         ]);
 
         $rfid = (int) $request->rfid;
@@ -301,6 +301,9 @@ class EcafeSeedapController extends Controller
         $shiftQtyData = $request->input('shift_qty');
 
         foreach ($shiftData as $category => $indexes) {
+            if (!isset($shiftQtyData[$category])) {
+                continue;
+            }
             foreach ($indexes as $index => $value) {
                 $quantity = $shiftQtyData[$category][$index];
                 $id_pesanan = $id_pesanan_base . $index;
@@ -309,24 +312,24 @@ class EcafeSeedapController extends Controller
                     $id_pesanan .= 'S';
                 } elseif ($category == 'non-staff') {
                     $id_pesanan .= 'N';
+                } elseif ($category == 'non-staff-snack') {
+                    $id_pesanan .= 'NS';
                 }
 
-                // Check if ID_PESANAN already exists
                 $existingEntry = ecafeSedaapBas::where('id_pesanan', $id_pesanan)->first();
 
                 if ($existingEntry) {
-                    Session::flash('error', "pesanan pada tanggal ({$request->tanggal}) sudah ada.");
-                    return back();
-                } else {
-                    // If ID_PESANAN does not exist, create a new one
-                    ecafeSedaapBas::create([
-                        'id_pesanan' => $id_pesanan,
-                        'tanggal' => $request->tanggal,
-                        'kategori' => $category,
-                        'shift' => $index,
-                        'jumlah' => $quantity,
-                    ]);
+                    continue;
                 }
+
+                // Jika belum ada, buat baru
+                ecafeSedaapBas::create([
+                    'id_pesanan' => $id_pesanan,
+                    'tanggal'    => $request->tanggal,
+                    'kategori'   => $category,
+                    'shift'      => $index,
+                    'jumlah'     => $quantity,
+                ]);
             }
         }
 
@@ -384,6 +387,9 @@ class EcafeSeedapController extends Controller
         $isUpdated = false;
 
         foreach ($shiftData as $category => $indexes) {
+            if (!isset($shiftQtyData[$category])) {
+                continue;
+            }
             foreach ($indexes as $index => $value) {
                 $quantity = $shiftQtyData[$category][$index];
 

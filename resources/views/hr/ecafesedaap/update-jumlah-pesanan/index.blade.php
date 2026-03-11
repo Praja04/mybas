@@ -1,6 +1,13 @@
 @extends('layouts.base')
 
 @section('content')
+    <style>
+        #non-staff-snack-section.disabled-section {
+            opacity: 0.4;
+            pointer-events: none;
+        }
+    </style>
+
     <div class="container-fluid">
 
         <!--begin::Row-->
@@ -26,7 +33,7 @@
 
                             <div class="row">
                                 <!-- Kolom Kiri untuk Staff -->
-                                <div class="col-md-6">
+                                <div class="col-md-4">
                                     <h3>Staff</h3>
                                     <input type="hidden" name="kategori[staff]" value="staff">
 
@@ -50,7 +57,7 @@
                                 </div>
 
                                 <!-- Kolom Kanan untuk Non-Staff -->
-                                <div class="col-md-6">
+                                <div class="col-md-4">
                                     <h3>Non-Staff</h3>
                                     <input type="hidden" name="kategori[non-staff]" value="non-staff">
 
@@ -70,6 +77,40 @@
                                     <div class="form-group">
                                         <label>Total Keseluruhan Non Staff</label>
                                         <input type="number" id="sum_non_shift_qty" class="form-control" disabled>
+                                    </div>
+                                </div>
+
+                                <!-- Kolom Kanan untuk Non-Staff Snack (Opsional) -->
+                                <div class="col-md-4">
+                                    <div class="d-flex align-items-center mb-2" style="gap:10px;">
+                                        <h3 class="mb-0">Non-Staff Snack</h3>
+                                        <label class="mb-0 ml-2">
+                                            <input type="checkbox" id="toggle-snack" name="include_snack" value="1">
+                                            <small id="snack-status-text" class="text-muted ml-1">Tidak Aktif</small>
+                                        </label>
+                                    </div>
+
+                                    <div id="non-staff-snack-section" class="disabled-section">
+                                        <input type="hidden" name="kategori[non-staff-snack]" value="non-staff-snack">
+
+                                        @for ($i = 1; $i <= 3; $i++)
+                                            <div class="form-group">
+                                                <label for="shift{{ $i }}-non-staff-snack">Shift
+                                                    {{ $i }}</label>
+                                                <input type="hidden" name="shift[non-staff-snack][{{ $i }}]"
+                                                    value="{{ $i }}">
+                                                <input type="number" class="form-control snack-input"
+                                                    name="shift_qty[non-staff-snack][{{ $i }}]"
+                                                    placeholder="Jumlah Porsi"
+                                                    id="shift{{ $i }}-non-staff-snack" disabled>
+                                            </div>
+                                        @endfor
+
+                                        <div class="form-group">
+                                            <label>Total Keseluruhan Non Staff Snack</label>
+                                            <input type="number" id="sum_non_shift_qty_snack" class="form-control"
+                                                disabled>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -113,6 +154,41 @@
             }
 
             $(document).on('input', 'input[name^="shift_qty[non-staff]"]', hitungTotalNonShift);
+
+            // Toggle Non-Staff Snack
+            document.getElementById('toggle-snack').addEventListener('change', function() {
+                var isChecked = this.checked;
+                var section = document.getElementById('non-staff-snack-section');
+                var inputs = section.querySelectorAll('.snack-input');
+                var statusText = document.getElementById('snack-status-text');
+
+                if (isChecked) {
+                    section.classList.remove('disabled-section');
+                    inputs.forEach(function(input) {
+                        input.disabled = false;
+                    });
+                    statusText.textContent = 'Aktif';
+                    statusText.className = 'text-success ml-1';
+                } else {
+                    section.classList.add('disabled-section');
+                    inputs.forEach(function(input) {
+                        input.disabled = true;
+                        input.value = '';
+                    });
+                    statusText.textContent = 'Tidak Aktif';
+                    statusText.className = 'text-muted ml-1';
+                    document.getElementById('sum_non_shift_qty_snack').value = '';
+                }
+            });
+
+            // Hitung total snack
+            $(document).on('input', 'input[name^="shift_qty[non-staff-snack]"]', function() {
+                var total = 0;
+                $('input[name^="shift_qty[non-staff-snack]"]').each(function() {
+                    total += parseInt($(this).val()) || 0;
+                });
+                $('#sum_non_shift_qty_snack').val(total);
+            });
         </script>
         <script>
             $(document).ready(function() {
@@ -128,14 +204,15 @@
                         },
                         success: function(response) {
                             if (response.length === 0) {
-                            Swal.fire({
-                                imageUrl: cautionFoodImageUrl,
-                                imageWidth: 120,
-                                title: 'Informasi',
-                                text: 'Data pesanan pada tanggal ' + selectedDate + ' belum ada.'
-                            });
-                            return; 
-                        }
+                                Swal.fire({
+                                    imageUrl: cautionFoodImageUrl,
+                                    imageWidth: 120,
+                                    title: 'Informasi',
+                                    text: 'Data pesanan pada tanggal ' + selectedDate +
+                                        ' belum ada.'
+                                });
+                                return;
+                            }
 
                             var sumShiftQtyStaff = 0;
                             var sumShiftQtyNonStaff = 0;
@@ -165,6 +242,28 @@
                             // Update the total keseluruhan input fields
                             $("#sum_shift_qty").val(sumShiftQtyStaff);
                             $("#sum_non_shift_qty").val(sumShiftQtyNonStaff);
+
+                            // Loop untuk non-staff-snack
+                            var snackExists = false;
+                            var sumShiftQtySnack = 0;
+                            for (var i = 1; i <= 3; i++) {
+                                var snackData = response.find(item => item.shift === i && item
+                                    .kategori === 'non-staff-snack');
+                                if (snackData) {
+                                    snackExists = true;
+                                    $("#shift" + i + "-non-staff-snack").val(snackData.jumlah);
+                                    sumShiftQtySnack += snackData.jumlah;
+                                }
+                            }
+
+                            // Aktifkan toggle snack otomatis jika data snack ada di DB
+                            if (snackExists) {
+                                var toggleSnack = document.getElementById('toggle-snack');
+                                toggleSnack.checked = true;
+                                toggleSnack.dispatchEvent(new Event(
+                                'change')); // trigger event biar section aktif
+                                $("#sum_non_shift_qty_snack").val(sumShiftQtySnack);
+                            }
                         },
                         error: function(xhr, status, error) {
                             console.error("Error: " + error);

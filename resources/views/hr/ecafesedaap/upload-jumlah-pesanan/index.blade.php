@@ -37,6 +37,11 @@
                 margin: 0;
                 font-size: 14px;
             }
+
+            #non-staff-snack-section.disabled-section {
+                opacity: 0.4;
+                pointer-events: none;
+            }
         </style>
 
         <div class="container-fluid">
@@ -94,19 +99,19 @@
                                 <i class="la la-file-download"></i>Import Excel
                             </button>
                             {{-- <button type="submit" class="btn btn-info btn-lg">+ Import Excel</button> --}}
-                        {{-- </div> --}} 
+                        {{-- </div> --}}
                         <div class="card-body">
                             <form action="{{ url('/PostPesananCatering') }}" method="POST">
                                 @csrf
                                 <div class="row">
                                     <!-- Input Tanggal Umum -->
-                                    <div class="form-group col-7">
+                                    <div class="form-group col-12">
                                         <label for="tanggal">Tanggal Upload Pesanan</label>
                                         <input type="date" name="tanggal" class="form-control" id="tanggal">
                                     </div>
 
                                     <!-- Kolom Kiri untuk Staff -->
-                                    <div class="col-md-6">
+                                    <div class="col-md-4">
                                         <h3>Staff</h3>
                                         <input type="hidden" name="kategori[staff]" value="staff">
 
@@ -130,7 +135,7 @@
                                     </div>
 
                                     <!-- Kolom Kanan untuk Non-Staff -->
-                                    <div class="col-md-6">
+                                    <div class="col-md-4">
                                         <h3>Non-Staff</h3>
                                         <input type="hidden" name="kategori[non-staff]" value="non-staff">
 
@@ -150,6 +155,45 @@
                                         <div class="form-group">
                                             <label>Total Keseluruhan Non Staff</label>
                                             <input type="number" id="sum_non_shift_qty" class="form-control" disabled>
+                                        </div>
+                                    </div>
+
+                                    <!-- Kolom Kanan untuk Non-Staff Snack -->
+                                    <div class="col-md-4">
+                                        <div class="d-flex align-items-center mb-2" style="gap:10px;">
+                                            <h3 class="mb-0">Non-Staff Snack</h3>
+                                            <div class="d-flex align-items-center" style="gap:6px;">
+                                                <label class="mb-0">
+                                                    <input type="checkbox" id="toggle-snack" name="include_snack"
+                                                        value="1">
+                                                    <small id="snack-status-text" class="text-muted ml-1">Tidak
+                                                        Aktif</small>
+                                                </label>
+                                            </div>
+                                        </div>
+
+                                        <div id="non-staff-snack-section" class="disabled-section">
+                                            <input type="hidden" name="kategori[non-staff-snack]" value="non-staff-snack">
+
+                                            @for ($i = 1; $i <= 3; $i++)
+                                                <div class="form-group">
+                                                    <label for="shift{{ $i }}-non-staff-snack">Shift
+                                                        {{ $i }}</label>
+                                                    <input type="hidden"
+                                                        name="shift[non-staff-snack][{{ $i }}]"
+                                                        value="{{ $i }}">
+                                                    <input type="number" class="form-control snack-input"
+                                                        name="shift_qty[non-staff-snack][{{ $i }}]"
+                                                        placeholder="Jumlah Porsi"
+                                                        id="shift{{ $i }}-non-staff-snack" disabled>
+                                                </div>
+                                            @endfor
+
+                                            <div class="form-group">
+                                                <label>Total Keseluruhan Non Staff Snack</label>
+                                                <input type="number" id="sum_non_shift_qty_snack" class="form-control"
+                                                    disabled>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -204,23 +248,96 @@
 
                 $(document).on('input', 'input[name^="shift_qty[non-staff]"]', hitungTotalNonShift);
 
-                // wajib isi semua field
-                document.querySelector('form').addEventListener('submit', function(e) {
-                var tanggal = document.getElementById('tanggal').value;
-                var inputsRequired = document.querySelectorAll('input[type="number"]'); 
-                var isAllFilled = Array.from(inputsRequired).every(function(input) {
-                    return input.value !== ''; 
+                function hitungTotalNonShiftSnack() {
+                    var total = 0;
+
+                    $('input[name^="shift_qty[non-staff-snack]"]').each(function() {
+                        total += parseInt($(this).val()) || 0;
+                    });
+
+                    $('#sum_non_shift_qty_snack').val(total);
+                }
+
+                $(document).on('input', 'input[name^="shift_qty[non-staff-snack]"]', hitungTotalNonShiftSnack);
+
+                document.getElementById('toggle-snack').addEventListener('change', function() {
+                    var isChecked = this.checked;
+                    var section = document.getElementById('non-staff-snack-section');
+                    var inputs = section.querySelectorAll('.snack-input');
+                    var statusText = document.getElementById('snack-status-text');
+
+                    if (isChecked) {
+                        section.classList.remove('disabled-section');
+                        inputs.forEach(function(input) {
+                            input.disabled = false;
+                        });
+                        statusText.textContent = 'Aktif';
+                        statusText.className = 'text-success ml-1';
+                    } else {
+                        section.classList.add('disabled-section');
+                        inputs.forEach(function(input) {
+                            input.disabled = true;
+                            input.value = '';
+                        });
+                        statusText.textContent = 'Tidak Aktif';
+                        statusText.className = 'text-muted ml-1';
+                        document.getElementById('sum_non_shift_qty_snack').value = '';
+                    }
                 });
 
-                if (!tanggal || !isAllFilled) {
-                    e.preventDefault(); 
-                    Swal.fire({
-                        title: 'Error!',
-                        text: 'Harap Lengkapi Data Jumlah Pesanan.',
-                        icon: 'error',
-                        confirmButtonText: 'Ok'
-                    });
-                }
-            });
+                document.querySelector('form').addEventListener('submit', function(e) {
+                    var tanggal = document.getElementById('tanggal').value;
+                    var snackChecked = document.getElementById('toggle-snack').checked;
+
+                    // Cek Staff — semua shift harus diisi jika salah satu diisi
+                    var staffInputs = Array.from(document.querySelectorAll('input[name^="shift_qty[staff]"]'));
+                    var nonStaffInputs = Array.from(document.querySelectorAll(
+                        'input[name^="shift_qty[non-staff]"]:not([name*="snack"])'));
+                    var snackInputs = Array.from(document.querySelectorAll('.snack-input'));
+
+                    var staffFilled = staffInputs.every(i => i.value !== '');
+                    var nonStaffFilled = nonStaffInputs.every(i => i.value !== '');
+                    var snackFilled = snackChecked ? snackInputs.every(i => i.value !== '') : true;
+
+                    // Minimal 1 kategori harus lengkap terisi
+                    var atLeastOneFilled = staffFilled || nonStaffFilled || (snackChecked && snackFilled);
+
+                    // Jika salah satu kategori ada yang diisi sebagian (tidak lengkap), tolak
+                    var staffPartial = staffInputs.some(i => i.value !== '') && !staffFilled;
+                    var nonStaffPartial = nonStaffInputs.some(i => i.value !== '') && !nonStaffFilled;
+                    var snackPartial = snackChecked && snackInputs.some(i => i.value !== '') && !snackFilled;
+
+                    if (!tanggal) {
+                        e.preventDefault();
+                        Swal.fire({
+                            title: 'Error!',
+                            text: 'Harap isi tanggal pesanan.',
+                            icon: 'error',
+                            confirmButtonText: 'Ok'
+                        });
+                        return;
+                    }
+
+                    if (staffPartial || nonStaffPartial || snackPartial) {
+                        e.preventDefault();
+                        Swal.fire({
+                            title: 'Error!',
+                            text: 'Kategori yang diisi harus lengkap semua shiftnya.',
+                            icon: 'error',
+                            confirmButtonText: 'Ok'
+                        });
+                        return;
+                    }
+
+                    if (!atLeastOneFilled) {
+                        e.preventDefault();
+                        Swal.fire({
+                            title: 'Error!',
+                            text: 'Harap isi minimal 1 kategori (Staff, Non-Staff, atau Non-Staff Snack).',
+                            icon: 'error',
+                            confirmButtonText: 'Ok'
+                        });
+                    }
+                });
             </script>
         @endpush
