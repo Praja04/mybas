@@ -1112,46 +1112,46 @@
                         id_card : id_card,
                         id_pembagian : $("#deskripsi-pembagian-input").val(),
                         lokasi: $('#lokasi').val(),
-                        pic : $("#pic-input").val()
+                        pic : $("#pic-input").val(),
+                        lokasi : "{{ $lokasi }}"  // default lokasi dari controller
                     },
                     success: function ( response ) {
                         unblock("#container-pembagian");
                         // console.log( response );
-                        if(response.success == 1) {
-                            play_success_sound();
+                        if (response.success == 1) {
+
+                        play_success_sound();
+
+                        var user = response.data;
+
+                        $("#nama").text(user.nama);
+                        $("#bagian").text(user.dept);
+                        $("#nik").text(user.nik);
+
+                        $("#data-karyawan").removeClass("hide");
+                        $("#error").addClass("hide");
+
+                        $("#success-icon").show();
+                    } else {
+                        play_failed_sound();
+
+                        $("#error span").text(response.message);
+
+                        if (response.data) {
                             var user = response.data;
+
                             $("#nama").text(user.nama);
                             $("#bagian").text(user.dept);
-                            $("#department").text(user.department);
-                            $("#keterangan").text(user.keterangan);
                             $("#nik").text(user.nik);
-                            $("#nik-input").val(user.nik);
-                            $("#foto-diri").attr("src", 'data:image/jpg;base64,'+user.foto)
-                            $("#data-karyawan").removeClass("hide");
-                            $("#error").addClass("hide");
-
-                            $("#success-icon").show();
-                        }else{
-                            play_failed_sound();
-                            $("#error span").text(response.message);
-                            var user = response.data;
-                            $("#nama").text(user.nama);
-                            $("#bagian").text('');
-                            $("#department").text('');
-                            $("#keterangan").text('');
-                            $("#nik").text(user.nik);
-                            $("#nik-input").val(user.nik);
-                            $("#foto-diri").attr("src", 'data:image/jpg;base64,'+user.foto)
-                            $("#data-karyawan").removeClass("hide");
-                            $("#error").removeClass("hide");
-                            // setTimeout(function() {
-                                // $("#error").addClass("hide");
-                            // }, 2000);
-
-                            $("#id-card").focus();
-
-                            $("#success-icon").hide();
                         }
+
+                        $("#data-karyawan").removeClass("hide");
+                        $("#error").removeClass("hide");
+
+                        $("#success-icon").hide();
+
+                        $("#id-card").focus();
+                    }
                     },
                     error: function ( error ) {
                         play_failed_sound();

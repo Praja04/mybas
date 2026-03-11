@@ -101,7 +101,7 @@ class PembagianController extends Controller
 
     public function displayScan(Request $request)
     {
-        $id_card = (int)$request->id_card;
+           $id_card = (int)$request->id_card;
 
         // Ambil data karyawan dari server
         $user = DB::connection('192.168.178.44-admin')
@@ -128,7 +128,12 @@ class PembagianController extends Controller
         if ($cek) {
             return response()->json([
                 'success' => 0,
-                'message' => $user->EMPNM . ' sudah pernah scan pada ' . $cek->waktu_ambil
+                'message' => $user->EMPNM . ' sudah pernah scan pada ' . $cek->waktu_ambil,
+                'data' => [
+                    'nik' => $user->NIK,
+                    'nama' => $user->EMPNM,
+                    'dept' => $user->DEPTID
+                ]
             ]);
         }
 
@@ -136,11 +141,16 @@ class PembagianController extends Controller
         $scan = new PembagianKaryawan;
         $scan->id_pembagian = $request->id_pembagian;
         $scan->nik = $user->NIK;
+        $scan->nama = $user->EMPNM;
         $scan->department = $user->DEPTID;
+
+        $scan->lokasi_pembagian = $request->lokasi;   // default lokasi
+        $scan->pic = $request->pic;       // dari blade
+
         $scan->status_ambil = 'sudah';
         $scan->waktu_ambil = now();
-        $scan->save();
 
+        $scan->save();
         return response()->json([
             'success' => 1,
             'message' => 'Scan berhasil',
