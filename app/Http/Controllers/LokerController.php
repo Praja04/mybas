@@ -349,12 +349,20 @@ class LokerController extends Controller
         $nik = $request->nik;
         $alasan = $request->alasan;
 
-        DB::transaction(function() use ($nik, $alasan) {
-            // Ambil data loker yang dihuni
-            $penghuni = DB::table('loker_penghuni')->where('nik', $nik)->first();
+        DB::transaction(function () use ($nik, $alasan) {
 
-            if ($penghuni) {
-                // Insert ke loker_user_transaksi (status out)
+            // Ambil SEMUA loker aktif milik NIK ini
+            $penghuniList = DB::table('loker_penghuni')
+                ->where('nik', $nik)
+                ->where('is_active', 'Y')
+                ->get();
+
+            if ($penghuniList->isEmpty()) {
+                throw new \Exception('Data penghuni loker aktif tidak ditemukan');
+            }
+
+            foreach ($penghuniList as $penghuni) {
+
                 DB::table('loker_user_transaksi')->insert([
                     'nik' => $nik,
                     'no_loker' => $penghuni->no_loker,
@@ -371,15 +379,21 @@ class LokerController extends Controller
                     'kode_blok' => $penghuni->kode_blok ?? '',
                     'kode_rak' => $penghuni->kode_rak ?? '',
                 ]);
-
-                // Hapus dari loker_penghuni
-                DB::table('loker_penghuni')->where('nik', $nik)->delete();
             }
+
+            DB::table('loker_penghuni')
+                ->where('nik', $nik)
+                ->where('is_active', 'Y')
+                ->update([
+                    'is_active' => 'N',
+                    'tgl_keluar' => now(),
+                    'updated_at' => now(),
+                ]);
         });
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Kunci berhasil ditarik dan transaksi tercatat'
+            'message' => 'Kunci berhasil ditarik'
         ]);
     }
 

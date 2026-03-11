@@ -213,6 +213,7 @@ class LokerMasterUserController extends Controller
                 }
 
                 // Hapus loker lama (UTAMA + PASANGAN)
+                // Delete dulu soalnya masih bug saat edit rak sepatu + rak baju otomatis
                 DB::table('loker_penghuni')
                     ->where('nik', $request->nik)
                     ->where('is_active', 'Y')
@@ -318,7 +319,7 @@ class LokerMasterUserController extends Controller
         } catch (\Throwable $e) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Error import loker: ' . $e->getMessage()
+                'message' => $e->getMessage()
             ], 422);
         }
     }

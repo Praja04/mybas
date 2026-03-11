@@ -72,6 +72,9 @@ $(document).ready(function () {
                 if (response.success) {
                     if (photoSessionId && window.IDBDraft) {
                         await window.IDBDraft.deleteDraft(photoSessionId);
+                        delete window.draftCache[photoSessionId];
+
+                        window.cekKendaraanInTable.ajax.reload(null, false);
                     }
                     
                     photoStore = {};
