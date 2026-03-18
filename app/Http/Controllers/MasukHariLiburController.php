@@ -337,7 +337,7 @@ class MasukHariLiburController extends Controller
             ->pluck('email')
             ->toArray();
 
-        \Mail::to($email)->send(new \App\Mail\MasukHariLiburMail($data_count, $mhl->tanggal));
+        // \Mail::to($email)->send(new \App\Mail\MasukHariLiburMail($data_count, $mhl->tanggal));
 
         Session::flash('info', 'Data Berhasil Diapprove!');
         return redirect()->back();
