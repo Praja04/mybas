@@ -8,7 +8,7 @@
     ],
     "license": "MIT",
     "require": {
-        "php": "^7.2.5",
+        "php": "^7.4",
         "azishapidin/indoregion": "^2.2",
         "barryvdh/laravel-dompdf": "^0.9.0",
         "beyondcode/laravel-self-diagnosis": "dev-master",
@@ -26,7 +26,7 @@
         "laravel/ui": "^2.2",
         "laravelcollective/html": "^6.4",
         "livewire/livewire": "^2.12",
-        "maatwebsite/excel": "^3.1",
+        "maatwebsite/excel": "~3.1",
         "nao-pon/flysystem-google-drive": "~1.1",
         "realrashid/sweet-alert": "^7.0",
         "yajra/laravel-datatables-oracle": "^9.18"
