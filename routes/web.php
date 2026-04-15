@@ -112,7 +112,6 @@ Route::group(['middleware' => ['auth', 'rules', 'access_log']], function () {
     // sigra legalitas export
     Route::get('/sigra/legalitas/export-legalitas', 'Sigra\LegalitasController@exportLegalitas')->name('sigra.export.legalitas');
 
-
     Route::get('/sigra/operasional', 'Sigra\OperasionalController@index');
     Route::get('/sigra/operasional/get-sertifikasi/{id}', 'Sigra\OperasionalController@getSertifikasi');
     Route::post('/sigra/operasional/store', 'Sigra\OperasionalController@store');
@@ -214,17 +213,12 @@ Route::group(['middleware' => ['auth', 'rules', 'access_log']], function () {
     Route::post('/sigra/email/toggle/{id}', 'Sigra\EmailPenerimaController@toggle')->name('sigra.email.penerima.toggle');
     Route::delete('/sigra/email/delete/{id}', 'Sigra\EmailPenerimaController@destroy')->name('sigra.email.penerima.delete');
 
-
-
-
     // balikin ke attachmentcontroller kalo mau store ke google
     Route::post('/attachment/upload', 'LocalAttachmentController@upload')->name('attachment.upload');
     Route::get('/attachment/download/{id}', 'LocalAttachmentController@download');
     Route::get('/attachment/generate', 'LocalAttachmentController@generateTransactionId')->name('attachment.generate-transaction-id');
     Route::delete('/attachment/delete/{id}', 'LocalAttachmentController@delete')->name('attachment.delete');
     Route::delete('/attachment/delete-all/{transactionId}', 'LocalAttachmentController@deleteAll')->name('attachment.delete-all');
-
-
 
     Route::get('/checklist/schedule', 'ChecklistScheduleController@index');
     Route::post('/master/checklist_schedule/store', 'ChecklistScheduleController@store');
@@ -265,7 +259,7 @@ Route::group(['middleware' => ['auth', 'rules', 'access_log']], function () {
     Route::post('/permission/auth-group/store', 'AuthGroupController@store');
     Route::post('/permission/auth-group/get-permissions', 'AuthGroupController@get_permissions');
     Route::post('/permission/auth-group/change-permissions', 'AuthGroupController@change_permissions');
-    // tambah get permissions di master user 
+    // tambah get permissions di master user
     // Route::post('/permission/auth-group/get-permissions', 'AuthGroupController@get_permissions');
 
     Route::get('/pme/monthly-bill', 'PME\MonthlyBillController@index');
@@ -471,7 +465,6 @@ Route::group(['middleware' => ['access_log']], function () {
     Route::POST('/logging_machine/adm_prod/pencarian/{kategori}', 'ReportLoggingMachineController@packing_harian_result');
     Route::POST('/logging_machine/adm_prod/pencarian_all_list/{kategori}', 'ReportLoggingMachineController@packing_all_list_result');
 
-
     // !! EXPORT EXCEL !!//
     Route::POST('/logging_machine/adm_prod/export_excel_downtime', 'ReportLoggingMachineController@export_excel_downtime');
 
@@ -533,7 +526,6 @@ Route::group(['middleware' => ['access_log']], function () {
     Route::POST('/logging_machine/get_modal_operator/{nik}', 'LoggingMachineController@get_modal_operator');
     Route::get('/logging_machine/list_for_operator/{nik}', 'LoggingMachineController@list_for_operator');
     Route::patch('/logging_machine/close_from_operator/{id}', 'LoggingMachineController@close_from_operator');
-
 
     // CRUD MASTER LOGGING //
     Route::post('/logging_machine/post_logging_master', 'LoggingMachineController@post_logging_master');
@@ -629,48 +621,77 @@ Route::group(['middleware' => ['auth', 'rules', 'access_log']], function () {
     Route::get('/ecafesedaap/upload-overtime', 'EcafeSeedapController@uploadOvertime');
     Route::post('/ecafesedaap/upload-overtime', 'EcafeSeedapController@doUploadOvertime');
 
+    // Route::prefix('loker/')->group(function () {
+    //     Route::get('/', 'LokerController@index');
+    //     Route::get('/auto-suggest', 'LokerController@autoSuggest')->name('loker.auto-suggest');
+    //     Route::get('/active-list', 'LokerController@getActiveList')->name('loker.active-list');
+    //     Route::get('/hr-connect/masters/loker-user/getData', 'LokerController@getActiveList')->name('loker.get-data');
+    //     // Route::get('/old', 'LokerControllerOld@index');
+    //     // Route::post('/post_user_loker', 'LokerControllerOld@post_user_loker');
+    //     // Route::get('cari_blok/{kategori}', 'LokerControllerOld@cari_blok');
+    //     // Route::get('cek_loker_kosong', 'LokerControllerOld@cek_loker_kosong');
+    //     // Route::get('cari_no_loker/{kode_area}/{kode_blok}', 'LokerControllerOld@cari_no_loker');
+    //     // Route::get('cek_penghuni_loker/{no_loker}/{kode_area}/{kode_blok}', 'LokerControllerOld@cek_penghuni_loker');
+    //     // Route::get('get_foto_user/{nik}', 'LokerControllerOld@get_foto_user');
+    //     // Route::get('tarik_kunci/{kode_loker}/{nik}/{keterangan}/{kode_blok}/{kode_area}', 'LokerControllerOld@tarik_kunci');
+    //     // Route::get('tarik_kunci_manual/{no_loker}/{kode_blok}/{kode_area}/{nik}/{keterangan}', 'LokerControllerOld@tarik_kunci_manual');
+    //     // Route::get('history_loker/{kategori}', 'LokerControllerOld@history_loker');
+    //     // Route::get('history_loker_karyawan/{nik}', 'LokerControllerOld@history_loker_karyawan');
+    //     // Route::get('export_history_karyawan/{nik}', 'LokerControllerOld@export_history_karyawan');
+    //     // Route::post('pencarian_history_loker', 'LokerControllerOld@pencarian_history_loker');
+    //     // Route::get('database/{kategori}', 'LokerControllerOld@database');
+    //     // Route::post('import_blok_loker', 'LokerControllerOld@import_blok_loker');
+    //     // Route::post('import_loker_user', 'LokerControllerOld@import_loker_user');
+    //     // Route::post('post_master_loker', 'LokerControllerOld@post_master_loker');
+    //     // Route::get('hapus_master_blok/{id}', 'LokerControllerOld@hapus_master_blok');
+    //     // Route::get('export_loker_spesifik/{kode_area}/{tgl_mulai}/{tgl_selesai}', 'LokerControllerOld@export_loker_spesifik');
+    //     // Route::get('last_number_loker/{kode_area}/{kode_blok}', 'LokerControllerOld@last_number_loker');
+    //     // Route::get('tandai_rusak/{kode_blok}/{kode_area}/{no_loker}', 'LokerControllerOld@tandai_rusak');
+    //     // Route::get('sudah_benar/{kode_blok}/{kode_area}/{no_loker}', 'LokerControllerOld@sudah_benar');
+    //     // Route::get('edit_loker/{kode_area}', 'LokerControllerOld@edit_loker');
+    //     // Route::get('export_excel/{kode_area}', 'LokerControllerOld@export_excel');
+    //     // Route::get('data-karyawan-belum-punya-loker/{jenis_kelamin}', 'LokerControllerOld@dataKaryawanBelumPunyaLoker');
+    //     // Route::post('data-karyawan-belum-punya-loker/store', 'LokerControllerOld@storeKaryawanBelumPunyaLoker');
+    //     // Route::get('data-karyawan-keluar-masih-punya-loker', 'LokerControllerOld@dataKaryawanMasihPunyaLoker');
+    //     // Route::post('data-karyawan-phk/copot', 'LokerControllerOld@copotKaryawanPHK');
 
-    Route::prefix('loker/')->group(function () {
-        Route::get('/', 'LokerController@index');
-        // Route::get('/old', 'LokerControllerOld@index');
-        // Route::post('/post_user_loker', 'LokerControllerOld@post_user_loker');
-        // Route::get('cari_blok/{kategori}', 'LokerControllerOld@cari_blok');
-        // Route::get('cek_loker_kosong', 'LokerControllerOld@cek_loker_kosong');
-        // Route::get('cari_no_loker/{kode_area}/{kode_blok}', 'LokerControllerOld@cari_no_loker');
-        // Route::get('cek_penghuni_loker/{no_loker}/{kode_area}/{kode_blok}', 'LokerControllerOld@cek_penghuni_loker');
-        // Route::get('get_foto_user/{nik}', 'LokerControllerOld@get_foto_user');
-        // Route::get('tarik_kunci/{kode_loker}/{nik}/{keterangan}/{kode_blok}/{kode_area}', 'LokerControllerOld@tarik_kunci');
-        // Route::get('tarik_kunci_manual/{no_loker}/{kode_blok}/{kode_area}/{nik}/{keterangan}', 'LokerControllerOld@tarik_kunci_manual');
-        // Route::get('history_loker/{kategori}', 'LokerControllerOld@history_loker');
-        // Route::get('history_loker_karyawan/{nik}', 'LokerControllerOld@history_loker_karyawan');
-        // Route::get('export_history_karyawan/{nik}', 'LokerControllerOld@export_history_karyawan');
-        // Route::post('pencarian_history_loker', 'LokerControllerOld@pencarian_history_loker');
-        // Route::get('database/{kategori}', 'LokerControllerOld@database');
-        // Route::post('import_blok_loker', 'LokerControllerOld@import_blok_loker');
-        // Route::post('import_loker_user', 'LokerControllerOld@import_loker_user');
-        // Route::post('post_master_loker', 'LokerControllerOld@post_master_loker');
-        // Route::get('hapus_master_blok/{id}', 'LokerControllerOld@hapus_master_blok');
-        // Route::get('export_loker_spesifik/{kode_area}/{tgl_mulai}/{tgl_selesai}', 'LokerControllerOld@export_loker_spesifik');
-        // Route::get('last_number_loker/{kode_area}/{kode_blok}', 'LokerControllerOld@last_number_loker');
-        // Route::get('tandai_rusak/{kode_blok}/{kode_area}/{no_loker}', 'LokerControllerOld@tandai_rusak');
-        // Route::get('sudah_benar/{kode_blok}/{kode_area}/{no_loker}', 'LokerControllerOld@sudah_benar');
-        // Route::get('edit_loker/{kode_area}', 'LokerControllerOld@edit_loker');
-        // Route::get('export_excel/{kode_area}', 'LokerControllerOld@export_excel');
-        // Route::get('data-karyawan-belum-punya-loker/{jenis_kelamin}', 'LokerControllerOld@dataKaryawanBelumPunyaLoker');
-        // Route::post('data-karyawan-belum-punya-loker/store', 'LokerControllerOld@storeKaryawanBelumPunyaLoker');
-        // Route::get('data-karyawan-keluar-masih-punya-loker', 'LokerControllerOld@dataKaryawanMasihPunyaLoker');
-        // Route::post('data-karyawan-phk/copot', 'LokerControllerOld@copotKaryawanPHK');
+    //     Route::get('{gender}/blok', 'LokerController@getBlokByGender')->name('loker.blok');
+    //     Route::get('{gender}/blok/{blok}', 'LokerController@getNomorByBlok')->name('loker.blok.nomor');
+    //     Route::get('{gender}/blok/{blok}/nomor/{no_loker}', 'LokerController@getPenghuni')->name('loker.blok.penghuni');
+    //     Route::get('{gender}/blok/{blok}/nomor/{no_loker}/detail', 'LokerController@getDetailLoker')->name('loker.blok.detail');
+    //     Route::get('/foto/{nik}', 'LokerController@getFoto')->name('loker.foto');
+    //     Route::post('/tandai-rusak', 'LokerController@tandaiRusak')->name('loker.tandai-rusak');
+    //     Route::post('/tandai-aktif', 'LokerController@tandaiAktif')->name('loker.tandai-aktif');
+    //     Route::post('/tarik-kunci', 'LokerController@tarikKunci')->name('loker.tarik-kunci');
+    //     Route::get('/available', 'LokerController@getAvailableLoker')->name('loker.available');
+    //     Route::post('/import', 'HRConnect\LokerMasterUserController@import')->name('loker.import');
+    // });
 
-        Route::get('{gender}/blok', 'LokerController@getBlokByGender')->name('loker.blok');
-        Route::get('{gender}/blok/{blok}', 'LokerController@getNomorByBlok')->name('loker.blok.nomor');
-        Route::get('{gender}/blok/{blok}/nomor/{no_loker}', 'LokerController@getPenghuni')->name('loker.blok.penghuni');
-        Route::get('{gender}/blok/{blok}/nomor/{no_loker}/detail', 'LokerController@getDetailLoker')->name('loker.blok.detail');
-        Route::get('/foto/{nik}', 'LokerController@getFoto')->name('loker.foto');
-        Route::post('/tandai-rusak', 'LokerController@tandaiRusak')->name('loker.tandai-rusak');
-        Route::post('/tandai-aktif', 'LokerController@tandaiAktif')->name('loker.tandai-aktif');
-        Route::post('/tarik-kunci', 'LokerController@tarikKunci')->name('loker.tarik-kunci');
-        Route::get('/available', 'LokerController@getAvailableLoker')->name('loker.available');
-        Route::post('/import', 'HRConnect\LokerMasterUserController@import');
+    // Gunakan Prefix 'loker' biar semua URL diawali /loker/...
+    Route::group(['prefix' => 'loker'], function () {
+        // --- DASHBOARD UTAMA ---
+        Route::get('/', 'LokerV2Controller@index')->name('loker.index');
+        Route::post('/store', 'LokerV2Controller@store')->name('loker.store');
+
+        // --- INTERAKSI AJAX ---
+        Route::get('/search-karyawan/{nik}', 'LokerV2Controller@searchKaryawan')->name('loker.search-karyawan');
+        Route::get('/api-suggest-loker', 'LokerV2Controller@apiSuggestLoker')->name('loker.api-suggest-loker');
+        Route::get('/detail/{gender}/{no_loker}', 'LokerV2Controller@getDetailLoker')->name('loker.detail');
+        Route::get('/available/{gender}/{kategori}', 'LokerV2Controller@getAvailableLockers')->name('loker.available');
+        Route::get('/get-foto/{nik}', 'LokerV2Controller@getFoto')->name('loker.get-foto');
+
+        // --- FITUR ACTION & MAINTENANCE ---
+        Route::get('/check-rfid', 'LokerV2Controller@checkRfid')->name('loker.check-rfid');
+        // Route::post('/tandai-rusak', 'LokerV2Controller@tandaiRusak')->name('loker.tandai-rusak');
+        // Route::post('/tandai-aktif', 'LokerV2Controller@tandaiAktif')->name('loker.tandai-aktif');
+        Route::post('/update-status', 'LokerV2Controller@updateStatus')->name('loker.update-status');
+        Route::post('/tarik-kunci', 'LokerV2Controller@tarikKunci')->name('loker.tarik-kunci');
+
+        // --- DATA UTILITIES ---
+        Route::get('/blok-by-gender/{gender}', 'LokerV2Controller@getBlokByGender')->name('loker.get-blok');
+        Route::get('/nomor-by-blok', 'LokerV2Controller@getNomorByBlok')->name('loker.get-nomor');
+        Route::post('/import', 'LokerV2Controller@import')->name('loker.import');
+        Route::get('/export/{gender}', 'LokerV2Controller@export')->name('loker.export');
     });
 
     Route::group(['middleware' => ['auth', 'rules', 'access_log']], function () {
@@ -708,7 +729,6 @@ Route::group(['middleware' => ['auth', 'rules', 'access_log']], function () {
     // buat page reset password
     Route::get('/user/edit_user', 'MasukHariLiburController@userEditPassword')->name('user.edit.password');
     Route::post('/user/update', 'MasukHariLiburController@userUpdatePassword')->name('user.update.password');
-
 
     Route::group(['middleware' => ['access_log']], function () {
         Route::post('/masukharilibur-scan/do-scan', 'MasukHariLiburController@doScan');
