@@ -109,6 +109,141 @@ class LokerV2Controller extends Controller
         return view('loker.index', compact('dashboardData', 'grandTotal'));
     }
 
+    public function management(Request $request)
+    {
+        // $allLoker = DB::table('loker_rak')
+        //     ->select('loker_rak.*', DB::raw('(SELECT EXISTS (SELECT 1 FROM loker_penghuni WHERE no_loker = loker_rak.no_loker AND kode_rak = loker_rak.kode_rak)) as is_occupied'))
+        //     ->orderBy('kode_rak', 'ASC')
+        //     ->orderBy('no_loker', 'ASC')
+        //     ->get();
+        $gender = $request->get('gender', 'tab_pria');
+        $page   = $request->get('page', 1);
+
+        $queryPria = DB::table('loker_rak')
+            ->where('gender', 'L')
+            ->whereNotExists(function ($query) {
+                $query->select(DB::raw(1))
+                    ->from('loker_penghuni')
+                    ->whereRaw('loker_penghuni.no_loker = loker_rak.no_loker')
+                    ->whereRaw('loker_penghuni.kode_rak = loker_rak.kode_rak')
+                    ->where('loker_penghuni.is_active', 'Y');
+            })
+            ->orderBy('no_loker', 'ASC');
+
+        $queryWanita = DB::table('loker_rak')
+            ->where('gender', 'P')
+            ->whereNotExists(function ($query) {
+                $query->select(DB::raw(1))
+                    ->from('loker_penghuni')
+                    ->whereRaw('loker_penghuni.no_loker = loker_rak.no_loker')
+                    ->whereRaw('loker_penghuni.kode_rak = loker_rak.kode_rak')
+                    ->where('loker_penghuni.is_active', 'Y');
+            })
+            ->orderBy('no_loker', 'ASC');
+
+        $query = ($gender == 'tab_pria') ? $queryPria : $queryWanita;
+        $data  = $query->paginate(10);
+
+        if ($data->isEmpty() && $data->lastPage() > 0 && $page > $data->lastPage()) {
+            return redirect()->route('loker.management', [
+                'page'   => $data->lastPage(),
+                'gender' => $gender,
+            ]);
+        }
+
+        if ($request->ajax()) {
+            // $gender = $request->get('gender');
+            // $data   = ($gender == 'tab_pria') ? $queryPria->paginate(10) : $queryWanita->paginate(10);
+
+            return view('loker.management.partials.table_management', compact('data', 'gender'))->render();
+        }
+
+        $lokerPria   = $queryPria->paginate(10);
+        $lokerWanita = $queryWanita->paginate(10);
+
+        return view('loker.management.index', compact('lokerPria', 'lokerWanita', 'gender'));
+    }
+
+    public function bulkAdd(Request $request)
+    {
+        $request->validate([
+            'kode_rak' => 'required|in:LP,LW',
+            'jumlah'   => 'required|integer|min:1|max:100',
+        ]);
+
+        $kodeRak    = $request->kode_rak;
+        $gender     = ($kodeRak == 'LP') ? 'L' : 'P';
+        $jumlahBaru = $request->jumlah;
+
+        $existingNumbers = DB::table('loker_rak')
+            ->where('kode_rak', $kodeRak)
+            ->pluck('no_loker')
+            ->toArray();
+
+        // $lastLoker = DB::table('loker_rak')
+        //     ->where('kode_rak', $kodeRak)
+        //     ->max('no_loker');
+
+        // $startNumber = $lastLoker ? $lastLoker + 1 : 1;
+        // $endNumber   = $lastLoker + $jumlahBaru;
+
+        DB::beginTransaction();
+        try {
+            // for ($i = $startNumber; $i <= $endNumber; $i++) {
+            //     DB::table('loker_rak')->insert([
+            //         'kode_rak'   => $kodeRak,
+            //         'no_loker'   => $i,
+            //         'gender'     => $gender,
+            //         'kapasitas'  => 2,
+            //         'is_active'  => 'Y',
+            //         'updated_at' => now(),
+            //     ]);
+            // }
+
+            $insertedCount = 0;
+            $currentNumber = 1;
+            $addedNumbers  = [];
+
+            while ($insertedCount < $jumlahBaru) {
+                if (! in_array($currentNumber, $existingNumbers)) {
+                    DB::table('loker_rak')->insert([
+                        'kode_rak'   => $kodeRak,
+                        'no_loker'   => $currentNumber,
+                        'gender'     => $gender,
+                        'kapasitas'  => 2,
+                        'is_active'  => 'Y',
+                        'updated_at' => now(),
+                    ]);
+
+                    $addedNumbers[] = $currentNumber;
+                    $insertedCount++;
+                }
+
+                $currentNumber++;
+
+                if ($currentNumber > 10000) {
+                    break;
+                }
+
+            }
+
+            DB::commit();
+
+            $infoRange = count($addedNumbers) > 0 ? "(" . min($addedNumbers) . " s/d " . max($addedNumbers) . ")" : "";
+
+            return response()->json([
+                'status'  => 'success',
+                'message' => "Berhasil menambah $jumlahBaru unit loker $infoRange",
+            ]);
+        } catch (\Exception $e) {
+            DB::rollback();
+            return response()->json([
+                'status'  => 'error',
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
     public function searchKaryawan($search)
     {
         $search = trim($search);
@@ -157,6 +292,34 @@ class LokerV2Controller extends Controller
                 'status_hris' => ($karyawan && $karyawan->active == 'Y') ? 'Aktif' : 'Tidak Aktif',
             ],
         ]);
+    }
+
+    public function searchGlobal(Request $request)
+    {
+        $keyword = $request->q;
+        $gender  = $request->gender;
+        $prefix  = $this->getPrefix($gender);
+
+        $data = DB::table('loker_penghuni')
+            ->where('kode_rak', $prefix)
+            ->where(function ($q) use ($keyword) {
+                $q->where('nik', $keyword)
+                    ->orWhere('nama', 'LIKE', "%$keyword%");
+            })
+            ->whereNull('tgl_keluar')
+            ->where('is_active', 'Y')
+            ->select('no_loker', 'kode_rak')
+            ->first();
+
+        if ($data) {
+            return response()->json([
+                'success'  => true,
+                'no_loker' => $data->no_loker,
+                'gender'   => ($data->kode_rak == 'LP') ? 'L' : 'P',
+            ]);
+        }
+
+        return response()->json(['success' => false]);
     }
 
     public function apiSuggestLoker(Request $request)
@@ -240,7 +403,18 @@ class LokerV2Controller extends Controller
     {
         $prefix = $this->getPrefix($gender);
 
-        $data = DB::table('loker_penghuni')
+        $unit = DB::table('loker_rak')
+            ->where('kode_rak', $prefix)
+            ->where('no_loker', $no_loker)
+            ->first();
+
+        $statusUnit = 'aktif';
+
+        if ($unit && $unit->is_active === 'N') {
+            $statusUnit = 'rusak';
+        }
+
+        $penghuni = DB::table('loker_penghuni')
             ->where('kode_rak', $prefix)
             ->where('no_loker', $no_loker)
             ->whereNull('tgl_keluar')
@@ -256,7 +430,10 @@ class LokerV2Controller extends Controller
                 return $item;
             });
 
-        return response()->json($data);
+        return response()->json([
+            'status_unit' => $statusUnit,
+            'data'        => $penghuni,
+        ]);
     }
 
     public function updateStatus(Request $request)
@@ -417,30 +594,21 @@ class LokerV2Controller extends Controller
             $prefix = ($gender == 'L') ? 'LP' : 'LW';
 
             DB::transaction(function () use ($request, $gender, $prefix) {
-                // 1. Bersihkan data penghuni lama
                 DB::table('loker_penghuni')->where('kode_rak', $prefix)->delete();
 
-                // 2. Jalankan Import
+                // 2. Jalankan Import Excel
                 $importInstance = new LokerImport($gender);
                 Excel::import($importInstance, $request->file('file'));
 
-                // 3. Ambil nomor terakhir yang terbaca di Excel (Misal: 228)
-                $maxLoker = (int) $importInstance->getLastLoker();
-
-                // 4. Ambil data penghuni yang baru masuk untuk referensi mapping
                 $newPenghuni = DB::table('loker_penghuni')
                     ->where('kode_rak', $prefix)
                     ->get()
                     ->groupBy('no_loker');
 
-                // 5. Sinkronisasi Unit Loker (Loop 1 sampai Max Loker)
-                for ($i = 1; $i <= $maxLoker; $i++) {
-                    $noLoker = (string) $i;
-                    $items   = isset($newPenghuni[$noLoker]) ? $newPenghuni[$noLoker] : null;
-
+                foreach ($newPenghuni as $noLoker => $items) {
                     $label = null;
-                    if ($items && count($items) > 0) {
-                        $p     = $items[0]; // Di Laravel 7 koleksi bisa diakses via index
+                    if (count($items) > 0) {
+                        $p     = $items[0];
                         $count = count($items);
                         $label = "Terisi: " . ($p->nik ?? '-') . " - " . ($p->nama ?? '-');
                         if ($count > 1) {
@@ -459,19 +627,12 @@ class LokerV2Controller extends Controller
                         ]
                     );
                 }
-
-                // 6. PERBAIKAN ERROR: Matikan loker lama yang nomornya di luar jangkauan Excel
-                // Di Laravel 7, gunakan whereRaw untuk casting manual
-                DB::table('loker_rak')
-                    ->where('kode_rak', $prefix)
-                    ->whereRaw('CAST(no_loker AS UNSIGNED) > ?', [$maxLoker])
-                    ->update([
-                        'is_active'  => 'N',
-                        'updated_at' => now(),
-                    ]);
             });
 
-            return response()->json(['status' => 'success', 'message' => 'Import sukses! ' . $gender . ' terupdate sampai nomor terakhir.']);
+            return response()->json([
+                'status'  => 'success',
+                'message' => 'Import sukses! Data plotting Excel diperbarui.',
+            ]);
 
         } catch (\Exception $e) {
             return response()->json(['status' => 'error', 'message' => 'Gagal: ' . $e->getMessage()], 500);
@@ -484,53 +645,6 @@ class LokerV2Controller extends Controller
         return Excel::download(new LokerExport($gender), $namaFile);
     }
 
-    // public function checkRfid(Request $request)
-    // {
-    //     $rfidInput = trim($request->rfid_uid);
-
-    //     if (! $rfidInput) {
-    //         return response()->json(['status' => 'error', 'message' => 'Input kosong'], 400);
-    //     }
-
-    //     $karyawan = DB::table('hr_karyawan')
-    //         ->where('nik', $rfidInput)
-    //         ->where('active', 'Y')
-    //         ->first();
-
-    //     if (! $karyawan) {
-    //         $karyawan = DB::table('hr_karyawan')
-    //             ->where('cardnodevice', $rfidInput)
-    //             ->where('active', 'Y')
-    //             ->first();
-    //     }
-
-    //     if (! $karyawan) {
-    //         return response()->json([
-    //             'status'  => 'error',
-    //             'message' => "Data ($rfidInput) tidak ditemukan di kolom NIK maupun Card Device!",
-    //         ], 404);
-    //     }
-
-    //     $checkLoker = DB::table('loker_penghuni')
-    //         ->where('nik', $karyawan->nik)
-    //         ->first();
-
-    //     if ($checkLoker) {
-    //         return response()->json([
-    //             'status'   => 'has_loker',
-    //             'nik'      => $karyawan->nik,
-    //             'no_loker' => $checkLoker->no_loker,
-    //             'gender'   => $karyawan->jenis_kelamin,
-    //         ]);
-    //     } else {
-    //         return response()->json([
-    //             'status' => 'new',
-    //             'nik'    => $karyawan->nik,
-    //             'nama'   => $karyawan->nama,
-    //         ]);
-    //     }
-    // }
-
     public function getFoto($nik)
     {
         $imageData = Cache::remember("foto_karyawan_{$nik}", 3600, function () use ($nik) {
@@ -541,5 +655,56 @@ class LokerV2Controller extends Controller
             } catch (\Throwable $e) {return 'error';}
         });
         return response()->json(['success' => ($imageData && $imageData !== 'error'), 'image' => $imageData]);
+    }
+
+    public function destroy(Request $request, $id)
+    {
+        $loker = DB::table('loker_rak')->where('id', $id)->first();
+
+        if (! $loker) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Data tidak ditemukan',
+            ], 404);
+        }
+
+        $isOccupied = DB::table('loker_penghuni')
+            ->where('no_loker', $loker->no_loker)
+            ->where('kode_rak', $loker->kode_rak)
+            ->exists();
+
+        if ($isOccupied) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => "Loker {$loker->no_loker} gagal dihapus karena masih ada penghuninya!",
+            ], 422);
+        }
+
+        // $kodeRak = $loker->kode_rak;
+        $gender = $loker->gender;
+
+        DB::table('loker_rak')->where('id', $id)->delete();
+
+        $data = DB::table('loker_rak')
+            ->where('gender', $gender)
+            ->whereNotExists(function ($query) {
+                $query->select(DB::raw(1))
+                    ->from('loker_penghuni')
+                    ->whereRaw('loker_penghuni.no_loker = loker_rak.no_loker')
+                    ->whereRaw('loker_penghuni.kode_rak = loker_rak.kode_rak');
+            })->paginate(10);
+
+        $html = view('loker.management.partials.table_management', [
+            'data'   => $data,
+            'gender' => $gender,
+        ])->render();
+
+        return response()->json([
+            'status'  => 'success',
+            'message' => "Loker {$loker->no_loker} berhasil dihapus.",
+            'newTotal' => $data->total(),
+            'html'     => $html,
+            'gender'   => $gender,
+        ]);
     }
 }

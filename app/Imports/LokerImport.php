@@ -54,15 +54,7 @@ class LokerImport implements ToModel, WithStartRow, WithCalculatedFormulas
         $nama = isset($row[8]) ? trim((string) $row[8]) : '';
         $nama = preg_replace('/\s+/', ' ', trim($nama));
 
-        // --- PERUBAHAN DISINI ---
-        // Jika nama kosong atau baris kosong, kita tetap return model
-        // tapi pastikan kita hanya simpan data JIKA ada NIK/Nama.
-        // Namun, agar Maatwebsite Excel mencatat "baris ini ada", kita buat logic manual
-        // atau pastikan di Controller kita mensinkronkan SEMUA nomor yang muncul di kolom B.
-
         if (empty($nama) || $nama === '-' || $nama === 'Nama Karyawan') {
-            // Kita masukkan data dummy/kosong ke tabel penghuni dengan flag is_active 'N'
-            // atau cukup return null tapi pastikan nomor loker terakhir tetap tersimpan di memori.
             return null;
         }
 
