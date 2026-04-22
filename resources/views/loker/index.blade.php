@@ -45,9 +45,9 @@
             <div class="col-md-5 col-lg-4 mb-3 mb-md-0">
                 <div class="bas-search-wrap">
                     <span class="bas-search-icon"><i class="flaticon2-search-1"></i></span>
-                    <input type="text" id="search_loker_input" class="bas-search-input" placeholder="Cari nomor loker..."
-                        data-toggle="tooltip" data-placement="top"
-                        title="Pencarian otomatis berdasarkan nomor unit pada tab yang aktif">
+                    <input type="text" id="search_loker_input" class="bas-search-input"
+                        placeholder="Cari nomor unit, nama, atau NIK..." data-toggle="tooltip" data-placement="top"
+                        title="Cari cepat berdasarkan nomor unit, NIK, atau nama karyawan pada tab yang aktif">
                 </div>
             </div>
             <div class="col-md-7 col-lg-8 text-right">
@@ -118,87 +118,7 @@
             </ul>
 
             {{-- Tab Content --}}
-            <div class="tab-content">
-                @foreach ($dashboardData as $label => $data)
-                    @php $genderKey = ($label == 'Pria') ? 'L' : 'P'; @endphp
-                    <div class="tab-pane fade {{ $loop->first ? 'show active' : '' }}"
-                        id="tab_content_{{ $genderKey }}" role="tabpanel">
-
-                        <div class="bas-loker-grid" id="container_{{ $genderKey }}">
-                            @foreach ($data['lockers'] as $loker)
-                                @php
-                                    $count = $loker['count'];
-                                    $status = $loker['status'];
-                                    $kat = strtolower(trim($loker['kategori']));
-
-                                    if ($status == 'rusak') {
-                                        $cardClass = 'bas-loker-rusak';
-                                        $statusLabel = 'PERBAIKAN';
-                                    } elseif ($status == 'penuh') {
-                                        $cardClass = 'bas-loker-penuh';
-                                        $statusLabel = 'PENUH';
-                                    } elseif ($count > 0) {
-                                        $cardClass = 'bas-loker-terisi';
-                                        $statusLabel = 'TERISI (1/2)';
-                                    } else {
-                                        $cardClass = 'bas-loker-kosong';
-                                        $statusLabel = 'KOSONG';
-                                    }
-
-                                    $namaKategori = strtoupper(str_replace('_', ' ', $kat)) ?: 'NON STAFF';
-                                @endphp
-
-                                <div class="loker-wrapper">
-                                    @php
-                                        $tooltipText = '';
-                                        if ($status == 'rusak') {
-                                            $tooltipText =
-                                                'Unit dalam perbaikan. Klik untuk ubah status menjadi aktif.';
-                                        } elseif ($status == 'penuh') {
-                                            $tooltipText = 'Unit penuh. Klik untuk lihat detail penghuni.';
-                                        } elseif ($count > 0) {
-                                            $tooltipText = 'Terisi 1 orang. Klik untuk detail atau tambah penghuni.';
-                                        } else {
-                                            $tooltipText = 'Unit kosong. Belum memiliki penghuni';
-                                        }
-                                    @endphp
-
-                                    <div class="bas-loker-card {{ $cardClass }}"
-                                        onclick="showDetail('{{ $genderKey }}', '{{ $loker['no'] }}')"
-                                        data-toggle="tooltip" data-theme="dark" title="{{ $tooltipText }}"
-                                        data-no="{{ $loker['no'] }}" data-kategori="{{ $kat }}"
-                                        data-nik="{{ $loker['nik'] ?? '' }}"
-                                        data-nama="{{ strtolower($loker['nama'] ?? '') }}">
-
-                                        {{-- Status indicator dot --}}
-                                        <span class="bas-loker-indicator"></span>
-
-                                        {{-- Kategori (hanya jika ada isi & bukan rusak) --}}
-                                        @if ($count > 0 && $status != 'rusak')
-                                            <div class="bas-loker-kat">{{ $namaKategori }}</div>
-                                        @else
-                                            <div class="bas-loker-kat" style="visibility:hidden;">—</div>
-                                        @endif
-
-                                        {{-- Nomor Loker --}}
-                                        <div class="bas-loker-no">{{ $loker['no'] }}</div>
-
-                                        {{-- Badge Status --}}
-                                        <div class="bas-loker-badge">{{ $statusLabel }}</div>
-                                    </div>
-                                </div>
-                            @endforeach
-                        </div>
-
-                        {{-- Empty state saat search tidak ketemu --}}
-                        <div class="empty-state d-none text-center py-12">
-                            <div class="bas-empty-icon mb-4"><i class="fas fa-search"></i></div>
-                            <p class="bas-empty-text">Nomor loker tidak ditemukan.</p>
-                        </div>
-
-                    </div>
-                @endforeach
-            </div>
+            @include('loker.partials.table_loker')
         </div>
 
     </div>
@@ -210,11 +130,6 @@
 
 @push('scripts')
     <style>
-        /* ============================================
-                                                                                                                                                                   BAS LOKER DASHBOARD — CUSTOM STYLES
-                                                                                                                                                                   Compatible: Bootstrap 4 + Metronic 7 + Laravel 7
-                                                                                                                                                                   ============================================ */
-
         :root {
             --bas-primary: #F59E0B;
             --bas-primary-dark: #D97706;
@@ -851,55 +766,99 @@
             // 4. TAB GENDER TRACKING
             $('a[data-toggle="tab"]').on('shown.bs.tab', function(e) {
                 state.gender = $(e.target).attr("href").includes('_L') ? 'L' : 'P';
+
+                $('#search_loker_input').val('');
+
+                const container = $(`#tab_content_${state.gender}`);
+                container.find('.loker-wrapper').show();
+                container.find('.empty-state').addClass('d-none');
             });
 
-            // --- FITUR RFID SCAN (NIK) ---
-            // let rfidBuffer = "";
-            // $(document).on('keypress', function(e) {
-            //     // Jika tombol yang ditekan adalah Enter (kode 13)
-            //     if (e.which === 13) {
-            //         if (rfidBuffer.length > 5) {
-            //             handleRfidScan(rfidBuffer);
-            //             rfidBuffer = "";
-            //         }
-            //     } else {
-            //         // Gabungkan karakter ke buffer
-            //         rfidBuffer += String.fromCharCode(e.which);
-            //     }
-            // });
-
-            // 5. SEARCH UNIT LOKER (With Debounce & Tooltip Refresh)
+            // 5. SEARCH UNIT LOKER (With Debounce, Tooltip Refresh & Enter to Open)
             let searchTimer;
-            $('#search_loker_input').on('keyup', function() {
+            $('#search_loker_input').on('keyup', function(e) {
                 clearTimeout(searchTimer);
-                let value = $(this).val().toLowerCase();
+
+                let value = $(this).val().trim();
+                const container = $(`#tab_content_${state.gender}`);
+                const items = container.find('.loker-wrapper');
+                const emptyState = container.find('.empty-state');
+
+                if (e.which === 13 && value.length > 0) {
+                    items.show();
+                    emptyState.addClass('d-none');
+                    refreshTooltips();
+
+                    if (!isNaN(value)) {
+                        const card = container.find(`.bas-loker-card[data-no="${value}"]`);
+                        if (card.length > 0) {
+                            showDetail(state.gender, value);
+                        } else {
+                            cariDataGlobal(value);
+                        }
+                    } else {
+                        cariDataGlobal(value);
+                    }
+
+                    $(this).val('');
+                    return;
+                }
 
                 searchTimer = setTimeout(function() {
-                    const container = $(`#tab_content_${state.gender}`);
-                    const items = container.find('.loker-wrapper');
+                    let keyword = value.toLowerCase();
+
+                    if (value === '') {
+                        items.show();
+                        emptyState.addClass('d-none');
+                        refreshTooltips();
+                        return;
+                    }
+
                     let found = 0;
-
                     items.each(function() {
-                        const card = $(this).find('.bas-loker-card');
-
-                        const noLoker = card.data('no') ? card.data('no').toString()
-                            .toLowerCase() : '';
-                        const nik = card.data('nik') ? card.data('nik').toString()
-                            .toLowerCase() : '';
-                        const nama = card.data('nama') ? card.data('nama').toString()
-                            .toLowerCase() : '';
-
-                        const isMatch = noLoker.includes(value) || nik.includes(value) ||
-                            nama.includes(value);
+                        const noLoker = $(this).find('.bas-loker-card').data('no')
+                            .toString()
+                            .toLowerCase();
+                        const isMatch = noLoker.includes(keyword);
 
                         $(this).toggle(isMatch);
                         if (isMatch) found++;
                     });
 
-                    container.find('.empty-state').toggleClass('d-none', found > 0);
+                    if (found === 0) {
+                        emptyState.removeClass('d-none');
+                        emptyState.find('.empty-state-text').text(
+                            `Loker nomor "${value}" tidak ditemukan`);
+                    } else {
+                        emptyState.addClass('d-none');
+                    }
+
                     refreshTooltips();
                 }, 250);
             });
+
+            function cariDataGlobal(keyword) {
+                KTApp.blockPage({
+                    message: 'Mencari data penghuni...'
+                });
+
+                $.get("{{ route('loker.search-global') }}", {
+                    q: keyword,
+                    gender: state.gender
+                }).done(function(res) {
+                    KTApp.unblockPage();
+                    if (res.success) {
+                        showDetail(res.gender, res.no_loker);
+                    } else {
+                        Swal.fire('Tidak Ditemukan',
+                            `Data "${keyword}" tidak terdaftar di loker ${state.gender === 'L' ? 'Pria' : 'Wanita'}`,
+                            'info');
+                    }
+                }).fail(() => {
+                    KTApp.unblockPage();
+                    Swal.fire('Error', 'Gagal mencari data', 'error');
+                })
+            }
 
             // 6. MANUAL SELECT LOKER LISTENER (Form Plotting)
             $('#select_no_loker').on('change', function() {
@@ -950,35 +909,49 @@
             });
         });
 
-        // --- MODAL DETAIL & STATUS ---
+        // function showDetail(genderCode, no) {
+        //     state.gender = genderCode;
+        //     state.lokerNo = no;
+        //     const label = genderCode === 'L' ? ' (Pria)' : ' (Wanita)';
 
-        // function handleRfidScan(nik) {
-        //     KTApp.blockPage({
-        //         overlayColor: '#000000',
-        //         state: 'primary',
-        //         message: 'Mengecek Data Karyawan...'
-        //     });
+        //     $('#detail_no_label').text(`#${no}${label}`);
+        //     $('#detail_penghuni_list').html(
+        //         '<tr><td colspan="6" class="text-center p-5"><i class="fas fa-spinner fa-spin mr-2"></i> Memuat Data...</td></tr>'
+        //     );
 
-        //     $.get("{{ route('loker.check-rfid') }}", {
-        //             rfid_uid: nik
-        //         })
-        //         .done(function(res) {
-        //             KTApp.unblockPage();
-        //             if (res.status == 'has_loker') {
-        //                 showDetail(res.gender, res.no_loker);
+        //     $('#btn_rusak').off('click').on('click', () => updateStatusLoker('rusak', genderCode, no));
+        //     $('#btn_aktif').off('click').on('click', () => updateStatusLoker('aktif', genderCode, no));
+
+        //     $.get(`{{ url('loker/detail') }}/${genderCode}/${no}`)
+        //         .done(function(data) {
+        //             let html = '';
+        //             if (data && data.length > 0) {
+        //                 data.forEach(p => {
+        //                     html += `<tr>
+    //                     <td class="font-weight-bold text-primary">${p.nik}</td>
+    //                     <td><span class="text-dark-75 font-weight-bolder d-block font-size-lg">${p.nama}</span></td>
+    //                     <td><span class="label label-inline label-light-success font-weight-bold">${p.kategori.toUpperCase()}</span></td>
+    //                     <td><span class="text-muted font-weight-bold">${p.divisi || '-'}</span></td>
+    //                     <td>${p.tgl_masuk}</td>
+    //                     <td class="text-right">
+    //                         <button class="btn btn-icon btn-light-primary btn-xs mr-1" onclick="pindahLoker('${p.nik}')" data-toggle="tooltip" title="Relokasi">
+    //                             <i class="flaticon-refresh"></i>
+    //                         </button>
+    //                         <button class="btn btn-icon btn-light-danger btn-xs" onclick="konfirmasiTarikKunci('${p.id}', '${p.nama}')" data-toggle="tooltip" title="Tarik Kunci">
+    //                             <i class="flaticon2-logout-1"></i>
+    //                         </button>
+    //                     </td>
+    //                 </tr>`;
+        //                 });
         //             } else {
-        //                 openModalPlotting(res.nik);
+        //                 html =
+        //                     '<tr><td colspan="6" class="text-center p-10 text-muted">Unit Kosong / Tidak Ada Penghuni</td></tr>';
         //             }
+        //             $('#detail_penghuni_list').html(html);
+        //             refreshTooltips();
+        //             $('#modalDetail').modal('show');
         //         })
-        //         .fail(function(err) {
-        //             KTApp.unblockPage();
-        //             Swal.fire({
-        //                 title: 'Gagal!',
-        //                 text: err.responseJSON ? err.responseJSON.message : 'Data tidak ditemukan',
-        //                 icon: 'error',
-        //                 confirmButtonText: 'Oke'
-        //             });
-        //         });
+        //         .fail(() => Swal.fire('Error', 'Gagal memuat detail', 'error'));
         // }
 
         function showDetail(genderCode, no) {
@@ -991,35 +964,51 @@
                 '<tr><td colspan="6" class="text-center p-5"><i class="fas fa-spinner fa-spin mr-2"></i> Memuat Data...</td></tr>'
             );
 
-            $('#btn_rusak').off('click').on('click', () => updateStatusLoker('rusak', genderCode, no));
-            $('#btn_aktif').off('click').on('click', () => updateStatusLoker('aktif', genderCode, no));
+            // Reset tombol (hide dulu semua)
+            $('#btn_rusak, #btn_aktif').hide();
 
             $.get(`{{ url('loker/detail') }}/${genderCode}/${no}`)
-                .done(function(data) {
+                .done(function(res) {
                     let html = '';
-                    if (data && data.length > 0) {
-                        data.forEach(p => {
+
+                    if (res.status_unit === 'rusak') {
+                        $('#btn_aktif').show();
+                        $('#btn_rusak').hide();
+                    } else {
+                        $('#btn_rusak').show();
+                        $('#btn_aktif').hide();
+                    }
+
+                    // Loop data penghuni (res.data)
+                    if (res.data && res.data.length > 0) {
+                        res.data.forEach(p => {
                             html += `<tr>
-                            <td class="font-weight-bold text-primary">${p.nik}</td>
-                            <td><span class="text-dark-75 font-weight-bolder d-block font-size-lg">${p.nama}</span></td>
-                            <td><span class="label label-inline label-light-success font-weight-bold">${p.kategori.toUpperCase()}</span></td>
-                            <td><span class="text-muted font-weight-bold">${p.divisi || '-'}</span></td>
-                            <td>${p.tgl_masuk}</td>
-                            <td class="text-right">
-                                <button class="btn btn-icon btn-light-primary btn-xs mr-1" onclick="pindahLoker('${p.nik}')" data-toggle="tooltip" title="Relokasi">
-                                    <i class="flaticon-refresh"></i>
-                                </button>
-                                <button class="btn btn-icon btn-light-danger btn-xs" onclick="konfirmasiTarikKunci('${p.id}', '${p.nama}')" data-toggle="tooltip" title="Tarik Kunci">
-                                    <i class="flaticon2-logout-1"></i>
-                                </button>
-                            </td>
-                        </tr>`;
+                        <td class="font-weight-bold text-primary">${p.nik}</td>
+                        <td><span class="text-dark-75 font-weight-bolder d-block font-size-lg">${p.nama}</span></td>
+                        <td><span class="label label-inline label-light-success font-weight-bold">${p.kategori.toUpperCase()}</span></td>
+                        <td><span class="text-muted font-weight-bold">${p.divisi || '-'}</span></td>
+                        <td>${p.tgl_masuk}</td>
+                        <td class="text-right">
+                            <button class="btn btn-icon btn-light-primary btn-xs mr-1" onclick="pindahLoker('${p.nik}')" data-toggle="tooltip" title="Relokasi">
+                                <i class="flaticon-refresh"></i>
+                            </button>
+                            <button class="btn btn-icon btn-light-danger btn-xs" onclick="konfirmasiTarikKunci('${p.id}', '${p.nama}')" data-toggle="tooltip" title="Tarik Kunci">
+                                <i class="flaticon2-logout-1"></i>
+                            </button>
+                        </td>
+                    </tr>`;
                         });
                     } else {
                         html =
                             '<tr><td colspan="6" class="text-center p-10 text-muted">Unit Kosong / Tidak Ada Penghuni</td></tr>';
                     }
+
                     $('#detail_penghuni_list').html(html);
+
+                    // Re-bind click event dengan data terbaru
+                    $('#btn_rusak').off('click').on('click', () => updateStatusLoker('rusak', genderCode, no));
+                    $('#btn_aktif').off('click').on('click', () => updateStatusLoker('aktif', genderCode, no));
+
                     refreshTooltips();
                     $('#modalDetail').modal('show');
                 })

@@ -675,17 +675,21 @@ Route::group(['middleware' => ['auth', 'rules', 'access_log']], function () {
 
         // --- INTERAKSI AJAX ---
         Route::get('/search-karyawan/{nik}', 'LokerV2Controller@searchKaryawan')->name('loker.search-karyawan');
+        Route::get('/search-global', 'LokerV2Controller@searchGlobal')->name('loker.search-global');
         Route::get('/api-suggest-loker', 'LokerV2Controller@apiSuggestLoker')->name('loker.api-suggest-loker');
         Route::get('/detail/{gender}/{no_loker}', 'LokerV2Controller@getDetailLoker')->name('loker.detail');
         Route::get('/available/{gender}/{kategori}', 'LokerV2Controller@getAvailableLockers')->name('loker.available');
         Route::get('/get-foto/{nik}', 'LokerV2Controller@getFoto')->name('loker.get-foto');
 
         // --- FITUR ACTION & MAINTENANCE ---
+        Route::get('/management', 'LokerV2Controller@management')->name('loker.management');
+        Route::post('/bulk-add', 'LokerV2Controller@bulkAdd')->name('loker.bulk-add');
         Route::get('/check-rfid', 'LokerV2Controller@checkRfid')->name('loker.check-rfid');
         // Route::post('/tandai-rusak', 'LokerV2Controller@tandaiRusak')->name('loker.tandai-rusak');
         // Route::post('/tandai-aktif', 'LokerV2Controller@tandaiAktif')->name('loker.tandai-aktif');
         Route::post('/update-status', 'LokerV2Controller@updateStatus')->name('loker.update-status');
         Route::post('/tarik-kunci', 'LokerV2Controller@tarikKunci')->name('loker.tarik-kunci');
+        Route::delete('/delete/{id}', 'LokerV2Controller@destroy')->name('loker.delete');
 
         // --- DATA UTILITIES ---
         Route::get('/blok-by-gender/{gender}', 'LokerV2Controller@getBlokByGender')->name('loker.get-blok');
