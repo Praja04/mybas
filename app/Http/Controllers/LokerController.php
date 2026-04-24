@@ -1,114 +1,87 @@
 <?php
-
 namespace App\Http\Controllers;
 
-use App\Department;
-use App\Services\LokerCapacityService;
-use Illuminate\Support\Facades\DB;
+use App\Http\Controllers\Controller;
+use App\Models\HR\Karyawan;
+use App\Models\Loker\Rak;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 class LokerController extends Controller
 {
-
-    protected $capacityService;
-
-    public function __construct(LokerCapacityService $capacityService)
+    private function getPrefix($gender)
     {
-        $this->capacityService = $capacityService;
+        $gender = strtolower($gender);
+        return ($gender === 'l' || $gender === 'pria') ? 'LP' : 'LW';
     }
-    
+
     public function index()
     {
-        $lokerQuery = DB::table('loker_rak as lr')
-            ->leftJoin('loker_penghuni as lp', function($join) {
-                $join->on('lr.kode_rak', '=', 'lp.kode_rak')
-                    ->on('lr.no_loker', '=', 'lp.no_loker')
-                    ->whereNull('lp.tgl_keluar');
-            })
-            ->select('lr.no_loker', 'lr.is_active', DB::raw('COUNT(lp.id) as terisi'), DB::raw('MIN(lp.staff) as kategori_staff'))
-            ->groupBy('lr.no_loker', 'lr.is_active');
+        $genders       = ['L' => 'Pria', 'P' => 'Wanita'];
+        $dashboardData = [];
+        $grandTotal    = ['total' => 0, 'penuh' => 0, 'tersedia' => 0, 'rusak' => 0];
 
-        // Hitung global
-        // $lokerGlobal = (clone $lokerQuery)->get()->map(function($row) {
-        //     if ($row->is_active === 'N') {
-        //         $status = 'perbaikan';
-        //     } elseif ($row->terisi >= ($row->kategori_staff === 'staff' ? 1 : 2)) {
-        //         $status = 'terisi';
-        //     } else {
-        //         $status = 'tersedia';
-        //     }
+        $allLockers = Rak::leftJoin('loker_penghuni', function ($join) {
+            $join->on('loker_rak.kode_rak', '=', 'loker_penghuni.kode_rak')
+                ->on('loker_rak.no_loker', '=', 'loker_penghuni.no_loker')
+                ->whereNull('loker_penghuni.tgl_keluar')
+                ->where('loker_penghuni.is_active', 'Y');
+        })
+            ->select('loker_rak.*', DB::raw('COUNT(loker_penghuni.id) as terisi'))
+            ->groupBy('loker_rak.id', 'loker_rak.kode_rak', 'loker_rak.no_loker', 'loker_rak.kode_blok', 'loker_rak.is_active', 'loker_rak.kapasitas')
+            ->orderByRaw('CAST(loker_rak.no_loker AS UNSIGNED) ASC')
+            ->get();
 
-        //     return $status;
-        // });
+        foreach ($genders as $code => $label) {
+            $prefix   = $this->getPrefix($code);
+            $filtered = $allLockers->where('kode_rak', $prefix);
 
-        // $countTersedia = $lokerGlobal->filter(fn($s) => $s === 'tersedia')->count();
-        // $countTerisi    = $lokerGlobal->filter(fn($s) => $s === 'terisi')->count();
-        // $countPerbaikan = $lokerGlobal->filter(fn($s) => $s === 'perbaikan')->count();
+            $processed = $filtered->map(function ($rak) use ($label) {
+                $status = 'tersedia';
+                if ($rak->is_active === 'N') {
+                    $status = 'rusak';
+                } elseif ($rak->terisi >= $rak->kapasitas) {
+                    $status = 'penuh';
+                }
 
+                return [
+                    'id'     => $rak->id,
+                    'no'     => $rak->no_loker,
+                    'block'  => $rak->kode_blok,
+                    'count'  => (int) $rak->terisi,
+                    'max'    => (int) $rak->kapasitas,
+                    'status' => $status,
+                    'gender' => $label,
+                ];
+            });
 
-        // Hitung per gender
-        $genders = ['pria' => 'P%', 'wanita' => 'W%'];
-        $countPerGender = [];
+            $stats = [
+                'total'    => $processed->count(),
+                'penuh'    => $processed->where('status', 'penuh')->count(),
+                'tersedia' => $processed->where('status', 'tersedia')->count(),
+                'rusak'    => $processed->where('status', 'rusak')->count(),
+            ];
 
-        foreach ($genders as $key => $prefix) {
-            $lokerGender = (clone $lokerQuery)
-                ->where('lr.kode_rak', 'LIKE', $prefix)
-                ->get()
-                ->map(function ($row) {
-                    // PRIORITAS 1: perbaikan
-                    if ($row->is_active === 'N') {
-                        return 'perbaikan';
-                    }
+            foreach ($stats as $key => $val) {
+                $grandTotal[$key] += $val;
+            }
 
-                    // PRIORITAS 2: hitung kapasitas hanya kalau aktif
-                    $max = ($row->kategori_staff === 'staff') ? 1 : 2;
-
-                    if ($row->terisi >= $max && $row->terisi > 0) {
-                        return 'terisi';
-                    }
-
-                    return 'tersedia';
-                });
-
-            $countPerGender[$key] = [
-                'tersedia' => $lokerGender->filter(fn($s) => $s === 'tersedia')->count(),
-                'terisi' => $lokerGender->filter(fn($s) => $s === 'terisi')->count(),
-                'perbaikan' => $lokerGender->filter(fn($s) => $s === 'perbaikan')->count(),
+            $dashboardData[$label] = [
+                'blocks' => $processed->groupBy('block'),
+                'stats'  => $stats,
             ];
         }
 
-        // Hitung total tersedia, terisi, perbaikan
-        $countTersedia  = array_sum(array_column($countPerGender, 'tersedia'));
-        $countTerisi    = array_sum(array_column($countPerGender, 'terisi'));
-        $countPerbaikan = array_sum(array_column($countPerGender, 'perbaikan'));
-
-        $departments = Department::where('status', '1')->get();
-
-        return view('loker.index', compact(
-            'countTersedia',
-            'countTerisi',
-            'countPerbaikan',
-            'countPerGender',
-            'departments'
-        ));
-
-        return view('loker.index', compact(
-            'countTersedia', 'countTerisi', 'countPerbaikan', 'countPerGender'
-        ));
+        return view('loker.index', compact('dashboardData', 'grandTotal'));
     }
 
     public function getBlokByGender($gender)
     {
-        $prefix = $gender === 'pria' ? 'P' : 'W';
-
-        $bloks = DB::table('loker_rak')
-            ->selectRaw(
-                "
-            SUBSTRING_INDEX(kode_blok, ' ', -1) as blok_nomor
-        ",
-            )
-            ->where('kode_rak', 'LIKE', $prefix . '%')
-            // ->where('is_active', 'Y')
+        $prefix = $this->getPrefix($gender);
+        $bloks  = DB::table('loker_rak')
+            ->selectRaw("SUBSTRING_INDEX(kode_blok, ' ', -1) as blok_nomor")
+            ->where('kode_rak', $prefix)
             ->groupBy('blok_nomor')
             ->orderByRaw("CAST(SUBSTRING_INDEX(blok_nomor, '-', 1) AS UNSIGNED)")
             ->get();
@@ -118,50 +91,29 @@ class LokerController extends Controller
 
     public function getNomorByBlok(Request $request)
     {
-        $gender = $request->gender; // pria | wanita
-        $blok = $request->blok; // contoh: "11-20"
-
-        $kodeRak = $gender === 'pria' ? ['PB'] : ['WB'];
+        $prefix = $this->getPrefix($request->gender);
+        $blok   = $request->blok;
 
         $data = DB::table('loker_rak as lr')
             ->leftJoin('loker_penghuni as lp', function ($join) {
-                $join->on('lr.kode_rak', '=', 'lp.kode_rak')->on('lr.no_loker', '=', 'lp.no_loker')->whereNull('lp.tgl_keluar');
+                $join->on('lr.kode_rak', '=', 'lp.kode_rak')
+                    ->on('lr.no_loker', '=', 'lp.no_loker')
+                    ->whereNull('lp.tgl_keluar')
+                    ->where('lp.is_active', 'Y');
             })
-            ->select('lr.no_loker', 'lr.is_active', DB::raw('COUNT(lp.id) as terisi'), DB::raw('MIN(lp.staff) as kategori_staff'), DB::raw('COUNT(DISTINCT lp.staff) as staff_count'))
-            ->whereIn('lr.kode_rak', $kodeRak)
-            ->where('lr.kode_blok', 'LIKE', '%' . $blok)
-            ->groupBy('lr.no_loker', 'lr.is_active')
-            ->orderBy('lr.no_loker')
+            ->select('lr.no_loker', 'lr.is_active', 'lr.kapasitas', DB::raw('COUNT(lp.id) as terisi'))
+            ->where('lr.kode_rak', $prefix)
+        // Optimasi: Gunakan LIKE untuk menghindari spasi ganda atau format yang agak beda
+            ->where('lr.kode_blok', 'LIKE', "%{$blok}%")
+            ->groupBy('lr.no_loker', 'lr.is_active', 'lr.kapasitas')
+            ->orderByRaw('CAST(lr.no_loker AS UNSIGNED) ASC')
             ->get()
             ->map(function ($row) {
-                // tentukan kapasitas berdasarkan kategori
-                if ($row->kategori_staff === 'staff') {
-                    $kapasitas = 1;
-                } elseif (in_array($row->kategori_staff, ['non_staff', 'mitra_kerja'])) {
-                    $kapasitas = 2;
-                } else {
-                    // belum ada penghuni
-                    $kapasitas = 2; // default maksimum
-                }
-
-                // validasi kategori ganda (harusnya tidak pernah)
-                $invalidKategori = $row->staff_count > 1;
-
-                if ($row->is_active === 'N') {
-                    $status = 'perbaikan';
-                } elseif ($row->terisi >= $kapasitas) {
-                    $status = 'terisi';
-                } else {
-                    $status = 'tersedia';
-                }
-
                 return [
-                    'no_loker' => $row->no_loker,
-                    'kapasitas' => $kapasitas,
-                    'terisi' => (int) $row->terisi,
-                    'status' => $status,
-                    'kategori_staff' => $row->kategori_staff, // null kalau kosong
-                    'invalid_kategori' => $invalidKategori,
+                    'no_loker'  => $row->no_loker,
+                    'kapasitas' => (int) $row->kapasitas,
+                    'terisi'    => (int) $row->terisi,
+                    'status'    => ($row->is_active === 'N') ? 'perbaikan' : (($row->terisi >= $row->kapasitas) ? 'penuh' : 'tersedia'),
                 ];
             });
 
@@ -170,266 +122,176 @@ class LokerController extends Controller
 
     public function getPenghuni(Request $request)
     {
-        $gender = $request->gender;
-        $noLoker = $request->no_loker;
+        $prefix = $this->getPrefix($request->gender);
 
-        $kodeRak = $gender === 'pria' ? ['PB'] : ['WB'];
-
-        $data = DB::table('loker_penghuni')->select('nama', 'nik', 'divisi', 'staff')->whereIn('kode_rak', $kodeRak)->where('no_loker', $noLoker)->whereNull('tgl_keluar')->where('is_active', 'Y')->orderBy('nama')->get();
-
-        // dd($gender, $noLoker, $kodeRak, $data);
-
-        return response()->json($data);
-    }
-
-    public function getDetailLoker($gender, $blok, $no_loker)
-    {
-        $kodeRak = $gender === 'pria' ? ['PB'] : ['WB'];
-
-        $penghuni = DB::table('loker_penghuni')
-            ->select('nama', 'nik', 'divisi as dept', 'staff')
-            ->whereIn('kode_rak', $kodeRak)
-            ->where('no_loker', $no_loker)
+        $data = DB::table('loker_penghuni')
+            ->select('nama', 'nik', 'divisi', 'kategori_karyawan')
+            ->where('kode_rak', $prefix)
+            ->where('no_loker', $request->no_loker)
             ->whereNull('tgl_keluar')
             ->where('is_active', 'Y')
             ->orderBy('nama')
             ->get();
 
-        $terisi = $penghuni->count();
-
-        $staffType = $penghuni->first()->staff ?? null;
-
-        $max = $staffType
-            ? $this->capacityService->resolveMaxCapacity($staffType)
-            : 2; // default saat kosong
-
-        return response()->json([
-            'kode_blok'     => $blok,
-            'no_loker'      => (int) $no_loker,
-            'jenis_kelamin' => ucfirst($gender),
-            'status'        => $terisi >= $max ? 'terisi' : 'tersedia',
-            'kapasitas'     => $max,
-            'terisi'        => $terisi,
-            'penghuni'      => $penghuni,
-        ]);
+        return response()->json($data);
     }
 
     public function getFoto($nik)
     {
-        try {
-            $user = DB::connection('192.168.178.44-admin')
-                ->table('MSIDCARD')
-                ->select('FOTOBLOB')
-                ->whereRaw('CAST(BARCODE AS SIGNED) = ?', [$nik])
-                ->first();
+        // Cache hanya menyimpan string Base64, bukan Object Response
+        $imageData = Cache::remember("foto_karyawan_{$nik}", 3600, function () use ($nik) {
+            try {
+                $user = DB::connection('192.168.178.44-admin')
+                    ->table('MSIDCARD')
+                    ->select('FOTOBLOB')
+                    ->whereRaw('CAST(BARCODE AS SIGNED) = ?', [$nik])
+                    ->first();
 
-            if (!$user || !$user->FOTOBLOB) {
-                return response()->json([
-                    'success' => false
-                ]);
+                return ($user && $user->FOTOBLOB) ? 'data:image/jpeg;base64,' . base64_encode($user->FOTOBLOB) : null;
+            } catch (\Throwable $e) {
+                return 'error';
             }
+        });
 
-            return response()->json([
-                'success' => true,
-                'image' => 'data:image/jpeg;base64,' . base64_encode($user->FOTOBLOB)
-            ]);
-
-        } catch (\Throwable $e) {
-            return response()->json([
-                'success' => false
-            ]);
+        if (! $imageData || $imageData === 'error') {
+            return response()->json(['success' => false, 'message' => $imageData === 'error' ? 'DB Error' : 'No Image']);
         }
+
+        return response()->json(['success' => true, 'image' => $imageData]);
     }
 
-   public function tandaiRusak(Request $request)
+    public function store(Request $request)
     {
         $request->validate([
-            'gender'   => 'required',
-            'blok'     => 'required',
+            'nik'      => 'required',
+            'nama'     => 'required',
             'no_loker' => 'required',
+            'gender'   => 'required',
         ]);
 
-        $kodeRak = $request->gender === 'pria' ? 'PB' : 'WB';
-        $kodeBlok = $kodeRak . ' ' . $request->blok;
-
-        DB::beginTransaction();
-
         try {
-            // cek penghuni aktif
-            $hasActivePenghuni = DB::table('loker_penghuni')
-                ->where('kode_rak', $kodeRak)
-                // ->where('kode_blok', $kodeBlok)
-                ->where('no_loker', $request->no_loker)
-                // ->where('is_active', 'Y')
-                ->lockForUpdate()
-                ->exists();
-
-            if ($hasActivePenghuni) {
-                DB::rollBack();
-
-                return response()->json([
-                    'status'  => 'error',
-                    'message' => 'Loker masih memiliki penghuni aktif. Silakan keluarkan penghuni terlebih dahulu.',
-                ], 422);
-            }
-
-            // update status loker
-            DB::table('loker_rak')
-                ->where('kode_rak', $kodeRak)
-                ->where('kode_blok', $kodeBlok)
-                ->where('no_loker', $request->no_loker)
-                ->update([
-                    'is_active'  => 'N',
-                ]);
-
-            DB::commit();
-
-            return response()->json([
-                'status'  => 'success',
-                'message' => 'Loker berhasil ditandai rusak.',
+            DB::table('loker_penghuni')->insert([
+                'kode_rak'          => $this->getPrefix($request->gender),
+                'no_loker'          => $request->no_loker,
+                'nik'               => $request->nik,
+                'nama'              => $request->nama,
+                'divisi'            => $request->dept ?? '-',
+                'kategori_karyawan' => $request->kategori ?? 'non_staff',
+                'is_active'         => 'Y',
+                'tgl_masuk'         => now(), // Tambahkan tgl_masuk jika ada di migrasi lo
+                'created_at'        => now(),
+                'updated_at'        => now(),
             ]);
 
-        } catch (\Throwable $e) {
-            DB::rollBack();
-
-            return response()->json([
-                'status'  => 'error',
-                'message' => 'Terjadi kesalahan saat menandai loker.' . $e->getMessage(),
-            ], 500);
+            return response()->json(['status' => 'success', 'message' => 'Data loker berhasil disimpan!']);
+        } catch (\Exception $e) {
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
         }
     }
 
-    public function tandaiAktif(Request $request)
+    public function apiSuggestLoker(Request $request)
     {
-        $request->validate([
-            'gender'   => 'required|in:pria,wanita',
-            'blok'     => 'required',
-            'no_loker' => 'required|integer',
-        ]);
+        $prefix   = $this->getPrefix($request->gender);
+        $kategori = $request->kategori;
 
-        $kodeRak  = $request->gender === 'pria' ? 'PB' : 'WB';
-        $kodeBlok = $kodeRak . ' ' . $request->blok;
+        $query = Rak::where('loker_rak.kode_rak', $prefix)
+            ->where('loker_rak.is_active', 'Y')
+            ->leftJoin('loker_penghuni', function ($join) {
+                $join->on('loker_rak.kode_rak', '=', 'loker_penghuni.kode_rak')
+                    ->on('loker_rak.no_loker', '=', 'loker_penghuni.no_loker')
+                    ->where('loker_penghuni.is_active', 'Y')
+                    ->whereNull('loker_penghuni.tgl_keluar');
+            })
+            ->select('loker_rak.no_loker', 'loker_rak.kapasitas')
+            ->selectRaw('COUNT(loker_penghuni.id) as terisi')
+            ->groupBy('loker_rak.no_loker', 'loker_rak.kapasitas');
 
-        $hasPenghuni = DB::table('loker_penghuni')
-            ->where('kode_rak', $kodeRak)
-            // ->where('kode_blok', $kodeBlok)
-            ->where('no_loker', $request->no_loker)
-            // ->where('is_active', 'Y')
-            ->exists();
-
-        if ($hasPenghuni) {
-            return response()->json([
-                'status'  => 'error',
-                'message' => 'Tidak bisa mengaktifkan loker yang masih memiliki penghuni.'
-            ], 422);
+        if ($kategori == 'staff') {
+            $query->havingRaw('COUNT(loker_penghuni.id) = 0');
+        } else {
+            $query->havingRaw('COUNT(loker_penghuni.id) < loker_rak.kapasitas');
         }
 
-        DB::table('loker_rak')
-            ->where('kode_rak', $kodeRak)
-            ->where('kode_blok', $kodeBlok)
-            ->where('no_loker', $request->no_loker)
-            ->update([
-                'is_active'  => 'Y',
-                // 'updated_at' => now(),
-            ]);
+        $suggest = $query->orderByRaw('CAST(loker_rak.no_loker AS UNSIGNED) ASC')->first();
 
         return response()->json([
-            'status'  => 'success',
-            'message' => 'Loker berhasil diaktifkan kembali.'
+            'status'            => 'success',
+            'rekomendasi_loker' => $suggest ? $suggest->no_loker : 'penuh',
         ]);
     }
 
     public function tarikKunci(Request $request)
     {
         $request->validate([
-            'nik' => 'required|string',
-            'alasan' => 'required|string',
+            'nik'    => 'required|string',
+            'alasan' => 'required|string|max:255',
         ]);
 
-        $nik = $request->nik;
-        $alasan = $request->alasan;
-
-        DB::transaction(function () use ($nik, $alasan) {
-
-            // Ambil SEMUA loker aktif milik NIK ini
-            $penghuniList = DB::table('loker_penghuni')
-                ->where('nik', $nik)
+        return DB::transaction(function () use ($request) {
+            // Hanya ambil record yang beneran aktif
+            $penghuniActive = DB::table('loker_penghuni')
+                ->where('nik', $request->nik)
                 ->where('is_active', 'Y')
+                ->whereNull('tgl_keluar')
                 ->get();
 
-            if ($penghuniList->isEmpty()) {
-                throw new \Exception('Data penghuni loker aktif tidak ditemukan');
+            if ($penghuniActive->isEmpty()) {
+                return response()->json(['status' => 'error', 'message' => 'Karyawan tidak memiliki loker aktif.'], 422);
             }
 
-            foreach ($penghuniList as $penghuni) {
-
-                DB::table('loker_user_transaksi')->insert([
-                    'nik' => $nik,
-                    'no_loker' => $penghuni->no_loker,
-                    'status' => 'OUT',
-                    'keterangan' => $alasan,
-                    'nama_pengisi' => auth()->user()->name ?? '',
-                    'nik_pengisi' => auth()->user()->username ?? '',
-                    'tgl_pengisi' => now()->format('Y-m-d'),
-                    'jam_pengisi' => now()->format('H:i:s'),
-                    'pindah_to' => null,
-                    'penghuni_sebelumnya' => $penghuni->nama ?? '',
-                    'alasan' => $alasan,
-                    'kode_area' => $penghuni->kode_area ?? '',
-                    'kode_blok' => $penghuni->kode_blok ?? '',
-                    'kode_rak' => $penghuni->kode_rak ?? '',
+            foreach ($penghuniActive as $p) {
+                DB::table('loker_transaksi')->insert([
+                    'nik'            => $request->nik,
+                    'nama'           => $p->nama,
+                    'kode_rak'       => $p->kode_rak,
+                    'no_loker'       => $p->no_loker,
+                    'tipe_transaksi' => 'KELUAR',
+                    'operator'       => auth()->user()->name ?? 'Admin IT',
+                    'keterangan'     => 'Penarikan: ' . $request->alasan,
+                    'created_at'     => now(),
                 ]);
             }
 
             DB::table('loker_penghuni')
-                ->where('nik', $nik)
-                ->where('is_active', 'Y')
+                ->where('nik', $request->nik)
+                ->where('is_active', 'Y') // Filter tambahan biar aman
                 ->update([
-                    'is_active' => 'N',
+                    'is_active'  => 'N',
                     'tgl_keluar' => now(),
                     'updated_at' => now(),
                 ]);
+
+            return response()->json(['status' => 'success', 'message' => 'Kunci berhasil ditarik.']);
         });
+    }
+
+    public function searchKaryawan($nik)
+    {
+        $karyawan = Karyawan::where('nik', $nik)->where('active', 'Y')->first();
+
+        if (! $karyawan) {
+            return response()->json(['success' => false, 'message' => 'Karyawan tidak ditemukan!']);
+        }
 
         return response()->json([
-            'status' => 'success',
-            'message' => 'Kunci berhasil ditarik'
+            'success' => true,
+            'data'    => [
+                'nik'      => $karyawan->nik,
+                'nama'     => $karyawan->nama,
+                'gender'   => $karyawan->jenis_kelamin,
+                'kategori' => ($karyawan->staff == 'Y') ? 'staff' : 'non_staff',
+                'dept'     => $karyawan->kode_divisi,
+            ],
         ]);
     }
 
-    public function getAvailableLoker(Request $req)
+    public function getDetailLoker($gender, $no_loker)
     {
-        $gender = $req->gender; // L / P
+        if (! $gender || ! $no_loker) {
+            return response()->json(['error' => 'Parameter tidak lengkap'], 400);
+        }
 
-        $kodeRak = $gender === 'L' ? 'PB' : 'WB';
-
-        $lockers = DB::table('loker_rak as lr')
-            ->leftJoin('loker_penghuni as lp', function ($join) {
-                $join->on('lr.kode_rak', '=', 'lp.kode_rak')
-                    ->on('lr.no_loker', '=', 'lp.no_loker')
-                    ->where('lp.is_active', 'Y');
-            })
-            ->where('lr.kode_rak', $kodeRak)
-            ->where('lr.is_active', 'Y')
-            ->select(
-                'lr.id',
-                'lr.kode_rak',
-                'lr.no_loker',
-                DB::raw('COUNT(lp.nik) as total_penghuni'),
-                DB::raw('MAX(lp.staff) as staff_type')
-            )
-            ->groupBy('lr.id', 'lr.kode_rak', 'lr.no_loker')
-            ->havingRaw('
-                COUNT(lp.nik) <
-                CASE
-                    WHEN MAX(lp.staff) = "staff" THEN 1
-                    WHEN MAX(lp.staff) IN ("non_staff","mitra_kerja") THEN 2
-                    ELSE 2
-                END
-            ')
-            ->orderBy('lr.no_loker')
-            ->get();
-
-        return response()->json($lockers);
+        // Langsung panggil logic getPenghuni tanpa merge request untuk efisiensi
+        return $this->getPenghuni(new Request(['gender' => $gender, 'no_loker' => $no_loker]));
     }
 }

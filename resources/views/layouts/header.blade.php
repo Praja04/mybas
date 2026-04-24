@@ -1359,6 +1359,13 @@
                                             </a>
                                         </li>
 
+                                        <li class="menu-item" aria-haspopup="true">
+                                            <a href="{{ url('/loker/management') }}" class="menu-link">
+                                                <i class="menu-bullet menu-bullet-line"><span></span></i>
+                                                <span class="menu-text">Manajemen Unit</span>
+                                            </a>
+                                        </li>
+
                                     </ul>
                                 </div>
                             </li>
@@ -1612,7 +1619,8 @@
                                     </ul>
                                     <ul class="menu-subnav">
                                         <li class="menu-item" aria-haspopup="true">
-                                            <a href="{{ url('/ecafesedaap-scan/non-staff-snack') }}" class="menu-link">
+                                            <a href="{{ url('/ecafesedaap-scan/non-staff-snack') }}"
+                                                class="menu-link">
                                                 <i class="menu-bullet menu-bullet-line">
                                                     <span></span>
                                                 </i>
