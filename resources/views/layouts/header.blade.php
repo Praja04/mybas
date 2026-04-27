@@ -1599,6 +1599,16 @@
                                 <div class="menu-submenu menu-submenu-classic menu-submenu-left">
                                     <ul class="menu-subnav">
                                         <li class="menu-item" aria-haspopup="true">
+                                            <a href="{{ url('/ecafesedaap/monitoring-scan') }}" class="menu-link">
+                                                <i class="menu-bullet menu-bullet-line">
+                                                    <span></span>
+                                                </i>
+                                                <span class="menu-text">Monitoring Scan Makan</span>
+                                            </a>
+                                        </li>
+                                    </ul>
+                                    <ul class="menu-subnav">
+                                        <li class="menu-item" aria-haspopup="true">
                                             <a href="{{ url('/ecafesedaap-scan/staff') }}" class="menu-link">
                                                 <i class="menu-bullet menu-bullet-line">
                                                     <span></span>

@@ -1,6 +1,10 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\HR\Ecafesedaap\DataScanmakanController;
+
+
+Route::get('/data-scan', [DataScanmakanController::class, 'index'])->name('scanmakan.index');
 
 Route::group(['middleware' => ['auth', 'rules', 'access_log']], function () {
 
@@ -612,10 +616,13 @@ Route::group(['middleware' => ['auth', 'rules', 'access_log']], function () {
     Route::post('/PencarianReport', 'EcafeSeedapController@PencarianReport');
 });
 Route::group(['middleware' => ['auth', 'rules', 'access_log']], function () {
+    Route::get('/ecafesedaap/monitoring-scan', 'EcafeSeedapController@monitoringScan');
+    Route::get('/ecafesedaap/monitoring-scan/export', 'EcafeSeedapController@exportExcelMonitoringScan')->name('ecafesedaap.monitoring-scan.export');
     Route::get('/ecafesedaap-scan', 'EcafeSeedapController@scanPage');
     Route::get('/ecafesedaap-scan/{kategori}', 'EcafeSeedapController@showDisplay');
     Route::post('/ecafesedaap-scan/do-scan', 'EcafeSeedapController@doScan');
 });
+
 
 Route::group(['middleware' => ['auth', 'rules', 'access_log']], function () {
     Route::get('/ecafesedaap/upload-overtime', 'EcafeSeedapController@uploadOvertime');
