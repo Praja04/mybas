@@ -1,4 +1,4 @@
-<div class="modal fade" id="modalDetail" tabindex="-1" role="dialog" aria-hidden="true">
+<div class="modal fade" id="modalDetail" role="dialog">
     <div class="modal-dialog modal-dialog-centered modal-xl" role="document">
         <div class="modal-content bas-modal">
 
@@ -23,30 +23,28 @@
             </div>
 
             {{-- BODY --}}
-            <div class="modal-body bas-modal-body">
-                <div class="bas-table-wrap">
-                    <table class="bas-table">
+            <div class="modal-body bas-modal-body" style="overflow: hidden;"> {{-- Kunci agar modal utama ga goyang --}}
+
+                {{-- Gunakan wrapper bawaan bootstrap untuk table responsive --}}
+                <div class="table-responsive">
+                    <table class="bas-table" id="table_detail"
+                        style="width: 100%; min-width: 800px; table-layout: auto;">
                         <thead>
                             <tr>
-                                <th>NIK</th>
-                                <th>Nama</th>
-                                <th>Kategori</th>
-                                <th>Divisi</th>
-                                <th>Tgl Masuk</th>
-                                <th class="text-right">Aksi</th>
+                                <th style="width: 100px;">NIK</th>
+                                <th style="min-width: 200px;">Nama</th>
+                                <th style="width: 150px;">Kategori</th>
+                                <th style="width: 150px;">Divisi</th>
+                                <th style="width: 150px;">Tgl Masuk</th>
+                                <th class="text-right" style="width: 120px;">Aksi</th>
                             </tr>
                         </thead>
                         <tbody id="detail_penghuni_list">
-                            {{-- State Awal: Loading --}}
-                            <tr>
-                                <td colspan="6" class="text-center py-10">
-                                    <div class="spinner spinner-primary spinner-lg mr-15"></div>
-                                    <span class="text-muted ml-5">Memuat data penghuni...</span>
-                                </td>
-                            </tr>
+                            {{-- Data dari AJAX --}}
                         </tbody>
                     </table>
                 </div>
+
             </div>
 
             {{-- FOOTER --}}
@@ -54,12 +52,11 @@
                 <div class="d-flex align-items-center">
                     {{-- Tombol aksi yang tampil bergantian sesuai status unit --}}
                     <button type="button" id="btn_rusak" class="bas-btn bas-btn-outline-danger mr-2"
-                        onclick="updateStatusUnit('rusak')" data-toggle="tooltip" title="Tandai unit sedang rusak">
+                        data-toggle="tooltip" title="Tandai unit sedang rusak">
                         <i class="fas fa-tools mr-2"></i> Tandai Rusak
                     </button>
-                    <button type="button" id="btn_aktif" class="bas-btn bas-btn-primary mr-2"
-                        onclick="updateStatusUnit('aktif')" style="display: none;" data-toggle="tooltip"
-                        title="Aktifkan kembali unit">
+                    <button type="button" id="btn_aktif" class="bas-btn bas-btn-primary mr-2" style="display: none;"
+                        data-toggle="tooltip" title="Aktifkan kembali unit">
                         <i class="fas fa-check-circle mr-2"></i> Aktifkan
                     </button>
                 </div>
@@ -72,3 +69,35 @@
         </div>
     </div>
 </div>
+
+@push('scripts')
+    <style>
+        /* Paksa table-responsive agar bisa scroll */
+        .table-responsive {
+            display: block;
+            width: 100%;
+            overflow-x: auto;
+            /* Ini kunci supaya bisa di-slide samping */
+            -webkit-overflow-scrolling: touch;
+            margin-bottom: 1rem;
+        }
+
+        /* Pastikan tabel tidak menciut lebih kecil dari 800px di layar HP */
+        .bas-table {
+            min-width: 800px !important;
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        /* Paksa tombol aksi tetap satu baris tanpa kepotong */
+        .text-nowrap {
+            white-space: nowrap !important;
+            vertical-align: middle !important;
+        }
+
+        /* Hilangkan batasan dari container pembungkus jika ada */
+        .bas-table-wrap {
+            overflow: visible !important;
+        }
+    </style>
+@endpush

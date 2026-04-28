@@ -3,6 +3,8 @@ namespace App\Imports;
 
 use App\Models\Loker\Penghuni;
 use Exception;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithCalculatedFormulas;
 use Maatwebsite\Excel\Concerns\WithStartRow;
@@ -49,20 +51,44 @@ class LokerImport implements ToModel, WithStartRow, WithCalculatedFormulas
             return null;
         }
 
-        // 3. AMBIL DATA PERSONIL
-        $nik  = isset($row[6]) ? trim((string) $row[6]) : '';
-        $nama = isset($row[8]) ? trim((string) $row[8]) : '';
-        $nama = preg_replace('/\s+/', ' ', trim($nama));
+        // 3. AMBIL DATA EXCEL
+        $nikExcel  = isset($row[6]) ? trim((string) $row[6]) : '';
+        $namaExcel = isset($row[8]) ? trim((string) $row[8]) : '';
+        $namaExcel = strtoupper(preg_replace('/\s+/', ' ', trim($namaExcel)));
 
-        if (empty($nama) || $nama === '-' || $nama === 'Nama Karyawan') {
+        if (empty($namaExcel) || $namaExcel === '-' || $namaExcel === 'Nama Karyawan') {
             return null;
         }
 
-        if (empty($nik) || $nik === '-') {
-            $nik = 'TMP-' . strtoupper(substr(md5($nama), 0, 6));
+        // --- LOGIC VALIDASI & SINKRONISASI NIK PUSAT ---
+        $nikFinal    = $nikExcel;
+        $divisiFinal = isset($row[10]) ? strtoupper(substr(trim((string) $row[10]), 0, 50)) : '-';
+
+        try {
+            $dataPusat = DB::connection('192.168.178.44-admin')
+                ->table('MSIDCARD')
+                ->select('NIK', 'DEPTID', 'EMPNM')
+                ->where(function ($q) use ($nikExcel, $namaExcel) {
+                    $q->whereRaw("CAST(NIK AS UNSIGNED) = CAST(? AS UNSIGNED)" . [$nikExcel])
+                        ->orWhere('EMPNM', $namaExcel);
+                })
+                ->first();
+
+            if ($dataPusat) {
+                $divisiFinal = $dataPusat->DEPTID ?? $divisiFinal;
+
+                // Log jika terjadi penggantian NIK untuk audit
+                // if ($nikExcel !== $dataPusat->NIK) {
+                //     Log::info("NIK Sync: Nama $namaExcel diubah dari $nikExcel menjadi $nikFinal (Source: Pusat)");
+                // }
+            } elseif (empty($nikExcel) || $nikExcel === '-') {
+                $nikFinal = 'TMP-' . strtoupper(substr(md5($namaExcel), 0, 6));
+            }
+        } catch (Exception $e) {
+            Log::error("Import Error - DB Pusat Offline: " . $e->getMessage());
         }
 
-        // 4. KATEGORI
+        // 4. KATEGORI (Logic tetap sama)
         $rawKategori   = isset($row[9]) ? strtolower(trim((string) $row[9])) : '';
         $kategoriFinal = 'non_staff';
         if (strpos($rawKategori, 'staff') !== false && strpos($rawKategori, 'non') === false) {
@@ -72,9 +98,9 @@ class LokerImport implements ToModel, WithStartRow, WithCalculatedFormulas
         }
 
         return new Penghuni([
-            'nik'               => $nik,
-            'nama'              => $nama,
-            'divisi'            => isset($row[10]) ? substr(trim((string) $row[10]), 0, 50) : '-',
+            'nik'               => $nikFinal, // NIK resmi hasil sinkronisasi
+            'nama'              => $namaExcel,
+            'divisi'            => $divisiFinal,
             'kode_rak'          => $this->prefix,
             'no_loker'          => (string) $this->lastLoker,
             'kategori_karyawan' => $kategoriFinal,

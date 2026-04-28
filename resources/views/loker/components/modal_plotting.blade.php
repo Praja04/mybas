@@ -1,4 +1,4 @@
-<div class="modal fade" id="modalPlotting" tabindex="-1" role="dialog" aria-hidden="true">
+<div class="modal fade" id="modalPlotting" tabindex="-1" role="dialog">
     <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
         <div class="modal-content border-0 shadow-lg" style="border-radius: 20px; overflow: hidden;">
             <div class="modal-header bg-white border-0 pt-8 px-8 pb-0">

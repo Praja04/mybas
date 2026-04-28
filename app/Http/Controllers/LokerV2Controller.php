@@ -246,95 +246,165 @@ class LokerV2Controller extends Controller
 
     public function searchKaryawan($search)
     {
-        $search    = trim($search);
-        $rfidFound = null;
-        $searchNIK = $search;
+        $search = trim((string) $search);
 
         $lokerAktif = DB::table('loker_penghuni')
             ->where('is_active', 'Y')
             ->where(function ($q) use ($search) {
-                $q->where('nik', $search)
+                $q->whereRaw("CAST(nik AS UNSIGNED) = CAST(? AS UNSIGNED)", [$search])
                     ->orWhere('nama', 'LIKE', "%$search%");
-            })
-            ->first();
+            })->first();
 
         $dataPusat = null;
         try {
             $dataPusat = DB::connection('192.168.178.44-admin')
                 ->table('MSIDCARD')
                 ->select('NIK', 'EMPNM', 'DEPTID', 'CARDNODEVICE', 'FOTOBLOB', 'STATUS')
-                ->where(function ($q) use ($search) {
-                    $q->where('CARDNODEVICE', $search)
-                        ->orWhere('NIK', $search)
-                        ->orWhereRaw('CAST(BARCODE AS SIGNED) = ?', [$search]);
+                ->where(function ($q) use ($search, $lokerAktif) {
+                    $q->whereRaw("CAST(NIK AS UNSIGNED) = CAST(? AS UNSIGNED)", [$search])
+                        ->orWhere('EMPNM', 'LIKE', "%$search%")
+                        ->orWhere('CARDNODEVICE', $search);
+
+                    if ($lokerAktif) {
+                        $q->orWhereRaw("CAST(NIK AS UNSIGNED) = CAST(? AS UNSIGNED)", [$lokerAktif->nik]);
+                    }
                 })
                 ->where('STATUS', 'X')
                 ->first();
-
-            if ($dataPusat) {
-                $rfidFound = $dataPusat->CARDNODEVICE;
-                $searchNIK = $dataPusat->NIK; // Update NIK pencarian berdasarkan data pusat
-            }
         } catch (\Exception $e) {
             Log::error("Koneksi DB Pusat Gagal: " . $e->getMessage());
         }
 
-        // 3. CEK HRIS LOKAL
-        $karyawan = Karyawan::where('nik', $searchNIK)->first();
-
-        // Validasi Akhir
-        if (! $karyawan && ! $lokerAktif && ! $dataPusat) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Data tidak ditemukan di sistem manapun',
-            ]);
+        if (! $lokerAktif && ! $dataPusat) {
+            return response()->json(['success' => false, 'message' => 'Data tidak ditemukan! Pastikan kartu terdaftar atau NIK benar.']);
         }
 
-        // Update RFID ke HRIS lokal jika ada data baru dari pusat
-        if ($karyawan && $rfidFound && (empty($karyawan->cardnodevice) || $karyawan->cardnodevice == '0')) {
-            $karyawan->update(['cardnodevice' => $rfidFound]);
-        }
+        // --- LOGIKA PENENTUAN DATA FINAL ---
+        $finalNIK = $dataPusat ? $dataPusat->NIK : ($lokerAktif->nik ?? $search);
+        $nama     = $dataPusat->EMPNM ?? ($lokerAktif->nama ?? 'Tidak dikenali');
+        $divisi   = $dataPusat->DEPTID ?? ($lokerAktif->divisi ?? '-');
+        $kategori = $lokerAktif ? $lokerAktif->kategori_karyawan : $this->getKategoriKaryawan($dataPusat);
 
-        // Mapping Data untuk Frontend
-        $nik      = $dataPusat->NIK ?? ($lokerAktif->nik ?? ($karyawan->nik ?? '-'));
-        $nama     = $dataPusat->EMPNM ?? ($lokerAktif->nama ?? ($karyawan->nama ?? 'Unknown'));
-        $divisi   = $lokerAktif->divisi ?? ($karyawan->kode_divisi ?? ($dataPusat->DEPTID ?? '-'));
-        $kategori = $lokerAktif ? $lokerAktif->kategori_karyawan : $this->getKategoriKaryawan($karyawan);
-
-        $isGenderEmpty = false;
+        $gender        = null;
+        $isGenderEmpty = true;
 
         if ($lokerAktif) {
-            $gender = ($lokerAktif->kode_rak == 'LP') ? 'L' : 'P';
-        } else {
-            $hrisGender = $karyawan ? strtoupper($karyawan->jenis_kelamin) : null;
-
-            if ($hrisGender == 'L' || $hrisGender == 'P') {
-                $gender = $hrisGender;
-            } else {
-                $gender        = null;
-                $isGenderEmpty = true;
+            $gender = ($lokerAktif->kode_rak == 'LP') ? 'L' : (($lokerAktif->kode_rak == 'LW') ? 'P' : null);
+            if ($gender) {
+                $isGenderEmpty = false;
             }
-        }
 
-        $fotoBase64 = ($dataPusat && $dataPusat->FOTOBLOB)
-            ? 'data:image/jpeg;base64,' . base64_encode($dataPusat->FOTOBLOB)
-            : null;
+        }
 
         return response()->json([
             'success' => true,
             'data'    => [
-                'nik'             => $nik,
-                'nama'            => $nama,
+                'nik'             => $finalNIK,
+                'nama'            => strtoupper($nama),
                 'gender'          => $gender,
                 'is_gender_empty' => $isGenderEmpty,
                 'kategori'        => $kategori,
-                'divisi'          => $divisi,
+                'divisi'          => strtoupper($divisi),
                 'no_loker'        => $lokerAktif ? $lokerAktif->no_loker : null,
-                'foto'            => $fotoBase64,
-                'status_hris'     => $karyawan ? 'Aktif' : ($dataPusat ? 'Data Pusat' : 'Manual'),
+                'status_data'     => $lokerAktif ? 'Terdaftar' : 'Data Baru',
+                'foto'            => ($dataPusat && $dataPusat->FOTOBLOB)
+                    ? 'data:image/jpeg;base64,' . base64_encode($dataPusat->FOTOBLOB)
+                    : null,
             ],
         ]);
     }
+
+    // public function searchKaryawan($search)
+    // {
+    //     $search    = trim($search);
+    //     $rfidFound = null;
+    //     $searchNIK = $search;
+
+    //     $lokerAktif = DB::table('loker_penghuni')
+    //         ->where('is_active', 'Y')
+    //         ->where(function ($q) use ($search) {
+    //             $q->where('nik', $search)
+    //                 ->orWhere('nama', 'LIKE', "%$search%");
+    //         })
+    //         ->first();
+
+    //     $dataPusat = null;
+    //     try {
+    //         $dataPusat = DB::connection('192.168.178.44-admin')
+    //             ->table('MSIDCARD')
+    //             ->select('NIK', 'EMPNM', 'DEPTID', 'CARDNODEVICE', 'FOTOBLOB', 'STATUS')
+    //             ->where(function ($q) use ($search) {
+    //                 $q->where('CARDNODEVICE', $search)
+    //                     ->orWhere('NIK', $search)
+    //                     ->orWhereRaw('CAST(BARCODE AS SIGNED) = ?', [$search]);
+    //             })
+    //             ->where('STATUS', 'X')
+    //             ->first();
+
+    //         if ($dataPusat) {
+    //             $rfidFound = $dataPusat->CARDNODEVICE;
+    //             $searchNIK = $dataPusat->NIK; // Update NIK pencarian berdasarkan data pusat
+    //         }
+    //     } catch (\Exception $e) {
+    //         Log::error("Koneksi DB Pusat Gagal: " . $e->getMessage());
+    //     }
+
+    //     // 3. CEK HRIS LOKAL
+    //     $karyawan = Karyawan::where('nik', $searchNIK)->first();
+
+    //     // Validasi Akhir
+    //     if (! $karyawan && ! $lokerAktif && ! $dataPusat) {
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => 'Data tidak ditemukan di sistem manapun',
+    //         ]);
+    //     }
+
+    //     // Update RFID ke HRIS lokal jika ada data baru dari pusat
+    //     if ($karyawan && $rfidFound && (empty($karyawan->cardnodevice) || $karyawan->cardnodevice == '0')) {
+    //         $karyawan->update(['cardnodevice' => $rfidFound]);
+    //     }
+
+    //     // Mapping Data untuk Frontend
+    //     $nik      = $dataPusat->NIK ?? ($lokerAktif->nik ?? ($karyawan->nik ?? '-'));
+    //     $nama     = $dataPusat->EMPNM ?? ($lokerAktif->nama ?? ($karyawan->nama ?? 'Unknown'));
+    //     $divisi   = $lokerAktif->divisi ?? ($karyawan->kode_divisi ?? ($dataPusat->DEPTID ?? '-'));
+    //     $kategori = $lokerAktif ? $lokerAktif->kategori_karyawan : $this->getKategoriKaryawan($karyawan);
+
+    //     $isGenderEmpty = false;
+
+    //     if ($lokerAktif) {
+    //         $gender = ($lokerAktif->kode_rak == 'LP') ? 'L' : 'P';
+    //     } else {
+    //         $hrisGender = $karyawan ? strtoupper($karyawan->jenis_kelamin) : null;
+
+    //         if ($hrisGender == 'L' || $hrisGender == 'P') {
+    //             $gender = $hrisGender;
+    //         } else {
+    //             $gender        = null;
+    //             $isGenderEmpty = true;
+    //         }
+    //     }
+
+    //     $fotoBase64 = ($dataPusat && $dataPusat->FOTOBLOB)
+    //         ? 'data:image/jpeg;base64,' . base64_encode($dataPusat->FOTOBLOB)
+    //         : null;
+
+    //     return response()->json([
+    //         'success' => true,
+    //         'data'    => [
+    //             'nik'             => $nik,
+    //             'nama'            => $nama,
+    //             'gender'          => $gender,
+    //             'is_gender_empty' => $isGenderEmpty,
+    //             'kategori'        => $kategori,
+    //             'divisi'          => $divisi,
+    //             'no_loker'        => $lokerAktif ? $lokerAktif->no_loker : null,
+    //             'foto'            => $fotoBase64,
+    //             'status_hris'     => $karyawan ? 'Aktif' : ($dataPusat ? 'Data Pusat' : 'Manual'),
+    //         ],
+    //     ]);
+    // }
 
     // public function searchKaryawan($search)
     // {
@@ -463,8 +533,8 @@ class LokerV2Controller extends Controller
                 ->select('NIK')
                 ->where(function ($q) use ($keyword) {
                     $q->where('CARDNODEVICE', $keyword)
-                        ->orWhere('NIK', $keyword)
-                        ->orWhereRaw('CAST(BARCODE AS SIGNED) = ?', [$keyword]);
+                        ->orWhereRaw('CAST(NIK AS UNSIGNED) = CAST(? AS UNSIGNED)', [$keyword])
+                        ->orWhereRaw('CAST(BARCODE AS UNSIGNED) = CAST(? AS UNSIGNED)', [$keyword]);
                 })
                 ->where('STATUS', 'X')
                 ->first();
@@ -481,7 +551,7 @@ class LokerV2Controller extends Controller
             ->where('kode_rak', $prefix)
             ->where('is_active', 'Y')
             ->where(function ($q) use ($searchNIK, $keyword) {
-                $q->where('nik', $searchNIK)
+                $q->whereRaw('CAST(nik AS UNSIGNED) = CAST(? AS UNSIGNED)', [$searchNIK])
                     ->orWhere('nama', 'LIKE', "%$keyword%");
             })
             ->select('no_loker', 'kode_rak')
@@ -495,7 +565,7 @@ class LokerV2Controller extends Controller
             ]);
         }
 
-        return response()->json(['success' => false]);
+        return response()->json(['success' => false, 'message' => 'Loker tidak ditemukan.']);
     }
 
     public function apiSuggestLoker(Request $request)
@@ -705,10 +775,16 @@ class LokerV2Controller extends Controller
 
     public function updateStatus(Request $request)
     {
+        $request->validate([
+            'no_loker' => 'required',
+            'status'   => 'required|in:aktif,rusak',
+            'alasan'   => 'required_if:status,rusak|nullable|string|max:255',
+        ]);
+
         $prefix = $this->getPrefix($request->gender);
         $status = $request->status;
 
-        $description = ($status == 'rusak') ? 'Maintenance/Rusak (' . date('d/m/Y H:i') . ')' : null;
+        $description = ($status == 'rusak') ? strtoupper($request->alasan) . " (Dilaporkan: " . date('d/m/Y H:i') . ")" : null;
 
         $affected = DB::table('loker_rak')
             ->where('kode_rak', $prefix)
@@ -719,15 +795,27 @@ class LokerV2Controller extends Controller
                 'updated_at'         => now(),
             ]);
 
-        return $affected ? response()->json(['status' => 'success']) : response()->json(['status' => 'error'], 404);
+        if ($affected) {
+            return response()->json([
+                'status'  => 'success',
+                'message' => $status == 'rusak' ? 'Unit berhasil ditandai sedang dalam perbaikan.' : 'Unit telah diaktifkan kembali.',
+            ]);
+        }
+
+        return response()->json(['status' => 'error', 'message' => 'Gagal memperbarui status unit'], 404);
     }
 
     public function tarikKunci(Request $request)
     {
+        $request->validate([
+            'id'     => 'required',
+            'alasan' => 'required|string|max:255',
+        ]);
+
         return DB::transaction(function () use ($request) {
             $p = DB::table('loker_penghuni')->where('id', $request->id)->first();
             if (! $p) {
-                return response()->json(['status' => 'error'], 422);
+                return response()->json(['status' => 'error', 'message' => 'Data tidak ditemukan'], 422);
             }
 
             DB::table('loker_penghuni')
@@ -745,7 +833,12 @@ class LokerV2Controller extends Controller
                 ->whereNull('tgl_keluar')
                 ->first();
 
-            $keterangan = $sisaPenghuni ? 'Terisi: ' . $sisaPenghuni->nik . ' - ' . $sisaPenghuni->nama : null;
+            // $keterangan = $sisaPenghuni ? 'Terisi: ' . $sisaPenghuni->nik . ' - ' . $sisaPenghuni->nama : null;
+            if (empty($sisaPenghuni)) {
+                $keterangan = null;
+            } else {
+                $keterangan = 'Terisi: ' . $sisaPenghuni->nik . ' - ' . $sisaPenghuni->nama;
+            }
 
             DB::table('loker_rak')
                 ->where('kode_rak', $p->kode_rak)
@@ -755,6 +848,8 @@ class LokerV2Controller extends Controller
                     'updated_at'         => now(),
                 ]);
 
+            // $this->updateKeteranganRak($p->kode_rak, $p->no_loker);
+
             DB::table('loker_transaksi')->insert([
                 'nik'            => $p->nik ?? '-',
                 'nama'           => $p->nama,
@@ -762,7 +857,7 @@ class LokerV2Controller extends Controller
                 'no_loker'       => $p->no_loker,
                 'tipe_transaksi' => 'KELUAR',
                 'operator'       => auth()->user()->name ?? 'Sistem',
-                'keterangan'     => 'Penarikan: ' . ($request->alasan ?? 'Karyawan Keluar'),
+                'keterangan'     => $request->alasan,
                 'created_at'     => now(),
             ]);
 
@@ -774,57 +869,92 @@ class LokerV2Controller extends Controller
         });
     }
 
+    private function updateKeteranganRak($prefix, $noLoker)
+    {
+        $allPenghuni = DB::table('loker_penghuni')
+            ->where('kode_rak', $prefix)
+            ->where('no_loker', $noLoker)
+            ->where('is_active', 'Y')
+            ->get();
+
+        $daftarNama = $allPenghuni->map(fn($p) => $p->nik . " - " . $p->nama)->implode(' | ');
+
+        DB::table('loker_rak')
+            ->where('kode_rak', $prefix)
+            ->where('no_loker', $noLoker)
+            ->update([
+                'keterangan_kondisi' => 'Terisi: ' . substr($daftarNama, 0, 230),
+                'updated_at'         => now(),
+            ]);
+    }
+
     public function store(Request $request)
     {
-        $nik    = trim($request->nik);
-        $prefix = $this->getPrefix($request->gender);
+        $nikInput = trim((string) $request->nik);
+        $prefix   = $this->getPrefix($request->gender);
+
+        // $nikBersihDepan    = ltrim($nikInput, '0');
+        // $nikBersihBelakang = rtrim($nikInput, '0');
+        // $nikSuperBersih    = rtrim(ltrim($nikInput, '0'), '0');
 
         $dataExternal = null;
         try {
             $dataExternal = DB::connection('192.168.178.44-admin')
                 ->table('MSIDCARD')
-                ->select('NIK', 'EMPNM', 'DEPTID')
-                ->where('NIK', $nik)
+                ->select('NIK', 'EMPNM', 'DEPTID', 'TYPECARD', 'FOTOBLOB')
+                ->whereRaw("CAST(NIK AS UNSIGNED) = CAST(? AS UNSIGNED)", [$nikInput])
+                ->where('STATUS', 'X')
                 ->first();
         } catch (\Exception $e) {
-            Log::error("Store Error - DB Parking Unreachable: " . $e->getMessage());
+            Log::error("Koneksi DB Pusat Gagal: " . $e->getMessage());
         }
 
-        // $dataLoker = DB::table('loker_penghuni')
-        //     ->where('nik', $nik)->where('is_active', 'Y')
-        //     ->orderBy('created_at', 'desc')->first();
-
-        $dataHRIS = Karyawan::where('nik', $nik)->first();
-
-        if ($dataHRIS) {
-            $namaKaryawan = $dataHRIS->nama;
-            $divisi       = $dataHRIS->divisi;
-            $kategori     = $this->getKategoriKaryawan($dataHRIS);
-        } elseif ($dataExternal) {
+        if ($dataExternal) {
+            $nikFix       = $dataExternal->NIK;
             $namaKaryawan = $dataExternal->EMPNM;
             $divisi       = $dataExternal->DEPTID;
-            $kategori     = $request->kategori_karyawan ?? 'non_staff';
+            $kategori     = ($dataExternal->TYPECARD == 1) ? 'mitra_kerja' : ($request->kategori_karyawan ?? 'non_staff');
         } elseif ($request->nama) {
+            $nikFix       = $nikInput;
             $namaKaryawan = $request->nama;
             $divisi       = $request->dept;
-            $kategori     = $request->kategori_karyawan;
+            $kategori     = $request->kategori_karyawan ?? 'non_staff';
         } else {
-            return response()->json(['status' => 'error', 'message' => "Data NIK ($nik) tidak valid!"], 422);
+            return response()->json(['status' => 'error', 'message' => "Data tidakditemukan . Pastikan kartu terdaftar atau isi manual!"], 422);
         }
 
-        return DB::transaction(function () use ($request, $nik, $namaKaryawan, $divisi, $kategori, $prefix) {
+        return DB::transaction(function () use ($request, $nikFix, $namaKaryawan, $divisi, $kategori, $prefix) {
 
             // Validasi Double Plotting
-            $existing = DB::table('loker_penghuni')
-                ->where('kode_rak', $prefix)->where('no_loker', $request->no_loker)
-                ->where('is_active', 'Y')->get();
+            // $existing = DB::table('loker_penghuni')
+            //     ->where('kode_rak', $prefix)->where('no_loker', $request->no_loker)
+            //     ->where('is_active', 'Y')->get();
 
-            if ($kategori === 'staff' && $existing->count() > 0) {
-                return response()->json(['status' => 'error', 'message' => 'Loker Staff harus kosong!'], 422);
+            // if ($kategori === 'staff' && $existing->count() > 0) {
+            //     return response()->json(['status' => 'error', 'message' => 'Loker Staff harus kosong!'], 422);
+            // }
+
+            if ($kategori === 'staff') {
+                $existing = DB::table('loker_penghuni')
+                    ->where('kode_rak', $prefix)
+                    ->where('no_loker', $request->no_loker)
+                    ->where('is_active', 'Y')
+                    ->exists();
+
+                if ($existing) {
+                    return response()->json([
+                        'status'  => 'error',
+                        'message' => 'Loker Staff sudah terisi!',
+                    ], 422);
+                }
             }
 
             // Handling Relokasi Otomatis
-            $lokerLama = DB::table('loker_penghuni')->where('nik', $nik)->where('is_active', 'Y')->first();
+            $lokerLama = DB::table('loker_penghuni')
+                ->where('is_active', 'Y')
+                ->whereRaw("CAST(nik AS UNSIGNED) = CAST(? AS UNSIGNED)", [$nikFix])
+                ->first();
+
             if ($lokerLama) {
                 DB::table('loker_penghuni')->where('id', $lokerLama->id)->update([
                     'is_active'  => 'N',
@@ -832,16 +962,16 @@ class LokerV2Controller extends Controller
                     'updated_at' => now(),
                 ]);
 
-                DB::table('loker_rak')
-                    ->where('kode_rak', $lokerLama->kode_rak)
-                    ->where('no_loker', $lokerLama->no_loker)
-                    ->update([
-                        'keterangan_kondisi' => null,
-                        'updated_at'         => now(),
-                    ]);
+                // DB::table('loker_rak')
+                //     ->where('kode_rak', $lokerLama->kode_rak)
+                //     ->where('no_loker', $lokerLama->no_loker)
+                //     ->update([
+                //         'keterangan_kondisi' => null,
+                //         'updated_at'         => now(),
+                //     ]);
 
                 DB::table('loker_transaksi')->insert([
-                    'nik'            => $nik,
+                    'nik'            => $lokerLama->nik,
                     'nama'           => $namaKaryawan,
                     'kode_rak'       => $lokerLama->kode_rak,
                     'no_loker'       => $lokerLama->no_loker,
@@ -849,13 +979,15 @@ class LokerV2Controller extends Controller
                     'operator'       => auth()->user()->name ?? 'Sistem',
                     'created_at'     => now(),
                 ]);
+
+                $this->updateKeteranganRak($lokerLama->kode_rak, $lokerLama->no_loker);
             }
 
             // Simpan Data Baru
             DB::table('loker_penghuni')->insert([
-                'nik'               => $nik,
-                'nama'              => $namaKaryawan,
-                'divisi'            => $divisi,
+                'nik'               => $nikFix,
+                'nama'              => strtoupper($namaKaryawan),
+                'divisi'            => strtoupper($divisi),
                 'kode_rak'          => $prefix,
                 'no_loker'          => $request->no_loker,
                 'kategori_karyawan' => $kategori,
@@ -865,26 +997,10 @@ class LokerV2Controller extends Controller
                 'updated_at'        => now(),
             ]);
 
-            $allPenghuni = DB::table('loker_penghuni')
-                ->where('kode_rak', $prefix)
-                ->where('no_loker', $request->no_loker)
-                ->where('is_active', 'Y')
-                ->get();
-
-            $daftarNama = $allPenghuni->map(function ($p) {
-                return $p->nik . " - " . $p->nama;
-            })->implode(' | ');
-
-            DB::table('loker_rak')
-                ->where('kode_rak', $prefix)
-                ->where('no_loker', $request->no_loker)
-                ->update([
-                    'keterangan_kondisi' => "Terisi: " . $daftarNama,
-                    'updated_at'         => now(),
-                ]);
+            $this->updateKeteranganRak($prefix, $request->no_loker);
 
             DB::table('loker_transaksi')->insert([
-                'nik'            => $nik,
+                'nik'            => $nikFix,
                 'nama'           => $namaKaryawan,
                 'kode_rak'       => $prefix,
                 'no_loker'       => $request->no_loker,
@@ -932,7 +1048,9 @@ class LokerV2Controller extends Controller
                         // }
                         // $label = substr($label, 0, 250);
                         $daftarPenghuni = $items->map(function ($item) {
-                            return ($item->nik ?? '-') . " - " . ($item->nama ?? '-');
+                            $nikAsli    = trim($item->nik);
+                            $namaBersih = strtoupper(trim($item->nama));
+                            return $nikAsli . " - " . $namaBersih;
                         })->implode(' | ');
 
                         $label = "Terisi: " . $daftarPenghuni;

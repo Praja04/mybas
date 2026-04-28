@@ -793,16 +793,29 @@
                 const emptyState = container.find('.empty-state');
 
                 if (e.which === 13 && value.length > 0) {
-                    if (!isNaN(value)) {
-                        const card = container.find(`.bas-loker-card[data-no="${value}"]`);
-                        if (card.length > 0) {
-                            showDetail(state.gender, value);
-                        } else {
-                            cariDataGlobal(value);
-                        }
+                    const card = container.find(`.bas-loker-card[data-no="${value}"]`);
+
+                    if (card.length > 0) {
+                        showDetail(state.gender, value);
+                        items.show();
+                        emptyState.addClass('d-none');
                     } else {
+                        items.show();
+                        emptyState.addClass('d-none');
                         cariDataGlobal(value);
                     }
+
+                    // if (!isNaN(value)) {
+                    //     const card = container.find(`.bas-loker-card[data-no="${value}"]`);
+                    //     if (card.length > 0) {
+                    //         showDetail(state.gender, value);
+                    //     } else {
+                    //         cariDataGlobal(value);
+                    //     }
+                    // } else {
+                    //     cariDataGlobal(value);
+                    // }
+
                     $(this).val('');
                     return;
                 }
@@ -822,6 +835,7 @@
                         const card = $(this).find('.bas-loker-card');
                         const noLoker = card.data('no') ? card.data('no').toString()
                             .toLowerCase() : '';
+
                         const isMatch = noLoker.includes(keyword);
 
                         $(this).toggle(isMatch);
@@ -831,7 +845,8 @@
                     if (found === 0) {
                         emptyState.removeClass('d-none');
                         emptyState.find('.empty-state-text').text(
-                            `Loker nomor "${value}" tidak ditemukan`);
+                            `Nomor loker "${value}" tidak ditemukan. Tekan Enter untuk cari Nama/NIK secara global.`
+                            );
                     } else {
                         emptyState.addClass('d-none');
                     }
@@ -887,7 +902,8 @@
                                 icon: 'success',
                                 title: 'Berhasil!',
                                 text: res.message,
-                                confirmButtonText: 'Mantap'
+                                timer: 1500,
+                                showConfirmButton: false
                             }).then(() => location.reload());
                         } else {
                             Swal.fire('Gagal', res.message, 'error');
@@ -904,25 +920,39 @@
         });
 
         function cariDataGlobal(keyword) {
+            const cleanKeyword = keyword.trim();
+
+            if (!cleanKeyword) return;
+
             KTApp.blockPage({
                 message: 'Mencari data penghuni...'
             });
 
             $.get("{{ route('loker.search-global') }}", {
-                q: keyword,
+                q: cleanKeyword,
                 gender: state.gender
             }).done(function(res) {
                 KTApp.unblockPage();
+
                 if (res.success) {
                     showDetail(res.gender, res.no_loker);
                 } else {
-                    Swal.fire('Tidak Ditemukan',
-                        `Data "${keyword}" tidak terdaftar di loker ${state.gender === 'L' ? 'Pria' : 'Wanita'}`,
-                        'info');
+                    const msg = res.message ||
+                        `Data "${cleanKeyword}" tidak ditemukan pada loker ${state.gender === 'L' ? 'Pria' : 'Wanita'}`;
+
+                    Swal.fire({
+                        title: 'Informasi',
+                        text: msg,
+                        icon: 'info',
+                        confirmButtonText: 'Oke'
+                    });
                 }
             }).fail(() => {
                 KTApp.unblockPage();
-                Swal.fire('Error', 'Gagal mencari data', 'error');
+
+                const errorText = xhr.responseJSON ? xhr.responseJSON.message :
+                    'Gagal terhubung ke server pencarian';
+                Swal.fire('Error', errorText, 'error');
             });
         }
 
@@ -937,9 +967,12 @@
             );
             $('#btn_rusak, #btn_aktif').hide();
 
+            $('#modalDetail').modal('show');
+
             $.get(`{{ url('loker/detail') }}/${genderCode}/${no}`)
                 .done(function(res) {
                     let html = '';
+
                     if (res.status_unit === 'rusak') {
                         $('#btn_aktif').show();
                         $('#btn_rusak').hide();
@@ -951,20 +984,23 @@
                     if (res.data && res.data.length > 0) {
                         res.data.forEach(p => {
                             html += `<tr>
-                            <td class="font-weight-bold text-primary">${p.nik}</td>
-                            <td><span class="text-dark-75 font-weight-bolder d-block font-size-lg">${p.nama}</span></td>
-                            <td><span class="label label-inline label-light-success font-weight-bold">${p.kategori.toUpperCase()}</span></td>
-                            <td><span class="text-muted font-weight-bold">${p.divisi || '-'}</span></td>
-                            <td>${p.tgl_masuk}</td>
-                            <td class="text-right">
-                                <button class="btn btn-icon btn-light-primary btn-xs mr-1" onclick="pindahLoker('${p.nik}')" data-toggle="tooltip" title="Relokasi">
-                                    <i class="flaticon-refresh"></i>
-                                </button>
-                                <button class="btn btn-icon btn-light-danger btn-xs" onclick="konfirmasiTarikKunci('${p.id}', '${p.nama}')" data-toggle="tooltip" title="Tarik Kunci">
-                                    <i class="flaticon2-logout-1"></i>
-                                </button>
-                            </td>
-                        </tr>`;
+        <td class="font-weight-bold text-primary">${p.nik}</td>
+        <td style="min-width: 150px;">
+            <span class="text-dark-75 font-weight-bolder d-block font-size-lg">${p.nama}</span>
+        </td>
+        <td><span class="label label-inline label-light-success font-weight-bold">${p.kategori.toUpperCase()}</span></td>
+        <td><span class="text-muted font-weight-bold">${p.divisi || '-'}</span></td>
+        <td>${p.tgl_masuk}</td>
+
+        <td class="text-right text-nowrap" style="width: 100px;">
+            <button class="btn btn-icon btn-light-primary btn-xs mr-1" onclick="pindahLoker('${p.nik}')" title="Relokasi">
+                <i class="flaticon-refresh"></i>
+            </button>
+            <button class="btn btn-icon btn-light-danger btn-xs" onclick="konfirmasiTarikKunci('${p.id}', '${p.nama}')" title="Tarik Kunci">
+                <i class="flaticon2-logout-1"></i>
+            </button>
+        </td>
+    </tr>`;
                         });
                     } else {
                         html =
@@ -972,31 +1008,81 @@
                     }
 
                     $('#detail_penghuni_list').html(html);
-                    $('#btn_rusak').off('click').on('click', () => updateStatusLoker('rusak', genderCode, no));
-                    $('#btn_aktif').off('click').on('click', () => updateStatusLoker('aktif', genderCode, no));
+
+                    $('#btn_rusak').off('click').on('click', () => updateStatusUnit('rusak', genderCode, no));
+                    $('#btn_aktif').off('click').on('click', () => updateStatusUnit('aktif', genderCode, no));
+
                     refreshTooltips();
-                    $('#modalDetail').modal('show');
                 })
-                .fail(() => Swal.fire('Error', 'Gagal memuat detail', 'error'));
+                .fail(() => {
+                    $('#modalDetail').modal('hide');
+                    Swal.fire('Error', 'Gagal memuat detail data', 'error');
+                });
         }
 
-        function updateStatusLoker(status, gender, no) {
+        function updateStatusUnit(status, gender, no) {
+            // $('#modalDetail').modal('hide');
+
+            // setTimeout(() => {
             Swal.fire({
-                title: 'Konfirmasi Perubahan',
+                title: status === 'rusak' ? 'Laporkan Kerusakan' : 'Aktifkan Kembali',
                 text: `Ubah status unit ${no} menjadi ${status.toUpperCase()}?`,
-                icon: 'warning',
+                icon: status === 'rusak' ? 'error' : 'question',
+                input: status === 'rusak' ? 'text' : null,
+                inputPlaceholder: 'Jelaskan detail kerusakan...',
                 showCancelButton: true,
                 confirmButtonText: 'Ya, Update!',
-                confirmButtonColor: status === 'rusak' ? '#EF4444' : '#10B981'
+                confirmButtonColor: status === 'rusak' ? '#EF4444' : '#10B981',
+                cancelButtonText: 'Batal',
+                inputValidator: (value) => {
+                    if (status === 'rusak' && !value) {
+                        return 'Alasan kerusakan wajib diisi!';
+                    }
+                }
             }).then((res) => {
                 if (res.isConfirmed) {
+                    KTApp.blockPage({
+                        message: 'Memperbarui status...'
+                    });
+
                     $.post("{{ url('loker/update-status') }}", {
-                        status: status,
-                        gender: gender,
-                        no_loker: no
-                    }).done(() => location.reload());
+                            _token: "{{ csrf_token() }}",
+                            status: status,
+                            gender: gender,
+                            no_loker: no,
+                            alasan: res.value
+                        })
+                        .done(function(res) {
+                            KTApp.unblockPage();
+                            Swal.fire('Berhasil', res.message, 'success')
+                                .then(() => location.reload());
+                        })
+                        .fail((xhr) => {
+                            KTApp.unblockPage();
+                            $('#modalDetail').modal('show');
+                            Swal.fire('Gagal', 'Gagal memperbarui status unit', 'error');
+                        });
+                } else {
+                    $('#modalDetail').modal('show');
                 }
             });
+            // }, 400);
+            // Swal.fire({
+            //     title: 'Konfirmasi Perubahan',
+            //     text: `Ubah status unit ${no} menjadi ${status.toUpperCase()}?`,
+            //     icon: 'warning',
+            //     showCancelButton: true,
+            //     confirmButtonText: 'Ya, Update!',
+            //     confirmButtonColor: status === 'rusak' ? '#EF4444' : '#10B981'
+            // }).then((res) => {
+            //     if (res.isConfirmed) {
+            //         $.post("{{ url('loker/update-status') }}", {
+            //             status: status,
+            //             gender: gender,
+            //             no_loker: no
+            //         }).done(() => location.reload());
+            //     }
+            // });
         }
 
         function openModalPlotting(defaultNik = '') {
@@ -1181,16 +1267,29 @@
                 title: 'Tarik Kunci?',
                 text: `Keluarkan ${nama} dari unit ini?`,
                 icon: 'warning',
+                input: 'text',
+                // inputLabel: 'Alasan Penarikan',
+                inputPlaceholder: 'Contoh: Pindah Unit / Karyawan Resign...',
                 showCancelButton: true,
                 confirmButtonText: 'Ya, Keluarkan',
-                confirmButtonColor: '#EF4444'
+                confirmButtonColor: '#EF4444',
+                cancelButtonText: 'Batal',
+                inputValidator: (value) => {
+                    if (!value) {
+                        return 'Alasan penarikan wajib diisi!'
+                    }
+                }
             }).then((res) => {
                 if (res.isConfirmed) {
+                    const alasanPenarikan = res.value;
+
                     KTApp.blockPage({
                         message: 'Memproses penarikan...'
                     });
+
                     $.post("{{ route('loker.tarik-kunci') }}", {
-                            id: id
+                            id: id,
+                            alasan: alasanPenarikan
                         })
                         .done(function(res) {
                             KTApp.unblockPage();
@@ -1206,7 +1305,9 @@
                             }
                         }).fail(() => {
                             KTApp.unblockPage();
-                            Swal.fire('Error', 'Gagal memproses data', 'error');
+                            let msg = xhr.responseJSON ? xhr.responseJSON.message :
+                                'Gagal memproses data';
+                            Swal.fire('Error', msg, 'error');
                         });
                 }
             });
