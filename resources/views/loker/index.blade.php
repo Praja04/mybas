@@ -51,42 +51,47 @@
                 </div>
             </div>
             <div class="col-md-7 col-lg-8 text-right">
-                <button type="button" onclick="openModalPlotting()" class="bas-btn bas-btn-primary mr-2"
-                    data-toggle="tooltip" title="Daftarkan penempatan karyawan baru ke dalam unit loker">
-                    <i class="fas fa-user-plus mr-2"></i> Plotting Baru
-                </button>
-                <div class="dropdown d-inline-block">
-                    <button class="bas-btn bas-btn-outline" data-toggle="dropdown">
-                        <i class="fas fa-file-export mr-2"></i> Kelola Data <i
-                            class="fas fa-chevron-down ml-2 font-size-xs"></i>
+                @if (in_array('loker_operator', $permissions))
+                    <button type="button" onclick="openModalPlotting()" class="bas-btn bas-btn-primary mr-2"
+                        data-toggle="tooltip" title="Daftarkan penempatan karyawan baru ke dalam unit loker">
+                        <i class="fas fa-user-plus mr-2"></i> Plotting Baru
                     </button>
-                    <div class="dropdown-menu dropdown-menu-right bas-dropdown shadow border-0 p-3"
-                        style="min-width: 220px;">
-                        <div class="bas-dropdown-section-label">Unduh Laporan (Excel)</div>
-                        <a class="bas-dropdown-item" href="{{ route('loker.export', 'L') }}" data-toggle="tooltip"
-                            data-placement="left" title="Unduh template laporan (excel) area Pria">
-                            <span class="bas-dropdown-icon bas-icon-success"><i class="far fa-file-excel"></i></span>
-                            Loker Pria
-                        </a>
-                        <a class="bas-dropdown-item" href="{{ route('loker.export', 'P') }}" data-toggle="tooltip"
-                            data-placement="left" title="Unduh template laporan (excel) area Wanita">
-                            <span class="bas-dropdown-icon bas-icon-danger"><i class="far fa-file-excel"></i></span>
-                            Loker Wanita
-                        </a>
-                        <div class="bas-dropdown-divider"></div>
-                        <div class="bas-dropdown-section-label">Unggah Data</div>
-                        <a class="bas-dropdown-item" href="javascript:void(0)" onclick="openModalImport('L')"
-                            data-toggle="tooltip" data-placement="left" title="Masukkan laporan (excel) area Pria">
-                            <span class="bas-dropdown-icon bas-icon-primary"><i class="fas fa-upload"></i></span>
-                            Impor Loker Pria
-                        </a>
-                        <a class="bas-dropdown-item" href="javascript:void(0)" onclick="openModalImport('P')"
-                            data-toggle="tooltip" data-placement="left" title="Masukkan laporan (excel) area Wanita">
-                            <span class="bas-dropdown-icon bas-icon-primary"><i class="fas fa-upload"></i></span>
-                            Impor Loker Wanita
-                        </a>
+                @endif
+
+                @if (in_array('loker_master', $permissions))
+                    <div class="dropdown d-inline-block">
+                        <button class="bas-btn bas-btn-outline" data-toggle="dropdown">
+                            <i class="fas fa-file-export mr-2"></i> Kelola Data <i
+                                class="fas fa-chevron-down ml-2 font-size-xs"></i>
+                        </button>
+                        <div class="dropdown-menu dropdown-menu-right bas-dropdown shadow border-0 p-3"
+                            style="min-width: 220px;">
+                            <div class="bas-dropdown-section-label">Unduh Laporan (Excel)</div>
+                            <a class="bas-dropdown-item" href="{{ route('loker.export', 'L') }}" data-toggle="tooltip"
+                                data-placement="left" title="Unduh template laporan (excel) area Pria">
+                                <span class="bas-dropdown-icon bas-icon-success"><i class="far fa-file-excel"></i></span>
+                                Loker Pria
+                            </a>
+                            <a class="bas-dropdown-item" href="{{ route('loker.export', 'P') }}" data-toggle="tooltip"
+                                data-placement="left" title="Unduh template laporan (excel) area Wanita">
+                                <span class="bas-dropdown-icon bas-icon-danger"><i class="far fa-file-excel"></i></span>
+                                Loker Wanita
+                            </a>
+                            <div class="bas-dropdown-divider"></div>
+                            <div class="bas-dropdown-section-label">Unggah Data</div>
+                            <a class="bas-dropdown-item" href="javascript:void(0)" onclick="openModalImport('L')"
+                                data-toggle="tooltip" data-placement="left" title="Masukkan laporan (excel) area Pria">
+                                <span class="bas-dropdown-icon bas-icon-primary"><i class="fas fa-upload"></i></span>
+                                Impor Loker Pria
+                            </a>
+                            <a class="bas-dropdown-item" href="javascript:void(0)" onclick="openModalImport('P')"
+                                data-toggle="tooltip" data-placement="left" title="Masukkan laporan (excel) area Wanita">
+                                <span class="bas-dropdown-icon bas-icon-primary"><i class="fas fa-upload"></i></span>
+                                Impor Loker Wanita
+                            </a>
+                        </div>
                     </div>
-                </div>
+                @endif
             </div>
         </div>
 
@@ -723,6 +728,8 @@
     </style>
 
     <script>
+        const canOperator = @json(in_array('loker_operator', $permissions));
+
         // Global State Management
         let state = {
             gender: 'L',
@@ -846,7 +853,7 @@
                         emptyState.removeClass('d-none');
                         emptyState.find('.empty-state-text').text(
                             `Nomor loker "${value}" tidak ditemukan. Tekan Enter untuk cari Nama/NIK secara global.`
-                            );
+                        );
                     } else {
                         emptyState.addClass('d-none');
                     }
@@ -973,44 +980,60 @@
                 .done(function(res) {
                     let html = '';
 
-                    if (res.status_unit === 'rusak') {
-                        $('#btn_aktif').show();
-                        $('#btn_rusak').hide();
+                    if (canOperator) {
+                        $('.kolom-aksi').show();
+
+                        if (res.status_unit === 'rusak') {
+                            $('#btn_aktif').show();
+                            $('#btn_rusak').hide();
+                        } else {
+                            $('#btn_rusak').show();
+                            $('#btn_aktif').hide();
+                        }
                     } else {
-                        $('#btn_rusak').show();
-                        $('#btn_aktif').hide();
+                        $('.kolom-aksi').hide();
+                        $('#btn_rusak, #btn_aktif').hide();
                     }
 
                     if (res.data && res.data.length > 0) {
                         res.data.forEach(p => {
-                            html += `<tr>
-        <td class="font-weight-bold text-primary">${p.nik}</td>
-        <td style="min-width: 150px;">
-            <span class="text-dark-75 font-weight-bolder d-block font-size-lg">${p.nama}</span>
-        </td>
-        <td><span class="label label-inline label-light-success font-weight-bold">${p.kategori.toUpperCase()}</span></td>
-        <td><span class="text-muted font-weight-bold">${p.divisi || '-'}</span></td>
-        <td>${p.tgl_masuk}</td>
+                            let rowContent = `
+                                <td class="font-weight-bold text-primary">${p.nik}</td>
+                                <td style="min-width: 150px;">
+                                    <span class="text-dark-75 font-weight-bolder d-block font-size-lg">${p.nama}</span>
+                                </td>
+                                <td><span class="label label-inline label-light-success font-weight-bold">${p.kategori.toUpperCase()}</span></td>
+                                <td><span class="text-muted font-weight-bold">${p.divisi || '-'}</span></td>
+                                <td>${p.tgl_masuk}</td>
+                            `;
 
-        <td class="text-right text-nowrap" style="width: 100px;">
-            <button class="btn btn-icon btn-light-primary btn-xs mr-1" onclick="pindahLoker('${p.nik}')" title="Relokasi">
-                <i class="flaticon-refresh"></i>
-            </button>
-            <button class="btn btn-icon btn-light-danger btn-xs" onclick="konfirmasiTarikKunci('${p.id}', '${p.nama}')" title="Tarik Kunci">
-                <i class="flaticon2-logout-1"></i>
-            </button>
-        </td>
-    </tr>`;
+                            if (canOperator) {
+                                rowContent += `
+                        <td class="text-right text-nowrap" style="width: 100px;">
+                            <button class="btn btn-icon btn-light-primary btn-xs mr-1" onclick="pindahLoker('${p.nik}')" title="Relokasi">
+                                <i class="flaticon-refresh"></i>
+                            </button>
+                            <button class="btn btn-icon btn-light-danger btn-xs" onclick="konfirmasiTarikKunci('${p.id}', '${p.nama}')" title="Tarik Kunci">
+                                <i class="flaticon2-logout-1"></i>
+                            </button>
+                        </td>
+                    `;
+                            }
+
+                            html += `<tr>${rowContent}</tr>`;
                         });
                     } else {
+                        let totalCol = canOperator ? 6 : 5;
                         html =
-                            '<tr><td colspan="6" class="text-center p-10 text-muted">Unit Kosong / Tidak Ada Penghuni</td></tr>';
+                            `<tr><td colspan="${totalCol}" class="text-center p-10 text-muted">Unit Kosong / Tidak Ada Penghuni</td></tr>`;
                     }
 
                     $('#detail_penghuni_list').html(html);
 
-                    $('#btn_rusak').off('click').on('click', () => updateStatusUnit('rusak', genderCode, no));
-                    $('#btn_aktif').off('click').on('click', () => updateStatusUnit('aktif', genderCode, no));
+                    if (canOperator) {
+                        $('#btn_rusak').off('click').on('click', () => updateStatusUnit('rusak', genderCode, no));
+                        $('#btn_aktif').off('click').on('click', () => updateStatusUnit('aktif', genderCode, no));
+                    }
 
                     refreshTooltips();
                 })

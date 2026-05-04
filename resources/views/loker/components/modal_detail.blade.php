@@ -23,7 +23,7 @@
             </div>
 
             {{-- BODY --}}
-            <div class="modal-body bas-modal-body" style="overflow: hidden;"> {{-- Kunci agar modal utama ga goyang --}}
+            <div class="modal-body bas-modal-body" style="overflow: hidden;">
 
                 {{-- Gunakan wrapper bawaan bootstrap untuk table responsive --}}
                 <div class="table-responsive">
@@ -36,7 +36,7 @@
                                 <th style="width: 150px;">Kategori</th>
                                 <th style="width: 150px;">Divisi</th>
                                 <th style="width: 150px;">Tgl Masuk</th>
-                                <th class="text-right" style="width: 120px;">Aksi</th>
+                                <th class="text-right kolom-aksi" style="width: 120px;">Aksi</th>
                             </tr>
                         </thead>
                         <tbody id="detail_penghuni_list">
@@ -49,17 +49,18 @@
 
             {{-- FOOTER --}}
             <div class="modal-footer bas-modal-footer">
-                <div class="d-flex align-items-center">
-                    {{-- Tombol aksi yang tampil bergantian sesuai status unit --}}
-                    <button type="button" id="btn_rusak" class="bas-btn bas-btn-outline-danger mr-2"
-                        data-toggle="tooltip" title="Tandai unit sedang rusak">
-                        <i class="fas fa-tools mr-2"></i> Tandai Rusak
-                    </button>
-                    <button type="button" id="btn_aktif" class="bas-btn bas-btn-primary mr-2" style="display: none;"
-                        data-toggle="tooltip" title="Aktifkan kembali unit">
-                        <i class="fas fa-check-circle mr-2"></i> Aktifkan
-                    </button>
-                </div>
+                @if (in_array('loker_operator', $permissions))
+                    <div class="d-flex align-items-center">
+                        <button type="button" id="btn_rusak" class="bas-btn bas-btn-outline-danger mr-2"
+                            data-toggle="tooltip" title="Tandai unit sedang rusak">
+                            <i class="fas fa-tools mr-2"></i> Tandai Rusak
+                        </button>
+                        <button type="button" id="btn_aktif" class="bas-btn bas-btn-primary mr-2"
+                            style="display: none;" data-toggle="tooltip" title="Aktifkan kembali unit">
+                            <i class="fas fa-check-circle mr-2"></i> Aktifkan
+                        </button>
+                    </div>
+                @endif
 
                 <button type="button" class="bas-btn bas-btn-outline" data-dismiss="modal">
                     Tutup
