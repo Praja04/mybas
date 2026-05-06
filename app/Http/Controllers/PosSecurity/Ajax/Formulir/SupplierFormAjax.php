@@ -340,39 +340,19 @@ class SupplierFormAjax extends Controller
     // supplier
     public function store(Request $request)
     {
-
-        // dd($request->all());
-        // Validasi tetap sama
+        // Validasi hanya 5 field wajib
         $validator = Validator::make($request->all(), [
-            'namavisitor'       => 'required|string|max:100',
-            'keterangan'        => 'required|string|max:100',
-            'nomorktp'          => 'required|string|max:100',
-            'tgllahir'          => 'required|nullable|date|before_or_equal:today',
-            'namacomp'          => 'required|string|max:100',
-            'rfid'              => 'required|string|max:100',
-            'purpose'           => 'required|in:BONGKAR,MUAT',
-            'nopol'             => 'required|string|max:20',
-            'createdby'         => 'nullable',
-            'sumpeople'         => 'nullable|integer|min:1|max:10',
-            'imgvisitorpathin'  => 'required|string',
-            'foto'              => 'required|string',
-            'nohpdriver'        => 'nullable|string|max:20',
-            // 'is_kacamata'       => 'required|boolean',
-
+            'namavisitor' => 'required|string|max:100',
+            'keterangan'  => 'required|string|max:100',
+            'nomorktp'    => 'required|string|max:100',
+            'namacomp'    => 'required|string|max:100',
+            'nopol'       => 'required|string|max:20',
         ], [
-            'namavisitor.required'      => 'Nama visitor harus diisi',
-            'namacomp.required'         => 'Nama perusahaan harus diisi',
-            'rfid.required'             => 'Nomor Kartu harus diisi',
-            'purpose.required'          => 'Tujuan harus dipilih',
-            'purpose.in'                => 'Tujuan harus BONGKAR atau MUAT',
-            'nopol.required'            => 'Nomor polisi harus diisi',
-            'nomorktp.required'         => 'Nomor KTP harus diisi',
-            'tgllahir.before_or_equal' => 'Tanggal lahir tidak boleh di masa depan',
-            'imgvisitorpathin.required' => 'Foto KTP harus diambil',
-            'foto.required'             => 'Foto selfie wajib diambil',
-            'sumpeople.min'             => 'Jumlah orang minimal 1',
-            'sumpeople.max'             => 'Jumlah orang maksimal 10',
-            // 'is_kacamata.required'      => 'Pertanyaan kacamata wajib diisi',
+            'namavisitor.required' => 'Nama visitor harus diisi',
+            'keterangan.required'  => 'Keterangan harus diisi',
+            'nomorktp.required'    => 'Nomor KTP/SIM harus diisi',
+            'namacomp.required'    => 'Nama perusahaan harus diisi',
+            'nopol.required'       => 'Nomor polisi harus diisi',
         ]);
 
         if ($validator->fails()) {
@@ -384,20 +364,27 @@ class SupplierFormAjax extends Controller
 
         // Ambil input untuk pengecekan blacklist
         $normalized_nama = Str::lower($this->normalize_name($request->input('namavisitor')));
-        $input_tanggal_lahir = Carbon::parse($request->input('tgllahir'))->format('Y-m-d');
+
+        // tgllahir boleh null
+        $input_tanggal_lahir = $request->input('tgllahir')
+            ? Carbon::parse($request->input('tgllahir'))->format('Y-m-d')
+            : null;
+
         $input_no_identitas = $request->input('nomorktp');
 
         // Cek blacklist
         $blacklist = DB::table('ga_lgtk_blacklist_identitas')
-            ->where(function ($q) use ($input_no_identitas, $normalized_nama, $input_tanggal_lahir) {
-                $q->where('no_identitas', $input_no_identitas)
-                    ->orWhere(function ($q2) use ($normalized_nama, $input_tanggal_lahir) {
-                        $q2->whereRaw('LOWER(TRIM(nama)) = ?', [$normalized_nama])
-                            ->where('tanggal_lahir', $input_tanggal_lahir);
-                    });
-            })
-            ->where('aktif', true)
-            ->first();
+        ->where(function ($q) use ($input_no_identitas, $normalized_nama, $input_tanggal_lahir) {
+            $q->where('no_identitas', $input_no_identitas)
+            ->orWhere(function ($q2) use ($normalized_nama, $input_tanggal_lahir) {
+                $q2->whereRaw('LOWER(TRIM(nama)) = ?', [$normalized_nama])
+                ->where('tanggal_lahir', $input_tanggal_lahir);
+            });
+        })
+        ->where('aktif',
+            true
+        )
+        ->first();
 
         if ($blacklist) {
             return response()->json([
@@ -414,100 +401,76 @@ class SupplierFormAjax extends Controller
         try {
 
             $prefixMapping = [
-                'MUAT'    => 'BM',
-                'BONGKAR' => 'GB',
-                'VENDOR'  => 'VN',
-                'TAMU'    => 'TM',
-            ];
+                    'MUAT'    => 'BM',
+                    'BONGKAR' => 'GB',
+                    'VENDOR'  => 'VN',
+                    'TAMU'    => 'TM',
+                ];
 
-            $jenis  = strtoupper($request->purpose);
+            $jenis  = strtoupper($request->purpose ?? 'TAMU');
             $prefix = $prefixMapping[$jenis] ?? 'TM';
             $trnVisitorId = $this->generateVisitorId($prefix);
 
             $ktpImagePath = null;
-            if ($request->has('imgvisitorpathin')) {
-                $ktpImagePath = $this->saveImageFromBase64(
-                    $request->imgvisitorpathin,
-                    $trnVisitorId . '_ktp',
-                    'uploads/pos-security/suppliers/ktp'
-                );
-            }
 
             // Proses foto selfie
             $selfiePaths = [];
-            if ($request->has('foto')) {
-                $selfiePhotos = json_decode($request->foto);
-                foreach ($selfiePhotos as $index => $selfiePhoto) {
-                    $path = $this->saveImageFromBase64(
-                        $selfiePhoto,
-                        $trnVisitorId . '_selfie_' . $index,
-                        'uploads/pos-security/suppliers/selfie'
-                    );
-                    $selfiePaths[] = $path;
-                }
-            }
 
             $now = Carbon::now();
 
             $supplier_data = [
-                'trnvisitorid'       => $trnVisitorId,
-                'namavisitor'        => $normalized_nama,
-                'keterangan'        => strtoupper($request->keterangan),
-                'no_ktp_sim'         => strtoupper($request->nomorktp),
-                'no_kartu'           => strtoupper($request->rfid),
-                'namacomp'           => strtoupper($request->namacomp),
-                'purpose'            => $request->purpose,
-                'nopol'              => strtoupper($request->nopol),
-                'gateidin'           => 'POS01',
-                'gatelineidin'       => 'JGB01',
-                'datein'             => $now->format('Y-m-d'),
-                'timein'             => $now->format('H:i:s'),
-                'createdby'          => 'system',
-                'createdon'          => $now,
-                'sumpeople'          => $request->sumpeople ?? 1,
-                'imgvisitorpathin'   => $ktpImagePath,
-                'nohpdriver'         => $request->nohpdriver,
-                'typevisitor'        => '1',
-                'flagtrx'            => 'X',
-                'foto'               => json_encode($selfiePaths),
-                'kartu_dikembalikan' => false,
-                'qr_code_saat_ini'   => $request->qr_code_saat_ini,
-                'tgl_lahir'          => $request->tgllahir,
-                // 'is_kacamata'          => $request->is_kacamata,
-                // 'kondisi_kacamata'     => $request->kondisi_kacamata ?? null,
-            ];
-
-            // dd($supplier_data);
+                    'trnvisitorid'       => $trnVisitorId,
+                    'namavisitor'        => $normalized_nama,
+                    'keterangan'         => strtoupper($request->keterangan),
+                    'no_ktp_sim'         => strtoupper($request->nomorktp),
+                    'no_kartu'           => $request->rfid ? strtoupper($request->rfid) : null,
+                    'namacomp'           => strtoupper($request->namacomp),
+                    'purpose'            => $request->purpose ?? null,
+                    'nopol'              => strtoupper($request->nopol),
+                    'gateidin'           => 'POS01',
+                    'gatelineidin'       => 'JGB01',
+                    'datein'             => $now->format('Y-m-d'),
+                    'timein'             => $now->format('H:i:s'),
+                    'createdby'          => 'system',
+                    'createdon'          => $now,
+                    'sumpeople'          => $request->sumpeople ?? 1,
+                    'imgvisitorpathin'   => $ktpImagePath,
+                    'nohpdriver'         => $request->nohpdriver ?? null,
+                    'typevisitor'        => '1',
+                    'flagtrx'            => 'X',
+                    'foto'               => json_encode($selfiePaths),
+                    'kartu_dikembalikan' => false,
+                    'qr_code_saat_ini'   => $request->qr_code_saat_ini ?? null,
+                    'tgl_lahir'          => $request->tgllahir ?? null,
+                ];
 
             $isNewRecord   = false;
             $isUpdated     = false;
             $isCardInUse   = false;
 
             DB::transaction(function () use ($supplier_data, &$isNewRecord, &$isUpdated, &$isCardInUse) {
-                // Cek apakah kartu masih dipakai oleh supplier/transporter lain
-                $dipakaiSupplier = GaVisitorTransaction::where('no_kartu', $supplier_data['no_kartu'])
+                // Jika no_kartu null/kosong, skip pengecekan kartu
+                if (!empty($supplier_data['no_kartu'])) {
+                    $dipakaiSupplier = GaVisitorTransaction::where('no_kartu', $supplier_data['no_kartu'])
                     ->where(function ($q) {
                         $q->whereNull('kartu_dikembalikan')
                             ->orWhere('kartu_dikembalikan', false)
                             ->orWhereNull('dateout');
                     })
-                    ->exists();
+                        ->exists();
 
-                // Cek apakah kartu masih dipakai oleh vendor/tamu lain
-                $dipakaiVendor = GaVisitorVendorTransaction::where('no_kartu', $supplier_data['no_kartu'])
+                    $dipakaiVendor = GaVisitorVendorTransaction::where('no_kartu', $supplier_data['no_kartu'])
                     ->where(function ($q) {
                         $q->whereNull('kartu_dikembalikan')
                             ->orWhere('kartu_dikembalikan', false)
                             ->orWhereNull('dateout');
                     })
-                    ->exists();
+                        ->exists();
 
-                // Jika dipakai di salah satu tabel → kartu sedang digunakan
-                $kartuMasihDipakai = $dipakaiVendor || $dipakaiSupplier;
-
-                if ($kartuMasihDipakai) {
-                    $isCardInUse = true;
-                    return;
+                    if ($dipakaiVendor || $dipakaiSupplier) {
+                        $isCardInUse = true;
+                        return;
+                    }
                 }
 
                 $existing = GaVisitorTransaction::where('trnvisitorid', $supplier_data['trnvisitorid'])->first();
@@ -552,7 +515,6 @@ class SupplierFormAjax extends Controller
             ], 500);
         }
     }
-
 
     // 
     public function kembali_kartu(Request $request)

@@ -76,8 +76,7 @@
                         ← Kembali ke Daftar
                     </button>
 
-                    <form id="cekKendaraanForm" method="POST" enctype="multipart/form-data" onsubmit="return false;"
-                        action="{{ route('ajax.pos-security.cek-kendaraan.store') }}">
+                    <form id="cekKendaraanForm" method="POST" enctype="multipart/form-data" onsubmit="return false;" action="{{ route('ajax.pos-security.cek-kendaraan.store') }}">
                         @csrf
 
                         <input type="hidden" name="trnvisitorid" id="trnvisitorid">
@@ -135,6 +134,77 @@
                             </div>
                         </div>
 
+                        {{-- ===================================================== --}}
+                        {{-- Foto Identitas Supir (KTP + Selfie) — BARU --}}
+                        {{-- ===================================================== --}}
+                        <div id="section-identitas" class="mt-4">
+                            <div class="alert alert-secondary mb-3">
+                                <i class="mdi mdi-card-account-details-outline"></i>
+                                <strong>Foto Identitas Supir</strong>
+                                <br>
+                                <small>Ambil foto KTP dan foto diri supir sebelum melakukan pengecekan kendaraan.</small>
+                            </div>
+
+                            <div class="row g-3">
+                                {{-- Slot Foto KTP --}}
+                                <div class="col-md-6">
+                                    <div class="card shadow-sm h-100 foto-slot-identitas" data-key="foto_ktp">
+                                        <div class="card-body d-flex flex-column">
+                                            <label class="form-label fw-semibold mb-1">
+                                                <i class="mdi mdi-card-account-details text-primary me-1"></i>
+                                                Foto KTP
+                                                <span class="text-danger">*</span>
+                                                <span class="badge bg-danger ms-1">Wajib</span>
+                                            </label>
+                                            <p class="text-muted small mb-2">Arahkan kamera ke KTP supir dengan jelas</p>
+
+                                            <div id="preview-foto_ktp" class="d-flex justify-content-center align-items-center mb-3 rounded" style="min-height: 130px; background:#f8f9fa; border: 2px dashed #dee2e6;">
+                                                <span class="text-muted small" id="placeholder-foto_ktp">
+                                                    <i class="mdi mdi-image-outline fs-4 d-block text-center mb-1"></i>
+                                                    Belum ada foto
+                                                </span>
+                                            </div>
+
+                                            <input type="hidden" name="photos[foto_ktp]" id="input-foto_ktp" value="">
+
+                                            <button type="button" class="btn btn-outline-primary btn-sm mt-auto open-supplier-photo" data-key="foto_ktp" data-label="KTP Supir" data-bs-toggle="modal" data-bs-target="#myModalSupplier">
+                                                <i class="mdi mdi-camera"></i> Ambil Foto KTP
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {{-- Slot Foto Diri --}}
+                                <div class="col-md-6">
+                                    <div class="card shadow-sm h-100 foto-slot-identitas" data-key="foto_diri">
+                                        <div class="card-body d-flex flex-column">
+                                            <label class="form-label fw-semibold mb-1">
+                                                <i class="mdi mdi-account-box text-primary me-1"></i>
+                                                Foto Diri / Selfie
+                                                <span class="text-danger">*</span>
+                                                <span class="badge bg-danger ms-1">Wajib</span>
+                                            </label>
+                                            <p class="text-muted small mb-2">Ambil foto wajah supir secara langsung</p>
+
+                                            <div id="preview-foto_diri" class="d-flex justify-content-center align-items-center mb-3 rounded" style="min-height: 130px; background:#f8f9fa; border: 2px dashed #dee2e6;">
+                                                <span class="text-muted small" id="placeholder-foto_diri">
+                                                    <i class="mdi mdi-image-outline fs-4 d-block text-center mb-1"></i>
+                                                    Belum ada foto
+                                                </span>
+                                            </div>
+
+                                            <input type="hidden" name="photos[foto_diri]" id="input-foto_diri" value="">
+
+                                            <button type="button" class="btn btn-outline-primary btn-sm mt-auto open-supplier-photo" data-key="foto_diri" data-label="Foto Diri Supir" data-bs-toggle="modal" data-bs-target="#myModalSupplier">
+                                                <i class="mdi mdi-account-camera"></i> Ambil Foto Diri
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {{-- ===================================================== --}}
+
                         {{-- Form pemeriksaan --}}
                         <div id="section-pemeriksaan">
                             <div class="alert alert-warning mt-3">
@@ -148,23 +218,20 @@
                                 <div class="mb-3">
                                     <label class="form-label fw-semibold" for="nama_petugas">Nama Petugas Pemeriksa
                                         <span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" name="nama_petugas" id="nama_petugas"
-                                        required placeholder="Masukkan nama petugas yang memeriksa">
+                                    <input type="text" class="form-control" name="nama_petugas" id="nama_petugas" required placeholder="Masukkan nama petugas yang memeriksa">
                                 </div>
 
                                 <div class="mb-3">
-                                    <label class="form-label fw-semibold" for="muatanType">Jenis Muatan <span
-                                            class="text-danger">*</span></label>
+                                    <label class="form-label fw-semibold" for="muatanType">Jenis Muatan <span class="text-danger">*</span></label>
                                     <select class="form-select" id="muatanType" name="muatan_type" required>
                                         <option value="" disabled selected>-- Pilih Jenis Muatan --</option>
                                         <option value="LIQUID">LIQUID</option>
-                                        <option value="NONLIQUID">NONLIQUID</option>
+                                        <option value="NONLIQUID">NON LIQUID</option>
                                     </select>
                                 </div>
 
                                 <div class="mb-3" id="truckTypeContainer" style="display: none;">
-                                    <label class="form-label fw-semibold" for="truckType">Jenis Truk <span
-                                            class="text-danger">*</span></label>
+                                    <label class="form-label fw-semibold" for="truckType">Jenis Truk <span class="text-danger">*</span></label>
                                     <select class="form-select" id="truckType" name="truck_type" required>
                                         <option value="" disabled selected>-- Pilih Jenis Truk --</option>
                                     </select>
@@ -174,9 +241,7 @@
                                     <label class="form-label fw-semibold" for="otherTruckType">
                                         Jenis Truk Lainnya <span class="text-danger">*</span>
                                     </label>
-                                    <input type="text" class="form-control" name="otherTruckType"
-                                        id="otherTruckType"
-                                        placeholder="Contoh: Truk Tangki Limbah, Truk Tangki Air, dll">
+                                    <input type="text" class="form-control" name="otherTruckType" id="otherTruckType" placeholder="Contoh: Truk Tangki Limbah, Truk Tangki Air, dll">
                                 </div>
                             </div>
 
@@ -197,23 +262,8 @@
                         {{-- Button --}}
                         <div class="d-flex flex-column flex-md-row gap-2 justify-content-start mb-4">
 
-                            {{-- <button type="button" class="btn btn-outline-primary px-4 py-2 d-flex align-items-center gap-2"
-                                onclick="location.reload()">
-                                <i class="mdi mdi-refresh"></i>
-                                <span>Refresh Halaman</span>
-                            </button> --}}
-
-                            {{-- <button type="button"
-                                class="btn btn-outline-secondary px-4 py-2 d-flex align-items-center gap-2"
-                                onclick="resetFormButton()" id="resetBtn" data-bs-toggle="tooltip"
-                                data-bs-placement="top" title="Kosongkan semua isian dan foto">
-                                <i class="mdi mdi-eraser"></i>
-                                <span>Reset Form</span>
-                            </button> --}}
-
                             <!-- Submit Button -->
-                            <button type="submit" class="btn btn-primary px-4 py-2 d-flex align-items-center gap-2"
-                                id="submitBtn" data-bs-toggle="tooltip" data-bs-placement="top">
+                            <button type="submit" class="btn btn-primary px-4 py-2 d-flex align-items-center gap-2" id="submitBtn" data-bs-toggle="tooltip" data-bs-placement="top">
                                 <i class="mdi mdi-content-save"></i>
                                 <span>Simpan Data</span>
                             </button>
@@ -227,7 +277,7 @@
     </div>
 </div>
 
-{{-- Foto Modal --}}
+{{-- Foto Modal (Kendaraan) --}}
 <div id="myModal" class="modal fade" tabindex="-1" aria-labelledby="myModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -236,8 +286,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body text-center">
-                <video id="video" autoplay width="100%" class="rounded shadow-sm mb-3"
-                    style="display: none;"></video>
+                <video id="video" autoplay width="100%" class="rounded shadow-sm mb-3" style="display: none;"></video>
                 <canvas id="canvas" style="display: none;"></canvas>
 
                 <button id="startCamera" class="btn btn-success mb-3">Mulai Kamera</button>
@@ -259,45 +308,74 @@
     </div>
 </div>
 
+{{-- Modal Kamera Identitas (KTP & Selfie) --}}
+<div id="myModalSupplier" class="modal fade" tabindex="-1" aria-labelledby="myModalLabelSupplier" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="myModalLabelSupplier">Foto Identitas</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <video id="videoSupplier" autoplay width="100%" class="rounded shadow-sm mb-3" style="display: none;"></video>
+                <canvas id="canvasSupplier" style="display: none;"></canvas>
+
+                <button id="startCameraSupplier" class="btn btn-success mb-3">Mulai Kamera</button>
+
+                <div id="capturedImageContainerSupplier" class="mt-3" style="display: none;">
+                    <img id="capturedImageSupplier" class="img-fluid rounded shadow" />
+                </div>
+            </div>
+            <div class="modal-footer justify-content-between">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
+                <div>
+                    <button id="retakeBtnSupplier" class="btn btn-warning me-2" style="display: none;">Ulangi</button>
+                    <button id="captureBtnSupplier" class="btn btn-secondary me-2" style="display: none;">Capture</button>
+                    <button id="saveBtnSupplier" class="btn btn-primary" style="display: none;">Simpan</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 @push('scripts')
-    <script src="{{ asset('assets/js/pos-security/formulir-cek-kendaraan/indexeddb-helper.js') }}"></script>
-    <script type="module" src="{{ asset('assets/js/pos-security/formulir-cek-kendaraan/cek-kendaraan-in-table.js') }}">
-    </script>
-    <script src="{{ asset('assets/js/pos-security/formulir-cek-kendaraan/form-kendaraan-input.js') }}"></script>
-    <script src="{{ asset('assets/js/pos-security/formulir-cek-kendaraan/form-kendaraan-input-store.js') }}"></script>
-    <script src="{{ asset('assets/js/pos-security/formulir-cek-kendaraan/foto-config.js') }}"></script>
-    {{-- <script src="{{ asset('assets/js/pos-security/formulir-cek-kendaraan/truck-options.js') }}"></script> --}}
+<script src="{{ asset('assets/js/pos-security/formulir-cek-kendaraan/indexeddb-helper.js') }}"></script>
+<script type="module" src="{{ asset('assets/js/pos-security/formulir-cek-kendaraan/cek-kendaraan-in-table.js') }}">
+</script>
+<script src="{{ asset('assets/js/pos-security/formulir-cek-kendaraan/form-kendaraan-input.js') }}"></script>
+<script src="{{ asset('assets/js/pos-security/formulir-cek-kendaraan/form-kendaraan-input-store.js') }}"></script>
+<script src="{{ asset('assets/js/pos-security/formulir-cek-kendaraan/foto-config.js') }}"></script>
 
-    <script>
-        function hotReload() {
-            const url = window.location.origin + window.location.pathname + '?_=' + Date.now();
-            window.location.replace(url);
+<script>
+    function hotReload() {
+        const url = window.location.origin + window.location.pathname + '?_=' + Date.now();
+        window.location.replace(url);
+    }
+</script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+
+        // === TAB MASUK (IN) ===
+        const inTabButton = document.querySelector(
+            '[data-bs-target="#cek-kendaraan-in"]'
+        );
+
+        if (inTabButton) {
+            inTabButton.addEventListener("shown.bs.tab", function() {
+                console.log("TAB IN dibuka");
+
+                // belum pernah init
+                if (!window.cekKendaraanInTable) {
+                    console.log("INIT DATATABLE IN");
+                    new window.ContentDatatableIn().initialize();
+                    return;
+                }
+
+                // sudah init → reload
+                console.log("RELOAD DATATABLE IN");
+                window.cekKendaraanInTable.ajax.reload(null, false);
+            });
         }
-    </script>
-    <script>
-        document.addEventListener("DOMContentLoaded", function() {
-
-            // === TAB MASUK (IN) ===
-            const inTabButton = document.querySelector(
-                '[data-bs-target="#cek-kendaraan-in"]'
-            );
-
-            if (inTabButton) {
-                inTabButton.addEventListener("shown.bs.tab", function() {
-                    console.log("TAB IN dibuka");
-
-                    // belum pernah init
-                    if (!window.cekKendaraanInTable) {
-                        console.log("INIT DATATABLE IN");
-                        new window.ContentDatatableIn().initialize();
-                        return;
-                    }
-
-                    // sudah init → reload
-                    console.log("RELOAD DATATABLE IN");
-                    window.cekKendaraanInTable.ajax.reload(null, false);
-                });
-            }
-        });
-    </script>
+    });
+</script>
 @endpush

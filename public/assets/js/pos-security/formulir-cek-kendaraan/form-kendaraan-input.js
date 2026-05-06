@@ -1,4 +1,7 @@
 (() => {
+    // ============================================================
+    // MODAL KENDARAAN (multi-foto)
+    // ============================================================
     const video = document.getElementById("video");
     const canvas = document.getElementById("canvas");
     const captureBtn = document.getElementById("captureBtn");
@@ -177,8 +180,251 @@
         if (saveBtn) saveBtn.addEventListener("click", saveCapture);
     });
 
+    // ============================================================
+    // MODAL IDENTITAS (single-foto: KTP & Selfie)
+    // ============================================================
+    const videoSupplier = document.getElementById("videoSupplier");
+    const canvasSupplier = document.getElementById("canvasSupplier");
+    const captureBtnSupplier = document.getElementById("captureBtnSupplier");
+    const retakeBtnSupplier = document.getElementById("retakeBtnSupplier");
+    const saveBtnSupplier = document.getElementById("saveBtnSupplier");
+    const startCameraSupplier = document.getElementById("startCameraSupplier");
+    const capturedImageSupplier = document.getElementById("capturedImageSupplier");
+    const capturedImageContainerSupplier = document.getElementById("capturedImageContainerSupplier");
+
+    let activeSupplierKey = null;   // 'foto_ktp' | 'foto_diri'
+    let tempSupplierPhoto = null;   // single capture
+
+    function toggleSupplier(elements = []) {
+        elements.forEach(({ el, show }) => {
+            if (el) el.style.display = show ? "inline-block" : "none";
+        });
+    }
+
+    async function startWebcamSupplier() {
+        // Untuk foto diri gunakan kamera depan (user), untuk KTP kamera belakang (environment)
+        const facingMode = activeSupplierKey === "foto_diri" ? "user" : "environment";
+
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: {
+                    width: { ideal: 400 },
+                    height: { ideal: 300 },
+                    facingMode,
+                },
+            });
+
+            if (videoSupplier) {
+                videoSupplier.srcObject = stream;
+                videoSupplier.style.display = "block";
+            }
+
+            toggleSupplier([
+                { el: startCameraSupplier, show: false },
+                { el: captureBtnSupplier, show: true },
+                { el: retakeBtnSupplier, show: false },
+                { el: saveBtnSupplier, show: false },
+            ]);
+        } catch (err) {
+            alert("Gagal mengakses kamera: " + err.message);
+            console.error(err);
+        }
+    }
+
+    function captureImageSupplier() {
+        if (!videoSupplier || !canvasSupplier) return;
+
+        const ctx = canvasSupplier.getContext("2d");
+        canvasSupplier.width = videoSupplier.videoWidth;
+        canvasSupplier.height = videoSupplier.videoHeight;
+        ctx.drawImage(videoSupplier, 0, 0);
+
+        tempSupplierPhoto = canvasSupplier.toDataURL("image/jpeg", 0.8);
+
+        if (capturedImageSupplier) capturedImageSupplier.src = tempSupplierPhoto;
+        if (capturedImageContainerSupplier)
+            capturedImageContainerSupplier.style.display = "block";
+
+        toggleSupplier([
+            { el: videoSupplier, show: false },
+            { el: captureBtnSupplier, show: false },
+            { el: retakeBtnSupplier, show: true },
+            { el: saveBtnSupplier, show: true },
+        ]);
+
+        stopStreamSupplier();
+    }
+
+    function retakePhotoSupplier() {
+        tempSupplierPhoto = null;
+
+        if (capturedImageContainerSupplier)
+            capturedImageContainerSupplier.style.display = "none";
+
+        toggleSupplier([
+            { el: videoSupplier, show: true },
+            { el: captureBtnSupplier, show: true },
+            { el: retakeBtnSupplier, show: false },
+            { el: saveBtnSupplier, show: false },
+        ]);
+
+        startCameraSupplier.click();
+    }
+
+    function stopStreamSupplier() {
+        const stream = videoSupplier?.srcObject;
+        if (stream && typeof stream.getTracks === "function") {
+            stream.getTracks().forEach((track) => track.stop());
+            videoSupplier.srcObject = null;
+        }
+    }
+
+    async function saveCaptureSupplier() {
+        if (!activeSupplierKey || !tempSupplierPhoto) {
+            Swal.fire({
+                icon: "warning",
+                title: "Error!",
+                text: "Ambil foto terlebih dahulu.",
+            });
+            return;
+        }
+
+        // Simpan sebagai array 1 elemen (replace, bukan append)
+        photoStore[activeSupplierKey] = [tempSupplierPhoto];
+        tempSupplierPhoto = null;
+
+        // Simpan ke draft IndexedDB
+        if (photoSessionId && window.IDBDraft) {
+            await window.IDBDraft.saveDraft(collectDraftData());
+        }
+
+        renderPhotoPreviewIdentitas(activeSupplierKey);
+        updateHiddenInput(activeSupplierKey);
+
+        const modal = bootstrap.Modal.getInstance(
+            document.getElementById("myModalSupplier")
+        );
+        modal.hide();
+
+        Swal.fire({
+            icon: "success",
+            title: "Berhasil",
+            text: "Foto identitas berhasil disimpan",
+            timer: 1200,
+            showConfirmButton: false,
+        });
+    }
+
+    function resetCameraModalSupplier() {
+        stopStreamSupplier();
+        tempSupplierPhoto = null;
+
+        if (capturedImageSupplier) capturedImageSupplier.src = "";
+        if (capturedImageContainerSupplier)
+            capturedImageContainerSupplier.style.display = "none";
+
+        toggleSupplier([
+            { el: startCameraSupplier, show: true },
+            { el: captureBtnSupplier, show: false },
+            { el: retakeBtnSupplier, show: false },
+            { el: saveBtnSupplier, show: false },
+        ]);
+
+        if (videoSupplier) videoSupplier.style.display = "none";
+
+        if (canvasSupplier) {
+            const ctx = canvasSupplier.getContext("2d");
+            ctx.clearRect(0, 0, canvasSupplier.width, canvasSupplier.height);
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        const supplierModal = document.getElementById("myModalSupplier");
+        if (supplierModal) {
+            supplierModal.addEventListener("shown.bs.modal", () => {
+                resetCameraModalSupplier();
+                startWebcamSupplier();
+            });
+
+            supplierModal.addEventListener("hidden.bs.modal", () => {
+                activeSupplierKey = null;
+                resetCameraModalSupplier();
+            });
+        }
+
+        if (startCameraSupplier)
+            startCameraSupplier.addEventListener("click", startWebcamSupplier);
+        if (captureBtnSupplier)
+            captureBtnSupplier.addEventListener("click", captureImageSupplier);
+        if (retakeBtnSupplier)
+            retakeBtnSupplier.addEventListener("click", retakePhotoSupplier);
+        if (saveBtnSupplier)
+            saveBtnSupplier.addEventListener("click", saveCaptureSupplier);
+    });
+
+    // Set key & label saat tombol foto identitas diklik
+    $(document).on("click", ".open-supplier-photo", function () {
+        activeSupplierKey = $(this).data("key");
+        const label = $(this).data("label") || "Identitas";
+        $("#myModalLabelSupplier").text(`Foto ${label}`);
+
+        // Inisialisasi slot di photoStore kalau belum ada
+        if (!photoStore[activeSupplierKey]) {
+            photoStore[activeSupplierKey] = [];
+        }
+    });
+
+    // ============================================================
+    // Render preview foto identitas (single photo, replace mode)
+    // ============================================================
+    function renderPhotoPreviewIdentitas(key) {
+        const container = document.getElementById(`preview-${key}`);
+        const placeholder = document.getElementById(`placeholder-${key}`);
+        if (!container) return;
+
+        const photos = photoStore[key] || [];
+
+        if (photos.length === 0) {
+            container.innerHTML = `
+                <span class="text-muted small" id="placeholder-${key}">
+                    <i class="mdi mdi-image-outline fs-4 d-block text-center mb-1"></i>
+                    Belum ada foto
+                </span>
+            `;
+            return;
+        }
+
+        // Tampilkan foto tunggal dengan tombol hapus
+        container.innerHTML = `
+            <div class="position-relative w-100 text-center">
+                <img src="${photos[0]}"
+                    class="img-fluid rounded shadow-sm"
+                    style="max-height: 130px; object-fit: cover;">
+                <button type="button"
+                    class="btn btn-danger btn-sm position-absolute top-0 end-0 m-1"
+                    onclick="removeIdentitasPhoto('${key}')"
+                    title="Hapus foto">
+                    <i class="mdi mdi-close"></i>
+                </button>
+            </div>
+        `;
+    }
+
+    window.removeIdentitasPhoto = async function (key) {
+        photoStore[key] = [];
+        renderPhotoPreviewIdentitas(key);
+        updateHiddenInput(key);
+
+        if (photoSessionId && window.IDBDraft) {
+            await window.IDBDraft.saveDraft(collectDraftData());
+        }
+    };
+
+    // ============================================================
+    // Shared / form logic
+    // ============================================================
     $(document).ready(function () {
-        // label in modal
+        // label in modal kendaraan
         $(document).on("click", '[data-bs-target="#myModal"]', function () {
             const $btn = $(this);
             const rawLabel = $btn
@@ -282,7 +528,7 @@
                     '<option value="" disabled selected>-- Pilih Jenis Truk --</option>'
                 );
 
-            // reset foto
+            // reset foto kendaraan (identitas tetap)
             $fotoSection.empty();
 
             $otherTruckContainer.slideUp();
@@ -361,11 +607,6 @@
                     .join("")
             );
 
-            // auto-scroll
-            // setTimeout(() => {
-            //     scrollToFotoSection();
-            // }, 150);
-
             // render other truck type field
             if (
                 value === "LAINNYA (LIQUID)" ||
@@ -380,21 +621,10 @@
                 $otherTruckInput.val("");
             }
         });
-
-        function scrollToFotoSection() {
-            const fotoSection = document.getElementById("fotoSection");
-            if (!fotoSection) return;
-
-            fotoSection.scrollIntoView({
-                behavior: "smooth",
-                block: "start",
-            });
-        }
     });
 
-    // slot handler
+    // slot handler (modal kendaraan)
     $(document).on("click", ".open-camera", function () {
-        // activePhotoKey = $(this).data("key");
         setActivePhotoKey($(this).data("key"));
 
         if (!photoStore[activePhotoKey]) {
@@ -446,6 +676,7 @@
         photoStore = {};
         tempPhotos = [];
         activePhotoKey = null;
+        activeSupplierKey = null;
         photoSessionId = trnvisitorid;
         
         $("#tableWrapper").hide();
@@ -453,6 +684,12 @@
 
         $("#formWrapper").fadeIn();
         $("#headerForm").fadeIn();
+
+        // Reset identitas preview
+        renderPhotoPreviewIdentitas("foto_ktp");
+        renderPhotoPreviewIdentitas("foto_diri");
+        $("#input-foto_ktp").val("");
+        $("#input-foto_diri").val("");
 
         $("#cekKendaraanForm")[0].reset();
         $("#fotoSection").html("");
@@ -481,7 +718,7 @@
             const draft = await window.IDBDraft.getDraft(trnvisitorid);
             if (!draft) return;
 
-            // restore input
+            // restore input teks
             $("#nama_petugas").val(draft.nama_petugas);
             $("#muatanType").val(draft.muatan_type).trigger("change");
 
@@ -492,7 +729,12 @@
 
                 setTimeout(() => {
                     Object.keys(photoStore).forEach((key) => {
-                        renderPhotoPreview(key);
+                        // Foto identitas pakai render single
+                        if (key === "foto_ktp" || key === "foto_diri") {
+                            renderPhotoPreviewIdentitas(key);
+                        } else {
+                            renderPhotoPreview(key);
+                        }
                         updateHiddenInput(key);
                     });
                 }, 100);
@@ -533,6 +775,7 @@
         photoStore = {};
         tempPhotos = [];
         activePhotoKey = null;
+        activeSupplierKey = null;
         photoSessionId = null;
 
         $("#formWrapper").hide();
@@ -631,6 +874,7 @@
             truck_type: $("#truckType").val(),
             other_truck_type: $("#otherTruckType").val() || null,
 
+            // photos mencakup foto_ktp, foto_diri, dan foto kendaraan
             photos: structuredClone(photoStore),
 
             updatedAt: Date.now(), 
@@ -670,19 +914,6 @@
         );
     });
     
-    function formatTime(value) {
-        const d = new Date(value);
-        if (isNaN(d)) return "-";
-
-        return d.toLocaleString("id-ID", {
-            day: "2-digit",
-            month: "2-digit",
-            year: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-        });
-    }
-
     function timeAgo(value) {
         const date = new Date(value);
         if (isNaN(date)) return "";
