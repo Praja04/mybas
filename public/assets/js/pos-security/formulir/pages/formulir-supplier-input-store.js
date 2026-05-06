@@ -1,4 +1,3 @@
-
 // form ajax
 $(document).ready(function () {
     $("#visitorForm").on("submit", function (e) {
@@ -86,8 +85,10 @@ $(document).ready(function () {
                 console.log("Selfie photos:", selfiePhotos);
                 console.log(
                     "Hidden input value:",
-                    document.getElementById("selfiePhotos").value
+                    document.getElementById("selfiePhotos").value,
                 );
+
+                location.reload();
             },
             error: function (xhr) {
                 // Ambil pesan dari response jika tersedia
@@ -137,14 +138,14 @@ function resetPreviewImage() {
     $("#ktpPreview")
         .empty()
         .append(
-            '<div class="text-muted fst-italic mt-2">Tidak ada foto yang diunggah.</div>'
+            '<div class="text-muted fst-italic mt-2">Tidak ada foto yang diunggah.</div>',
         );
 
     // Reset Selfie Preview
     $("#selfiePreview")
         .empty()
         .append(
-            '<div class="text-muted fst-italic mt-2">Tidak ada foto yang diunggah.</div>'
+            '<div class="text-muted fst-italic mt-2">Tidak ada foto yang diunggah.</div>',
         );
 
     // Reset variabel selfiePhotos jika ada
@@ -174,11 +175,11 @@ function resetPreviewImage() {
 
     console.log(
         "Reset completed - imgvisitorpathin value:",
-        $("#imgvisitorpathin").val()
+        $("#imgvisitorpathin").val(),
     );
     console.log(
         "Reset completed - selfiePhotos value:",
-        $("#selfiePhotos").val()
+        $("#selfiePhotos").val(),
     );
 }
 
@@ -188,7 +189,7 @@ function resetModalKamera() {
     const canvas = document.getElementById("canvas");
     const capturedImage = document.getElementById("capturedImage");
     const capturedImageContainer = document.getElementById(
-        "capturedImageContainer"
+        "capturedImageContainer",
     );
 
     if (video && video.srcObject) {
@@ -208,7 +209,7 @@ function resetModalKamera() {
     const selfieCanvas = document.getElementById("selfieCanvas");
     const capturedSelfieImage = document.getElementById("capturedSelfieImage");
     const capturedSelfieContainer = document.getElementById(
-        "capturedSelfieContainer"
+        "capturedSelfieContainer",
     );
 
     if (selfieVideo && selfieVideo.srcObject) {
@@ -294,7 +295,7 @@ function resetKtpData() {
     $("#ktpPreview")
         .empty()
         .append(
-            '<div class="text-muted fst-italic mt-2">Tidak ada foto yang diunggah.</div>'
+            '<div class="text-muted fst-italic mt-2">Tidak ada foto yang diunggah.</div>',
         );
 
     // Reset captured image (modal)
@@ -303,4 +304,3 @@ function resetKtpData() {
 
     console.log("🧹 KTP data direset");
 }
-
