@@ -68,7 +68,11 @@ class FormInDatatable extends Controller
             //     $join->on('c.trnvisitorid', '=', 'v.trnvisitorid');
             // })
             ->leftJoin('ga_cek_kendaraan as c', function ($join) {
-                $join->on(DB::raw('c.trnvisitorid COLLATE utf8mb4_unicode_ci'), '=', DB::raw('v.trnvisitorid COLLATE utf8mb4_unicode_ci'))
+                $join->on(
+                    DB::raw('CONVERT(c.trnvisitorid USING utf8mb4)'),
+                    '=',
+                    DB::raw('CONVERT(v.trnvisitorid USING utf8mb4)')
+                )
                     ->whereColumn('c.created_at', '>=', 'v.created_at');
             })
 
