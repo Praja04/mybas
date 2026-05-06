@@ -49,10 +49,10 @@ class FormInDatatable extends Controller
                     ->from('ga_visitor_transaction')
                     ->where('ga_visitor_transaction.keterangan', 'SUPIR')
                     ->whereRaw("
-                REPLACE(REPLACE(UPPER(ga_visitor_transaction.nopol), ' ', ''), '-', '') COLLATE utf8mb4_unicode_ci
-                =
-                REPLACE(REPLACE(UPPER(ga_visitor_vendor.nopol), ' ', ''), '-', '') COLLATE utf8mb4_unicode_ci
-            ");
+                        REPLACE(REPLACE(UPPER(CONVERT(ga_visitor_transaction.nopol USING utf8mb4)), ' ', ''), '-', '')
+                        =
+                        REPLACE(REPLACE(UPPER(CONVERT(ga_visitor_vendor.nopol USING utf8mb4)), ' ', ''), '-', '')
+                    ");
             });
 
         // UNION visitor
@@ -75,7 +75,7 @@ class FormInDatatable extends Controller
             ->whereNull('c.trncekid') // tampilkan yang belum cek sama sekali
             ->where(function ($q) {
                 $q->whereNull('v.kartu_dikembalikan')
-                ->orWhere('v.kartu_dikembalikan', 0);
+                    ->orWhere('v.kartu_dikembalikan', 0);
             })
             ->select([
                 'v.trnvisitorid',
