@@ -258,11 +258,16 @@ Route::group(['middleware' => ['auth', 'rules', 'access_log']], function () {
     Route::post('/display/pengambilan-id-card/submit', 'PKWKaryawanController@pengambilanIdCardSubmit');
 
     Route::get('/permission/auth-permission/', 'AuthPermissionController@index');
-    Route::post('/permission/auth-permission/store', 'AuthPermissionController@store');
+    Route::post('/permission/auth-permission/store', 'AuthPermissionController@store')->name('auth-permission.store');
+    Route::get('/permission/auth-permission/get/{id}', 'AuthPermissionController@edit');
+    Route::delete('/permission/auth-permission/delete/{id}', 'AuthPermissionController@destroy');
+
     Route::get('/permission/auth-group/', 'AuthGroupController@index');
     Route::post('/permission/auth-group/store', 'AuthGroupController@store');
     Route::post('/permission/auth-group/get-permissions', 'AuthGroupController@get_permissions');
     Route::post('/permission/auth-group/change-permissions', 'AuthGroupController@change_permissions');
+    Route::post('/permission/auth-group/update', 'AuthGroupController@update');
+    Route::delete('/permission/auth-group/delete', 'AuthGroupController@delete');
     // tambah get permissions di master user
     // Route::post('/permission/auth-group/get-permissions', 'AuthGroupController@get_permissions');
 

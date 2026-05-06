@@ -1359,12 +1359,14 @@
                                             </a>
                                         </li>
 
-                                        <li class="menu-item" aria-haspopup="true">
-                                            <a href="{{ url('/loker/management') }}" class="menu-link">
-                                                <i class="menu-bullet menu-bullet-line"><span></span></i>
-                                                <span class="menu-text">Manajemen Unit</span>
-                                            </a>
-                                        </li>
+                                        @if (in_array('loker_master', $permissions))
+                                            <li class="menu-item" aria-haspopup="true">
+                                                <a href="{{ url('/loker/management') }}" class="menu-link">
+                                                    <i class="menu-bullet menu-bullet-line"><span></span></i>
+                                                    <span class="menu-text">Manajemen Unit</span>
+                                                </a>
+                                            </li>
+                                        @endif
 
                                     </ul>
                                 </div>

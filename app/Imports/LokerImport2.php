@@ -14,45 +14,23 @@ class LokerImport implements ToModel, WithStartRow, WithCalculatedFormulas
     protected $gender;
     protected $prefix;
     private $lastLoker   = null;
-    private $lastStatus  = 'Sepatu: Aktif | Baju: Aktif';
+    private $lastStatus  = 'Aktif | Aktif';
     private $isValidated = false;
 
     public function __construct($gender)
     {
         $this->gender = $gender;
-        // Prefix untuk database loker_rak
         $this->prefix = ($gender == 'L') ? 'LP' : 'LW';
     }
 
     public function startRow(): int
     {
-        // Data dimulai dari baris ke-4
         return 4;
     }
 
     public function model(array $row)
     {
-        // --- 1. IDENTIFIKASI DATA DASAR ---
-        $noLokerRaw = isset($row[0]) ? trim((string) $row[0]) : '';
-        $nikExcel   = isset($row[5]) ? trim((string) $row[5]) : '';
-        $namaExcel  = isset($row[7]) ? trim((string) $row[7]) : '';
-        $namaExcel  = strtoupper(preg_replace('/\s+/', ' ', trim($namaExcel)));
-
-        // --- 2. PAGAR FOOTER & DATA SAMPAH ---
-        $cekFooter = strtolower($namaExcel . $nikExcel . $noLokerRaw . ($row[2] ?? '') . ($row[4] ?? ''));
-
-        if (
-            str_contains($cekFooter, 'rumah') ||
-            str_contains($cekFooter, 'total') ||
-            str_contains($cekFooter, 'pcs') ||
-            str_contains($cekFooter, 'terbuka') ||
-            str_contains($cekFooter, 'rp.') ||
-            (empty($noLokerRaw) && empty($namaExcel))
-        ) {
-            return null;
-        }
-
-        // --- 3. SECURITY CHECK (GENDER MISMATCH) ---
+        // 1. SECURITY CHECK (Kolom C / Index 2)
         $kodeLokerExcel = isset($row[1]) ? trim((string) $row[1]) : '';
         if (! $this->isValidated && ! empty($kodeLokerExcel)) {
             if ($this->gender == 'L' && strpos($kodeLokerExcel, 'WS') !== false) {
@@ -64,58 +42,50 @@ class LokerImport implements ToModel, WithStartRow, WithCalculatedFormulas
             $this->isValidated = true;
         }
 
-        // --- 4. HANDLE NOMOR LOKER (LOGIC MEMORY) ---
-        // if ($noLokerRaw !== '' && ! is_numeric($noLokerRaw)) {
-        //     return null;
-        // }
-
-        // Jika angka, simpan ke memori lastLoker
+        // 2. HANDLE NO LOKER (Kolom B / Index 1)
+        $noLokerRaw = isset($row[0]) ? trim((string) $row[0]) : '';
         if ($noLokerRaw !== '' && is_numeric($noLokerRaw)) {
-            $this->lastLoker  = $noLokerRaw;
-            $this->lastStatus = 'Sepatu: Aktif | Baju: Aktif'; // Reset status ke default
+            $this->lastLoker = $noLokerRaw;
         }
 
-        // Jika sampai sini lastLoker masih kosong, skip
         if (empty($this->lastLoker)) {
             return null;
         }
 
-        $noLokerFix = trim((string) $this->lastLoker);
-
-        // --- 5. HANDLE STATUS KONDISI FISIK ---
         $statusSepatu = isset($row[2]) ? trim((string) $row[2]) : '';
         $statusBaju   = isset($row[4]) ? trim((string) $row[4]) : '';
 
         $cekSepatu = strtolower($statusSepatu);
         $cekBaju   = strtolower($statusBaju);
-        $ignored   = ['', '-', 'null', '0', 'aktif'];
+
+        $ignored = ['', '-', 'null', '0'];
 
         if (! in_array($cekSepatu, $ignored) || ! in_array($cekBaju, $ignored)) {
-            if (strlen($statusSepatu) < 15 && strlen($statusBaju) < 15) {
-                $newSepatu        = (! in_array($cekSepatu, $ignored)) ? $statusSepatu : 'Aktif';
-                $newBaju          = (! in_array($cekBaju, $ignored)) ? $statusBaju : 'Aktif';
-                $this->lastStatus = "Sepatu: {$newSepatu} | Baju: {$newBaju}";
-            }
+            $newSepatu = (! in_array($cekSepatu, $ignored)) ? $statusSepatu : 'Aktif';
+            $newBaju   = (! in_array($cekBaju, $ignored)) ? $statusBaju : 'Aktif';
+
+            $this->lastStatus = "Sepatu: {$newSepatu} | Baju: {$newBaju}";
         }
 
-        // --- 6. UPDATE DATABASE (LOKER RAK) ---
-        DB::table('loker_rak')->updateOrInsert(
-            ['kode_rak' => $this->prefix, 'no_loker' => $noLokerFix],
-            [
-                'kondisi_fisik' => $this->lastStatus,
-                'gender'        => $this->gender,
-                'is_active'     => 'Y',
-                'updated_at'    => now(),
-            ]
-        );
+        DB::table('loker_rak')
+            ->where('kode_rak', $this->prefix)
+            ->where('no_loker', $noLokerRaw)
+            ->update([
+                'keterangan_kondisi' => $this->lastStatus,
+                'updated_at'         => now(),
+            ]);
+
+        // 3. AMBIL DATA EXCEL
+        $nikExcel  = isset($row[5]) ? trim((string) $row[5]) : '';
+        $namaExcel = isset($row[7]) ? trim((string) $row[7]) : '';
+        $namaExcel = strtoupper(preg_replace('/\s+/', ' ', trim($namaExcel)));
 
         if (empty($namaExcel) || $namaExcel === '-' || $namaExcel === 'Nama Karyawan') {
             return null;
         }
 
-        // --- 7. SINKRONISASI DATA PUSAT & PENGHUNI ---
-        // $nikFinal    = $nikExcel;
-        $nikFinal    = (empty($nikExcel) || $nikExcel === '-') ? null : $nikExcel;
+        // --- LOGIC VALIDASI & SINKRONISASI NIK PUSAT ---
+        $nikFinal    = $nikExcel;
         $divisiFinal = isset($row[9]) ? strtoupper(substr(trim((string) $row[9]), 0, 50)) : '-';
 
         try {
@@ -130,7 +100,11 @@ class LokerImport implements ToModel, WithStartRow, WithCalculatedFormulas
 
             if ($dataPusat) {
                 $divisiFinal = $dataPusat->DEPTID ?? $divisiFinal;
-                $nikFinal    = $dataPusat->NIK ?? $nikFinal;
+
+                // Log jika terjadi penggantian NIK untuk audit
+                // if ($nikExcel !== $dataPusat->NIK) {
+                //     Log::info("NIK Sync: Nama $namaExcel diubah dari $nikExcel menjadi $nikFinal (Source: Pusat)");
+                // }
             } elseif (empty($nikExcel) || $nikExcel === '-') {
                 $nikFinal = 'TMP-' . strtoupper(substr(md5($namaExcel), 0, 6));
             }
@@ -138,7 +112,7 @@ class LokerImport implements ToModel, WithStartRow, WithCalculatedFormulas
             Log::error("Import Error - DB Pusat Offline: " . $e->getMessage());
         }
 
-        // 8. KATEGORI KARYAWAN
+        // 4. KATEGORI (Logic tetap sama)
         $rawKategori   = isset($row[8]) ? strtolower(trim((string) $row[8])) : '';
         $kategoriFinal = 'non_staff';
         if (strpos($rawKategori, 'staff') !== false && strpos($rawKategori, 'non') === false) {
@@ -147,19 +121,19 @@ class LokerImport implements ToModel, WithStartRow, WithCalculatedFormulas
             $kategoriFinal = 'mitra_kerja';
         }
 
-        // 9. RETURN UNTUK INSERT KE TABEL LOKER_PENGHUNI
         return new Penghuni([
-            'nik'               => $nikFinal,
+            'nik'               => $nikFinal, // NIK resmi hasil sinkronisasi
             'nama'              => $namaExcel,
             'divisi'            => $divisiFinal,
             'kode_rak'          => $this->prefix,
-            'no_loker'          => $noLokerFix,
+            'no_loker'          => (string) $this->lastLoker,
             'kategori_karyawan' => $kategoriFinal,
             'tgl_masuk'         => now(),
             'is_active'         => 'Y',
         ]);
     }
 
+    // Tambahkan helper untuk mengambil nomor loker terakhir yang terbaca
     public function getLastLoker()
     {
         return $this->lastLoker;
