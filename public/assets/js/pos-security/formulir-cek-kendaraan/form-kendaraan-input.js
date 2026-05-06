@@ -192,7 +192,7 @@
     const capturedImageSupplier = document.getElementById("capturedImageSupplier");
     const capturedImageContainerSupplier = document.getElementById("capturedImageContainerSupplier");
 
-    let activeSupplierKey = null;   // 'foto_ktp' | 'foto_diri'
+    let activeSupplierKey = null;   // 'foto_diri'
     let tempSupplierPhoto = null;   // single capture
 
     function toggleSupplier(elements = []) {
@@ -203,7 +203,7 @@
 
     async function startWebcamSupplier() {
         // Untuk foto diri gunakan kamera depan (user), untuk KTP kamera belakang (environment)
-        const facingMode = activeSupplierKey === "foto_diri" ? "user" : "environment";
+        const facingMode = "user";
 
         try {
             const stream = await navigator.mediaDevices.getUserMedia({
@@ -686,9 +686,7 @@
         $("#headerForm").fadeIn();
 
         // Reset identitas preview
-        renderPhotoPreviewIdentitas("foto_ktp");
         renderPhotoPreviewIdentitas("foto_diri");
-        $("#input-foto_ktp").val("");
         $("#input-foto_diri").val("");
 
         $("#cekKendaraanForm")[0].reset();
@@ -730,7 +728,7 @@
                 setTimeout(() => {
                     Object.keys(photoStore).forEach((key) => {
                         // Foto identitas pakai render single
-                        if (key === "foto_ktp" || key === "foto_diri") {
+                        if (key === "foto_diri") {
                             renderPhotoPreviewIdentitas(key);
                         } else {
                             renderPhotoPreview(key);

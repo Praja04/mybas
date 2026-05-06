@@ -286,6 +286,10 @@
                             <p class="label">Status Lokasi</p>
                             <span class="badge-status orange" id="status-lokasi">-</span>
                         </div>
+                        <div class="info-box">
+                            <p class="label">Cek Kendaraan</p>
+                            <span class="badge-status" id="cek-kendaraan-status">-</span>
+                        </div>
                         <div class="info-box full">
                             <p class="label">Keperluan Kunjungan</p>
                             <p class="value" id="keperluan">-</p>
@@ -382,6 +386,21 @@
                         setText('keperluan', d.keperluan || '-');
                         setText('waktu-scan', nowFormatted());
                         setText('status-lokasi', "POS CHECK BODY");
+
+                        // Cek Kendaraan
+                        const cekStatusEl = document.getElementById('cek-kendaraan-status');
+                        if (d.cek_kendaraan_status === 'SUDAH') {
+                            cekStatusEl.className = 'badge-status green';
+                            cekStatusEl.textContent = 'SUDAH DICEK';
+                        } else if (d.cek_kendaraan_status === 'BELUM') {
+                            cekStatusEl.className = 'badge-status orange';
+                            cekStatusEl.textContent = 'BELUM DICEK';
+                        } else {
+                            cekStatusEl.className = 'badge-status';
+                            cekStatusEl.textContent = 'TANPA KENDARAAN';
+                            cekStatusEl.style.background = '#e9ecef';
+                            cekStatusEl.style.color = '#6c757d';
+                        }
 
                         // Status kartu
                         const statusKartuEl = document.getElementById('status-kartu');

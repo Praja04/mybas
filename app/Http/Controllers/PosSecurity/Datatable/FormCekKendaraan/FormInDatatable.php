@@ -49,9 +49,9 @@ class FormInDatatable extends Controller
                     ->from('ga_visitor_transaction')
                     ->where('ga_visitor_transaction.keterangan', 'SUPIR')
                     ->whereRaw("
-                REPLACE(REPLACE(UPPER(ga_visitor_transaction.nopol), ' ', ''), '-', '')
+                REPLACE(REPLACE(UPPER(ga_visitor_transaction.nopol), ' ', ''), '-', '') COLLATE utf8mb4_unicode_ci
                 =
-                REPLACE(REPLACE(UPPER(ga_visitor_vendor.nopol), ' ', ''), '-', '')
+                REPLACE(REPLACE(UPPER(ga_visitor_vendor.nopol), ' ', ''), '-', '') COLLATE utf8mb4_unicode_ci
             ");
             });
 
@@ -68,7 +68,7 @@ class FormInDatatable extends Controller
             //     $join->on('c.trnvisitorid', '=', 'v.trnvisitorid');
             // })
             ->leftJoin('ga_cek_kendaraan as c', function ($join) {
-                $join->on('c.trnvisitorid', '=', 'v.trnvisitorid')
+                $join->on(DB::raw('c.trnvisitorid COLLATE utf8mb4_unicode_ci'), '=', DB::raw('v.trnvisitorid COLLATE utf8mb4_unicode_ci'))
                     ->whereColumn('c.created_at', '>=', 'v.created_at');
             })
 

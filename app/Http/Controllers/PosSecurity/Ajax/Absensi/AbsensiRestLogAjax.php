@@ -275,20 +275,22 @@ class AbsensiRestLogAjax extends Controller
                 ->orWhere('no_ktp_sim', $keyword)
                 ->orWhere('no_kartu', $keyword);
         })->where(function ($q) {
-            $q->whereNull('dateout')->orWhere('kartu_dikembalikan', true);
+            $q->whereNull('dateout')
+              ->where('kartu_dikembalikan', false);
         })->orderBy('createdon', 'desc')->first();
 
-        if ($visitor) return [$visitor, 'ga_visitor_transactions'];
+        if ($visitor) return [$visitor, 'ga_visitor_transaction'];
 
         $visitor = GaVisitorVendorTransaction::where(function ($q) use ($keyword) {
             $q->where('trnvisitorid', $keyword)
                 ->orWhere('no_ktp_sim', $keyword)
                 ->orWhere('no_kartu', $keyword);
         })->where(function ($q) {
-            $q->whereNull('dateout')->orWhere('kartu_dikembalikan', true);
+            $q->whereNull('dateout')
+              ->where('kartu_dikembalikan', false);
         })->orderBy('createdon', 'desc')->first();
 
-        return $visitor ? [$visitor, 'ga_visitor_vendor_transactions'] : null;
+        return $visitor ? [$visitor, 'ga_visitor_vendor'] : null;
     }
 
     protected function isGloballyBlacklisted($visitor)
@@ -333,10 +335,10 @@ class AbsensiRestLogAjax extends Controller
         $visitor = GaVisitorTransaction::where('trnvisitorid', $trnvisitorid)->first();
 
         // 3. Jika tidak ketemu, coba cari di vendor
-        $sourceOrigin = 'ga_visitor_transactions';
+        $sourceOrigin = 'ga_visitor_transaction';
         if (!$visitor) {
             $visitor = GaVisitorVendorTransaction::where('trnvisitorid', $trnvisitorid)->first();
-            $sourceOrigin = 'ga_visitor_vendor_transactions';
+            $sourceOrigin = 'ga_visitor_vendor';
         }
 
         // 4. Siapkan data untuk log
@@ -420,6 +422,22 @@ class AbsensiRestLogAjax extends Controller
 
     protected function handleAbsensi($visitor, $sourceOrigin, $now)
     {
+        // ── VERIFIKASI CEK KENDARAAN (RELASI) ───────────────────────
+        // Jika visitor membawa kendaraan (ada nopol), wajib cek dulu
+        if (!empty($visitor->nopol)) {
+            $cek = $visitor->cekKendaraan; // relasi hasOne
+            
+            // Jika belum ada record cek kendaraan ATAU belum checked_in_at
+            if (!$cek || !$cek->checked_in_at) {
+                Cache::forget('pending_visitors');
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Akses Ditolak: Kendaraan belum melakukan pengecekan masuk di POS Security.',
+                ], 403);
+            }
+        }
+        // ────────────────────────────────────────────────────────────
+
         $gracePeriod = 7;
         $lastLog = AbsensiRestLog::where('trnvisitorid', $visitor->trnvisitorid)
             ->where('source_origin', $sourceOrigin)
@@ -1010,7 +1028,7 @@ class AbsensiRestLogAjax extends Controller
             'trnvisitorid' => $visitor->trnvisitorid,
             'nama' => $visitor->namavisitor,
             'perusahaan' => $visitor->namacomp ?? $visitor->perusahaan ?? '-',
-            'jenis_kunjungan' => $sourceOrigin === 'ga_visitor_vendor_transactions' ? 'VENDOR' : 'TAMU',
+            'jenis_kunjungan' => $sourceOrigin === 'ga_visitor_vendor' ? 'VENDOR' : 'TAMU',
             'no_polisi' => $visitor->nopol ?? '-',
             'keperluan' => $visitor->keperluan ?? $visitor->purpose ?? '-',
             'status_istirahat' => $nextAction === 'in' ? 'keluar' : 'masuk',
@@ -1019,7 +1037,7 @@ class AbsensiRestLogAjax extends Controller
             'foto_url' => $fotoUrl,
             'source' => $sourceOrigin,
             'source_detail' => [
-                'type' =>  $sourceOrigin === 'ga_visitor_vendor_transactions' ? 'vendor' : 'tamu',
+                'type' =>  $sourceOrigin === 'ga_visitor_vendor' ? 'vendor' : 'tamu',
                 'asal_perusahaan' => $visitor->namacomp ?? '-',
                 'penanggung_jawab' => $visitor->host ?? '-',
                 'no_ktp_sim' => $visitor->no_ktp_sim ?? '-',
@@ -1037,6 +1055,7 @@ class AbsensiRestLogAjax extends Controller
             ],
             'status_kartu' => $visitor->kartu_dikembalikan ? 'dikembalikan' : 'aktif',
             'status_display' => $visitor->kartu_dikembalikan ? 'Kartu Sudah Dikembalikan' : 'Kartu Aktif',
+            'cek_kendaraan_status' => !empty($visitor->nopol) ? ($visitor->cekKendaraan ? 'SUDAH' : 'BELUM') : 'TIDAK ADA',
         ];
     }
 }

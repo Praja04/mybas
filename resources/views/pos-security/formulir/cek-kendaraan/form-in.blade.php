@@ -142,40 +142,12 @@
                                 <i class="mdi mdi-card-account-details-outline"></i>
                                 <strong>Foto Identitas Supir</strong>
                                 <br>
-                                <small>Ambil foto KTP dan foto diri supir sebelum melakukan pengecekan kendaraan.</small>
+                                <small>Ambil foto diri supir sebelum melakukan pengecekan kendaraan.</small>
                             </div>
 
                             <div class="row g-3">
-                                {{-- Slot Foto KTP --}}
-                                <div class="col-md-6">
-                                    <div class="card shadow-sm h-100 foto-slot-identitas" data-key="foto_ktp">
-                                        <div class="card-body d-flex flex-column">
-                                            <label class="form-label fw-semibold mb-1">
-                                                <i class="mdi mdi-card-account-details text-primary me-1"></i>
-                                                Foto KTP
-                                                <span class="text-danger">*</span>
-                                                <span class="badge bg-danger ms-1">Wajib</span>
-                                            </label>
-                                            <p class="text-muted small mb-2">Arahkan kamera ke KTP supir dengan jelas</p>
-
-                                            <div id="preview-foto_ktp" class="d-flex justify-content-center align-items-center mb-3 rounded" style="min-height: 130px; background:#f8f9fa; border: 2px dashed #dee2e6;">
-                                                <span class="text-muted small" id="placeholder-foto_ktp">
-                                                    <i class="mdi mdi-image-outline fs-4 d-block text-center mb-1"></i>
-                                                    Belum ada foto
-                                                </span>
-                                            </div>
-
-                                            <input type="hidden" name="photos[foto_ktp]" id="input-foto_ktp" value="">
-
-                                            <button type="button" class="btn btn-outline-primary btn-sm mt-auto open-supplier-photo" data-key="foto_ktp" data-label="KTP Supir" data-bs-toggle="modal" data-bs-target="#myModalSupplier">
-                                                <i class="mdi mdi-camera"></i> Ambil Foto KTP
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-
                                 {{-- Slot Foto Diri --}}
-                                <div class="col-md-6">
+                                <div class="col-md-12">
                                     <div class="card shadow-sm h-100 foto-slot-identitas" data-key="foto_diri">
                                         <div class="card-body d-flex flex-column">
                                             <label class="form-label fw-semibold mb-1">
