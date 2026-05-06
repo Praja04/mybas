@@ -13,6 +13,34 @@ $(document).ready(function () {
             return false;
         }
 
+        // ── Validasi foto identitas (KTP & Selfie) ──────────────────
+        const identitasSlots = [
+            { key: "foto_ktp",  label: "Foto KTP" },
+            { key: "foto_diri", label: "Foto Diri / Selfie" },
+        ];
+
+        for (const slot of identitasSlots) {
+            const val = $(`#input-${slot.key}`).val();
+            let photos = [];
+
+            try {
+                photos = JSON.parse(val || "[]");
+            } catch (_) {
+                photos = [];
+            }
+
+            if (!Array.isArray(photos) || photos.length === 0) {
+                Swal.fire({
+                    icon: "error",
+                    title: "Gagal!",
+                    text: `${slot.label} wajib diisi.`,
+                });
+                return false;
+            }
+        }
+        // ────────────────────────────────────────────────────────────
+
+        // ── Validasi foto kendaraan (foto-slot yang required) ───────
         let valid = true;
         let firstEmptyLabel = "";
 
@@ -50,6 +78,7 @@ $(document).ready(function () {
             e.preventDefault();
             return false;
         }
+        // ────────────────────────────────────────────────────────────
 
         $("#submitBtn")
             .prop("disabled", true)
@@ -116,6 +145,19 @@ $(document).ready(function () {
                         .forEach((input) => {
                             input.value = "";
                         });
+
+                    // reset preview identitas ke placeholder
+                    ["foto_ktp", "foto_diri"].forEach((key) => {
+                        const container = document.getElementById(`preview-${key}`);
+                        if (container) {
+                            container.innerHTML = `
+                                <span class="text-muted small" id="placeholder-${key}">
+                                    <i class="mdi mdi-image-outline fs-4 d-block text-center mb-1"></i>
+                                    Belum ada foto
+                                </span>
+                            `;
+                        }
+                    });
 
                     // reset kamera
                     if (typeof resetCameraModal === "function") {

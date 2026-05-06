@@ -41,14 +41,14 @@
                                                 <div class="symbol symbol-50 symbol-light mr-4">
                                                     <span class="symbol symbol-35 symbol-light-success">
                                                         <span class="symbol-label font-size-h5 font-weight-bold">
-                                                            {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
+                                                            {{ strtoupper(substr(Auth::user()->username, 0, 1)) }}
                                                         </span>
                                                     </span>
                                                 </div>
                                                 <div>
                                                     <a href="#" class="text-dark-75 font-weight-bolder text-hover-primary mb-1 font-size-lg">{{ Auth::user()->name }}</a>
                                                     <span class="text-muted font-weight-bold d-block">
-                                                        {{ Auth::user()->department->name }}
+                                                        
                                                     </span>
                                                 </div>
                                             </div>
