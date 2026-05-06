@@ -158,7 +158,6 @@ class CekKendaraanFormAjax extends Controller
             'otherTruckType' => 'nullable|string|max:50',
             'photos'        => 'required',
             // Validasi foto identitas wajib ada
-            'photos.foto_ktp'  => 'required',
             'photos.foto_diri' => 'required',
         ], [
             'nama_supir.required'       => 'Nama supir harus diisi',
@@ -168,7 +167,6 @@ class CekKendaraanFormAjax extends Controller
             'muatan_type.required'      => 'Jenis muatan wajib diisi',
             'truck_type.required'       => 'Jenis truk wajib diisi',
             'photos.required'           => 'Foto kendaraan tidak terdeteksi',
-            'photos.foto_ktp.required'  => 'Foto KTP supir wajib diambil',
             'photos.foto_diri.required' => 'Foto diri supir wajib diambil',
         ]);
 
@@ -221,11 +219,10 @@ class CekKendaraanFormAjax extends Controller
             // Keduanya TIDAK disimpan ke foto_in di ga_cek_kendaraan supaya
             // foto_in hanya berisi foto pemeriksaan kendaraan.
 
-            $ktpPaths   = $photoPaths['foto_ktp']  ?? [];
             $selfPaths  = $photoPaths['foto_diri'] ?? [];
 
             // Hapus foto identitas dari $photoPaths agar tidak masuk foto_in
-            unset($photoPaths['foto_ktp'], $photoPaths['foto_diri']);
+            unset($photoPaths['foto_diri']);
 
             // ── Insert ke ga_cek_kendaraan ───────────────────────────────
             $data = [
@@ -272,9 +269,17 @@ class CekKendaraanFormAjax extends Controller
             if (!empty($visitorUpdate)) {
                 $visitorUpdate['updated_at'] = now();
 
-                DB::table('ga_visitor_transaction')
-                ->where('trnvisitorid', $request->trnvisitorid)
+                // Coba update di ga_visitor_transaction
+                $updated = DB::table('ga_visitor_transaction')
+                    ->where('trnvisitorid', $request->trnvisitorid)
                     ->update($visitorUpdate);
+
+                // Jika tidak ada yang diupdate (0 row affected), coba update di ga_visitor_vendor
+                if (!$updated) {
+                    DB::table('ga_visitor_vendor')
+                        ->where('trnvisitorid', $request->trnvisitorid)
+                        ->update($visitorUpdate);
+                }
             }
             // ────────────────────────────────────────────────────────────
 
@@ -375,6 +380,29 @@ class CekKendaraanFormAjax extends Controller
             DB::table('ga_cek_kendaraan')
                 ->where('trncekid', $request->trncekid)
                 ->update($updateData);
+
+            // ── UPDATE STATUS VISITOR (SYNC) ───────────────────────────
+            // Otomatis tutup transaksi visitor saat kendaraan keluar
+            $visitorUpdate = [
+                'dateout'            => $updateData['checked_out_at']->toDateString(),
+                'timeout'            => $updateData['checked_out_at']->format('H:i:s'),
+                'kartu_dikembalikan' => true,
+                'changedon'          => $updateData['checked_out_at'],
+                'changedby'          => $updateData['nama_petugas_keluar'],
+            ];
+
+            // Coba update di tabel transaction (supplier)
+            $sync = DB::table('ga_visitor_transaction')
+                ->where('trnvisitorid', $cek->trnvisitorid)
+                ->update($visitorUpdate);
+
+            // Jika tidak ada di transaction, coba di vendor
+            if (!$sync) {
+                DB::table('ga_visitor_vendor')
+                    ->where('trnvisitorid', $cek->trnvisitorid)
+                    ->update($visitorUpdate);
+            }
+            // ────────────────────────────────────────────────────────────
 
             return response()->json([
                 'success' => true,

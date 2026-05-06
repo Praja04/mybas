@@ -451,20 +451,18 @@ class SupplierFormAjax extends Controller
             DB::transaction(function () use ($supplier_data, &$isNewRecord, &$isUpdated, &$isCardInUse) {
                 // Jika no_kartu null/kosong, skip pengecekan kartu
                 if (!empty($supplier_data['no_kartu'])) {
+                    // Kartu dianggap "dipakai" jika visitor belum checkout DAN kartu belum dikembalikan
+                    $checkInUse = function ($q) {
+                        $q->whereNull('dateout')
+                          ->where('kartu_dikembalikan', false);
+                    };
+
                     $dipakaiSupplier = GaVisitorTransaction::where('no_kartu', $supplier_data['no_kartu'])
-                    ->where(function ($q) {
-                        $q->whereNull('kartu_dikembalikan')
-                            ->orWhere('kartu_dikembalikan', false)
-                            ->orWhereNull('dateout');
-                    })
+                        ->where($checkInUse)
                         ->exists();
 
                     $dipakaiVendor = GaVisitorVendorTransaction::where('no_kartu', $supplier_data['no_kartu'])
-                    ->where(function ($q) {
-                        $q->whereNull('kartu_dikembalikan')
-                            ->orWhere('kartu_dikembalikan', false)
-                            ->orWhereNull('dateout');
-                    })
+                        ->where($checkInUse)
                         ->exists();
 
                     if ($dipakaiVendor || $dipakaiSupplier) {

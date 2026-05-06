@@ -416,22 +416,20 @@ class TamuFormAjax extends Controller
 
             DB::transaction(function () use ($visitorData, &$isNewRecord, &$isUpdated, &$isCardInUse) {
 
+                // Kartu dianggap "dipakai" jika visitor belum checkout DAN kartu belum dikembalikan
+                $checkInUse = function ($q) {
+                    $q->whereNull('dateout')
+                      ->where('kartu_dikembalikan', false);
+                };
+
                 // Cek apakah kartu masih dipakai oleh vendor/tamu lain
                 $dipakaiVendor = GaVisitorVendorTransaction::where('no_kartu', $visitorData['no_kartu'])
-                    ->where(function ($q) {
-                        $q->whereNull('kartu_dikembalikan')
-                            ->orWhere('kartu_dikembalikan', false)
-                            ->orWhereNull('dateout');
-                    })
+                    ->where($checkInUse)
                     ->exists();
 
                 // Cek apakah kartu masih dipakai oleh supplier/transporter lain
                 $dipakaiSupplier = GaVisitorTransaction::where('no_kartu', $visitorData['no_kartu'])
-                    ->where(function ($q) {
-                        $q->whereNull('kartu_dikembalikan')
-                            ->orWhere('kartu_dikembalikan', false)
-                            ->orWhereNull('dateout');
-                    })
+                    ->where($checkInUse)
                     ->exists();
 
                 // Jika dipakai di salah satu tabel → kartu sedang digunakan
