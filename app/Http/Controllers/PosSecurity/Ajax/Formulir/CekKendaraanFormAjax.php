@@ -156,15 +156,20 @@ class CekKendaraanFormAjax extends Controller
             'muatan_type'   => 'required|string|max:50',
             'truck_type'    => 'required|string|max:50',
             'otherTruckType' => 'nullable|string|max:50',
-            'photos'   => 'required',
+            'photos'        => 'required',
+            // Validasi foto identitas wajib ada
+            'photos.foto_ktp'  => 'required',
+            'photos.foto_diri' => 'required',
         ], [
-            'nama_supir.required'   => 'Nama supir harus diisi',
-            'company.required'      => 'Nama perusahaan harus diisi',
-            'nomor_polisi.required' => 'Nomor polisi wajib diisi',
-            'nama_petugas.required' => 'Nama petugas wajib diisi',
-            'muatan_type.required'  => 'Jenis muatan wajib diisi',
-            'truck_type.required'   => 'Jenis truk wajib diisi',
-            'photos.required' => 'Foto kendaraan tidak terdeteksi',
+            'nama_supir.required'       => 'Nama supir harus diisi',
+            'company.required'          => 'Nama perusahaan harus diisi',
+            'nomor_polisi.required'     => 'Nomor polisi wajib diisi',
+            'nama_petugas.required'     => 'Nama petugas wajib diisi',
+            'muatan_type.required'      => 'Jenis muatan wajib diisi',
+            'truck_type.required'       => 'Jenis truk wajib diisi',
+            'photos.required'           => 'Foto kendaraan tidak terdeteksi',
+            'photos.foto_ktp.required'  => 'Foto KTP supir wajib diambil',
+            'photos.foto_diri.required' => 'Foto diri supir wajib diambil',
         ]);
 
         if ($validator->fails()) {
@@ -176,16 +181,8 @@ class CekKendaraanFormAjax extends Controller
         }
 
         try {
-            $keyword = strtoupper(str_replace(' ', '', $request->nomor_polisi));
-
-            // $alreadyChecked = DB::table('ga_cek_kendaraan')
-            //     ->whereRaw("REPLACE(UPPER(nomor_polisi),' ','') = ?", [$keyword])
-            //     ->where('checked_in_at', '>=', now()->subHours(24))
-            //     // ->where('checked_in_at', '>=', $visitor->created_at)
-            //     ->exists();
-
             $alreadyChecked = DB::table('ga_cek_kendaraan')
-                ->where('trnvisitorid', $request->trnvisitorid)
+            ->where('trnvisitorid', $request->trnvisitorid)
                 ->whereNotNull('checked_in_at')
                 ->exists();
 
@@ -202,15 +199,6 @@ class CekKendaraanFormAjax extends Controller
 
             $photoPaths = [];
 
-            // if ($request->has('photos')) {
-            //     $photoPaths = $this->saveBase64Images(
-            //         $request->photos,
-            //         $trnCekId,
-            //         'MASUK'
-            //     );
-            // }
-
-
             if ($request->filled('photos') && is_array($request->photos)) {
                 $decodedPhotos = [];
 
@@ -225,25 +213,70 @@ class CekKendaraanFormAjax extends Controller
                 );
             }
 
+            // ── Pisahkan foto identitas dari foto kendaraan ──────────────
+            //
+            // foto_ktp  → imgvisitorpathin di ga_visitor_transaction (string path)
+            // foto_diri → foto             di ga_visitor_transaction (json array)
+            //
+            // Keduanya TIDAK disimpan ke foto_in di ga_cek_kendaraan supaya
+            // foto_in hanya berisi foto pemeriksaan kendaraan.
+
+            $ktpPaths   = $photoPaths['foto_ktp']  ?? [];
+            $selfPaths  = $photoPaths['foto_diri'] ?? [];
+
+            // Hapus foto identitas dari $photoPaths agar tidak masuk foto_in
+            unset($photoPaths['foto_ktp'], $photoPaths['foto_diri']);
+
+            // ── Insert ke ga_cek_kendaraan ───────────────────────────────
             $data = [
-                'trncekid'      => $trnCekId,
-                'nama_supir'    => strtoupper($request->nama_supir),
-                'company'       => strtoupper($request->company),
-                'nomor_polisi'  => strtoupper($request->nomor_polisi),
-                'nama_petugas_masuk'  => strtoupper($request->nama_petugas),
-                'muatan_type'   => $request->muatan_type,
-                'truck_type'    => $request->truck_type,
-                'truck_type_other' => $otherTruckType !== ''
+                'trncekid'           => $trnCekId,
+                'nama_supir'         => strtoupper($request->nama_supir),
+                'company'            => strtoupper($request->company),
+                'nomor_polisi'       => strtoupper($request->nomor_polisi),
+                'nama_petugas_masuk' => strtoupper($request->nama_petugas),
+                'muatan_type'        => $request->muatan_type,
+                'truck_type'         => $request->truck_type,
+                'truck_type_other'   => $otherTruckType !== ''
                     ? strtoupper($otherTruckType)
                     : null,
-                'foto_in'       => json_encode($photoPaths),
-                'checked_in_at'    => now(),
-                'created_at'    => now(),
-                'updated_at'    => now(),
-                'trnvisitorid'  => $request->trnvisitorid
+                'foto_in'            => json_encode($photoPaths), // hanya foto kendaraan
+                'checked_in_at'      => now(),
+                'created_at'         => now(),
+                'updated_at'         => now(),
+                'trnvisitorid'       => $request->trnvisitorid,
             ];
 
             DB::table('ga_cek_kendaraan')->insert($data);
+
+            // ── Update foto identitas ke ga_visitor_transaction ──────────
+            //
+            // imgvisitorpathin : path foto KTP (string, ambil index 0)
+            // foto             : JSON array path foto selfie
+            //
+            // Hanya diupdate jika foto berhasil disimpan.
+
+            $visitorUpdate = [];
+
+            if (!empty($ktpPaths)) {
+                // imgvisitorpathin menyimpan satu path string — full URL
+                $visitorUpdate['imgvisitorpathin'] = asset($ktpPaths[0]);
+            }
+
+            if (!empty($selfPaths)) {
+                // foto menyimpan JSON array full URL (konsisten dengan store visitor asli)
+                $visitorUpdate['foto'] = json_encode(
+                    array_map(fn ($p) => asset($p), $selfPaths)
+                );
+            }
+
+            if (!empty($visitorUpdate)) {
+                $visitorUpdate['updated_at'] = now();
+
+                DB::table('ga_visitor_transaction')
+                ->where('trnvisitorid', $request->trnvisitorid)
+                    ->update($visitorUpdate);
+            }
+            // ────────────────────────────────────────────────────────────
 
             return response()->json([
                 'success' => true,
@@ -258,6 +291,7 @@ class CekKendaraanFormAjax extends Controller
             ], 500);
         }
     }
+
 
     // out
     public function checkout(Request $request)
