@@ -91,7 +91,9 @@ class LokerV2Controller extends Controller
                     'gender'   => $rak->kode_rak,
                     'kategori' => $kategori,
                 ];
-            })->sortBy(fn($item) => (int) $item['no']);
+            })->sortBy(function ($item) {
+                return (int) $item['no'];
+            });
 
             $stats = [
                 'total'    => $processed->count(),
@@ -1117,10 +1119,9 @@ class LokerV2Controller extends Controller
 
                 $allLockers = DB::table('loker_rak')
                     ->where('kode_rak', $prefix)
-                    ->get()
-                    ->groupBy('no_loker');
+                    ->pluck('no_loker');
 
-                foreach ($allLockers as $noLoker => $items) {
+                foreach ($allLockers as $noLoker) {
                     $this->updateKeteranganRak($prefix, $noLoker);
                 }
 

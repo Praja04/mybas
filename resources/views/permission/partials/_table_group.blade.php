@@ -45,7 +45,7 @@
         }
 
         /* 3. Tambahan halus untuk baris tabel yang dipilih */
-        .permission-item.selected::before {
+        /* .permission-item.selected::before {
             content: '✓';
             position: absolute;
             top: 5px;
@@ -53,7 +53,7 @@
             font-size: 10px;
             color: var(--bas-primary);
             font-weight: bold;
-        }
+        } */
     </style>
 @endpush
 

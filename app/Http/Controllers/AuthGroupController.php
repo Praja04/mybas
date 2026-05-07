@@ -55,34 +55,34 @@ class AuthGroupController extends Controller
             'auth_permissions' => $auth_permissions,
             'permissions_left' => $permissions_left,
         ]);
-        // $all_permissions  = AuthPermission::all();
-        // $auth_permissions = AuthGroup::find($request->id)->permissions;
-
-        // $all_permissions_array  = [];
-        // $auth_permissions_array = [];
-
-        // foreach ($auth_permissions as $permission) {
-        //     $auth_permissions_array[] = [
-        //         'id'       => $permission->id,
-        //         'codename' => $permission->codename,
-        //     ];
-        // }
-
-        // foreach ($all_permissions as $permission) {
-        //     $all_permissions_array[] = ['id' => $permission->id, 'codename' => $permission->codename];
-        // }
-        // $permissions_left = $this->permission_left($all_permissions_array, $auth_permissions_array);
-
-        // sort($auth_permissions_array);
-        // sort($permissions_left);
-
-        // return response()->json([
-        //     'success'          => 1,
-        //     'auth_permissions' => $auth_permissions_array,
-        //     'all_permissions'  => $all_permissions_array,
-        //     'permissions_left' => $permissions_left,
-        // ]);
     }
+    // $all_permissions  = AuthPermission::all();
+    // $auth_permissions = AuthGroup::find($request->id)->permissions;
+
+    // $all_permissions_array  = [];
+    // $auth_permissions_array = [];
+
+    // foreach ($auth_permissions as $permission) {
+    //     $auth_permissions_array[] = [
+    //         'id'       => $permission->id,
+    //         'codename' => $permission->codename,
+    //     ];
+    // }
+
+    // foreach ($all_permissions as $permission) {
+    //     $all_permissions_array[] = ['id' => $permission->id, 'codename' => $permission->codename];
+    // }
+    // $permissions_left = $this->permission_left($all_permissions_array, $auth_permissions_array);
+
+    // sort($auth_permissions_array);
+    // sort($permissions_left);
+
+    // return response()->json([
+    //     'success'          => 1,
+    //     'auth_permissions' => $auth_permissions_array,
+    //     'all_permissions'  => $all_permissions_array,
+    //     'permissions_left' => $permissions_left,
+    // ]);
 
     // public function permission_left($array1, $array2)
     // {
