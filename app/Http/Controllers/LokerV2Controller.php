@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 use App\Exports\LokerExport;
 use App\Http\Controllers\Controller;
 use App\Imports\LokerImport;
+use App\Imports\LokerSheetSelectorImport;
 use App\Models\HR\Karyawan;
 use App\Models\Loker\Rak;
 use Illuminate\Http\Request;
@@ -11,6 +12,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Facades\Excel;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 
 class LokerV2Controller extends Controller
 {
@@ -735,6 +737,7 @@ class LokerV2Controller extends Controller
             ->where('no_loker', $no_loker)
             ->whereNull('tgl_keluar')
             ->where('is_active', 'Y')
+            ->orderBy('id', 'asc')
             ->select('id', 'nik', 'nama', 'divisi', 'kategori_karyawan', 'tgl_masuk')
             ->get()
             ->map(function ($item) {
@@ -948,6 +951,7 @@ class LokerV2Controller extends Controller
             ->where('kode_rak', $prefix)
             ->where('no_loker', $noLoker)
             ->where('is_active', 'Y')
+            ->orderBy('id', 'asc')
             ->get();
 
         // $daftarNama = $allPenghuni->map(fn($p) => $p->nik . " - " . $p->nama)->implode(' | ');
@@ -1110,12 +1114,26 @@ class LokerV2Controller extends Controller
             $gender = $request->gender;
             $prefix = ($gender == 'L') ? 'LP' : 'LW';
 
-            DB::transaction(function () use ($request, $gender, $prefix) {
+            $filePath = $request->file('file')->path();
+
+            $spreadsheet = IOFactory::load($filePath);
+
+            $sheetNames = $spreadsheet->getSheetNames();
+
+            $sheetIndex = 0;
+
+            if (count($sheetNames) > 1 && $gender == 'P') {
+                $sheetIndex = 1;
+            }
+
+            DB::transaction(function () use ($request, $gender, $prefix, $sheetIndex) {
                 DB::table('loker_penghuni')->where('kode_rak', $prefix)->delete();
 
                 // 2. Jalankan Import Excel
                 $importInstance = new LokerImport($gender);
-                Excel::import($importInstance, $request->file('file'));
+                $selector       = new LokerSheetSelectorImport($sheetIndex, $importInstance);
+
+                Excel::import($selector, $request->file('file'));
 
                 $allLockers = DB::table('loker_rak')
                     ->where('kode_rak', $prefix)
