@@ -20,9 +20,10 @@ Route::prefix('pos-security')->group(function () {
         Route::get('/history/kendaraan', [PosSecurityController::class, 'historyCekKendaraan'])->name('pos-security.history.cek-kendaraan');
 
         Route::get('/dashboard', [PosSecurityController::class, 'dashboard'])->name('pos-security.dashboard');
-        // Route::get('/blacklist', [PosSecurityController::class, 'blacklist'])->name('pos-security.blacklist');
-        // Route::get('/kartu/kartu-aktif', [PosSecurityController::class, 'kartuAktif'])->name('pos-security.kartu-aktif');
-        // Route::get('/kartu/kartu-aktif/detail/{nomor_kartu}', [PosSecurityController::class, 'kartuAktifDetail'])->name('pos-security.kartu-aktif.detail');
+        Route::get('/blacklist', [PosSecurityController::class, 'blacklist'])->name('pos-security.blacklist');
+        Route::get('/kartu/kartu-aktif', [PosSecurityController::class, 'kartuAktif'])->name('pos-security.kartu-aktif');
+        Route::post('/kartu/reset', [PosSecurityController::class, 'resetKartu'])->name('pos-security.kartu.reset');
+        Route::get('/kartu/kartu-aktif/detail/{nomor_kartu}', [PosSecurityController::class, 'kartuAktifDetail'])->name('pos-security.kartu-aktif.detail');
 
         Route::prefix('master')->group(function () {
             Route::prefix('security')->group(function () {

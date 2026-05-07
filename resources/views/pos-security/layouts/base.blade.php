@@ -4,12 +4,6 @@ $menus = [
     [
         'label' => 'Formulir',
         'menu' => [
-            // [
-            //     'path' => '/',
-            //     'label' => 'Kembali ke MyBAS',
-            //     'icon' => 'mdi-arrow-left',
-            //     'submenu' => [],
-            // ],
             [
                 'path' => 'pos-security/formulir',
                 'label' => 'Formulir Security',
@@ -95,23 +89,23 @@ $menus = [
                 'submenu' => [],
             ],
 
-            //         [
-            //             'path' => 'sidebarKartu',
-            //             'label' => 'Kartu',
-            //             'icon' => 'mdi-card-account-details-outline',
-            //             'submenu' => [
-            //                 [
-            //                     'path' => 'pos-security/kartu/kartu-aktif',
-            //                     'label' => 'List Kartu Aktif',
-            //                 ],
-            //             ],
-            //         ],
-            //         [
-            //             'path' => 'pos-security/blacklist',
-            //             'label' => 'Blacklist Tamu',
-            //             'icon' => 'mdi-account-cancel-outline',
-            //             'submenu' => [],
-            //         ],
+            [
+                'path' => 'sidebarKartu',
+                'label' => 'Kartu',
+                'icon' => 'mdi-card-account-details-outline',
+                'submenu' => [
+                    [
+                        'path' => 'pos-security/kartu/kartu-aktif',
+                        'label' => 'List Kartu Aktif',
+                    ],
+                ],
+            ],
+            [
+                'path' => 'pos-security/blacklist',
+                'label' => 'Blacklist Tamu',
+                'icon' => 'mdi-account-cancel-outline',
+                'submenu' => [],
+            ],
         ],
     ],
     // [
