@@ -1,7 +1,7 @@
 <div class="modal fade" id="modal" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable" role="document">
         <div class="modal-content border-0 shadow-lg" style="border-radius: var(--bas-radius-lg);">
-            <form id="form" method="POST">
+            <form id="form" method="POST" class="d-flex flex-column w-100 h-100">
                 @csrf
                 <input type="hidden" name="group_id" class="group_id">
 

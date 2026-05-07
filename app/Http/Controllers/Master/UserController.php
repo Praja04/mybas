@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Http\Controllers\Master;
 
 use App\AuthGroup;
@@ -13,10 +12,11 @@ class UserController extends Controller
 {
     public function index()
     {
-        $authGroup = AuthGroup::all();
+        $authGroup  = AuthGroup::all();
         $department = Department::where('status', '1')->get();
+        $user       = User::where('status', '1')->get();
 
-        return view('master.user.index', compact('authGroup', 'department'));
+        return view('master.user.index', compact('authGroup', 'department', 'user'));
     }
 
     public function data()
@@ -30,18 +30,18 @@ class UserController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'username' => 'required',
-            'name' => 'required',
+            'username'      => 'required',
+            'name'          => 'required',
             'auth_group_id' => 'required',
             'department_id' => 'required',
-            'password' => 'required',
+            'password'      => 'required',
         ]);
 
         $ifExist = User::where('username', $request->username)->first();
 
         if ($ifExist) {
             return response()->json([
-                'status' => 'error',
+                'status'  => 'error',
                 'message' => 'Username sudah ada',
             ]);
         }
@@ -55,13 +55,13 @@ class UserController extends Controller
         $data = User::updateOrCreate(
             ['id' => $request->id],
             [
-                'username' => $request->username,
-                'name' => $request->name,
-                'email' => $request->email,
+                'username'      => $request->username,
+                'name'          => $request->name,
+                'email'         => $request->email,
                 'auth_group_id' => $request->auth_group_id,
-                'dept_id' => $request->department_id,
-                'status' => 1, // 'status' => $request->status,
-                'password' => $password,
+                'dept_id'       => $request->department_id,
+                'status'        => 1, // 'status' => $request->status,
+                'password'      => $password,
             ]
         );
 
@@ -71,36 +71,35 @@ class UserController extends Controller
             $user->save();
 
             return response()->json([
-                'status' => 'success',
+                'status'  => 'success',
                 'message' => 'Data berhasil disimpan',
             ]);
         } else {
             return response()->json([
-                'status' => 'error',
+                'status'  => 'error',
                 'message' => 'Data gagal disimpan',
             ]);
         }
     }
 
-
     public function update($id)
     {
         try {
-            $user = User::findOrFail($id);
+            $user         = User::findOrFail($id);
             $user->status = $user->status == 1 ? 0 : 1;
             $user->save();
 
             $message = $user->status == 1 ? 'Data user berhasil diaktifkan.' : 'Data user berhasil dinonaktifkan.';
 
             return response()->json([
-                'status' => 'success',
-                'message' => $message,
+                'status'     => 'success',
+                'message'    => $message,
                 'new_status' => $user->status, // Tambahkan new_status untuk memberikan status baru ke frontend
             ]);
         } catch (\Exception $e) {
             return response()->json([
-                'status' => 'error',
-                'message' => 'Terjadi kesalahan saat mengupdate user.'
+                'status'  => 'error',
+                'message' => 'Terjadi kesalahan saat mengupdate user.',
             ], 500);
         }
     }
@@ -111,35 +110,35 @@ class UserController extends Controller
         if ($user) {
             return response()->json([
                 'status' => 'success',
-                'user' => $user
+                'user'   => $user,
             ]);
         } else {
             return response()->json([
-                'status' => 'error',
-                'message' => 'User not found'
+                'status'  => 'error',
+                'message' => 'User not found',
             ]);
         }
     }
 
     public function prosesUbah(Request $request)
     {
-        $id = $request->id;
+        $id   = $request->id;
         $user = User::find($id);
 
-        if (!$user) {
+        if (! $user) {
             return response()->json([
-                'status' => 'error',
+                'status'  => 'error',
                 'message' => 'User not found',
             ]);
         }
 
         // Update data pengguna dengan nilai-nilai baru dari permintaan
-        $user->username = $request->username;
-        $user->name = $request->name;
-        $user->email = $request->email;
+        $user->username      = $request->username;
+        $user->name          = $request->name;
+        $user->email         = $request->email;
         $user->auth_group_id = $request->auth_group_id;
-        $user->dept_id = $request->department_id;
-        $user->status = 1;
+        $user->dept_id       = $request->department_id;
+        $user->status        = 1;
 
         // Cek dan update password jika ada
         if ($request->has('edit_password') && $request->edit_password) {
@@ -149,13 +148,13 @@ class UserController extends Controller
         // Simpan perubahan data pengguna
         if ($user->save()) {
             return response()->json([
-                'status' => 'success',
+                'status'  => 'success',
                 'message' => 'User updated successfully',
-                'user' => $user,
+                'user'    => $user,
             ]);
         } else {
             return response()->json([
-                'status' => 'error',
+                'status'  => 'error',
                 'message' => 'Failed to update user',
             ]);
         }
@@ -172,26 +171,26 @@ class UserController extends Controller
     public function updateProfile(Request $request)
     {
         $request->validate([
-            'id'    => 'required|integer|exists:users,id',
-            'name'  => 'required|string|max:150',
-            'email' => 'required|email|max:255|unique:users,email,' . $request->id,
+            'id'       => 'required|integer|exists:users,id',
+            'name'     => 'required|string|max:150',
+            'email'    => 'required|email|max:255|unique:users,email,' . $request->id,
             'password' => 'nullable|min:6|confirmed',
         ], [
-            'email.unique'    => 'Email sudah digunakan oleh pengguna lain.',
+            'email.unique'       => 'Email sudah digunakan oleh pengguna lain.',
             'password.confirmed' => 'Konfirmasi password tidak cocok.',
-            'password.min' => 'Password minimal 6 karakter.',
+            'password.min'       => 'Password minimal 6 karakter.',
         ]);
 
         $user = User::find($request->id);
 
-        if (!$user) {
+        if (! $user) {
             return response()->json([
-                'status' => 'error',
+                'status'  => 'error',
                 'message' => 'Akun tidak ditemukan',
             ]);
         }
 
-        $user->name = $request->name;
+        $user->name  = $request->name;
         $user->email = $request->email;
 
         // update password jika ada
@@ -201,12 +200,12 @@ class UserController extends Controller
 
         if ($user->save()) {
             return response()->json([
-                'status' => 'success',
+                'status'  => 'success',
                 'message' => 'Profil berhasil diperbarui',
             ]);
         } else {
             return response()->json([
-                'status' => 'error',
+                'status'  => 'error',
                 'message' => 'Profil gagal diperbarui',
             ]);
         }

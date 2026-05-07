@@ -1,303 +1,311 @@
 @extends('layouts.base')
 
 @push('styles')
-    <link rel="stylesheet" href="{{ url('/assets/plugins/custom/datatables/datatables.bundle.css') }}">
+<link rel="stylesheet" href="{{ url('/assets/plugins/custom/datatables/datatables.bundle.css') }}">
 
-    <style>
-        :root {
-            --bas-primary: #F59E0B;
-            --bas-primary-dark: #D97706;
-            --bas-primary-light: #FEF3C7;
-            --bas-neutral: #6B7280;
-            --bas-neutral-light: #F3F4F6;
-            --bas-dark: #374151;
-            --bas-border: #E5E7EB;
-            --bas-surface: #FFFFFF;
-            --bas-radius-md: 12px;
-            --bas-radius-lg: 18px;
-            --bas-transition: all 0.2s ease;
-        }
+<style>
+    :root {
+        --bas-primary: #F59E0B;
+        --bas-primary-dark: #D97706;
+        --bas-primary-light: #FEF3C7;
+        --bas-neutral: #6B7280;
+        --bas-neutral-light: #F3F4F6;
+        --bas-dark: #374151;
+        --bas-border: #E5E7EB;
+        --bas-surface: #FFFFFF;
+        --bas-radius-md: 12px;
+        --bas-radius-lg: 18px;
+        --bas-transition: all 0.2s ease;
+    }
 
-        /* 1. PERBAIKAN STRUKTUR LAYER (Z-INDEX) */
+    /* 1. PERBAIKAN STRUKTUR LAYER (Z-INDEX) */
 
-        /* Navbar harus paling atas */
-        #kt_header {
-            z-index: 1100 !important;
-        }
+    /* Navbar harus paling atas */
+    #kt_header {
+        z-index: 1100 !important;
+    }
 
-        /* Modal harus di bawah navbar tapi di atas popover */
-        .modal {
-            z-index: 1070 !important;
-        }
+    /* Modal harus di bawah navbar tapi di atas popover */
+    .modal {
+        z-index: 1070 !important;
+    }
 
-        .modal-backdrop {
-            z-index: 1060 !important;
-        }
+    .modal-backdrop {
+        z-index: 1060 !important;
+    }
 
-        /* Popover harus di bawah modal & navbar agar tidak nembus */
-        .popover {
-            z-index: 1040 !important;
-        }
+    /* Popover harus di bawah modal & navbar agar tidak nembus */
+    .popover {
+        z-index: 1040 !important;
+    }
 
-        /* 2. LAYOUT & HEADER */
-        .content {
-            background-color: #F9FAFB !important;
-            padding-top: 20px;
-            /* Kasih space dikit di bawah navbar */
-        }
+    /* 2. LAYOUT & HEADER */
+    .content {
+        background-color: #F9FAFB !important;
+        padding-top: 20px;
+        /* Kasih space dikit di bawah navbar */
+    }
 
-        .bas-header {
-            background: linear-gradient(135deg, #1F2937 0%, #111827 100%);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: var(--bas-radius-lg);
-            position: relative;
-            z-index: 1;
-            /* Cukup 1 agar tidak balapan sama navbar */
-            margin-bottom: 25px;
-        }
+    .bas-header {
+        background: linear-gradient(135deg, #1F2937 0%, #111827 100%);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: var(--bas-radius-lg);
+        position: relative;
+        z-index: 1;
+        /* Cukup 1 agar tidak balapan sama navbar */
+        margin-bottom: 25px;
+    }
 
-        .bas-header-icon {
-            width: 56px;
-            height: 56px;
-            background: rgba(245, 158, 11, 0.15);
-            border: 1px solid rgba(245, 158, 11, 0.3);
-            border-radius: var(--bas-radius-md);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 22px;
-            color: var(--bas-primary);
-        }
+    .bas-header-icon {
+        width: 56px;
+        height: 56px;
+        background: rgba(245, 158, 11, 0.15);
+        border: 1px solid rgba(245, 158, 11, 0.3);
+        border-radius: var(--bas-radius-md);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+        color: var(--bas-primary);
+    }
 
-        .bas-header-title {
-            font-size: 20px;
-            font-weight: 700;
-            color: #FFFFFF;
-            margin-bottom: 0;
-        }
+    .bas-header-title {
+        font-size: 20px;
+        font-weight: 700;
+        color: #FFFFFF;
+        margin-bottom: 0;
+    }
 
-        .bas-header-sub {
-            font-size: 13px;
-            color: rgba(255, 255, 255, 0.5);
-        }
+    .bas-header-sub {
+        font-size: 13px;
+        color: rgba(255, 255, 255, 0.5);
+    }
 
-        /* 3. TABLE CARD STYLE */
-        .bas-tab-card {
-            background: var(--bas-surface) !important;
-            border: 1.5px solid var(--bas-border);
-            border-radius: var(--bas-radius-lg);
-            overflow: hidden;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-        }
+    /* 3. TABLE CARD STYLE */
+    .bas-tab-card {
+        background: var(--bas-surface) !important;
+        border: 1.5px solid var(--bas-border);
+        border-radius: var(--bas-radius-lg);
+        overflow: hidden;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    }
 
-        #table_group {
-            border-collapse: separate;
-            border-spacing: 0;
-            width: 100% !important;
-        }
+    #table_group {
+        border-collapse: separate;
+        border-spacing: 0;
+        width: 100% !important;
+    }
 
-        #table_group thead th {
-            background-color: var(--bas-neutral-light);
-            color: var(--bas-neutral);
-            font-weight: 700;
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 0.8px;
-            padding: 20px 25px;
-            border: none;
-        }
+    #table_group thead th {
+        background-color: var(--bas-neutral-light);
+        color: var(--bas-neutral);
+        font-weight: 700;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        padding: 20px 25px;
+        border: none;
+    }
 
-        #table_group tbody td {
-            padding: 18px 25px;
-            vertical-align: middle;
-            border-bottom: 1px solid var(--bas-border);
-        }
+    #table_group tbody td {
+        padding: 18px 25px;
+        vertical-align: middle;
+        border-bottom: 1px solid var(--bas-border);
+    }
 
-        #table_group tbody tr:hover {
-            background-color: #FFFBEB !important;
-            transition: var(--bas-transition);
-        }
+    #table_group tbody tr:hover {
+        background-color: #FFFBEB !important;
+        transition: var(--bas-transition);
+    }
 
-        /* Area Pagination & Search */
-        .dataTables_wrapper .row:last-child {
-            padding: 1.25rem 1.5rem;
-            border-top: 1px solid var(--bas-border);
-            background-color: var(--bas-neutral-light);
-        }
+    /* Area Pagination & Search */
+    .dataTables_wrapper .row:last-child {
+        padding: 1.25rem 1.5rem;
+        border-top: 1px solid var(--bas-border);
+        background-color: var(--bas-neutral-light);
+    }
 
-        .dataTables_filter,
-        .dataTables_length {
-            padding: 1.5rem;
-        }
+    .dataTables_filter,
+    .dataTables_length {
+        padding: 1.5rem;
+    }
 
-        /* 4. UTILITY & BUTTONS */
-        .bas-btn-primary {
-            background: var(--bas-primary);
-            border: none;
-            color: #FFFFFF;
-            font-weight: 600;
-            border-radius: var(--bas-radius-md);
-            transition: var(--bas-transition);
-            height: 45px;
-        }
+    /* 4. UTILITY & BUTTONS */
+    .bas-btn-primary {
+        background: var(--bas-primary);
+        border: none;
+        color: #FFFFFF;
+        font-weight: 600;
+        border-radius: var(--bas-radius-md);
+        transition: var(--bas-transition);
+        height: 45px;
+    }
 
-        .bas-btn-primary:hover {
-            background: var(--bas-primary-dark);
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
-            color: #FFFFFF;
-        }
+    .bas-btn-primary:hover {
+        background: var(--bas-primary-dark);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+        color: #FFFFFF;
+    }
 
-        /* 5. PERMISSION GRID & MODAL */
-        .auth-permissions {
-            list-style: none;
-            padding: 0;
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-            gap: 15px;
-            width: 100%;
-        }
+    /* 5. PERMISSION GRID & MODAL */
+    .auth-permissions {
+        list-style: none;
+        padding: 0;
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 15px;
+        width: 100%;
+    }
 
-        .permission-item {
-            padding: 15px;
-            border-radius: var(--bas-radius-md);
-            border: 1.5px solid var(--bas-border);
-            background-color: var(--bas-surface);
-            transition: var(--bas-transition);
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            position: relative;
-        }
+    .permission-item {
+        padding: 15px;
+        border-radius: var(--bas-radius-md);
+        border: 1.5px solid var(--bas-border);
+        background-color: var(--bas-surface);
+        transition: var(--bas-transition);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        position: relative;
+    }
 
-        .permission-item.selected {
-            border-color: var(--bas-primary);
-            background-color: var(--bas-primary-light);
-        }
+    .permission-item.selected {
+        border-color: var(--bas-primary);
+        background-color: var(--bas-primary-light);
+    }
 
-        .separator-text {
-            grid-column: 1 / -1;
-            padding: 20px 0 10px 0;
-            font-weight: 800;
-            color: var(--bas-dark);
-            text-transform: uppercase;
-            font-size: 11px;
-            letter-spacing: 1.5px;
-            display: flex;
-            align-items: center;
-        }
+    .separator-text {
+        grid-column: 1 / -1;
+        padding: 20px 0 10px 0;
+        font-weight: 800;
+        color: var(--bas-dark);
+        text-transform: uppercase;
+        font-size: 11px;
+        letter-spacing: 1.5px;
+        display: flex;
+        align-items: center;
+    }
 
-        .separator-text::after {
-            content: "";
-            flex: 1;
-            height: 1px;
-            background: var(--bas-border);
-            margin-left: 15px;
-        }
+    .separator-text::after {
+        content: "";
+        flex: 1;
+        height: 1px;
+        background: var(--bas-border);
+        margin-left: 15px;
+    }
 
-        #modal .modal-body {
-            background-color: #FDFDFD;
-            max-height: 65vh;
-            overflow-y: auto;
-            padding: 25px !important;
-        }
+    #modal .modal-content {
+        margin-top: 10vh;
+    }
 
-        /* 6. BADGE STYLING (PENTING) */
-        .label.label-light-warning {
-            background-color: #FFFBEB !important;
-            color: #D97706 !important;
-            font-weight: 700;
-        }
+    #modal form {
+        width: 100%;
+    }
 
-        .swal2-container {
-            z-index: 2000 !important;
-        }
-    </style>
+    #modal .modal-body {
+        background-color: #FDFDFD;
+        max-height: 55vh !important;
+        overflow-y: auto;
+        padding: 25px !important;
+    }
+
+    /* 6. BADGE STYLING (PENTING) */
+    .label.label-light-warning {
+        background-color: #FFFBEB !important;
+        color: #D97706 !important;
+        font-weight: 700;
+    }
+
+    .swal2-container {
+        z-index: 2000 !important;
+    }
+</style>
 @endpush
 
 @section('content')
-    <div class="container-fluid px-8 py-6">
-        {{-- HEADER --}}
-        <div class="row mb-7">
-            <div class="col-12">
-                <div class="bas-header d-flex align-items-center justify-content-between p-7 shadow-lg">
+<div class="container-fluid px-8 py-6">
+    {{-- HEADER --}}
+    <div class="row mb-7">
+        <div class="col-12">
+            <div class="bas-header d-flex align-items-center justify-content-between p-7 shadow-lg">
+                <div class="d-flex align-items-center">
+                    <div class="bas-header-icon mr-5">
+                        <i class="fas fa-users-cog"></i>
+                    </div>
+                    <div>
+                        <h2 class="bas-header-title">Auth Group (Role)</h2>
+                        <div class="bas-header-sub">Pengelompokan Hak Akses &bull; Wings Food (BAS)</div>
+                    </div>
+                </div>
+                <button type="button" onclick="openCreateModal()"
+                    class="bas-btn bas-btn-primary px-6 h-45px d-flex align-items-center">
+                    <i class="fas fa-plus-circle mr-2"></i> BUAT GROUP
+                </button>
+            </div>
+        </div>
+    </div>
+
+    {{-- TABLE CARD --}}
+    @include('permission.partials._table_group')
+</div>
+
+{{-- MODAL MAPPING PERMISSION (Existing) --}}
+@include('permission.partials._modal_group')
+
+{{-- MODAL CREATE/EDIT GROUP --}}
+<div class="modal fade" id="modalCreate" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: var(--bas-radius-lg);">
+            <form id="formCreate" method="POST">
+                @csrf
+                <input type="hidden" name="id" id="group_id_input">
+                <div class="modal-header border-0 pt-8 px-8">
                     <div class="d-flex align-items-center">
-                        <div class="bas-header-icon mr-5">
-                            <i class="fas fa-users-cog"></i>
+                        <div class="symbol symbol-45 symbol-light-warning mr-4">
+                            <span class="symbol-label"><i class="fas fa-users-cog text-warning"></i></span>
                         </div>
                         <div>
-                            <h2 class="bas-header-title">Auth Group (Role)</h2>
-                            <div class="bas-header-sub">Pengelompokan Hak Akses &bull; Wings Food (BAS)</div>
+                            <h5 class="modal-title font-weight-bolder text-dark" id="modalCreateLabel">Tambah Group Baru
+                            </h5>
+                            <p class="text-muted mb-0 font-size-sm">Kategorikan hak akses user</p>
                         </div>
                     </div>
-                    <button type="button" onclick="openCreateModal()"
-                        class="bas-btn bas-btn-primary px-6 h-45px d-flex align-items-center">
-                        <i class="fas fa-plus-circle mr-2"></i> BUAT GROUP
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <i aria-hidden="true" class="ki ki-close"></i>
                     </button>
                 </div>
-            </div>
-        </div>
 
-        {{-- TABLE CARD --}}
-        @include('permission.partials._table_group')
-    </div>
-
-    {{-- MODAL MAPPING PERMISSION (Existing) --}}
-    @include('permission.partials._modal_group')
-
-    {{-- MODAL CREATE/EDIT GROUP --}}
-    <div class="modal fade" id="modalCreate" tabindex="-1" role="dialog" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered" role="document">
-            <div class="modal-content border-0 shadow-lg" style="border-radius: var(--bas-radius-lg);">
-                <form id="formCreate" method="POST">
-                    @csrf
-                    <input type="hidden" name="id" id="group_id_input">
-                    <div class="modal-header border-0 pt-8 px-8">
-                        <div class="d-flex align-items-center">
-                            <div class="symbol symbol-45 symbol-light-warning mr-4">
-                                <span class="symbol-label"><i class="fas fa-users-cog text-warning"></i></span>
-                            </div>
-                            <div>
-                                <h5 class="modal-title font-weight-bolder text-dark" id="modalCreateLabel">Tambah Group Baru
-                                </h5>
-                                <p class="text-muted mb-0 font-size-sm">Kategorikan hak akses user</p>
-                            </div>
-                        </div>
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                            <i aria-hidden="true" class="ki ki-close"></i>
-                        </button>
+                <div class="modal-body px-8 py-4">
+                    <div class="form-group mb-2 _name">
+                        <label class="font-weight-bolder text-dark-75">Nama Group <span
+                                class="text-danger">*</span></label>
+                        <input type="text" name="name" id="input_group_name"
+                            class="form-control form-control-solid h-50px"
+                            placeholder="Contoh: Admin HRGA, IT Support..." style="border-radius: var(--bas-radius-md);"
+                            autocomplete="off">
+                        <span class="help-block text-danger font-size-sm"></span>
                     </div>
+                </div>
 
-                    <div class="modal-body px-8 py-4">
-                        <div class="form-group mb-2 _name">
-                            <label class="font-weight-bolder text-dark-75">Nama Group <span
-                                    class="text-danger">*</span></label>
-                            <input type="text" name="name" id="input_group_name"
-                                class="form-control form-control-solid h-50px"
-                                placeholder="Contoh: Admin HRGA, IT Support..." style="border-radius: var(--bas-radius-md);"
-                                autocomplete="off">
-                            <span class="help-block text-danger font-size-sm"></span>
-                        </div>
-                    </div>
-
-                    <div class="modal-footer border-0 pb-8 px-8">
-                        <button type="button" class="btn btn-light-danger font-weight-bold mr-3 px-8"
-                            data-dismiss="modal">Batal</button>
-                        <button type="submit" class="bas-btn-primary px-12 h-45px shadow-sm submit-button">
-                            <i class="fas fa-save mr-2"></i> SIMPAN GROUP
-                        </button>
-                    </div>
-                </form>
-            </div>
+                <div class="modal-footer border-0 pb-8 px-8">
+                    <button type="button" class="btn btn-light-danger font-weight-bold mr-3 px-8"
+                        data-dismiss="modal">Batal</button>
+                    <button type="submit" class="bas-btn-primary px-12 h-45px shadow-sm submit-button">
+                        <i class="fas fa-save mr-2"></i> SIMPAN GROUP
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
+</div>
 @endsection
 
 @push('scripts')
-    <script src="{{ url('/assets/plugins/custom/datatables/datatables.bundle.js') }}"></script>
+<script src="{{ url('/assets/plugins/custom/datatables/datatables.bundle.js') }}"></script>
 
-    <script>
-        $(document).ready(function() {
+<script>
+    $(document).ready(function() {
             // --- 1. INISIALISASI DATATABLE ---
             const table = $('#table_group').DataTable({
                 responsive: true,
@@ -535,5 +543,5 @@
                 }
             });
         }
-    </script>
+</script>
 @endpush

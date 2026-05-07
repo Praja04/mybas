@@ -6,10 +6,12 @@ use Exception;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Concerns\ToModel;
+use Maatwebsite\Excel\Concerns\WithBatchInserts;
 use Maatwebsite\Excel\Concerns\WithCalculatedFormulas;
+use Maatwebsite\Excel\Concerns\WithChunkReading;
 use Maatwebsite\Excel\Concerns\WithStartRow;
 
-class LokerImport implements ToModel, WithStartRow, WithCalculatedFormulas
+class LokerImport implements ToModel, WithStartRow, WithCalculatedFormulas, WithBatchInserts, WithChunkReading
 {
     protected $gender;
     protected $prefix;
@@ -121,18 +123,20 @@ class LokerImport implements ToModel, WithStartRow, WithCalculatedFormulas
         try {
             $dataPusat = DB::connection('192.168.178.44-admin')
                 ->table('MSIDCARD')
-                ->select('NIK', 'DEPTID', 'EMPNM')
-                ->where(function ($q) use ($nikExcel, $namaExcel) {
-                    $q->whereRaw("CAST(NIK AS UNSIGNED) = CAST(? AS UNSIGNED)", [$nikExcel])
-                        ->orWhere('EMPNM', $namaExcel);
+            // ->select('NIK', 'DEPTID', 'EMPNM')
+                ->where(function ($q) use ($nikFinal, $namaExcel) {
+                    if ($nikFinal !== null) {
+                        $q->whereRaw("CAST(NIK AS UNSIGNED) = CAST(? AS UNSIGNED)", [$nikFinal])
+                            ->orWhere('EMPNM', $namaExcel);
+                    } else {
+                        $q->where('EMPNM', $namaExcel);
+                    }
                 })
-                ->first();
+                ->exists();
 
-            if ($dataPusat) {
-                $divisiFinal = $dataPusat->DEPTID ?? $divisiFinal;
-                $nikFinal    = $dataPusat->NIK ?? $nikFinal;
-            } elseif (empty($nikExcel) || $nikExcel === '-') {
-                $nikFinal = 'TMP-' . strtoupper(substr(md5($namaExcel), 0, 6));
+            if (! $dataPusat) {
+                $nikLog = $nikFinal ?? 'KOSONG';
+                Log::warning("Import LokerBAS: Karyawan tidak ditemukan di DB Pusat (PAS). Nama: {$namaExcel}, NIK: {$nikLog}");
             }
         } catch (Exception $e) {
             Log::error("Import Error - DB Pusat Offline: " . $e->getMessage());
@@ -141,6 +145,7 @@ class LokerImport implements ToModel, WithStartRow, WithCalculatedFormulas
         // 8. KATEGORI KARYAWAN
         $rawKategori   = isset($row[8]) ? strtolower(trim((string) $row[8])) : '';
         $kategoriFinal = 'non_staff';
+
         if (strpos($rawKategori, 'staff') !== false && strpos($rawKategori, 'non') === false) {
             $kategoriFinal = 'staff';
         } elseif (strpos($rawKategori, 'mitra') !== false) {
@@ -163,5 +168,15 @@ class LokerImport implements ToModel, WithStartRow, WithCalculatedFormulas
     public function getLastLoker()
     {
         return $this->lastLoker;
+    }
+
+    public function batchSize(): int
+    {
+        return 100;
+    }
+
+    public function chunkSize(): int
+    {
+        return 100;
     }
 }
