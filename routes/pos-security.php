@@ -25,6 +25,10 @@ Route::prefix('pos-security')->group(function () {
         Route::post('/kartu/reset', [PosSecurityController::class, 'resetKartu'])->name('pos-security.kartu.reset');
         Route::get('/kartu/kartu-aktif/detail/{nomor_kartu}', [PosSecurityController::class, 'kartuAktifDetail'])->name('pos-security.kartu-aktif.detail');
 
+        Route::get('/session-keeper', function () {
+            return response()->json(['status' => 'alive', 'timestamp' => now()]);
+        })->name('pos-security.session-keeper');
+
         Route::prefix('master')->group(function () {
             Route::prefix('security')->group(function () {
                 Route::get('/', [PosSecurityController::class, 'dataSecurity'])->name('pos-security.data.security');

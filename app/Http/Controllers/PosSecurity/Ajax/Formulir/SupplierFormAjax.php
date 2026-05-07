@@ -280,9 +280,9 @@ class SupplierFormAjax extends Controller
             // validasi apakah kendaraan sudah dilakukan cek kendaraan
             $cekKendaraan = DB::table('ga_cek_kendaraan')
                 ->whereRaw("
-                    REPLACE(REPLACE(UPPER(nomor_polisi), ' ', ''), '-', '')
+                    CONVERT(REPLACE(REPLACE(UPPER(nomor_polisi), ' ', ''), '-', '') USING latin1)
                     =
-                    REPLACE(REPLACE(UPPER(?), ' ', ''), '-', '')
+                    CONVERT(REPLACE(REPLACE(UPPER(?), ' ', ''), '-', '') USING latin1)
                 ", [$visitor->nopol])
                 ->where('checked_in_at', '>=', $visitor->createdon)
                 // ->where('checked_in_at', '>=', now()->subHours(24))
@@ -306,7 +306,7 @@ class SupplierFormAjax extends Controller
             }
 
             $cekKendaraan = DB::table('ga_cek_kendaraan')
-                ->where('trnvisitorid', $visitor->trnvisitorid)
+                ->whereRaw("CONVERT(trnvisitorid USING latin1) = CONVERT(? USING latin1)", [$visitor->trnvisitorid])
                 ->orderBy('checked_in_at', 'desc')
                 ->first();
 
@@ -347,12 +347,14 @@ class SupplierFormAjax extends Controller
             'nomorktp'    => 'required|string|max:100',
             'namacomp'    => 'required|string|max:100',
             'nopol'       => 'required|string|max:20',
+            'nohpdriver'  => 'required|string|max:20',
         ], [
             'namavisitor.required' => 'Nama visitor harus diisi',
             'keterangan.required'  => 'Keterangan harus diisi',
             'nomorktp.required'    => 'Nomor KTP/SIM harus diisi',
             'namacomp.required'    => 'Nama perusahaan harus diisi',
             'nopol.required'       => 'Nomor polisi harus diisi',
+            'nohpdriver.required'  => 'Nomor HP harus diisi',
         ]);
 
         if ($validator->fails()) {
@@ -523,8 +525,8 @@ class SupplierFormAjax extends Controller
         ]);
 
         try {
-            $visitor = GaVisitorTransaction::where('trnvisitorid', $request->trnvisitorid)->first();
-            //     ->whereNull('dateout')->where('kartu_dikembalikan', false)
+            // Gunakan whereRaw + CONVERT untuk menghindari collation conflict
+            $visitor = GaVisitorTransaction::whereRaw("CONVERT(trnvisitorid USING latin1) = CONVERT(? USING latin1)", [$request->trnvisitorid])->first();
 
             if (!$visitor) {
                 return response()->json([
@@ -533,11 +535,15 @@ class SupplierFormAjax extends Controller
                 ]);
             }
 
-            $fotoOutUrl = $this->saveImageFromBase64(
-                $request->foto_out,
-                $visitor->trnvisitorid . '_foto_out',
-                'uploads/pos-security/suppliers/selfie_out'
-            );
+            // Proses foto hanya jika ada
+            $fotoOutUrl = null;
+            if ($request->filled('foto_out')) {
+                $fotoOutUrl = $this->saveImageFromBase64(
+                    $request->foto_out,
+                    $visitor->trnvisitorid . '_foto_out',
+                    'uploads/pos-security/suppliers/selfie_out'
+                );
+            }
 
             $now = now();
 
@@ -547,9 +553,17 @@ class SupplierFormAjax extends Controller
             $visitor->dateout = $now->toDateString(); // YYYY-MM-DD
             $visitor->timeout = $now->format('H:i:s'); // HH:MM:SS
             $visitor->changedon = $now;
-            $visitor->changedby = auth()->user()->username ?? 'system'; // atau session user
-            $visitor->foto_out = $fotoOutUrl;
-            // $visitor->kondisi_kacamata_out = $request->kondisi_kacamata_out ?? null;
+            $visitor->changedby = auth()->user()->username ?? 'system'; 
+            
+            // Simpan foto ke kolom 'foto' (array JSON) karena kolom 'foto_out' tidak ada di tabel ini
+            if ($fotoOutUrl) {
+                $currentFotos = json_decode($visitor->foto, true) ?: [];
+                if (!in_array($fotoOutUrl, $currentFotos)) {
+                    $currentFotos[] = $fotoOutUrl;
+                }
+                $visitor->foto = json_encode($currentFotos);
+            }
+
             $visitor->save();
 
             return response()->json([
@@ -560,7 +574,7 @@ class SupplierFormAjax extends Controller
             Log::error('Error saat mengembalikan kartu: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Terjadi kesalahan saat mengembalikan kartu.'
+                'message' => 'Gagal: ' . $e->getMessage() // Tampilkan error aslinya agar bisa didiagnosa
             ]);
         }
     }

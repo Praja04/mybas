@@ -143,5 +143,15 @@ $menus = [
         @include('pos-security.routes.datatable')
 
         @stack('scripts')
+
+        <script>
+            // Session Keeper - Menjaga session tetap aktif dengan ping ke server setiap 5 menit
+            setInterval(function() {
+                fetch("{{ route('pos-security.session-keeper') }}")
+                    .then(response => response.json())
+                    .then(data => console.log('Session Keeper: ' + data.status))
+                    .catch(error => console.log('Session Keeper Error'));
+            }, 5 * 60 * 1000); 
+        </script>
     </x-slot>
 </x-templates.velzon-hs.base>

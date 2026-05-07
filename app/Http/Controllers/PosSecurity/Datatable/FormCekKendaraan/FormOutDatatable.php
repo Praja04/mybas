@@ -49,9 +49,9 @@ class FormOutDatatable extends Controller
                     ->from('ga_visitor_transaction')
                     ->where('ga_visitor_transaction.keterangan', 'SUPIR')
                     ->whereRaw("
-                        REPLACE(REPLACE(UPPER(CONVERT(ga_visitor_transaction.nopol USING utf8mb4)), ' ', ''), '-', '')
+                        CONVERT(REPLACE(REPLACE(UPPER(ga_visitor_transaction.nopol), ' ', ''), '-', '') USING latin1)
                         =
-                        REPLACE(REPLACE(UPPER(CONVERT(ga_visitor_vendor.nopol USING utf8mb4)), ' ', ''), '-', '')
+                        CONVERT(REPLACE(REPLACE(UPPER(ga_visitor_vendor.nopol), ' ', ''), '-', '') USING latin1)
                     ");
             });
 
@@ -64,15 +64,8 @@ class FormOutDatatable extends Controller
         // LEFT JOIN cek kendaraan
         return DB::query()
             ->fromSub($visitors, 'v')
-            // ->leftJoin('ga_cek_kendaraan as c', function ($join) {
-            //     $join->on('c.trnvisitorid', '=', 'v.trnvisitorid');
-            // })
             ->leftJoin('ga_cek_kendaraan as c', function ($join) {
-                $join->on(
-                    DB::raw('CONVERT(c.trnvisitorid USING utf8mb4)'),
-                    '=',
-                    DB::raw('CONVERT(v.trnvisitorid USING utf8mb4)')
-                )
+                $join->on(DB::raw('CONVERT(c.trnvisitorid USING latin1)'), '=', DB::raw('CONVERT(v.trnvisitorid USING latin1)'))
                     ->whereColumn('c.created_at', '>=', 'v.created_at');
             })
             ->whereNotNull('c.checked_in_at') // sudah cek masuk
