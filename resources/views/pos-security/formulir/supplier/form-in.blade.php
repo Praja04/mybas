@@ -47,6 +47,11 @@
                             </div>
 
                             <div class="mb-3">
+                                <label class="form-label fw-semibold" for="nohpdriver">Nomor HP <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="nohpdriver" name="nohpdriver" required placeholder="Masukkan nomor HP aktif">
+                            </div>
+
+                            <div class="mb-3">
                                 <label class="form-label fw-semibold" for="nomor-ktp">No. KTP / SIM <span class="text-danger">*</span></label>
                                 <input type="text" class="form-control" name="nomorktp" id="nomor-ktp" required placeholder="Masukkan nomor identitas">
                             </div>

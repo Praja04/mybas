@@ -22,18 +22,14 @@ class HistorySupplierDatatable extends Controller
         $filter = $request->input('filter', []);
 
         $query = GaVisitorTransaction::query()
-            ->whereIn('purpose', ['MUAT', 'BONGKAR'])
-            ->where('createdon', '>=', Carbon::now()->subDays(7))
-            ->orderBy('createdon', 'desc');
+            ->whereIn('purpose', ['MUAT', 'BONGKAR']);
 
-        // // 🚫 Exclude blacklist by subquery
-        // $query->whereNotExists(function ($sub) {
-        //     $sub->select(DB::raw(1))
-        //         ->from('ga_lgtk_blacklist_identitas as bl')
-        //         ->whereColumn('bl.tanggal_lahir', 'ga_visitor_transaction.tgl_lahir')
-        //         ->where(DB::raw('LOWER(TRIM(bl.nama))'), DB::raw('LOWER(TRIM(ga_visitor_transaction.namavisitor))'))
-        //         ->where('bl.aktif', true);
-        // });
+        // Default 7 hari terakhir (hanya jika filter tanggal tidak diisi)
+        if (empty($filter['start_date'])) {
+            $query->where('createdon', '>=', Carbon::now()->subDays(7));
+        }
+
+        $query->orderBy('createdon', 'desc');
 
         if (!empty($filter['nama_visitor'])) {
             $query->where('namavisitor', 'like', "%{$filter['nama_visitor']}%");
@@ -116,65 +112,6 @@ class HistorySupplierDatatable extends Controller
                 return '<div style="max-width: 100px; word-wrap: break-word; white-space: normal;">' . e($namaComp) . '</div>';
             })
 
-            // ->addColumn('photo_visitor', function ($item) {
-            //     if (empty($item->foto)) {
-            //         return '-';
-            //     }
-
-            //     // Decode JSON string jadi array
-            //     $fotoArray = json_decode(html_entity_decode($item->foto), true);
-
-            //     if (empty($fotoArray) || !is_array($fotoArray)) {
-            //         return '-';
-            //     }
-
-            //     $html = '';
-
-            //     foreach ($fotoArray as $fotoUrl) {
-            //         $html .= '<img src="' . $fotoUrl . '" 
-            //           alt="Photo Visitor" 
-            //           style="max-width: 80px; max-height: 80px; margin: 3px; border-radius: 6px; cursor: pointer;" 
-            //           onclick="showImageModal(\'' . $fotoUrl . '\')" />';
-            //     }
-
-            //     return $html;
-            // })
-            // ->addColumn('photo_visitor_out', function ($item) {
-            //     if (empty($item->foto_out)) return '-';
-            //     return '<img src="' . $item->foto_out . '" style="max-width: 80px; max-height: 80px; border-radius: 6px; cursor: pointer; margin: 3px;" onclick="showImageModal(\'' . $item->foto_out . '\')" />';
-            // })
-            // ->addColumn('img_visitor', function ($item) {
-            //     if (empty($item->imgvisitorpathin)) {
-            //         return '-';
-            //     }
-            //     return '<img src="' . $item->imgvisitorpathin . '" 
-            //         alt="Image Visitor" 
-            //         style="max-width: 80px; max-height: 80px; border-radius: 6px; cursor: pointer; margin: 3px;" 
-            //         onclick="showImageModal(\'' . $item->imgvisitorpathin . '\')" />';
-            // })
-            // ->addColumn('is_kacamata', function ($item) {
-            //     if ($item->is_kacamata === null) {
-            //         return '-';
-            //     }
-
-            //     return $item->is_kacamata
-            //         ? '<span class="badge bg-success">Ya</span>'
-            //         : '<span class="badge bg-secondary">Tidak</span>';
-            // })
-            // ->addColumn('kondisi_kacamata', function ($item) {
-            //     if (!$item->is_kacamata) {
-            //         return '-';
-            //     }
-
-            //     return $item->kondisi_kacamata;
-            // })
-            // ->addColumn('kondisi_kacamata_out', function ($item) {
-            //     if (!$item->is_kacamata || !$item->kondisi_kacamata_out) {
-            //         return '-';
-            //     }
-
-            //     return $item->kondisi_kacamata_out;
-            // })
             ->editColumn('NAMAVISITOR', function ($item) {
                 return $item->NAMAVISITOR ?: '-';
             })
@@ -203,40 +140,7 @@ class HistorySupplierDatatable extends Controller
                 return $item->KETERANGAN ?: '-';
             })
             ->addColumn('action', function ($item) {
-                // return '
-                // <div class="dropdown d-inline-block">
-                //     <button class="btn btn-soft-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                //         <i class="ri-more-fill align-middle"></i>
-                //     </button>
-                //     <ul class="dropdown-menu dropdown-menu-end">
-                //         <li>
-                //             <a href="#!" class="dropdown-item" onclick="openVisitorActionModal(\'' . $item->trnvisitorid . '\')">
-                //                 <i class="ri-eye-fill align-bottom me-2 text-muted"></i>View Detail
-                //             </a>
-                //         </li>
-                //         <li>
-                //             <a href="#!" class="dropdown-item text-danger" onclick="triggerBlacklistVisitor(\'' . $item->trnvisitorid . '\')">
-                //                 <i class="ri-close-circle-fill align-bottom me-2 text-muted"></i>Block Visitor
-                //             </a>
-                //         </li>
-                //         <li>
-                //             <a href="#!" class="dropdown-item text-warning" onclick="triggerReportLostCard(\'' . $item->trnvisitorid . '\')">
-                //                 <i class="ri-error-warning-fill align-bottom me-2 text-muted"></i>Report Kartu Hilang
-                //             </a>
-                //         </li>
-                //     </ul>
-                // </div>';
-
-                // test
-                // return '
-                // <div class="dropdown d-inline-block">
-                //     <button class="btn btn-soft-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                //         <i class="ri-more-fill align-middle"></i>
-                //     </button>
-                //     <ul class="dropdown-menu dropdown-menu-end">
-
-                //     </ul>
-                // </div>';
+               
                 return '
                     <div class="dropdown d-inline-block">
                         <button class="btn btn-soft-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -251,11 +155,6 @@ class HistorySupplierDatatable extends Controller
                             </ul>
                             </div>
                             ';
-                // <li>
-                //     <a href="#!" class="dropdown-item text-danger" onclick="triggerBlacklistVisitor(\'' . $item->trnvisitorid . '\')">
-                //         <i class="ri-close-circle-fill align-bottom me-2 text-muted"></i>Block Visitor
-                //     </a>
-                // </li>
             })
 
 

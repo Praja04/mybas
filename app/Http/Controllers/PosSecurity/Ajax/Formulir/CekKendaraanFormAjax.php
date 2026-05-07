@@ -381,27 +381,6 @@ class CekKendaraanFormAjax extends Controller
                 ->where('trncekid', $request->trncekid)
                 ->update($updateData);
 
-            // ── UPDATE STATUS VISITOR (SYNC) ───────────────────────────
-            // Otomatis tutup transaksi visitor saat kendaraan keluar
-            $visitorUpdate = [
-                'dateout'            => $updateData['checked_out_at']->toDateString(),
-                'timeout'            => $updateData['checked_out_at']->format('H:i:s'),
-                'kartu_dikembalikan' => true,
-                'changedon'          => $updateData['checked_out_at'],
-                'changedby'          => $updateData['nama_petugas_keluar'],
-            ];
-
-            // Coba update di tabel transaction (supplier)
-            $sync = DB::table('ga_visitor_transaction')
-                ->where('trnvisitorid', $cek->trnvisitorid)
-                ->update($visitorUpdate);
-
-            // Jika tidak ada di transaction, coba di vendor
-            if (!$sync) {
-                DB::table('ga_visitor_vendor')
-                    ->where('trnvisitorid', $cek->trnvisitorid)
-                    ->update($visitorUpdate);
-            }
             // ────────────────────────────────────────────────────────────
 
             return response()->json([

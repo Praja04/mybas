@@ -20,9 +20,14 @@ class HistoryVendorDatatable extends Controller
     {
         $filter = $request->input('filter', []);
 
-        $query = GaVisitorVendorTransaction::query()
-            ->where('createdon', '>=', Carbon::now()->subDays(7))
-            ->orderBy('createdon', 'desc');
+        $query = GaVisitorVendorTransaction::query();
+
+        // Default 7 hari terakhir (hanya jika filter tanggal tidak diisi)
+        if (empty($filter['start_date'])) {
+            $query->where('createdon', '>=', Carbon::now()->subDays(7));
+        }
+
+        $query->orderBy('createdon', 'desc');
 
         // Filter nama visitor
         if (!empty($filter['nama_visitor'])) {

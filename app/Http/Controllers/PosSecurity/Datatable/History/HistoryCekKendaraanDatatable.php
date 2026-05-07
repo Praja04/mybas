@@ -68,9 +68,9 @@ class HistoryCekKendaraanDatatable extends Controller
                     ->from('ga_visitor_transaction')
                     ->where('ga_visitor_transaction.keterangan', 'SUPIR')
                     ->whereRaw("
-                REPLACE(REPLACE(UPPER(ga_visitor_transaction.nopol), ' ', ''), '-', '') COLLATE utf8mb4_unicode_ci
+                CONVERT(REPLACE(REPLACE(UPPER(ga_visitor_transaction.nopol), ' ', ''), '-', '') USING latin1)
                 =
-                REPLACE(REPLACE(UPPER(ga_visitor_vendor.nopol), ' ', ''), '-', '') COLLATE utf8mb4_unicode_ci
+                CONVERT(REPLACE(REPLACE(UPPER(ga_visitor_vendor.nopol), ' ', ''), '-', '') USING latin1)
             ");
             });
 
@@ -84,12 +84,8 @@ class HistoryCekKendaraanDatatable extends Controller
         // LEFT JOIN cek kendaraan
         return DB::query()
             ->fromSub($visitors, 'v')
-            // ->leftJoin('ga_cek_kendaraan as c', function ($join) use ($sevenDaysAgo) {
-            //     $join->on('c.trnvisitorid', '=', 'v.trnvisitorid')
-            //         ->where('c.created_at', '>=', $sevenDaysAgo);
-            // })
             ->leftJoin('ga_cek_kendaraan as c', function ($join) {
-                $join->on(DB::raw('c.trnvisitorid COLLATE utf8mb4_unicode_ci'), '=', DB::raw('v.trnvisitorid COLLATE utf8mb4_unicode_ci'))
+                $join->on(DB::raw('CONVERT(c.trnvisitorid USING latin1)'), '=', DB::raw('CONVERT(v.trnvisitorid USING latin1)'))
                     ->whereColumn('c.created_at', '>=', 'v.created_at');
             })
             ->select([

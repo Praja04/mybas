@@ -90,14 +90,14 @@ class TamuFormAjax extends Controller
     // 
     public function kembali_kartu(Request $request)
     {
-        // dd($request->all());
         $request->validate([
             'trnvisitorid' => 'required|string|max:50',
-            'foto_out'     => 'required|string',
+            'foto_out'     => 'nullable|string',
         ]);
 
         try {
-            $visitor = GaVisitorVendorTransaction::where('trnvisitorid', $request->trnvisitorid)->first();
+            // Gunakan whereRaw + CONVERT untuk menghindari collation conflict
+            $visitor = GaVisitorVendorTransaction::whereRaw("CONVERT(trnvisitorid USING latin1) = CONVERT(? USING latin1)", [$request->trnvisitorid])->first();
 
             if (!$visitor) {
                 return response()->json([
@@ -106,13 +106,15 @@ class TamuFormAjax extends Controller
                 ]);
             }
 
-            $fotoOutUrl = $this->saveImageFromBase64(
-                $request->foto_out,
-                // 'foto_out_' . $visitor->trnvisitorid . '_' . now()->format('His'),
-                // 'visitors/out'
-                $visitor->trnvisitorid . '_foto_out',
-                'uploads/pos-security/tamu/selfie_out'
-            );
+            // Proses foto hanya jika ada
+            $fotoOutUrl = null;
+            if ($request->filled('foto_out')) {
+                $fotoOutUrl = $this->saveImageFromBase64(
+                    $request->foto_out,
+                    $visitor->trnvisitorid . '_foto_out',
+                    'uploads/pos-security/visitors/selfie_out'
+                );
+            }
 
             $now = now();
 
@@ -122,9 +124,8 @@ class TamuFormAjax extends Controller
             $visitor->dateout = $now->toDateString(); // YYYY-MM-DD
             $visitor->timeout = $now->format('H:i:s'); // HH:MM:SS
             $visitor->changedon = $now;
-            $visitor->changedby = auth()->user()->username ?? 'system'; // atau session user
-            $visitor->foto_out = $fotoOutUrl;
-            $visitor->kondisi_kacamata_out = $request->kondisi_kacamata_out ?? null;
+            $visitor->changedby = auth()->user()->username ?? 'system';
+            $visitor->foto_out = $fotoOutUrl ?: $visitor->foto_out;
             $visitor->save();
 
             return response()->json([
@@ -135,7 +136,7 @@ class TamuFormAjax extends Controller
             Log::error('Error saat mengembalikan kartu: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Terjadi kesalahan saat mengembalikan kartu.'
+                'message' => 'Gagal: ' . $e->getMessage()
             ]);
         }
     }
@@ -189,9 +190,9 @@ class TamuFormAjax extends Controller
             if ($visitor->type === 'TRANSPORTER') {
                 $cekKendaraan = DB::table('ga_cek_kendaraan')
                     ->whereRaw("
-                            REPLACE(REPLACE(UPPER(nomor_polisi), ' ', ''), '-', '')
+                            CONVERT(REPLACE(REPLACE(UPPER(nomor_polisi), ' ', ''), '-', '') USING latin1)
                             =
-                            REPLACE(REPLACE(UPPER(?), ' ', ''), '-', '')
+                            CONVERT(REPLACE(REPLACE(UPPER(?), ' ', ''), '-', '') USING latin1)
                         ", [$visitor->nopol])
                     ->where('checked_in_at', '>=', $visitor->createdon)
                     // ->where('checked_in_at', '>=', now()->subHours(24))
@@ -215,7 +216,7 @@ class TamuFormAjax extends Controller
                 }
                 
                 $cekKendaraan = DB::table('ga_cek_kendaraan')
-                    ->where('trnvisitorid', $visitor->trnvisitorid)
+                    ->whereRaw("CONVERT(trnvisitorid USING latin1) = CONVERT(? USING latin1)", [$visitor->trnvisitorid])
                     ->orderBy('checked_in_at', 'desc')
                     ->first();
 
