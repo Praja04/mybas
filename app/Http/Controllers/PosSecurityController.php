@@ -59,6 +59,41 @@ class PosSecurityController extends Controller
         return view('pos-security.kartu.index');
     }
 
+    public function resetKartu(Request $request)
+    {
+        $request->validate([
+            'trnvisitorid' => 'required|string',
+            'type' => 'required|string' // 'supplier' or 'vendor'
+        ]);
+
+        try {
+            $now = now();
+            $data = [
+                'kartu_dikembalikan' => true,
+                'dateout' => $now->toDateString(),
+                'timeout' => $now->toTimeString(),
+                'changedon' => $now,
+                'changedby' => auth()->user()->username ?? 'system',
+            ];
+
+            if ($request->type === 'supplier') {
+                \App\Models\PosSecurity\GaVisitorTransaction::where('trnvisitorid', $request->trnvisitorid)->update($data);
+            } else {
+                \App\Models\PosSecurity\GaVisitorVendorTransaction::where('trnvisitorid', $request->trnvisitorid)->update($data);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Kartu berhasil direset dan transaksi ditutup.'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mereset kartu: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
     public function kartuAktifDetail()
     {
         return view('pos-security.kartu.detail');

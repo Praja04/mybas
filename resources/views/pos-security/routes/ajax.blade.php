@@ -18,6 +18,8 @@
     var API_FORM_TOGGLE_SECURITY = '{{ route('ajax.pos-security.master.security.toggle', ':id') }}';
     var API_FORM_EDIT_SECURITY = '{{ route('ajax.pos-security.master.security.edit', ':id') }}';
     var API_FORM_UPDATE_SECURITY = '{{ route('ajax.pos-security.master.security.update', ':id') }}';
+
+    var API_RESET_KARTU = '{{ route('pos-security.kartu.reset') }}';
 </script>
 
 {{-- <script>
