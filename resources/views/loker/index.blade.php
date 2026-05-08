@@ -1,734 +1,734 @@
 @extends('layouts.base')
 
 @section('content')
-    <div class="container-fluid px-8 py-6">
+<div class="container-fluid px-8 py-6">
 
-        {{-- ========== HEADER ========== --}}
-        <div class="row mb-7">
-            <div class="col-12">
-                <div class="bas-header rounded-xl d-flex align-items-center justify-content-between flex-wrap p-7">
-                    <div class="d-flex align-items-center">
-                        <div class="bas-header-icon mr-5">
-                            <i class="fas fa-th-large"></i>
-                        </div>
-                        <div>
-                            <h2 class="bas-header-title mb-1">Panel Kontrol Loker</h2>
-                            <div class="bas-header-sub">Monitoring Real-time &bull; PT Bumi Alam Segar</div>
-                        </div>
+    {{-- ========== HEADER ========== --}}
+    <div class="row mb-7">
+        <div class="col-12">
+            <div class="bas-header rounded-xl d-flex align-items-center justify-content-between flex-wrap p-7">
+                <div class="d-flex align-items-center">
+                    <div class="bas-header-icon mr-5">
+                        <i class="fas fa-th-large"></i>
                     </div>
+                    <div>
+                        <h2 class="bas-header-title mb-1">Panel Kontrol Loker</h2>
+                        <div class="bas-header-sub">Monitoring Real-time &bull; PT Bumi Alam Segar</div>
+                    </div>
+                </div>
 
-                    {{-- Ringkasan Status --}}
-                    <div class="bas-stat-group d-flex align-items-center mt-4 mt-md-0 rounded-lg px-5 py-3">
-                        <div class="bas-stat-item text-center px-5">
-                            <div class="bas-stat-label">Total Unit</div>
-                            <div class="bas-stat-value">{{ number_format($grandTotal['total']) }}</div>
-                        </div>
-                        <div class="bas-stat-divider"></div>
-                        <div class="bas-stat-item text-center px-5" data-toggle="tooltip"
-                            title="Jumlah unit kosong yang siap digunakan oleh karyawan baru">
-                            <div class="bas-stat-label">Tersedia</div>
-                            <div class="bas-stat-value bas-stat-success">{{ number_format($grandTotal['tersedia']) }}</div>
-                        </div>
-                        <div class="bas-stat-divider"></div>
-                        <div class="bas-stat-item text-center px-5" data-toggle="tooltip"
-                            title="Unit yang sedang dalam masa perbaikan dan tidak dapat di-plotting">
-                            <div class="bas-stat-label">Rusak</div>
-                            <div class="bas-stat-value bas-stat-danger">{{ number_format($grandTotal['rusak']) }}</div>
-                        </div>
+                {{-- Ringkasan Status --}}
+                <div class="bas-stat-group d-flex align-items-center mt-4 mt-md-0 rounded-lg px-5 py-3">
+                    <div class="bas-stat-item text-center px-5">
+                        <div class="bas-stat-label">Total Unit</div>
+                        <div class="bas-stat-value">{{ number_format($grandTotal['total']) }}</div>
+                    </div>
+                    <div class="bas-stat-divider"></div>
+                    <div class="bas-stat-item text-center px-5" data-toggle="tooltip"
+                        title="Jumlah unit kosong yang siap digunakan oleh karyawan baru">
+                        <div class="bas-stat-label">Tersedia</div>
+                        <div class="bas-stat-value bas-stat-success">{{ number_format($grandTotal['tersedia']) }}</div>
+                    </div>
+                    <div class="bas-stat-divider"></div>
+                    <div class="bas-stat-item text-center px-5" data-toggle="tooltip"
+                        title="Unit yang sedang dalam masa perbaikan dan tidak dapat di-plotting">
+                        <div class="bas-stat-label">Rusak</div>
+                        <div class="bas-stat-value bas-stat-danger">{{ number_format($grandTotal['rusak']) }}</div>
                     </div>
                 </div>
             </div>
         </div>
-
-        {{-- ========== TOOLBAR ========== --}}
-        <div class="row mb-6 align-items-center">
-            <div class="col-md-5 col-lg-4 mb-3 mb-md-0">
-                <div class="bas-search-wrap">
-                    <span class="bas-search-icon"><i class="flaticon2-search-1"></i></span>
-                    <input type="text" id="search_loker_input" class="bas-search-input"
-                        placeholder="Cari nomor unit, nama, atau NIK..." data-toggle="tooltip" data-placement="top"
-                        title="Cari cepat berdasarkan nomor unit, NIK, atau nama karyawan pada tab yang aktif">
-                </div>
-            </div>
-            <div class="col-md-7 col-lg-8 text-right">
-                @if (in_array('loker_operator', $permissions))
-                    <button type="button" onclick="openModalPlotting()" class="bas-btn bas-btn-primary mr-2"
-                        data-toggle="tooltip" title="Daftarkan penempatan karyawan baru ke dalam unit loker">
-                        <i class="fas fa-user-plus mr-2"></i> Plotting Baru
-                    </button>
-                @endif
-
-                @if (in_array('loker_master', $permissions))
-                    <div class="dropdown d-inline-block">
-                        <button class="bas-btn bas-btn-outline" data-toggle="dropdown">
-                            <i class="fas fa-file-export mr-2"></i> Kelola Data <i
-                                class="fas fa-chevron-down ml-2 font-size-xs"></i>
-                        </button>
-                        <div class="dropdown-menu dropdown-menu-right bas-dropdown shadow border-0 p-3"
-                            style="min-width: 220px;">
-                            <div class="bas-dropdown-section-label">Unduh Laporan (Excel)</div>
-                            <a class="bas-dropdown-item" href="{{ route('loker.export', 'L') }}" data-toggle="tooltip"
-                                data-placement="left" title="Unduh template laporan (excel) area Pria">
-                                <span class="bas-dropdown-icon bas-icon-success"><i class="far fa-file-excel"></i></span>
-                                Loker Pria
-                            </a>
-                            <a class="bas-dropdown-item" href="{{ route('loker.export', 'P') }}" data-toggle="tooltip"
-                                data-placement="left" title="Unduh template laporan (excel) area Wanita">
-                                <span class="bas-dropdown-icon bas-icon-danger"><i class="far fa-file-excel"></i></span>
-                                Loker Wanita
-                            </a>
-                            <div class="bas-dropdown-divider"></div>
-                            <div class="bas-dropdown-section-label">Unggah Data</div>
-                            <a class="bas-dropdown-item" href="javascript:void(0)" onclick="openModalImport('L')"
-                                data-toggle="tooltip" data-placement="left" title="Masukkan laporan (excel) area Pria">
-                                <span class="bas-dropdown-icon bas-icon-primary"><i class="fas fa-upload"></i></span>
-                                Impor Loker Pria
-                            </a>
-                            <a class="bas-dropdown-item" href="javascript:void(0)" onclick="openModalImport('P')"
-                                data-toggle="tooltip" data-placement="left" title="Masukkan laporan (excel) area Wanita">
-                                <span class="bas-dropdown-icon bas-icon-primary"><i class="fas fa-upload"></i></span>
-                                Impor Loker Wanita
-                            </a>
-                        </div>
-                    </div>
-                @endif
-            </div>
-        </div>
-
-        {{-- ========== LEGEND ========== --}}
-        <div class="bas-legend-bar d-flex align-items-center flex-wrap mb-5 px-5 py-3 rounded-lg">
-            <span class="bas-legend-title mr-4">Status:</span>
-            <span class="bas-legend-item"><span class="bas-dot bas-dot-kosong"></span> Kosong</span>
-            <span class="bas-legend-item"><span class="bas-dot bas-dot-terisi"></span> Terisi (1/2)</span>
-            <span class="bas-legend-item"><span class="bas-dot bas-dot-penuh"></span> Penuh</span>
-            <span class="bas-legend-item"><span class="bas-dot bas-dot-rusak"></span> Perbaikan</span>
-        </div>
-
-        {{-- ========== TAB + GRID ========== --}}
-        <div class="bas-tab-card rounded-xl p-6">
-
-            {{-- Tab Pills --}}
-            <ul class="nav bas-tab-nav mb-6" id="lokerTab" role="tablist">
-                @foreach ($dashboardData as $label => $data)
-                    @php $genderKey = ($label == 'Pria') ? 'L' : 'P'; @endphp
-                    <li class="nav-item">
-                        <a class="bas-tab-link {{ $loop->first ? 'active' : '' }}" data-toggle="tab"
-                            href="#tab_content_{{ $genderKey }}" role="tab">
-                            <i class="{{ $label == 'Pria' ? 'fas fa-mars mr-2' : 'fas fa-venus mr-2' }}"></i>
-                            Loker {{ $label }}
-                            <span class="bas-tab-badge ml-2">{{ count($data['lockers']) }}</span>
-                        </a>
-                    </li>
-                @endforeach
-            </ul>
-
-            {{-- Tab Content --}}
-            @include('loker.partials.table_loker')
-        </div>
-
     </div>
 
-    @include('loker.components.modal_detail')
-    @include('loker.components.modal_plotting')
-    @include('loker.components.modal_import')
+    {{-- ========== TOOLBAR ========== --}}
+    <div class="row mb-6 align-items-center">
+        <div class="col-md-5 col-lg-4 mb-3 mb-md-0">
+            <div class="bas-search-wrap">
+                <span class="bas-search-icon"><i class="flaticon2-search-1"></i></span>
+                <input type="text" id="search_loker_input" class="bas-search-input"
+                    placeholder="Cari nomor unit, nama, atau NIK..." data-toggle="tooltip" data-placement="top"
+                    title="Cari cepat berdasarkan nomor unit, NIK, atau nama karyawan pada tab yang aktif">
+            </div>
+        </div>
+        <div class="col-md-7 col-lg-8 text-right">
+            @if (in_array('loker_operator', $permissions))
+            <button type="button" onclick="openModalPlotting()" class="bas-btn bas-btn-primary mr-2"
+                data-toggle="tooltip" title="Daftarkan penempatan karyawan baru ke dalam unit loker">
+                <i class="fas fa-user-plus mr-2"></i> Plotting Baru
+            </button>
+            @endif
+
+            @if (in_array('loker_master', $permissions))
+            <div class="dropdown d-inline-block">
+                <button class="bas-btn bas-btn-outline" data-toggle="dropdown">
+                    <i class="fas fa-file-export mr-2"></i> Kelola Data <i
+                        class="fas fa-chevron-down ml-2 font-size-xs"></i>
+                </button>
+                <div class="dropdown-menu dropdown-menu-right bas-dropdown shadow border-0 p-3"
+                    style="min-width: 220px;">
+                    <div class="bas-dropdown-section-label">Unduh Laporan (Excel)</div>
+                    <a class="bas-dropdown-item" href="{{ route('loker.export', 'L') }}" data-toggle="tooltip"
+                        data-placement="left" title="Unduh template laporan (excel) area Pria">
+                        <span class="bas-dropdown-icon bas-icon-success"><i class="far fa-file-excel"></i></span>
+                        Loker Pria
+                    </a>
+                    <a class="bas-dropdown-item" href="{{ route('loker.export', 'P') }}" data-toggle="tooltip"
+                        data-placement="left" title="Unduh template laporan (excel) area Wanita">
+                        <span class="bas-dropdown-icon bas-icon-danger"><i class="far fa-file-excel"></i></span>
+                        Loker Wanita
+                    </a>
+                    <div class="bas-dropdown-divider"></div>
+                    <div class="bas-dropdown-section-label">Unggah Data</div>
+                    <a class="bas-dropdown-item" href="javascript:void(0)" onclick="openModalImport('L')"
+                        data-toggle="tooltip" data-placement="left" title="Masukkan laporan (excel) area Pria">
+                        <span class="bas-dropdown-icon bas-icon-primary"><i class="fas fa-upload"></i></span>
+                        Impor Loker Pria
+                    </a>
+                    <a class="bas-dropdown-item" href="javascript:void(0)" onclick="openModalImport('P')"
+                        data-toggle="tooltip" data-placement="left" title="Masukkan laporan (excel) area Wanita">
+                        <span class="bas-dropdown-icon bas-icon-primary"><i class="fas fa-upload"></i></span>
+                        Impor Loker Wanita
+                    </a>
+                </div>
+            </div>
+            @endif
+        </div>
+    </div>
+
+    {{-- ========== LEGEND ========== --}}
+    <div class="bas-legend-bar d-flex align-items-center flex-wrap mb-5 px-5 py-3 rounded-lg">
+        <span class="bas-legend-title mr-4">Status:</span>
+        <span class="bas-legend-item"><span class="bas-dot bas-dot-kosong"></span> Kosong</span>
+        <span class="bas-legend-item"><span class="bas-dot bas-dot-terisi"></span> Terisi (1/2)</span>
+        <span class="bas-legend-item"><span class="bas-dot bas-dot-penuh"></span> Penuh</span>
+        <span class="bas-legend-item"><span class="bas-dot bas-dot-rusak"></span> Perbaikan</span>
+    </div>
+
+    {{-- ========== TAB + GRID ========== --}}
+    <div class="bas-tab-card rounded-xl p-6">
+
+        {{-- Tab Pills --}}
+        <ul class="nav bas-tab-nav mb-6" id="lokerTab" role="tablist">
+            @foreach ($dashboardData as $label => $data)
+            @php $genderKey = ($label == 'Pria') ? 'L' : 'P'; @endphp
+            <li class="nav-item">
+                <a class="bas-tab-link {{ $loop->first ? 'active' : '' }}" data-toggle="tab"
+                    href="#tab_content_{{ $genderKey }}" role="tab">
+                    <i class="{{ $label == 'Pria' ? 'fas fa-mars mr-2' : 'fas fa-venus mr-2' }}"></i>
+                    Loker {{ $label }}
+                    <span class="bas-tab-badge ml-2">{{ count($data['lockers']) }}</span>
+                </a>
+            </li>
+            @endforeach
+        </ul>
+
+        {{-- Tab Content --}}
+        @include('loker.partials.table_loker')
+    </div>
+
+</div>
+
+@include('loker.components.modal_detail')
+@include('loker.components.modal_plotting')
+@include('loker.components.modal_import')
 @endsection
 
 @push('scripts')
-    <style>
-        :root {
-            --bas-primary: #F59E0B;
-            --bas-primary-dark: #D97706;
-            --bas-primary-light: #FEF3C7;
-            --bas-success: #10B981;
-            --bas-success-light: #D1FAE5;
-            --bas-danger: #EF4444;
-            --bas-danger-light: #FEE2E2;
-            --bas-neutral: #6B7280;
-            --bas-neutral-light: #F3F4F6;
-            --bas-dark: #374151;
-            --bas-dark-soft: #4B5563;
-            --bas-border: #E5E7EB;
-            --bas-surface: #FFFFFF;
-            --bas-radius-sm: 8px;
-            --bas-radius-md: 12px;
-            --bas-radius-lg: 18px;
-            --bas-transition: all 0.2s ease;
-        }
+<style>
+    :root {
+        --bas-primary: #F59E0B;
+        --bas-primary-dark: #D97706;
+        --bas-primary-light: #FEF3C7;
+        --bas-success: #10B981;
+        --bas-success-light: #D1FAE5;
+        --bas-danger: #EF4444;
+        --bas-danger-light: #FEE2E2;
+        --bas-neutral: #6B7280;
+        --bas-neutral-light: #F3F4F6;
+        --bas-dark: #374151;
+        --bas-dark-soft: #4B5563;
+        --bas-border: #E5E7EB;
+        --bas-surface: #FFFFFF;
+        --bas-radius-sm: 8px;
+        --bas-radius-md: 12px;
+        --bas-radius-lg: 18px;
+        --bas-transition: all 0.2s ease;
+    }
 
-        /* ---- HEADER ---- */
-        .bas-header {
-            background: linear-gradient(135deg, #1F2937 0%, #111827 100%);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-        }
+    /* ---- HEADER ---- */
+    .bas-header {
+        background: linear-gradient(135deg, #1F2937 0%, #111827 100%);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+    }
 
-        .bas-header-icon {
-            width: 56px;
-            height: 56px;
-            background: rgba(245, 158, 11, 0.15);
-            border: 1px solid rgba(245, 158, 11, 0.3);
-            border-radius: var(--bas-radius-md);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 22px;
-            color: var(--bas-primary);
-            flex-shrink: 0;
-        }
+    .bas-header-icon {
+        width: 56px;
+        height: 56px;
+        background: rgba(245, 158, 11, 0.15);
+        border: 1px solid rgba(245, 158, 11, 0.3);
+        border-radius: var(--bas-radius-md);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+        color: var(--bas-primary);
+        flex-shrink: 0;
+    }
 
-        .bas-header-title {
-            font-size: 20px;
-            font-weight: 700;
-            color: #FFFFFF;
-            letter-spacing: -0.3px;
-            margin-bottom: 0;
-        }
+    .bas-header-title {
+        font-size: 20px;
+        font-weight: 700;
+        color: #FFFFFF;
+        letter-spacing: -0.3px;
+        margin-bottom: 0;
+    }
 
-        .bas-header-sub {
-            font-size: 13px;
-            color: rgba(255, 255, 255, 0.5);
-            margin-top: 2px;
+    .bas-header-sub {
+        font-size: 13px;
+        color: rgba(255, 255, 255, 0.5);
+        margin-top: 2px;
+    }
+
+    .bas-stat-group {
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .bas-stat-label {
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        color: rgba(255, 255, 255, 0.45);
+        margin-bottom: 4px;
+    }
+
+    .bas-stat-value {
+        font-size: 24px;
+        font-weight: 700;
+        color: #FFFFFF;
+        line-height: 1;
+    }
+
+    .bas-stat-value.bas-stat-success {
+        color: #34D399;
+    }
+
+    .bas-stat-value.bas-stat-danger {
+        color: #F87171;
+    }
+
+    .bas-stat-divider {
+        width: 1px;
+        height: 36px;
+        background: rgba(255, 255, 255, 0.1);
+    }
+
+    /* ---- SEARCH ---- */
+    .bas-search-wrap {
+        position: relative;
+    }
+
+    .bas-search-icon {
+        position: absolute;
+        left: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--bas-neutral);
+        font-size: 14px;
+        pointer-events: none;
+        z-index: 2;
+    }
+
+    .bas-search-input {
+        width: 100%;
+        height: 44px;
+        padding: 0 14px 0 40px;
+        border: 1.5px solid var(--bas-border);
+        border-radius: var(--bas-radius-md);
+        background: var(--bas-surface);
+        color: var(--bas-dark);
+        font-size: 14px;
+        outline: none;
+        transition: var(--bas-transition);
+        font-family: inherit;
+    }
+
+    .bas-search-input::placeholder {
+        color: var(--bas-neutral);
+    }
+
+    .bas-search-input:focus {
+        border-color: var(--bas-primary);
+        box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.12);
+    }
+
+    /* ---- BUTTONS ---- */
+    .bas-btn {
+        display: inline-flex;
+        align-items: center;
+        height: 44px;
+        padding: 0 20px;
+        border-radius: var(--bas-radius-md);
+        font-size: 14px;
+        font-weight: 600;
+        border: 1.5px solid transparent;
+        cursor: pointer;
+        transition: var(--bas-transition);
+        white-space: nowrap;
+        text-decoration: none;
+        font-family: inherit;
+    }
+
+    .bas-btn:focus {
+        outline: none;
+        box-shadow: none;
+    }
+
+    .bas-btn-primary {
+        background: var(--bas-primary);
+        border-color: var(--bas-primary);
+        color: #FFFFFF;
+    }
+
+    .bas-btn-primary:hover {
+        background: var(--bas-primary-dark);
+        border-color: var(--bas-primary-dark);
+        color: #FFFFFF;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35);
+        text-decoration: none;
+    }
+
+    .bas-btn-outline {
+        background: var(--bas-surface);
+        border-color: var(--bas-border);
+        color: var(--bas-dark);
+    }
+
+    .bas-btn-outline:hover {
+        background: var(--bas-neutral-light);
+        border-color: #D1D5DB;
+        color: var(--bas-dark);
+        transform: translateY(-1px);
+        text-decoration: none;
+    }
+
+    /* ---- DROPDOWN ---- */
+    .bas-dropdown {
+        border-radius: var(--bas-radius-md) !important;
+        border: 1.5px solid var(--bas-border) !important;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1) !important;
+    }
+
+    .bas-dropdown-section-label {
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        color: var(--bas-neutral);
+        padding: 6px 10px 4px;
+    }
+
+    .bas-dropdown-divider {
+        height: 1px;
+        background: var(--bas-border);
+        margin: 8px 0;
+    }
+
+    .bas-dropdown-item {
+        display: flex;
+        align-items: center;
+        padding: 8px 10px;
+        border-radius: var(--bas-radius-sm);
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--bas-dark);
+        cursor: pointer;
+        text-decoration: none;
+        transition: var(--bas-transition);
+    }
+
+    .bas-dropdown-item:hover {
+        background: var(--bas-neutral-light);
+        color: var(--bas-dark);
+        text-decoration: none;
+    }
+
+    .bas-dropdown-icon {
+        width: 28px;
+        height: 28px;
+        border-radius: 6px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        margin-right: 10px;
+        flex-shrink: 0;
+    }
+
+    .bas-icon-success {
+        background: var(--bas-success-light);
+        color: var(--bas-success);
+    }
+
+    .bas-icon-danger {
+        background: var(--bas-danger-light);
+        color: var(--bas-danger);
+    }
+
+    .bas-icon-primary {
+        background: var(--bas-primary-light);
+        color: var(--bas-primary-dark);
+    }
+
+    /* ---- LEGEND ---- */
+    .bas-legend-bar {
+        background: var(--bas-surface);
+        border: 1.5px solid var(--bas-border);
+    }
+
+    .bas-legend-title {
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--bas-neutral);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .bas-legend-item {
+        display: inline-flex;
+        align-items: center;
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--bas-dark-soft);
+        margin-right: 18px;
+    }
+
+    .bas-dot {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        margin-right: 6px;
+        flex-shrink: 0;
+    }
+
+    .bas-dot-kosong {
+        background: var(--bas-neutral-light);
+        border: 1.5px solid var(--bas-border);
+    }
+
+    .bas-dot-terisi {
+        background: var(--bas-success);
+    }
+
+    .bas-dot-penuh {
+        background: var(--bas-danger);
+    }
+
+    .bas-dot-rusak {
+        background: #9CA3AF;
+    }
+
+    /* ---- TAB CARD ---- */
+    .bas-tab-card {
+        background: var(--bas-surface);
+        border: 1.5px solid var(--bas-border);
+    }
+
+    /* ---- TAB NAV ---- */
+    .bas-tab-nav {
+        display: flex;
+        gap: 6px;
+        border: none;
+        background: var(--bas-neutral-light);
+        border-radius: var(--bas-radius-md);
+        padding: 5px;
+        width: fit-content;
+        margin-bottom: 0;
+        list-style: none;
+        padding-left: 5px;
+    }
+
+    .bas-tab-link {
+        display: inline-flex;
+        align-items: center;
+        padding: 8px 20px;
+        border-radius: var(--bas-radius-sm);
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--bas-neutral);
+        cursor: pointer;
+        border: 1.5px solid transparent;
+        background: transparent;
+        transition: var(--bas-transition);
+        text-decoration: none;
+    }
+
+    .bas-tab-link:hover {
+        color: var(--bas-dark);
+        text-decoration: none;
+    }
+
+    .bas-tab-link.active {
+        background: var(--bas-surface);
+        color: var(--bas-dark);
+        border-color: var(--bas-border);
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+        text-decoration: none;
+    }
+
+    .bas-tab-badge {
+        background: var(--bas-neutral-light);
+        border: 1px solid var(--bas-border);
+        color: var(--bas-neutral);
+        font-size: 11px;
+        font-weight: 700;
+        padding: 1px 7px;
+        border-radius: 99px;
+    }
+
+    .bas-tab-link.active .bas-tab-badge {
+        background: var(--bas-primary-light);
+        border-color: rgba(245, 158, 11, 0.3);
+        color: var(--bas-primary-dark);
+    }
+
+    /* ---- LOKER GRID ---- */
+    .bas-loker-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+        gap: 12px;
+    }
+
+    /* ---- LOKER CARD ---- */
+    .bas-loker-card {
+        position: relative;
+        border-radius: var(--bas-radius-lg);
+        padding: 16px 12px 14px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        cursor: pointer;
+        border: 1.5px solid var(--bas-border);
+        background: var(--bas-surface);
+        transition: all 0.22s ease;
+        min-height: 120px;
+        justify-content: center;
+        overflow: hidden;
+    }
+
+    .bas-loker-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 10px 28px rgba(0, 0, 0, 0.10);
+        z-index: 1;
+    }
+
+    .bas-loker-card:active {
+        transform: translateY(-2px) scale(0.98);
+    }
+
+    /* Status card styles */
+    .bas-loker-kosong {
+        background: var(--bas-surface);
+        border-color: var(--bas-border);
+    }
+
+    .bas-loker-kosong:hover {
+        border-color: #D1D5DB;
+    }
+
+    .bas-loker-terisi {
+        background: #F0FDF4;
+        border-color: #86EFAC;
+    }
+
+    .bas-loker-terisi:hover {
+        border-color: var(--bas-success);
+        box-shadow: 0 8px 24px rgba(16, 185, 129, 0.15);
+    }
+
+    .bas-loker-penuh {
+        background: #FFF5F5;
+        border-color: #FCA5A5;
+    }
+
+    .bas-loker-penuh:hover {
+        border-color: var(--bas-danger);
+        box-shadow: 0 8px 24px rgba(239, 68, 68, 0.15);
+    }
+
+    .bas-loker-rusak {
+        background: #F9FAFB;
+        border-color: #D1D5DB;
+        opacity: 0.75;
+    }
+
+    .bas-loker-rusak:hover {
+        opacity: 0.9;
+        border-color: #9CA3AF;
+    }
+
+    /* Indicator dot */
+    .bas-loker-indicator {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+
+    .bas-loker-kosong .bas-loker-indicator {
+        background: #D1D5DB;
+    }
+
+    .bas-loker-terisi .bas-loker-indicator {
+        background: var(--bas-success);
+    }
+
+    .bas-loker-penuh .bas-loker-indicator {
+        background: var(--bas-danger);
+    }
+
+    .bas-loker-rusak .bas-loker-indicator {
+        background: #9CA3AF;
+    }
+
+    /* Card inner text */
+    .bas-loker-kat {
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.4px;
+        text-transform: uppercase;
+        color: var(--bas-neutral);
+        margin-bottom: 5px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 100%;
+    }
+
+    .bas-loker-terisi .bas-loker-kat {
+        color: #065F46;
+    }
+
+    .bas-loker-penuh .bas-loker-kat {
+        color: #991B1B;
+    }
+
+    .bas-loker-no {
+        font-size: 17px;
+        font-weight: 700;
+        line-height: 1.1;
+        color: var(--bas-dark);
+        margin-bottom: 7px;
+        letter-spacing: -0.3px;
+    }
+
+    .bas-loker-terisi .bas-loker-no {
+        color: #065F46;
+    }
+
+    .bas-loker-penuh .bas-loker-no {
+        color: #991B1B;
+    }
+
+    .bas-loker-rusak .bas-loker-no {
+        color: #6B7280;
+    }
+
+    .bas-loker-badge {
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        padding: 3px 9px;
+        border-radius: 99px;
+        display: inline-block;
+    }
+
+    .bas-loker-kosong .bas-loker-badge {
+        background: var(--bas-neutral-light);
+        color: #6B7280;
+        border: 1px solid var(--bas-border);
+    }
+
+    .bas-loker-terisi .bas-loker-badge {
+        background: #DCFCE7;
+        color: #166534;
+        border: 1px solid #86EFAC;
+    }
+
+    .bas-loker-penuh .bas-loker-badge {
+        background: #FEE2E2;
+        color: #991B1B;
+        border: 1px solid #FCA5A5;
+    }
+
+    .bas-loker-rusak .bas-loker-badge {
+        background: #F3F4F6;
+        color: #6B7280;
+        border: 1px solid #D1D5DB;
+    }
+
+    /* ---- EMPTY STATE ---- */
+    .bas-empty-icon {
+        width: 56px;
+        height: 56px;
+        background: var(--bas-neutral-light);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+        color: var(--bas-neutral);
+        margin: 0 auto;
+    }
+
+    .bas-empty-text {
+        font-size: 14px;
+        color: var(--bas-neutral);
+        margin: 0;
+    }
+
+    /* ---- RESPONSIVE ---- */
+    @media (max-width: 576px) {
+        .bas-loker-grid {
+            grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+            gap: 8px;
         }
 
         .bas-stat-group {
-            background: rgba(255, 255, 255, 0.06);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: none !important;
         }
 
-        .bas-stat-label {
-            font-size: 11px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.6px;
-            color: rgba(255, 255, 255, 0.45);
-            margin-bottom: 4px;
-        }
-
-        .bas-stat-value {
-            font-size: 24px;
-            font-weight: 700;
-            color: #FFFFFF;
-            line-height: 1;
-        }
-
-        .bas-stat-value.bas-stat-success {
-            color: #34D399;
-        }
-
-        .bas-stat-value.bas-stat-danger {
-            color: #F87171;
-        }
-
-        .bas-stat-divider {
-            width: 1px;
-            height: 36px;
-            background: rgba(255, 255, 255, 0.1);
-        }
-
-        /* ---- SEARCH ---- */
-        .bas-search-wrap {
-            position: relative;
-        }
-
-        .bas-search-icon {
-            position: absolute;
-            left: 14px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--bas-neutral);
-            font-size: 14px;
-            pointer-events: none;
-            z-index: 2;
-        }
-
-        .bas-search-input {
-            width: 100%;
-            height: 44px;
-            padding: 0 14px 0 40px;
-            border: 1.5px solid var(--bas-border);
-            border-radius: var(--bas-radius-md);
-            background: var(--bas-surface);
-            color: var(--bas-dark);
-            font-size: 14px;
-            outline: none;
-            transition: var(--bas-transition);
-            font-family: inherit;
-        }
-
-        .bas-search-input::placeholder {
-            color: var(--bas-neutral);
-        }
-
-        .bas-search-input:focus {
-            border-color: var(--bas-primary);
-            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.12);
-        }
-
-        /* ---- BUTTONS ---- */
-        .bas-btn {
-            display: inline-flex;
-            align-items: center;
-            height: 44px;
-            padding: 0 20px;
-            border-radius: var(--bas-radius-md);
-            font-size: 14px;
-            font-weight: 600;
-            border: 1.5px solid transparent;
-            cursor: pointer;
-            transition: var(--bas-transition);
-            white-space: nowrap;
-            text-decoration: none;
-            font-family: inherit;
-        }
-
-        .bas-btn:focus {
-            outline: none;
-            box-shadow: none;
-        }
-
-        .bas-btn-primary {
-            background: var(--bas-primary);
-            border-color: var(--bas-primary);
-            color: #FFFFFF;
-        }
-
-        .bas-btn-primary:hover {
-            background: var(--bas-primary-dark);
-            border-color: var(--bas-primary-dark);
-            color: #FFFFFF;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35);
-            text-decoration: none;
-        }
-
-        .bas-btn-outline {
-            background: var(--bas-surface);
-            border-color: var(--bas-border);
-            color: var(--bas-dark);
-        }
-
-        .bas-btn-outline:hover {
-            background: var(--bas-neutral-light);
-            border-color: #D1D5DB;
-            color: var(--bas-dark);
-            transform: translateY(-1px);
-            text-decoration: none;
-        }
-
-        /* ---- DROPDOWN ---- */
-        .bas-dropdown {
-            border-radius: var(--bas-radius-md) !important;
-            border: 1.5px solid var(--bas-border) !important;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1) !important;
-        }
-
-        .bas-dropdown-section-label {
-            font-size: 10px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.8px;
-            color: var(--bas-neutral);
-            padding: 6px 10px 4px;
-        }
-
-        .bas-dropdown-divider {
-            height: 1px;
-            background: var(--bas-border);
-            margin: 8px 0;
-        }
-
-        .bas-dropdown-item {
-            display: flex;
-            align-items: center;
-            padding: 8px 10px;
-            border-radius: var(--bas-radius-sm);
-            font-size: 13px;
-            font-weight: 500;
-            color: var(--bas-dark);
-            cursor: pointer;
-            text-decoration: none;
-            transition: var(--bas-transition);
-        }
-
-        .bas-dropdown-item:hover {
-            background: var(--bas-neutral-light);
-            color: var(--bas-dark);
-            text-decoration: none;
-        }
-
-        .bas-dropdown-icon {
-            width: 28px;
-            height: 28px;
-            border-radius: 6px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 12px;
-            margin-right: 10px;
-            flex-shrink: 0;
-        }
-
-        .bas-icon-success {
-            background: var(--bas-success-light);
-            color: var(--bas-success);
-        }
-
-        .bas-icon-danger {
-            background: var(--bas-danger-light);
-            color: var(--bas-danger);
-        }
-
-        .bas-icon-primary {
-            background: var(--bas-primary-light);
-            color: var(--bas-primary-dark);
-        }
-
-        /* ---- LEGEND ---- */
-        .bas-legend-bar {
-            background: var(--bas-surface);
-            border: 1.5px solid var(--bas-border);
-        }
-
-        .bas-legend-title {
-            font-size: 12px;
-            font-weight: 700;
-            color: var(--bas-neutral);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .bas-legend-item {
-            display: inline-flex;
-            align-items: center;
-            font-size: 12px;
-            font-weight: 500;
-            color: var(--bas-dark-soft);
-            margin-right: 18px;
-        }
-
-        .bas-dot {
-            display: inline-block;
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            margin-right: 6px;
-            flex-shrink: 0;
-        }
-
-        .bas-dot-kosong {
-            background: var(--bas-neutral-light);
-            border: 1.5px solid var(--bas-border);
-        }
-
-        .bas-dot-terisi {
-            background: var(--bas-success);
-        }
-
-        .bas-dot-penuh {
-            background: var(--bas-danger);
-        }
-
-        .bas-dot-rusak {
-            background: #9CA3AF;
-        }
-
-        /* ---- TAB CARD ---- */
-        .bas-tab-card {
-            background: var(--bas-surface);
-            border: 1.5px solid var(--bas-border);
-        }
-
-        /* ---- TAB NAV ---- */
         .bas-tab-nav {
-            display: flex;
-            gap: 6px;
-            border: none;
-            background: var(--bas-neutral-light);
-            border-radius: var(--bas-radius-md);
-            padding: 5px;
-            width: fit-content;
-            margin-bottom: 0;
-            list-style: none;
-            padding-left: 5px;
+            width: 100%;
         }
 
         .bas-tab-link {
-            display: inline-flex;
-            align-items: center;
-            padding: 8px 20px;
-            border-radius: var(--bas-radius-sm);
+            flex: 1;
+            justify-content: center;
+            font-size: 12px;
+            padding: 8px 10px;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .bas-btn {
             font-size: 13px;
-            font-weight: 600;
-            color: var(--bas-neutral);
-            cursor: pointer;
-            border: 1.5px solid transparent;
-            background: transparent;
-            transition: var(--bas-transition);
-            text-decoration: none;
+            padding: 0 14px;
+            height: 40px;
         }
+    }
+</style>
 
-        .bas-tab-link:hover {
-            color: var(--bas-dark);
-            text-decoration: none;
-        }
-
-        .bas-tab-link.active {
-            background: var(--bas-surface);
-            color: var(--bas-dark);
-            border-color: var(--bas-border);
-            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
-            text-decoration: none;
-        }
-
-        .bas-tab-badge {
-            background: var(--bas-neutral-light);
-            border: 1px solid var(--bas-border);
-            color: var(--bas-neutral);
-            font-size: 11px;
-            font-weight: 700;
-            padding: 1px 7px;
-            border-radius: 99px;
-        }
-
-        .bas-tab-link.active .bas-tab-badge {
-            background: var(--bas-primary-light);
-            border-color: rgba(245, 158, 11, 0.3);
-            color: var(--bas-primary-dark);
-        }
-
-        /* ---- LOKER GRID ---- */
-        .bas-loker-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-            gap: 12px;
-        }
-
-        /* ---- LOKER CARD ---- */
-        .bas-loker-card {
-            position: relative;
-            border-radius: var(--bas-radius-lg);
-            padding: 16px 12px 14px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-            cursor: pointer;
-            border: 1.5px solid var(--bas-border);
-            background: var(--bas-surface);
-            transition: all 0.22s ease;
-            min-height: 120px;
-            justify-content: center;
-            overflow: hidden;
-        }
-
-        .bas-loker-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 10px 28px rgba(0, 0, 0, 0.10);
-            z-index: 1;
-        }
-
-        .bas-loker-card:active {
-            transform: translateY(-2px) scale(0.98);
-        }
-
-        /* Status card styles */
-        .bas-loker-kosong {
-            background: var(--bas-surface);
-            border-color: var(--bas-border);
-        }
-
-        .bas-loker-kosong:hover {
-            border-color: #D1D5DB;
-        }
-
-        .bas-loker-terisi {
-            background: #F0FDF4;
-            border-color: #86EFAC;
-        }
-
-        .bas-loker-terisi:hover {
-            border-color: var(--bas-success);
-            box-shadow: 0 8px 24px rgba(16, 185, 129, 0.15);
-        }
-
-        .bas-loker-penuh {
-            background: #FFF5F5;
-            border-color: #FCA5A5;
-        }
-
-        .bas-loker-penuh:hover {
-            border-color: var(--bas-danger);
-            box-shadow: 0 8px 24px rgba(239, 68, 68, 0.15);
-        }
-
-        .bas-loker-rusak {
-            background: #F9FAFB;
-            border-color: #D1D5DB;
-            opacity: 0.75;
-        }
-
-        .bas-loker-rusak:hover {
-            opacity: 0.9;
-            border-color: #9CA3AF;
-        }
-
-        /* Indicator dot */
-        .bas-loker-indicator {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            flex-shrink: 0;
-        }
-
-        .bas-loker-kosong .bas-loker-indicator {
-            background: #D1D5DB;
-        }
-
-        .bas-loker-terisi .bas-loker-indicator {
-            background: var(--bas-success);
-        }
-
-        .bas-loker-penuh .bas-loker-indicator {
-            background: var(--bas-danger);
-        }
-
-        .bas-loker-rusak .bas-loker-indicator {
-            background: #9CA3AF;
-        }
-
-        /* Card inner text */
-        .bas-loker-kat {
-            font-size: 10px;
-            font-weight: 600;
-            letter-spacing: 0.4px;
-            text-transform: uppercase;
-            color: var(--bas-neutral);
-            margin-bottom: 5px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: 100%;
-        }
-
-        .bas-loker-terisi .bas-loker-kat {
-            color: #065F46;
-        }
-
-        .bas-loker-penuh .bas-loker-kat {
-            color: #991B1B;
-        }
-
-        .bas-loker-no {
-            font-size: 17px;
-            font-weight: 700;
-            line-height: 1.1;
-            color: var(--bas-dark);
-            margin-bottom: 7px;
-            letter-spacing: -0.3px;
-        }
-
-        .bas-loker-terisi .bas-loker-no {
-            color: #065F46;
-        }
-
-        .bas-loker-penuh .bas-loker-no {
-            color: #991B1B;
-        }
-
-        .bas-loker-rusak .bas-loker-no {
-            color: #6B7280;
-        }
-
-        .bas-loker-badge {
-            font-size: 10px;
-            font-weight: 700;
-            letter-spacing: 0.5px;
-            text-transform: uppercase;
-            padding: 3px 9px;
-            border-radius: 99px;
-            display: inline-block;
-        }
-
-        .bas-loker-kosong .bas-loker-badge {
-            background: var(--bas-neutral-light);
-            color: #6B7280;
-            border: 1px solid var(--bas-border);
-        }
-
-        .bas-loker-terisi .bas-loker-badge {
-            background: #DCFCE7;
-            color: #166534;
-            border: 1px solid #86EFAC;
-        }
-
-        .bas-loker-penuh .bas-loker-badge {
-            background: #FEE2E2;
-            color: #991B1B;
-            border: 1px solid #FCA5A5;
-        }
-
-        .bas-loker-rusak .bas-loker-badge {
-            background: #F3F4F6;
-            color: #6B7280;
-            border: 1px solid #D1D5DB;
-        }
-
-        /* ---- EMPTY STATE ---- */
-        .bas-empty-icon {
-            width: 56px;
-            height: 56px;
-            background: var(--bas-neutral-light);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 22px;
-            color: var(--bas-neutral);
-            margin: 0 auto;
-        }
-
-        .bas-empty-text {
-            font-size: 14px;
-            color: var(--bas-neutral);
-            margin: 0;
-        }
-
-        /* ---- RESPONSIVE ---- */
-        @media (max-width: 576px) {
-            .bas-loker-grid {
-                grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
-                gap: 8px;
-            }
-
-            .bas-stat-group {
-                display: none !important;
-            }
-
-            .bas-tab-nav {
-                width: 100%;
-            }
-
-            .bas-tab-link {
-                flex: 1;
-                justify-content: center;
-                font-size: 12px;
-                padding: 8px 10px;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .bas-btn {
-                font-size: 13px;
-                padding: 0 14px;
-                height: 40px;
-            }
-        }
-    </style>
-
-    <script>
-        const canOperator = @json(in_array('loker_operator', $permissions));
+<script>
+    const canOperator = @json(in_array('loker_operator', $permissions));
 
         // Global State Management
         let state = {
@@ -942,7 +942,32 @@
                 KTApp.unblockPage();
 
                 if (res.success) {
-                    showDetail(res.gender, res.no_loker);
+                    if(res.is_wrong_tab) {
+                        Swal.fire({
+                            title: 'Informasi',
+                            text: res.message,
+                            icon: 'warning',
+                            showCancelButton: true,
+                            confirmButtonText: 'Pindah ke Tab ' + (res.gender === 'L' ? 'Pria' : 'Wanita')
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                state.gender = res.gender;
+
+                                let targetTab = `#tab_content_${res.gender}`;
+
+                                $(`a[href="${targetTab}"]`).tab('show');
+
+                                setTimeout(() => {
+                                    showDetail(res.gender, res.no_loker);
+                                }, 400);
+                            }
+                        });
+                        // return;
+                    } else {
+                        showDetail(res.gender, res.no_loker);
+                    }
+
+                    // showDetail(res.gender, res.no_loker);
                 } else {
                     const msg = res.message ||
                         `Data "${cleanKeyword}" tidak ditemukan pada loker ${state.gender === 'L' ? 'Pria' : 'Wanita'}`;
@@ -1348,5 +1373,5 @@
             $('#importGenderVal').val(gender);
             $('#modalImport').modal('show');
         }
-    </script>
+</script>
 @endpush
