@@ -22,7 +22,7 @@ class HistorySupplierDatatable extends Controller
         $filter = $request->input('filter', []);
 
         $query = GaVisitorTransaction::query()
-            ->whereIn('purpose', ['MUAT', 'BONGKAR']);
+            ->whereIn('keterangan', ['SUPIR', 'KERNET']);
 
         // Default 7 hari terakhir (hanya jika filter tanggal tidak diisi)
         if (empty($filter['start_date'])) {
