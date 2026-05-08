@@ -315,8 +315,7 @@
                     searchable: false,
                     render: function(data, type, row) {
                         let statusIcon = row.status == 1 ?
-                            `<i class="fas fa-ban text-danger"></i>` : `<i
-                        class = "fas fa-check-circle text-success" > < /i>`;
+                            `<i class="fas fa-ban text-danger"></i>` : `<i class="fas fa-check-circle text-success"></i>`;
                         let statusText = row.status == 1 ? 'Nonaktifkan User' : 'Aktifkan User';
                         let statusColor = row.status == 1 ? 'text-danger' : 'text-success';
 
@@ -542,9 +541,9 @@
             <span class="text-muted font-weight-bold font-size-lg">Memuat Detail Permission...</span>
         </div>
         `);
-        
+
         $("#modal-view-permission").modal("show");
-        
+
         $.ajax({
         url: '{{ URL::to('/permission/auth-group/get-permissions') }}',
         type: 'POST',
@@ -554,7 +553,7 @@
         },
         success: function(res) {
         let html = '';
-        
+
         if (res.auth_permissions.length > 0) {
         res.auth_permissions.forEach(data => {
         // Ceklis dan style tambahan dihapus, murni pakai class .selected dari CSS lu
@@ -578,7 +577,7 @@
             <p class="text-muted font-size-sm mb-0">Group ini belum memiliki permission yang terhubung.</p>
         </div>`;
         }
-        
+
         $(".auth-permissions").html(html);
         },
         error: function(err) {
