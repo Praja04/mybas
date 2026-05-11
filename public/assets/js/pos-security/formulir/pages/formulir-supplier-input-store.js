@@ -57,8 +57,12 @@ $(document).ready(function () {
                 resetPreviewImage(); // Reset semua tampilan preview
                 resetModalKamera(); // Stop kamera & clear canvas
                 selfiePhotos = []; // Reset array selfie
-                updateSelfieHiddenInput(); // Sync ke input hidden
-                renderSelfiePreviews();
+                if (typeof updateSelfieHiddenInput === "function") {
+                    updateSelfieHiddenInput(); // Sync ke input hidden
+                }
+                if (typeof renderSelfiePreviews === "function") {
+                    renderSelfiePreviews();
+                }
 
                 if (typeof resetKacamata === "function") {
                     resetKacamata();
@@ -85,7 +89,7 @@ $(document).ready(function () {
                 console.log("Selfie photos:", selfiePhotos);
                 console.log(
                     "Hidden input value:",
-                    document.getElementById("selfiePhotos").value,
+                    document.getElementById("selfiePhotos")?.value,
                 );
 
                 location.reload();
