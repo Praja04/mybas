@@ -100,7 +100,7 @@
                                     <div id="plot_gender_select_container" style="display: none;">
                                         <select id="plot_gender_val_manual"
                                             class="form-control font-weight-bolder border-primary">
-                                            <option value="">-- Pilih Gender --</option>
+                                            <option value="" selected disabled>Pilih Gender</option>
                                             <option value="L">LAKI-LAKI</option>
                                             <option value="P">PEREMPUAN</option>
                                         </select>
@@ -108,10 +108,25 @@
 
                                     <input type="hidden" name="gender" id="plot_gender_val">
                                 </div>
+
                                 <div class="col-6">
                                     <label class="text-muted font-size-sm mb-1">Kategori</label>
-                                    <input type="text" id="plot_kategori_label"
-                                        class="form-control form-control-solid border-0" readonly placeholder="-">
+
+                                    <div id="plot_kategori_label_container">
+                                        <input type="text" id="plot_kategori_label"
+                                            class="form-control form-control-solid border-0" readonly placeholder="-">
+                                    </div>
+
+                                    <div id="plot_kategori_select_container" style="display: none;">
+                                        <select id="plot_kategori_val_manual"
+                                            class="form-control font-weight-bolder border-primary">
+                                            <option value="" selected disabled>Pilih Kategori</option>
+                                            <option value="staff">STAFF</option>
+                                            <option value="mitra">MITRA KERJA</option>
+                                            <option value="non_staff">NON-STAFF</option>
+                                        </select>
+                                    </div>
+
                                     <input type="hidden" name="kategori_karyawan" id="plot_kategori_val">
                                 </div>
                             </div>

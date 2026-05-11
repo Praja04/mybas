@@ -1,191 +1,186 @@
 @extends('hr-connect.layouts.base')
 
 @section('content')
-    <div class="container-fluid">
+<div class="container-fluid">
 
-        <div class="d-flex p-2 align-items-center">
-            <button id="btnStore" class="btn btn-primary mb-3 me-3">Tambah</button>
+    <div class="d-flex p-2 align-items-center">
+        <button id="btnStore" class="btn btn-primary mb-3 me-3">Tambah</button>
 
-            <button class="btn btn-success mb-3" data-toggle="modal" data-target="#modalImportLoker">
-                <i class="fas fa-file-excel mr-1"></i>
-                Import Excel
-            </button>
-        </div>
-
-        <div class="card p-4 table-responsive">
-            <ul class="nav nav-tabs mb-3" id="jkTabs">
-                <li class="nav-item">
-                    <a class="nav-link active" data-jk="">Semua</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" data-jk="L">Pria</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" data-jk="P">Wanita</a>
-                </li>
-            </ul>
-
-            <table id="tableAjax" class="table table-bordered">
-                <thead>
-                    <tr>
-                        <th>NIK</th>
-                        <th>Nama</th>
-                        <th>Dept</th>
-                        <th>Jenis Kelamin</th>
-                        <th>Loker Baju</th>
-                        <th>Loker Sepatu</th>
-                        <th>Staff</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-            </table>
-        </div>
+        <button class="btn btn-success mb-3" data-toggle="modal" data-target="#modalImportLoker">
+            <i class="fas fa-file-excel mr-1"></i>
+            Import Excel
+        </button>
     </div>
 
-    <div class="modal fade" id="modalData">
-        <div class="modal-dialog">
-            <form id="storeForm">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 id="modalTitle">Form Loker User</h5>
-                    </div>
-                    <div class="modal-body">
+    <div class="card p-4 table-responsive">
+        <ul class="nav nav-tabs mb-3" id="jkTabs">
+            <li class="nav-item">
+                <a class="nav-link active" data-jk="">Semua</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-jk="L">Pria</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-jk="P">Wanita</a>
+            </li>
+        </ul>
 
-                        <div id="modalLoading" class="text-center py-4 d-none">
-                            <div class="spinner-border text-primary" role="status"></div>
-                            <div class="mt-2">Memuat data loker...</div>
-                        </div>
+        <table id="tableAjax" class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>No Loker</th>
+                    <th>NIK</th>
+                    <th>Nama</th>
+                    <th>Dept</th>
+                    <th>Jenis Kelamin</th>
+                    <th>Staff</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+        </table>
+    </div>
+</div>
 
-                        <div class="modalFormContent">
-                            <input type="hidden" id="editId">
+<div class="modal fade" id="modalData">
+    <div class="modal-dialog">
+        <form id="storeForm">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 id="modalTitle">Form Loker User</h5>
+                </div>
+                <div class="modal-body">
 
-                            <div class="mb-2">
-                                <label for="nik" class="form-label">NIK <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="nik" placeholder="Masukkan NIK"
-                                    required>
-                                {{-- disabled kl edit --}}
-                            </div>
-
-                            <div class="mb-2">
-                                <label for="nama" class="form-label">Nama <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="nama" placeholder="Masukkan Nama"
-                                    required>
-                            </div>
-
-                            {{-- <div class="mb-2">
-                                <label for="divisi" class="form-label">Departemen</label>
-                                <input type="text" class="form-control" id="divisi" placeholder="Masukkan Divisi">
-                            </div> --}}
-
-                            <div class="mb-2">
-                                <label for="divisi" class="form-label">Departemen <span
-                                        class="text-danger">*</span></label>
-                                <select class="form-control" id="divisi" required>
-                                    <option value="">Pilih Departemen</option>
-                                    @foreach ($departments as $dept)
-                                        <option value="{{ $dept->name }}">{{ $dept->name }}</option>
-                                    @endforeach
-                                    <option value="__other__">Lainnya</option>
-                                </select>
-                            </div>
-
-                            <div class="mb-2 d-none" id="divisiLainnyaWrapper">
-                                <label for="divisi_lainnya" class="form-label">Departemen Lainnya</label>
-                                <input type="text" class="form-control" id="divisi_lainnya"
-                                    placeholder="Masukkan nama departemen">
-                            </div>
-
-
-                            <div class="mb-2">
-                                <label for="jk" class="form-label">Jenis Kelamin <span
-                                        class="text-danger">*</span></label>
-                                <select class="form-control" id="jk" required>
-                                    <option value="">Pilih Jenis Kelamin</option>
-                                    <option value="L">Pria</option>
-                                    <option value="P">Wanita</option>
-                                </select>
-                            </div>
-
-                            <div class="mb-2">
-                                <label for="no_loker" class="form-label">Nomor Loker <span
-                                        class="text-danger">*</span></label>
-                                {{-- <select class="form-control" id="no_loker">
-                                    <option value="">Pilih No Loker</option>
-                                </select> --}}
-                                <input type="number" class="form-control" id="no_loker" placeholder="Masukkan Nomor Loker"
-                                    required>
-
-                            </div>
-
-                            <div class="mb-2">
-                                <label for="staff" class="form-label">Kategori Karyawan <span
-                                        class="text-danger">*</span></label>
-                                <select class="form-control" id="staff" required>
-                                    <option value="">Pilih Kategori</option>
-                                    <option value="staff">Staff</option>
-                                    <option value="non_staff">Non Staff</option>
-                                    <option value="mitra_kerja">Mitra Kerja</option>
-                                </select>
-                            </div>
-                        </div>
+                    <div id="modalLoading" class="text-center py-4 d-none">
+                        <div class="spinner-border text-primary" role="status"></div>
+                        <div class="mt-2">Memuat data loker...</div>
                     </div>
 
-                    <div class="modal-footer">
-                        <button class="btn btn-primary" type="submit" id="btnSubmit">Submit</button>
+                    <div class="modalFormContent">
+                        <input type="hidden" id="editId">
+
+                        <div class="mb-2">
+                            <label for="nik" class="form-label">NIK <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="nik" placeholder="Masukkan NIK" required>
+                            {{-- disabled kl edit --}}
+                        </div>
+
+                        <div class="mb-2">
+                            <label for="nama" class="form-label">Nama <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="nama" placeholder="Masukkan Nama" required>
+                        </div>
+
+                        {{-- <div class="mb-2">
+                            <label for="divisi" class="form-label">Departemen</label>
+                            <input type="text" class="form-control" id="divisi" placeholder="Masukkan Divisi">
+                        </div> --}}
+
+                        <div class="mb-2">
+                            <label for="divisi" class="form-label">Departemen <span class="text-danger">*</span></label>
+                            <select class="form-control" id="divisi" required>
+                                <option value="">Pilih Departemen</option>
+                                @foreach ($departments as $dept)
+                                <option value="{{ $dept->name }}">{{ $dept->name }}</option>
+                                @endforeach
+                                <option value="__other__">Lainnya</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-2 d-none" id="divisiLainnyaWrapper">
+                            <label for="divisi_lainnya" class="form-label">Departemen Lainnya</label>
+                            <input type="text" class="form-control" id="divisi_lainnya"
+                                placeholder="Masukkan nama departemen">
+                        </div>
+
+
+                        <div class="mb-2">
+                            <label for="jk" class="form-label">Jenis Kelamin <span class="text-danger">*</span></label>
+                            <select class="form-control" id="jk" required>
+                                <option value="">Pilih Jenis Kelamin</option>
+                                <option value="L">Pria</option>
+                                <option value="P">Wanita</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-2">
+                            <label for="no_loker" class="form-label">Nomor Loker <span
+                                    class="text-danger">*</span></label>
+                            {{-- <select class="form-control" id="no_loker">
+                                <option value="">Pilih No Loker</option>
+                            </select> --}}
+                            <input type="number" class="form-control" id="no_loker" placeholder="Masukkan Nomor Loker"
+                                required>
+
+                        </div>
+
+                        <div class="mb-2">
+                            <label for="staff" class="form-label">Kategori Karyawan <span
+                                    class="text-danger">*</span></label>
+                            <select class="form-control" id="staff" required>
+                                <option value="">Pilih Kategori</option>
+                                <option value="staff">Staff</option>
+                                <option value="non_staff">Non Staff</option>
+                                <option value="mitra_kerja">Mitra Kerja</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
-            </form>
-        </div>
+
+                <div class="modal-footer">
+                    <button class="btn btn-primary" type="submit" id="btnSubmit">Submit</button>
+                </div>
+            </div>
+        </form>
     </div>
+</div>
 
-    {{-- modal import --}}
-    <div class="modal fade" id="modalImportLoker">
-        <div class="modal-dialog" role="document">
-            <form id="importForm" enctype="multipart/form-data">
-                @csrf
+{{-- modal import --}}
+<div class="modal fade" id="modalImportLoker">
+    <div class="modal-dialog" role="document">
+        <form id="importForm" enctype="multipart/form-data">
+            @csrf
 
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Import Data Loker</h5>
-                        <button type="button" class="close" data-dismiss="modal">&times;</button>
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Import Data Loker</h5>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        Gunakan template Excel berikut agar format sesuai sistem.
                     </div>
 
-                    <div class="modal-body">
-                        <div class="alert alert-info">
-                            Gunakan template Excel berikut agar format sesuai sistem.
-                        </div>
-
-                        <div class="mb-3">
-                            <a href="{{ asset('templates/template-loker.xlsx') }}" class="btn btn-outline-primary"
-                                target="_blank">
-                                <i class="fas fa-download mr-1"></i>
-                                Download Template Excel
-                            </a>
-                        </div>
-
-                        <div class="form-group">
-                            <label>
-                                File Excel <span class="text-danger">*</span>
-                            </label>
-                            <input type="file" class="form-control" name="file" accept=".xlsx,.xls" required>
-                        </div>
+                    <div class="mb-3">
+                        <a href="{{ asset('templates/template-loker.xlsx') }}" class="btn btn-outline-primary"
+                            target="_blank">
+                            <i class="fas fa-download mr-1"></i>
+                            Download Template Excel
+                        </a>
                     </div>
 
-                    <div class="modal-footer">
-                        <button type="submit" class="btn btn-success">
-                            <i class="fas fa-upload mr-1"></i>
-                            Import
-                        </button>
+                    <div class="form-group">
+                        <label>
+                            File Excel <span class="text-danger">*</span>
+                        </label>
+                        <input type="file" class="form-control" name="file" accept=".xlsx,.xls" required>
                     </div>
                 </div>
-            </form>
-        </div>
+
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-upload mr-1"></i>
+                        Import
+                    </button>
+                </div>
+            </div>
+        </form>
     </div>
+</div>
 @endsection
 
 @push('scripts')
-    <script>
-        $(function() {
+<script>
+    $(function() {
             /* ================= DATATABLE ================= */
             let selectedJK = '';
 
@@ -444,5 +439,5 @@
                 $('#modalImportLoker').modal('show');
             });
         });
-    </script>
+</script>
 @endpush
