@@ -1204,9 +1204,9 @@
                             $('#plot_gender_label').val(d.gender === 'L' ? 'LAKI-LAKI' : 'PEREMPUAN');
 
                             // Load loker jika gender sudah ada
-                            loadAvailableLockers(d.gender, d.kategori).then(() => {
-                                getSuggestion(d.nik, d.gender, d.kategori);
-                            });
+                            // loadAvailableLockers(d.gender, d.kategori).then(() => {
+                            //     getSuggestion(d.nik, d.gender, d.kategori);
+                            // });
                         }
 
                         if (d.is_category_empty) {
