@@ -122,8 +122,8 @@
                                             class="form-control font-weight-bolder border-primary">
                                             <option value="" selected disabled>Pilih Kategori</option>
                                             <option value="staff">STAFF</option>
-                                            <option value="mitra">MITRA KERJA</option>
                                             <option value="non_staff">NON-STAFF</option>
+                                            <option value="mitra">MITRA KERJA</option>
                                         </select>
                                     </div>
 

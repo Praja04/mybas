@@ -759,7 +759,7 @@ class LokerV2Controller extends Controller
             $nikFix       = $dataExternal->NIK;
             $namaKaryawan = $dataExternal->EMPNM;
             $divisi       = $dataExternal->DEPTID;
-            $kategori     = ($dataExternal->TYPECARD == 1) ? 'mitra_kerja' : ($request->kategori_karyawan ?? 'non_staff');
+            $kategori     = $request->kategori_karyawan ?? (($dataExternal->TYPECARD == 1) ? 'mitra_kerja' : 'non_staff');
         } elseif ($request->nama) {
             $nikFix       = $nikInput;
             $namaKaryawan = $request->nama;
