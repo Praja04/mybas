@@ -26,7 +26,7 @@ class LokerV2Controller extends Controller
     }
 
     /**
-     * Helper Kategori Karyawan menyesuaikan struktur tabel hr_karyawan
+     * Helper Kategori Karyawan menyesuaikan struktur ENUM ('staff','non_staff','mitra_kerja')
      */
     private function getKategoriKaryawan($karyawan)
     {
@@ -34,12 +34,10 @@ class LokerV2Controller extends Controller
             return 'non_staff';
         }
 
-        // 1. Cek Staff berdasarkan kolom staff (enum 'Y'/'N')
         if (strtoupper($karyawan->staff ?? 'N') === 'Y') {
             return 'staff';
         }
 
-        // 2. Cek Mitra Kerja berdasarkan kode_divisi atau kode_bagian
         $divisi = strtoupper($karyawan->kode_divisi ?? '');
         $bagian = strtoupper($karyawan->kode_bagian ?? '');
 
@@ -47,7 +45,6 @@ class LokerV2Controller extends Controller
             return 'mitra_kerja';
         }
 
-        // 3. Fallback ke Non-Staff
         return 'non_staff';
     }
 
@@ -72,11 +69,9 @@ class LokerV2Controller extends Controller
                 $penghuniLoker = $allPenghuni->get($rak->no_loker) ?? collect();
                 $count         = $penghuniLoker->count();
 
-                // Ambil kategori dari penghuni yang sudah ada
                 $penghuniPertama = $penghuniLoker->first();
                 $kategori        = $penghuniPertama ? strtolower(trim($penghuniPertama->kategori_karyawan)) : 'non_staff';
 
-                // Logic Kapasitas: STAFF max 1, NON-STAFF sesuai kapasitas rak (default 2)
                 $maxDisplay = ($kategori == 'staff') ? 1 : (int) $rak->kapasitas;
                 $status     = ($count >= $maxDisplay) ? 'penuh' : 'tersedia';
 
@@ -116,11 +111,6 @@ class LokerV2Controller extends Controller
 
     public function management(Request $request)
     {
-        // $allLoker = DB::table('loker_rak')
-        //     ->select('loker_rak.*', DB::raw('(SELECT EXISTS (SELECT 1 FROM loker_penghuni WHERE no_loker = loker_rak.no_loker AND kode_rak = loker_rak.kode_rak)) as is_occupied'))
-        //     ->orderBy('kode_rak', 'ASC')
-        //     ->orderBy('no_loker', 'ASC')
-        //     ->get();
         $gender = $request->get('gender', 'tab_pria');
         $page   = $request->get('page', 1);
 
@@ -157,9 +147,6 @@ class LokerV2Controller extends Controller
         }
 
         if ($request->ajax()) {
-            // $gender = $request->get('gender');
-            // $data   = ($gender == 'tab_pria') ? $queryPria->paginate(10) : $queryWanita->paginate(10);
-
             return view('loker.management.partials.table_management', compact('data', 'gender'))->render();
         }
 
@@ -185,25 +172,8 @@ class LokerV2Controller extends Controller
             ->pluck('no_loker')
             ->toArray();
 
-        // $lastLoker = DB::table('loker_rak')
-        //     ->where('kode_rak', $kodeRak)
-        //     ->max('no_loker');
-
-        // $startNumber = $lastLoker ? $lastLoker + 1 : 1;
-        // $endNumber   = $lastLoker + $jumlahBaru;
-
         DB::beginTransaction();
         try {
-            // for ($i = $startNumber; $i <= $endNumber; $i++) {
-            //     DB::table('loker_rak')->insert([
-            //         'kode_rak'   => $kodeRak,
-            //         'no_loker'   => $i,
-            //         'gender'     => $gender,
-            //         'kapasitas'  => 2,
-            //         'is_active'  => 'Y',
-            //         'updated_at' => now(),
-            //     ]);
-            // }
 
             $insertedCount = 0;
             $currentNumber = 1;
@@ -237,13 +207,13 @@ class LokerV2Controller extends Controller
 
             return response()->json([
                 'status'  => 'success',
-                'message' => "Berhasil menambah $jumlahBaru unit loker $infoRange",
+                'message' => "Berhasil menambahkan $jumlahBaru data master loker $infoRange",
             ]);
         } catch (\Exception $e) {
             DB::rollback();
             return response()->json([
                 'status'  => 'error',
-                'message' => $e->getMessage(),
+                'message' => 'Terjadi kesalahan sistem: ' . $e->getMessage(),
             ], 500);
         }
     }
@@ -281,10 +251,9 @@ class LokerV2Controller extends Controller
         }
 
         if (! $lokerAktif && ! $dataPusat) {
-            return response()->json(['success' => false, 'message' => 'Data tidak ditemukan! Pastikan kartu terdaftar atau NIK benar.']);
+            return response()->json(['success' => false, 'message' => 'Verifikasi gagal: Data karyawan tidak ditemukan. Pastikan kartu terdaftar atau NIK valid.']);
         }
 
-        // --- LOGIKA PENENTUAN DATA FINAL ---
         $finalNIK = $dataPusat ? $dataPusat->NIK : ($lokerAktif->nik ?? $search);
         $nama     = $dataPusat->EMPNM ?? ($lokerAktif->nama ?? 'Tidak dikenali');
         $divisi   = $dataPusat->DEPTID ?? ($lokerAktif->divisi ?? '-');
@@ -315,7 +284,7 @@ class LokerV2Controller extends Controller
                 'kategori'          => $kategori,
                 'divisi'            => strtoupper($divisi),
                 'no_loker'          => $lokerAktif ? $lokerAktif->no_loker : null,
-                'status_data'       => $lokerAktif ? 'Terdaftar' : 'Data Baru',
+                'status_data'       => $lokerAktif ? 'Telah Dialokasikan' : 'Data Baru',
                 'foto'              => ($dataPusat && $dataPusat->FOTOBLOB)
                     ? 'data:image/jpeg;base64,' . base64_encode($dataPusat->FOTOBLOB)
                     : null,
@@ -327,7 +296,6 @@ class LokerV2Controller extends Controller
     {
         $keyword = trim($request->q);
         $gender  = $request->gender;
-        // $prefix  = $this->getPrefix($gender);
 
         $searchNIK = $keyword;
 
@@ -351,9 +319,7 @@ class LokerV2Controller extends Controller
             Log::error("Koneksi DB Pusat Gagal: " . $e->getMessage());
         }
 
-        // CARI DI TABEL LOKER
         $data = DB::table('loker_penghuni')
-        // ->where('kode_rak', $prefix)
             ->where('is_active', 'Y')
             ->where(function ($q) use ($searchNIK, $keyword) {
                 $q->whereRaw('CAST(nik AS UNSIGNED) = CAST(? AS UNSIGNED)', [$searchNIK])
@@ -371,7 +337,7 @@ class LokerV2Controller extends Controller
                     'is_wrong_tab' => true,
                     'no_loker'     => $data->no_loker,
                     'gender'       => $foundGender,
-                    'message'      => "Karyawan atas nama {$data->nama} terdaftar di Loker " . ($foundGender == 'L' ? 'PRIA' : 'WANITA') . ". Silahkan pindah tab.",
+                    'message'      => "Karyawan a.n. {$data->nama} teralokasi di Loker Area " . ($foundGender == 'L' ? 'PRIA' : 'WANITA') . ". Silakan beralih ke tab yang sesuai.",
                 ]);
             }
 
@@ -383,7 +349,7 @@ class LokerV2Controller extends Controller
             ]);
         }
 
-        return response()->json(['success' => false, 'message' => 'Loker tidak ditemukan.']);
+        return response()->json(['success' => false, 'message' => 'Data alokasi loker tidak ditemukan.']);
     }
 
     public function apiSuggestLoker(Request $request)
@@ -396,11 +362,11 @@ class LokerV2Controller extends Controller
             ->where('is_active', 'Y')
             ->where(function ($q) {
                 $q->whereNull('keterangan_kondisi')
+                    ->orWhere('keterangan_kondisi', 'NOT LIKE', '%Pemeliharaan%')
                     ->orWhere('keterangan_kondisi', 'NOT LIKE', '%Rusak%');
             })
             ->where(function ($q) use ($kategori, $prefix) {
                 if ($kategori === 'staff') {
-                    // Loker benar-benar kosong (0 penghuni)
                     $q->whereNotExists(function ($sq) use ($prefix) {
                         $sq->select(DB::raw(1))
                             ->from('loker_penghuni')
@@ -409,7 +375,6 @@ class LokerV2Controller extends Controller
                             ->where('loker_penghuni.is_active', 'Y');
                     });
                 } else {
-                    // Non-staff: isi < 2 DAN tidak ada staff di dalamnya
                     $q->whereRaw("(SELECT COUNT(*) FROM loker_penghuni
                               WHERE no_loker = loker_rak.no_loker
                               AND kode_rak = ?
@@ -432,6 +397,7 @@ class LokerV2Controller extends Controller
             'rekomendasi_loker' => $suggest ? $suggest->no_loker : 'penuh',
         ]);
     }
+
     public function getAvailableLockers($gender, $kategori = 'non_staff')
     {
         $prefix = $this->getPrefix($gender);
@@ -451,7 +417,6 @@ class LokerV2Controller extends Controller
                 AND loker_penghuni.is_active = 'Y'
                 AND loker_penghuni.kategori_karyawan = 'staff'";
 
-                // Tampilkan semua yang belum penuh (max 2)
                 if ($kategori == 'staff') {
                     $q->whereRaw("($subCount) = 0");
                 } else {
@@ -489,15 +454,12 @@ class LokerV2Controller extends Controller
             ->select('id', 'nik', 'nama', 'divisi', 'kategori_karyawan', 'tgl_masuk')
             ->get()
             ->map(function ($item) {
-                // Jika kolom divisi di loker_penghuni kosong, cari ke sumber lain
                 if (empty($item->divisi) || $item->divisi == '-') {
-                    // 1. Cek ke HRIS Lokal dulu
                     $hris = Karyawan::where('nik', $item->nik)->first();
 
                     if ($hris && ! empty($hris->kode_divisi)) {
                         $item->divisi = $hris->kode_divisi;
                     } else {
-                        // 2. Kalau di HRIS ga ada, tembak ke DB Pusat (154.218)
                         try {
                             $pusat = DB::connection('192.168.178.44-admin')
                                 ->table('MSIDCARD')
@@ -528,13 +490,6 @@ class LokerV2Controller extends Controller
 
     public function updateStatus(Request $request)
     {
-        // if (! in_array('loker_operator', session('permissions'))) {
-        //     return response()->json([
-        //         'status'  => 'error',
-        //         'message' => 'Anda tidak memiliki izin untuk mengubah status unit.',
-        //     ], 403);
-        // }
-
         $request->validate([
             'no_loker' => 'required',
             'status'   => 'required|in:aktif,rusak',
@@ -548,10 +503,10 @@ class LokerV2Controller extends Controller
         $tanggal = date('d-m-Y H:i');
 
         if ($status == 'rusak') {
-            $keterangan = "UNIT RUSAK";
+            $keterangan = "DALAM PEMELIHARAAN";
 
             $alasanRaw = ucwords(strtolower($request->alasan));
-            $catatan   = "Rusak ($alasanRaw - Dilaporkan: $tanggal)";
+            $catatan   = "Pemeliharaan ($alasanRaw - Dilaporkan: $tanggal)";
 
             DB::table('loker_rak')
                 ->where('kode_rak', $prefix)
@@ -568,43 +523,17 @@ class LokerV2Controller extends Controller
                 ->where('no_loker', $noLoker)
                 ->update([
                     'is_active'  => 'Y',
-                    // 'catatan_admin' => "Unit diaktifkan kembali",
                     'updated_at' => now(),
                 ]);
 
             $this->updateKeteranganRak($prefix, $noLoker);
         }
 
-        // $description = ($status == 'rusak') ? strtoupper($request->alasan) . " (Dilaporkan: " . date('d/m/Y H:i') . ")" : null;
-
-        // $affected = DB::table('loker_rak')
-        //     ->where('kode_rak', $prefix)
-        //     ->where('no_loker', $noLoker)
-        //     ->update([
-        //         'is_active'          => ($request->status == 'rusak') ? 'N' : 'Y',
-        //         'keterangan_kondisi' => $description,
-        //         'updated_at'         => now(),
-        //     ]);
-
-        // if ($affected) {
-        //     return response()->json([
-        //         'status'  => 'success',
-        //         'message' => $status == 'rusak' ? 'Unit berhasil ditandai sedang dalam perbaikan.' : 'Unit telah diaktifkan kembali.',
-        //     ]);
-        // }
-
-        return response()->json(['status' => 'success', 'message' => $status == 'rusak' ? 'Unit berhasil ditandai sedang dalam perbaikan.' : 'Unit telah diaktifkan kembali']);
+        return response()->json(['status' => 'success', 'message' => $status == 'rusak' ? 'Loker berhasil ditandai dalam status pemeliharaan.' : 'Loker telah diaktifkan dan siap dialokasikan.']);
     }
 
     public function tarikKunci(Request $request)
     {
-        // if (! in_array('loker_operator', session('permissions'))) {
-        //     return response()->json([
-        //         'status'  => 'error',
-        //         'message' => 'Anda tidak memiliki izin untuk menarik kunci.',
-        //     ], 403);
-        // }
-
         $request->validate([
             'id'     => 'required',
             'alasan' => 'required|string|max:255',
@@ -613,7 +542,7 @@ class LokerV2Controller extends Controller
         return DB::transaction(function () use ($request) {
             $p = DB::table('loker_penghuni')->where('id', $request->id)->first();
             if (! $p) {
-                return response()->json(['status' => 'error', 'message' => 'Data tidak ditemukan'], 422);
+                return response()->json(['status' => 'error', 'message' => 'Data alokasi tidak ditemukan.'], 422);
             }
 
             DB::table('loker_penghuni')
@@ -633,33 +562,13 @@ class LokerV2Controller extends Controller
             $alasan  = ucwords($request->alasan);
             $tanggal = date('d-m-Y');
 
-            // $keterangan = "Pengosongan Unit - $alasan";
-            // $catatan    = "Kunci ditarik pada: $tanggal";
-
-            // $keterangan = $sisaPenghuni ? 'Terisi: ' . $sisaPenghuni->nik . ' - ' . $sisaPenghuni->nama : null;
-
-            // if (empty($sisaPenghuni)) {
-            //     $keterangan = null;
-            // } else {
-            //     $keterangan = 'Terisi: ' . $sisaPenghuni->nik . ' - ' . $sisaPenghuni->nama;
-            // }
-
-            // DB::table('loker_rak')
-            //     ->where('kode_rak', $p->kode_rak)
-            //     ->where('no_loker', $p->no_loker)
-            //     ->update([
-            //         'keterangan_kondisi' => $keterangan,
-            //         'catatan_admin'      => $catatan,
-            //         'updated_at'         => now(),
-            //     ]);
-
             if (! $sisaPenghuni) {
                 DB::table('loker_rak')
                     ->where('kode_rak', $p->kode_rak)
                     ->where('no_loker', $p->no_loker)
                     ->update([
-                        'keterangan_kondisi' => 'Pengosongan Unit: ' . $alasan,
-                        'catatan_admin'      => "Kunci ditarik pada: $tanggal",
+                        'keterangan_kondisi' => 'Pengosongan Loker: ' . $alasan,
+                        'catatan_admin'      => "Fasilitas dicabut pada: $tanggal",
                         'updated_at'         => now(),
                     ]);
             } else {
@@ -667,27 +576,22 @@ class LokerV2Controller extends Controller
                     ->where('kode_rak', $p->kode_rak)
                     ->where('no_loker', $p->no_loker)
                     ->update([
-                        'catatan_admin' => "Salah satu penghuni ditarik ($alasan) - $tanggal",
+                        'catatan_admin' => "Pencabutan sebagian fasilitas ($alasan) - $tanggal",
                         'updated_at'    => now(),
                     ]);
             }
 
-            // $this->updateKeteranganRak($p->kode_rak, $p->no_loker);
-
+            // KEMBALI KE ENUM: 'KELUAR'
             DB::table('loker_transaksi')->insert([
                 'nik'            => $p->nik ?? '-',
-                'nama'           => $p->nama,
+                'nama'           => ucwords(strtolower($p->nama)),
                 'kode_rak'       => $p->kode_rak,
                 'no_loker'       => $p->no_loker,
                 'tipe_transaksi' => 'KELUAR',
                 'operator'       => auth()->user()->name ?? 'Sistem',
-                'keterangan'     => $alasan,
+                'keterangan'     => "Pencabutan Fasilitas: " . $alasan, // Penjelasan masuk sini
                 'created_at'     => now(),
             ]);
-
-            // DB::table('loker_penghuni')->where('id', $request->id)->update([
-            //     'is_active' => 'N', 'tgl_keluar' => now(), 'updated_at' => now(),
-            // ]);
 
             return response()->json(['status' => 'success']);
         });
@@ -702,16 +606,11 @@ class LokerV2Controller extends Controller
             ->orderBy('id', 'asc')
             ->get();
 
-        // $daftarNama = $allPenghuni->map(fn($p) => $p->nik . " - " . $p->nama)->implode(' | ');
-
         if ($allPenghuni->isEmpty()) {
             $keterangan = "Tersedia";
             $catatan    = null;
         } else {
-            // $daftarNama = $allPenghuni->map(function ($p) {
-            //     return $p->nik . " - " . $p->nama;
-            // })->implode(' | ');
-            $keterangan = "Unit Aktif";
+            $keterangan = "Telah Dialokasikan";
             $catatan    = null;
         }
 
@@ -727,10 +626,8 @@ class LokerV2Controller extends Controller
 
     public function store(Request $request)
     {
-        // 1. SECURITY CHECK
         $this->permission('loker_operator');
 
-        // 2. VALIDATION
         $request->validate([
             'nik'      => 'required',
             'no_loker' => 'required',
@@ -741,7 +638,6 @@ class LokerV2Controller extends Controller
         $prefix   = $this->getPrefix($request->gender);
         $operator = auth()->user()->name ?? 'Sistem';
 
-        // 3. EXTERNAL DB DATA (Gunakan try-catch yang sudah ada)
         $dataExternal = null;
         try {
             $dataExternal = DB::connection('192.168.178.44-admin')
@@ -754,7 +650,6 @@ class LokerV2Controller extends Controller
             Log::error("Koneksi DB Pusat Gagal: " . $e->getMessage());
         }
 
-        // 4. MAPPING DATA
         if ($dataExternal) {
             $nikFix       = $dataExternal->NIK;
             $namaKaryawan = $dataExternal->EMPNM;
@@ -766,10 +661,9 @@ class LokerV2Controller extends Controller
             $divisi       = $request->dept;
             $kategori     = $request->kategori_karyawan ?? 'non_staff';
         } else {
-            return response()->json(['status' => 'error', 'message' => "Data tidak ditemukan!"], 422);
+            return response()->json(['status' => 'error', 'message' => "Verifikasi gagal: Data karyawan tidak ditemukan."], 422);
         }
 
-        // 5. DATABASE TRANSACTION
         return DB::transaction(function () use ($request, $nikFix, $namaKaryawan, $divisi, $kategori, $prefix, $operator) {
 
             $kondisiRak = DB::table('loker_rak')
@@ -777,10 +671,9 @@ class LokerV2Controller extends Controller
                 ->first();
 
             if ($kondisiRak && $kondisiRak->is_active === 'N') {
-                return response()->json(['status' => 'error', 'message' => "Gagal! Loker nomor {$request->no_loker} sedang dalam status " . ($kondisiRak->keterangan_kondisi ?? 'RUSAK')], 422);
+                return response()->json(['status' => 'error', 'message' => "Penempatan gagal! Loker nomor {$request->no_loker} berstatus: " . ($kondisiRak->keterangan_kondisi ?? 'DALAM PEMELIHARAAN')], 422);
             }
 
-            // Validasi Loker Staff
             if ($kategori === 'staff') {
                 $isOccupied = DB::table('loker_penghuni')
                     ->where(['kode_rak' => $prefix, 'no_loker' => $request->no_loker, 'is_active' => 'Y'])
@@ -788,11 +681,10 @@ class LokerV2Controller extends Controller
                     ->exists();
 
                 if ($isOccupied) {
-                    return response()->json(['status' => 'error', 'message' => 'Loker Staff sudah terisi!'], 422);
+                    return response()->json(['status' => 'error', 'message' => 'Kapasitas loker khusus Staff telah terpenuhi!'], 422);
                 }
             }
 
-            // Relokasi Otomatis (Matikan Loker Lama)
             $lokerLama = DB::table('loker_penghuni')
                 ->where('is_active', 'Y')
                 ->whereRaw("CAST(nik AS UNSIGNED) = CAST(? AS UNSIGNED)", [$nikFix])
@@ -805,22 +697,21 @@ class LokerV2Controller extends Controller
                     'updated_at' => now(),
                 ]);
 
-                // Log Transaksi Keluar
+                // KEMBALI KE ENUM: 'PINDAH'
                 DB::table('loker_transaksi')->insert([
                     'nik'            => $lokerLama->nik,
                     'nama'           => $namaKaryawan,
                     'kode_rak'       => $lokerLama->kode_rak,
                     'no_loker'       => $lokerLama->no_loker,
-                    'tipe_transaksi' => 'KELUAR (PINDAH)',
+                    'tipe_transaksi' => 'PINDAH',
                     'operator'       => $operator,
-                    'keterangan'     => "Pindah ke {$prefix}-{$request->no_loker}",
+                    'keterangan'     => "Relokasi ke area {$prefix}-{$request->no_loker}", // Penjelasan masuk sini
                     'created_at' => now(),
                 ]);
 
                 $this->updateKeteranganRak($lokerLama->kode_rak, $lokerLama->no_loker);
             }
 
-            // Simpan Data Baru
             DB::table('loker_penghuni')->insert([
                 'nik'               => $nikFix,
                 'nama'              => strtoupper($namaKaryawan),
@@ -836,7 +727,7 @@ class LokerV2Controller extends Controller
 
             $this->updateKeteranganRak($prefix, $request->no_loker);
 
-            // Log Transaksi Masuk
+            // KEMBALI KE ENUM: 'MASUK'
             DB::table('loker_transaksi')->insert([
                 'nik'            => $nikFix,
                 'nama'           => $namaKaryawan,
@@ -844,10 +735,11 @@ class LokerV2Controller extends Controller
                 'no_loker'       => $request->no_loker,
                 'tipe_transaksi' => 'MASUK',
                 'operator'       => $operator,
+                'keterangan'     => 'Alokasi Penempatan Baru', // Penjelasan tambahan
                 'created_at'     => now(),
             ]);
 
-            return response()->json(['status' => 'success', 'message' => 'Berhasil disimpan!']);
+            return response()->json(['status' => 'success', 'message' => 'Alokasi penempatan berhasil disimpan.']);
         });
     }
 
@@ -877,7 +769,6 @@ class LokerV2Controller extends Controller
             DB::transaction(function () use ($request, $gender, $prefix, $sheetIndex) {
                 DB::table('loker_penghuni')->where('kode_rak', $prefix)->delete();
 
-                // 2. Jalankan Import Excel
                 $importInstance = new LokerImport($gender);
                 $selector       = new LokerSheetSelectorImport($sheetIndex, $importInstance);
 
@@ -894,10 +785,10 @@ class LokerV2Controller extends Controller
 
             return response()->json([
                 'status'  => 'success',
-                'message' => 'Import sukses! Data plotting Excel diperbarui.',
+                'message' => 'Proses unggah berhasil! Data alokasi loker telah disinkronisasi.',
             ]);
         } catch (\Exception $e) {
-            return response()->json(['status' => 'error', 'message' => 'Gagal: ' . $e->getMessage()], 500);
+            return response()->json(['status' => 'error', 'message' => 'Terjadi kesalahan sistem: ' . $e->getMessage()], 500);
         }
     }
 
@@ -928,7 +819,7 @@ class LokerV2Controller extends Controller
         if (! $loker) {
             return response()->json([
                 'status'  => 'error',
-                'message' => 'Data tidak ditemukan',
+                'message' => 'Data master loker tidak ditemukan.',
             ], 404);
         }
 
@@ -940,11 +831,10 @@ class LokerV2Controller extends Controller
         if ($isOccupied) {
             return response()->json([
                 'status'  => 'error',
-                'message' => "Loker {$loker->no_loker} gagal dihapus karena masih ada penghuninya!",
+                'message' => "Loker {$loker->no_loker} gagal dihapus karena masih memiliki data alokasi karyawan aktif.",
             ], 422);
         }
 
-        // $kodeRak = $loker->kode_rak;
         $gender = $loker->gender;
 
         DB::table('loker_rak')->where('id', $id)->delete();
@@ -965,7 +855,7 @@ class LokerV2Controller extends Controller
 
         return response()->json([
             'status'  => 'success',
-            'message' => "Loker {$loker->no_loker} berhasil dihapus.",
+            'message' => "Data loker {$loker->no_loker} berhasil dihapus dari sistem.",
             'newTotal' => $data->total(),
             'html'     => $html,
             'gender'   => $gender,
