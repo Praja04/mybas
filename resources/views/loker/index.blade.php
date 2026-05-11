@@ -874,17 +874,33 @@
             });
 
             // listener khusus jika gender dipilih secara manual (is_gender_empty case)
-            $('#plot_gender_val_manual').on('change', function() {
-                let gender = $(this).val();
-                let kategori = $('#plot_kategori_val').val();
-                let nik = $('#plot_nik').val();
+            // $('#plot_gender_val_manual').on('change', function() {
+            //     let gender = $(this).val();
+            //     let kategori = $('#plot_kategori_val').val();
+            //     let nik = $('#plot_nik').val();
 
-                if (gender) {
-                    loadAvailableLockers(gender, kategori)
-                        .then(() => {
-                            getSuggestion(nik, gender, kategori);
-                        });
-                }
+            //     if (gender) {
+            //         loadAvailableLockers(gender, kategori)
+            //             .then(() => {
+            //                 getSuggestion(nik, gender, kategori);
+            //             });
+            //     }
+            // });
+
+            // $('#plot_kategori_val_manual').on('change', function() {
+            //     let gender = $('#plot_gender_val').val();
+            //     let kategori = $(this).val();
+            //     let nik = $('#plot_nik').val();
+
+            //     if (kategori) {
+            //         loadAvailableLockers(gender, kategori).then(() => {
+            //             getSuggestion(nik, gender, kategori);
+            //         });
+            //     }
+            // });
+
+            $('#plot_gender_val_manual, #plot_kategori_val_manual').on('change', function() {
+                checkAndLoadLockers();
             });
 
             // 7. HANDLING SUBMIT IMPORT AJAX
@@ -1172,12 +1188,15 @@
                         // FOTO
                         $('#plot_foto_img').attr('src', d.foto ? d.foto : state.defaultFoto);
 
+                        let readyToLoad = true;
+
                         // GENDER HANDLING (DARI CONTROLLER)
                         if (d.is_gender_empty) {
                             $('#plot_gender_val').val('');
                             $('#plot_gender_label_container').hide();
                             $('#plot_gender_select_container').show();
                             $('#plot_gender_val_manual').val('').addClass('is-invalid');
+                            readyToLoad = false;
                         } else {
                             $('#plot_gender_val').val(d.gender);
                             $('#plot_gender_select_container').hide();
@@ -1185,6 +1204,25 @@
                             $('#plot_gender_label').val(d.gender === 'L' ? 'LAKI-LAKI' : 'PEREMPUAN');
 
                             // Load loker jika gender sudah ada
+                            loadAvailableLockers(d.gender, d.kategori).then(() => {
+                                getSuggestion(d.nik, d.gender, d.kategori);
+                            });
+                        }
+
+                        if (d.is_category_empty) {
+                            $('#plot_kategori_val').val('');
+                            $('#plot_kategori_label_container').hide();
+                            $('#plot_kategori_select_container').show();
+                            $('#plot_kategori_val_manual').val('').addClass('is-invalid');
+                            readyToLoad = false;
+                        } else {
+                            $('#plot_kategori_val').val(d.kategori);
+                            $('#plot_kategori_select_container').hide();
+                            $('#plot_kategori_label_container').show();
+                            $('#plot_kategori_label').val(d.kategori === 'staff' ? 'STAFF' : 'NON-STAFF');
+                        }
+
+                        if (readyToLoad) {
                             loadAvailableLockers(d.gender, d.kategori).then(() => {
                                 getSuggestion(d.nik, d.gender, d.kategori);
                             });
@@ -1217,6 +1255,18 @@
             $('#select_no_loker').empty().append('<option value="">-- Pilih Unit --</option>');
             $('#btnSimpanPlot').attr('disabled', true).addClass('btn-light').removeClass('btn-primary shadow-sm');
             $('#modalPlottingTitle').text("Plotting Loker");
+        }
+
+        function checkAndLoadLockers() {
+            let gender = $('#plot_gender_select_container').is(':visible') ? $('#plot_gender_val_manual').val() : $('#plot_gender_val').val();
+            let kategori = $('#plot_kategori_select_container').is(':visible') ? $('#plot_kategori_val_manual').val() : $('#plot_kategori_val').val();
+            let nik = $('#plot_nik').val();
+            
+            if (gender && kategori && nik) {
+                loadAvailableLockers(gender, kategori).then(() => {
+                    getSuggestion(nik, gender, kategori);
+                });
+            }
         }
 
         function loadAvailableLockers(gender, kategori) {
@@ -1272,19 +1322,25 @@
             let genderFinal = $('#plot_gender_select_container').is(':visible') ?
                 $('#plot_gender_val_manual').val() :
                 $('#plot_gender_val').val();
+            
+            let kategoriFinal = $('#plot_kategori_select_container').is(':visible') ?
+                $('#plot_kategori_val_manual').val() :
+                $('#plot_kategori_val').val();
 
             if (!genderFinal) {
                 Swal.fire('Perhatian', 'Gender belum ditentukan!', 'warning');
                 return;
             }
 
-            let formData = $('#formPlotting').serializeArray();
+            if (!kategoriFinal) {
+                Swal.fire('Perhatian', 'Kategori belum ditentukan!', 'warning');
+                return;
+            }
 
-            // Pastikan gender masuk ke payload
-            formData.push({
-                name: 'gender',
-                value: genderFinal
-            });
+            $('#plot_gender_val').val(genderFinal);
+            $('#plot_kategori_val').val(kategoriFinal);
+
+            let formData = $('#formPlotting').serialize();
 
             KTApp.block('#modalPlotting .modal-content', {
                 message: 'Menyimpan...'

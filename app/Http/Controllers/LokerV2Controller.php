@@ -290,29 +290,33 @@ class LokerV2Controller extends Controller
         $divisi   = $dataPusat->DEPTID ?? ($lokerAktif->divisi ?? '-');
         $kategori = $lokerAktif ? $lokerAktif->kategori_karyawan : $this->getKategoriKaryawan($dataPusat);
 
-        $gender        = null;
-        $isGenderEmpty = true;
+        $gender          = null;
+        $isGenderEmpty   = true;
+        $isCategoryEmpty = true;
 
         if ($lokerAktif) {
             $gender = ($lokerAktif->kode_rak == 'LP') ? 'L' : (($lokerAktif->kode_rak == 'LW') ? 'P' : null);
             if ($gender) {
                 $isGenderEmpty = false;
             }
-
+            if ($kategori) {
+                $isCategoryEmpty = false;
+            }
         }
 
         return response()->json([
             'success' => true,
             'data'    => [
-                'nik'             => $finalNIK,
-                'nama'            => strtoupper($nama),
-                'gender'          => $gender,
-                'is_gender_empty' => $isGenderEmpty,
-                'kategori'        => $kategori,
-                'divisi'          => strtoupper($divisi),
-                'no_loker'        => $lokerAktif ? $lokerAktif->no_loker : null,
-                'status_data'     => $lokerAktif ? 'Terdaftar' : 'Data Baru',
-                'foto'            => ($dataPusat && $dataPusat->FOTOBLOB)
+                'nik'               => $finalNIK,
+                'nama'              => strtoupper($nama),
+                'gender'            => $gender,
+                'is_gender_empty'   => $isGenderEmpty,
+                'is_category_empty' => $isCategoryEmpty,
+                'kategori'          => $kategori,
+                'divisi'            => strtoupper($divisi),
+                'no_loker'          => $lokerAktif ? $lokerAktif->no_loker : null,
+                'status_data'       => $lokerAktif ? 'Terdaftar' : 'Data Baru',
+                'foto'              => ($dataPusat && $dataPusat->FOTOBLOB)
                     ? 'data:image/jpeg;base64,' . base64_encode($dataPusat->FOTOBLOB)
                     : null,
             ],
@@ -740,7 +744,7 @@ class LokerV2Controller extends Controller
         // 3. EXTERNAL DB DATA (Gunakan try-catch yang sudah ada)
         $dataExternal = null;
         try {
-            $dataExternal = DB::connection('192.168.178.44-admin') // Sebaiknya pakai nama alias di config
+            $dataExternal = DB::connection('192.168.178.44-admin')
                 ->table('MSIDCARD')
                 ->select('NIK', 'EMPNM', 'DEPTID', 'TYPECARD')
                 ->whereRaw("CAST(NIK AS UNSIGNED) = CAST(? AS UNSIGNED)", [$nikInput])
@@ -886,46 +890,6 @@ class LokerV2Controller extends Controller
                 foreach ($allLockers as $noLoker) {
                     $this->updateKeteranganRak($prefix, $noLoker);
                 }
-
-                // $newPenghuni = DB::table('loker_penghuni')
-                //     ->where('kode_rak', $prefix)
-                //     ->get()
-                //     ->groupBy('no_loker');
-
-                // foreach ($newPenghuni as $noLoker => $items) {
-                //     // $label = null;
-
-                //     // if (count($items) > 0) {
-                //     //     // $p     = $items[0];
-                //     //     // $count = count($items);
-                //     //     // $label = "Terisi: " . ($p->nik ?? '-') . " - " . ($p->nama ?? '-');
-                //     //     // if ($count > 1) {
-                //     //     //     $label .= " (+$count)";
-                //     //     // }
-                //     //     // $label = substr($label, 0, 250);
-                //     $daftarPenghuni = $items->map(function ($item) {
-                //         $nikAsli    = trim($item->nik);
-                //         $namaBersih = strtoupper(trim($item->nama));
-                //         return $nikAsli . " - " . $namaBersih;
-                //     })->implode(' | ');
-
-                //     $label = "Terisi: " . $daftarPenghuni;
-
-                //     if (strlen($label) > 250) {
-                //         $label = substr($label, 0, 247) . '...';
-                //     }
-
-                //     DB::table('loker_rak')->updateOrInsert(
-                //         ['kode_rak' => $prefix, 'no_loker' => $noLoker],
-                //         [
-                //             'gender'             => $gender,
-                //             'is_active'          => 'Y',
-                //             'catatan_admin'      => null,
-                //             'keterangan_kondisi' => $label,
-                //             'updated_at'         => now(),
-                //         ]
-                //     );
-                // }
             });
 
             return response()->json([
