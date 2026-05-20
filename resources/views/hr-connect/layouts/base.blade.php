@@ -14,11 +14,11 @@ $menus = [
                 'path' => 'hr-connect',
                 'label' => 'Dashboard',
                 'icon' => 'mdi-monitor-dashboard',
-                'submenu' => []
-            ]
+                'submenu' => [],
+            ],
         ],
     ],
-     
+
     [
         'label' => 'Master Data',
         'permission' => ['hr_connect_master'],
@@ -28,14 +28,14 @@ $menus = [
                 'label' => 'Admin Department',
                 'permission' => 'hr_connect_master',
                 'icon' => 'mdi-account-cog',
-                'submenu' => []
+                'submenu' => [],
             ],
             [
                 'path' => 'hr-connect/masters/loker-user',
                 'label' => 'Loker User',
                 'permission' => 'hr_connect_master',
                 'icon' => 'mdi-account-cog',
-                'submenu' => []
+                'submenu' => [],
             ],
         ],
     ],
@@ -48,8 +48,8 @@ $menus = [
                 'label' => 'Karyawan Masuk',
                 'permission' => 'hr_connect_ga',
                 'icon' => 'mdi-account-check',
-                'submenu' => []
-            ]
+                'submenu' => [],
+            ],
         ],
     ],
     [
@@ -60,8 +60,8 @@ $menus = [
                 'label' => 'Persiapan Perlengkapan Goodie Bag & APD',
                 'permission' => 'hr_connect_ga',
                 'icon' => 'mdi-checkbox-marked',
-                'submenu' => []
-            ]
+                'submenu' => [],
+            ],
         ],
     ],
     [
@@ -72,12 +72,12 @@ $menus = [
                 'label' => 'Karyawan Keluar',
                 'permission' => 'hr_connect_ga',
                 'icon' => 'mdi-account-remove',
-                'submenu' => []
-            ]
+                'submenu' => [],
+            ],
         ],
     ],
     [
-        'label' => 'HRD IR', 
+        'label' => 'HRD IR',
         'permission' => ['hr_connect_ir'],
         'menu' => [
             [
@@ -85,12 +85,12 @@ $menus = [
                 'label' => 'Shift Out Karyawan',
                 'permission' => 'hr_connect_ir',
                 'icon' => 'mdi-arrow-right',
-                'submenu' => []
-            ]
+                'submenu' => [],
+            ],
         ],
     ],
     [
-        'label' => '', 
+        'label' => '',
         'permission' => ['hr_connect_ir'],
         'menu' => [
             [
@@ -98,12 +98,12 @@ $menus = [
                 'label' => 'Karyawan Keluar',
                 'permission' => 'hr_connect_ir',
                 'icon' => 'mdi-account-off',
-                'submenu' => []
-            ]
+                'submenu' => [],
+            ],
         ],
     ],
     [
-        'label' => '', 
+        'label' => '',
         'permission' => ['hr_connect_ir'],
         'menu' => [
             [
@@ -111,12 +111,12 @@ $menus = [
                 'label' => 'Pemulihan Data',
                 'permission' => 'hr_connect_ir',
                 'icon' => 'mdi-restore',
-                'submenu' => []
-            ]
+                'submenu' => [],
+            ],
         ],
     ],
     [
-        'label' => '', 
+        'label' => '',
         'permission' => ['hr_connect_ir'],
         'menu' => [
             [
@@ -124,12 +124,12 @@ $menus = [
                 'label' => 'Report Karyawan Keluar',
                 'permission' => 'hr_connect_ir',
                 'icon' => 'mdi-file-document',
-                'submenu' => []
-            ]
+                'submenu' => [],
+            ],
         ],
     ],
     [
-        'label' => 'Report', 
+        'label' => 'Report',
         'permission' => ['hr_connect_report'],
         'menu' => [
             [
@@ -137,12 +137,12 @@ $menus = [
                 'label' => 'Karyawan Masuk',
                 'permission' => 'hr_connect_report',
                 'icon' => 'mdi-file-document',
-                'submenu' => []
-            ]
+                'submenu' => [],
+            ],
         ],
     ],
     [
-        'label' => '', 
+        'label' => '',
         'permission' => ['hr_connect_report'],
         'menu' => [
             [
@@ -150,12 +150,12 @@ $menus = [
                 'label' => 'Karyawan Keluar',
                 'permission' => 'hr_connect_report',
                 'icon' => 'mdi-file-document',
-                'submenu' => []
-            ]
+                'submenu' => [],
+            ],
         ],
     ],
     [
-        'label' => '', 
+        'label' => '',
         'permission' => ['hr_connect_report'],
         'menu' => [
             [
@@ -163,23 +163,25 @@ $menus = [
                 'label' => 'Kalender Karyawan',
                 'permission' => 'hr_connect_report',
                 'icon' => 'mdi-calendar-clock',
-                'submenu' => []
-            ]
+                'submenu' => [],
+            ],
         ],
     ],
-    $isAdminAllowed ? [
-        'label' => 'Admin', 
-        'permission' => ['hr_connect_admin'],
-        'menu' => [
-            [
-                'path' => 'hr-connect/dept-adm/data-karyawan',
-                'label' => 'Data Karyawan',
-                'permission' => 'hr_connect_admin',
-                'icon' => 'mdi-account-details',
-                'submenu' => []
-            ]
-        ],
-    ] : [],
+    $isAdminAllowed
+        ? [
+            'label' => 'Admin',
+            'permission' => ['hr_connect_admin'],
+            'menu' => [
+                [
+                    'path' => 'hr-connect/dept-adm/data-karyawan',
+                    'label' => 'Data Karyawan',
+                    'permission' => 'hr_connect_admin',
+                    'icon' => 'mdi-account-details',
+                    'submenu' => [],
+                ],
+            ],
+        ]
+        : [],
 ];
 
 ?>

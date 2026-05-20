@@ -1,234 +1,273 @@
 @extends('layouts.base')
 
 @push('styles')
-<link rel="stylesheet" href="{{ url('/assets/plugins/custom/datatables/datatables.bundle.css') }}">
+    <link rel="stylesheet" href="{{ url('/assets/plugins/custom/datatables/datatables.bundle.css') }}">
 
-<style>
-    :root {
-        --bas-primary: #F59E0B;
-        --bas-primary-dark: #D97706;
-        --bas-primary-light: #FEF3C7;
-        --bas-neutral: #6B7280;
-        --bas-neutral-light: #F3F4F6;
-        --bas-dark: #374151;
-        --bas-border: #E5E7EB;
-        --bas-surface: #FFFFFF;
-        --bas-radius-md: 12px;
-        --bas-radius-lg: 18px;
-        --bas-transition: all 0.2s ease;
-    }
+    <style>
+        :root {
+            --bas-primary: #F59E0B;
+            --bas-primary-dark: #D97706;
+            --bas-primary-light: #FEF3C7;
+            --bas-neutral: #6B7280;
+            --bas-neutral-light: #F3F4F6;
+            --bas-dark: #374151;
+            --bas-border: #E5E7EB;
+            --bas-surface: #FFFFFF;
+            --bas-radius-md: 12px;
+            --bas-radius-lg: 18px;
+            --bas-transition: all 0.2s ease;
+        }
 
-    table tbody tr td {
-        padding-top: 4px !important;
-        padding-bottom: 4px !important;
-    }
+        /* 1. PERBAIKAN STRUKTUR LAYER (Z-INDEX) */
+        #kt_header {
+            z-index: 1100 !important;
+        }
 
-    .swal2-icon {
-        margin: auto !important;
-    }
+        .modal {
+            z-index: 1070 !important;
+        }
 
-    /* Override Body Background agar kartu terlihat pop-out */
-    .content {
-        background-color: #F9FAFB !important;
-    }
+        .modal-backdrop {
+            z-index: 1060 !important;
+        }
 
-    /* ---- HEADER STYLE (Matching Loker) ---- */
-    .bas-header {
-        background: linear-gradient(135deg, #1F2937 0%, #111827 100%);
-        border: 1px solid rgba(255, 255, 255, 0.05);
-        border-radius: var(--bas-radius-lg);
-    }
+        .popover {
+            z-index: 1040 !important;
+        }
 
-    .bas-header-icon {
-        width: 56px;
-        height: 56px;
-        background: rgba(245, 158, 11, 0.15);
-        border: 1px solid rgba(245, 158, 11, 0.3);
-        border-radius: var(--bas-radius-md);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 22px;
-        color: var(--bas-primary);
-        flex-shrink: 0;
-    }
+        .swal2-container {
+            z-index: 2000 !important;
+        }
 
-    .bas-header-title {
-        font-size: 20px;
-        font-weight: 700;
-        color: #FFFFFF;
-        letter-spacing: -0.3px;
-        margin-bottom: 0;
-    }
+        .swal2-icon {
+            margin: auto !important;
+        }
 
-    .bas-header-sub {
-        font-size: 13px;
-        color: rgba(255, 255, 255, 0.5);
-        margin-top: 2px;
-    }
+        /* 2. LAYOUT & HEADER */
+        .content {
+            background-color: #F9FAFB !important;
+            padding-top: 20px;
+            /* Jarak aman dari navbar */
+        }
 
-    /* ---- TABLE CARD & DATATABLE ---- */
-    .bas-tab-card {
-        background: var(--bas-surface) !important;
-        border: 1.5px solid var(--bas-border);
-        border-radius: var(--bas-radius-lg);
-        overflow: hidden;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-    }
+        .bas-header {
+            background: linear-gradient(135deg, #1F2937 0%, #111827 100%);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: var(--bas-radius-lg);
+            position: relative;
+            z-index: 1;
+            margin-bottom: 25px;
+        }
 
-    /* PERBAIKAN: Selector diubah dari #table_permission menjadi #table-user */
-    #table-user {
-        border-collapse: separate;
-        border-spacing: 0;
-        width: 100% !important;
-    }
+        .bas-header-icon {
+            width: 56px;
+            height: 56px;
+            background: rgba(245, 158, 11, 0.15);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            border-radius: var(--bas-radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            color: var(--bas-primary);
+            flex-shrink: 0;
+        }
 
-    #table-user thead th {
-        background-color: var(--bas-neutral-light);
-        color: var(--bas-neutral);
-        font-weight: 700;
-        font-size: 11px;
-        text-transform: uppercase;
-        letter-spacing: 0.8px;
-        padding: 18px 15px;
-        border: none;
-    }
+        .bas-header-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #FFFFFF;
+            letter-spacing: -0.3px;
+            margin-bottom: 0;
+        }
 
-    #table-user td {
-        padding: 16px 15px;
-        border-bottom: 1px solid var(--bas-border);
-        color: var(--bas-dark);
-        vertical-align: middle;
-    }
+        .bas-header-sub {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.5);
+            margin-top: 2px;
+        }
 
-    #table-user tbody tr:hover {
-        background-color: #FFFBEB !important;
-        /* Soft yellow hover */
-    }
+        /* 3. TABLE CARD STYLE */
+        .bas-tab-card {
+            background: var(--bas-surface) !important;
+            border: 1.5px solid var(--bas-border);
+            border-radius: var(--bas-radius-lg);
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
 
-    /* ---- CUSTOM BUTTONS ---- */
-    .bas-btn-primary {
-        background: var(--bas-primary);
-        border: none;
-        color: #FFFFFF;
-        font-weight: 600;
-        border-radius: var(--bas-radius-md);
-        transition: var(--bas-transition);
-    }
+        /* Styling Spesifik Tabel User */
+        #table-user {
+            border-collapse: separate;
+            border-spacing: 0;
+            width: 100% !important;
+        }
 
-    .bas-btn-primary:hover {
-        background: var(--bas-primary-dark);
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
-        color: #FFFFFF;
-    }
+        #table-user thead th {
+            background-color: var(--bas-neutral-light);
+            color: var(--bas-neutral);
+            font-weight: 700;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            padding: 20px 25px;
+            border: none;
+        }
 
-    /* 5. PERMISSION GRID & MODAL */
-    .auth-permissions {
-        list-style: none;
-        padding: 0;
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-        gap: 15px;
-        width: 100%;
-    }
+        #table-user tbody td {
+            padding: 18px 25px;
+            vertical-align: middle;
+            border-bottom: 1px solid var(--bas-border);
+            color: var(--bas-dark);
+        }
 
-    .permission-item {
-        padding: 15px;
-        border-radius: var(--bas-radius-md);
-        border: 1.5px solid var(--bas-border);
-        background-color: var(--bas-surface);
-        transition: var(--bas-transition);
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        position: relative;
-    }
+        #table-user tbody tr:hover {
+            background-color: #FFFBEB !important;
+            transition: var(--bas-transition);
+        }
 
-    .permission-item.selected {
-        border-color: var(--bas-primary);
-        background-color: var(--bas-primary-light);
-    }
+        /* Area Pagination & Search Datatables */
+        .dataTables_wrapper .row:last-child {
+            padding: 1.25rem 1.5rem;
+            border-top: 1px solid var(--bas-border);
+            background-color: var(--bas-neutral-light);
+        }
 
-    .permission-item.selected::before {
-        content: '✓';
-        position: absolute;
-        top: 5px;
-        right: 8px;
-        font-size: 10px;
-        color: var(--bas-primary);
-        font-weight: bold;
-    }
+        .dataTables_filter,
+        .dataTables_length {
+            padding: 1.5rem;
+        }
 
-    .separator-text {
-        grid-column: 1 / -1;
-        padding: 20px 0 10px 0;
-        font-weight: 800;
-        color: var(--bas-dark);
-        text-transform: uppercase;
-        font-size: 11px;
-        letter-spacing: 1.5px;
-        display: flex;
-        align-items: center;
-    }
+        /* 4. UTILITY & BUTTONS */
+        .bas-btn-primary {
+            background: var(--bas-primary);
+            border: none;
+            color: #FFFFFF;
+            font-weight: 600;
+            border-radius: var(--bas-radius-md);
+            transition: var(--bas-transition);
+            height: 45px;
+        }
 
-    .separator-text::after {
-        content: "";
-        flex: 1;
-        height: 1px;
-        background: var(--bas-border);
-        margin-left: 15px;
-    }
+        .bas-btn-primary:hover {
+            background: var(--bas-primary-dark);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+            color: #FFFFFF;
+        }
 
-    #modal-change-permission .modal-body {
-        background-color: #FDFDFD;
-        max-height: 65vh;
-        overflow-y: auto;
-        padding: 25px !important;
-    }
-</style>
+        /* 5. PERMISSION GRID & MODAL */
+        .auth-permissions {
+            list-style: none;
+            padding: 0;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 15px;
+            width: 100%;
+        }
+
+        .permission-item {
+            padding: 15px;
+            border-radius: var(--bas-radius-md);
+            border: 1.5px solid var(--bas-border);
+            background-color: var(--bas-surface);
+            transition: var(--bas-transition);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            position: relative;
+        }
+
+        .permission-item.selected {
+            border-color: var(--bas-primary);
+            background-color: var(--bas-primary-light);
+        }
+
+        .separator-text {
+            grid-column: 1 / -1;
+            padding: 20px 0 10px 0;
+            font-weight: 800;
+            color: var(--bas-dark);
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 1.5px;
+            display: flex;
+            align-items: center;
+        }
+
+        .separator-text::after {
+            content: "";
+            flex: 1;
+            height: 1px;
+            background: var(--bas-border);
+            margin-left: 15px;
+        }
+
+        /* Styling Spesifik Modal View Permission (User) */
+        #modal-view-permission .modal-content {
+            margin-top: 5vh;
+        }
+
+        #modal-view-permission form {
+            width: 100%;
+        }
+
+        #modal-view-permission .modal-body {
+            background-color: #FDFDFD;
+            max-height: 55vh !important;
+            overflow-y: auto;
+            padding: 25px !important;
+        }
+
+        /* 6. BADGE STYLING */
+        .label.label-light-warning {
+            background-color: #FFFBEB !important;
+            color: #D97706 !important;
+            font-weight: 700;
+        }
+    </style>
 @endpush
 
 @section('content')
-<div class="container-fluid px-8 py-6">
-    <div class="row mb-7">
-        <div class="col-12">
-            <div class="bas-header d-flex align-items-center justify-content-between p-7 shadow-lg">
-                <div class="d-flex align-items-center">
-                    <div class="bas-header-icon mr-5">
-                        <i class="fas fa-user-astronaut"></i>
+    <div class="container-fluid px-8 py-6">
+        <div class="row mb-7">
+            <div class="col-12">
+                <div class="bas-header d-flex align-items-center justify-content-between p-7 shadow-lg">
+                    <div class="d-flex align-items-center">
+                        <div class="bas-header-icon mr-5">
+                            <i class="fas fa-user-astronaut"></i>
+                        </div>
+                        <div>
+                            <h2 class="bas-header-title">Manajemen User</h2>
+                            <div class="bas-header-sub">Kontrol Hak Akses User &bull; Wings Food (BAS)</div>
+                        </div>
                     </div>
                     <div>
-                        <h2 class="bas-header-title">Manajemen User</h2>
-                        <div class="bas-header-sub">Kontrol Hak Akses User &bull; Wings Food (BAS)</div>
+                        <button type="button" data-toggle="modal" data-target="#createUserModal"
+                            class="bas-btn bas-btn-primary px-6 h-45px d-flex align-items-center">
+                            <i class="fas fa-plus-circle mr-2"></i> Tambah User
+                        </button>
                     </div>
-                </div>
-                <div>
-                    <button type="button" data-toggle="modal" data-target="#createUserModal"
-                        class="bas-btn bas-btn-primary px-6 h-45px d-flex align-items-center">
-                        <i class="fas fa-plus-circle mr-2"></i> Tambah User
-                    </button>
                 </div>
             </div>
         </div>
+
+        @include('master.user.partials._table_user')
     </div>
 
-    @include('master.user.partials._table_user')
-</div>
+    @include('master.user.partials._modal_create')
 
-@include('master.user.partials._modal_create')
+    @include('master.user.partials._modal_edit')
 
-@include('master.user.partials._modal_edit')
-
-@include('master.user.partials._modal_ubah')
+    @include('master.user.partials._modal_ubah')
 @endsection
 
 @push('scripts')
-<script src="{{ url('/assets/plugins/custom/datatables/datatables.bundle.js') }}"></script>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="{{ url('/assets/plugins/custom/datatables/datatables.bundle.js') }}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-<script>
-    $(document).ready(function() {
+    <script>
+        $(document).ready(function() {
             var table = $('#table-user').DataTable({
                 responsive: true,
                 processing: true,
@@ -282,11 +321,11 @@
                     name: 'group.name',
                     render: function(data, type, row) {
                         return `
-                        <a onClick="groupPermissions('${row.group.id}', '${data}')" href="javascript:;"
-                            class="label label-lg label-light-primary label-inline font-weight-bolder cursor-pointer text-hover-primary"
-                            data-toggle="tooltip" title="Lihat detail permission">
-                            <i class="fas fa-shield-alt icon-sm text-primary mr-2"></i> ${data}
-                        </a>`;
+        <a onClick="groupPermissions('${row.group_id || row.group.id}', '${data}')" href="javascript:;"
+            class="label label-lg label-light-primary label-inline font-weight-bolder cursor-pointer text-hover-primary"
+            data-toggle="tooltip" title="Lihat detail permission">
+            <i class="fas fa-shield-alt icon-sm text-primary mr-2"></i> ${data}
+        </a>`;
                     }
                 }, {
                     data: 'department.name',
@@ -315,7 +354,8 @@
                     searchable: false,
                     render: function(data, type, row) {
                         let statusIcon = row.status == 1 ?
-                            `<i class="fas fa-ban text-danger"></i>` : `<i class="fas fa-check-circle text-success"></i>`;
+                            `<i class="fas fa-ban text-danger"></i>` :
+                            `<i class="fas fa-check-circle text-success"></i>`;
                         let statusText = row.status == 1 ? 'Nonaktifkan User' : 'Aktifkan User';
                         let statusColor = row.status == 1 ? 'text-danger' : 'text-success';
 
@@ -384,7 +424,7 @@
                             success: function(response) {
                                 if (response.status == 'success') {
                                     table.ajax.reload(null,
-                                    false); // Reload tanpa reset pagination
+                                        false); // Reload tanpa reset pagination
                                     Swal.fire('Berhasil', response.message, 'success');
                                 } else {
                                     Swal.fire('Error', response.message, 'error');
@@ -530,113 +570,140 @@
             }
         }
 
-        // Function groupPermissions dan change permission tetap sama
+        // Function groupPermissions
         function groupPermissions(id, groupName) {
-        // 1. Tampilkan Loading State yang rapi di tengah
-        $('#title-group-name').text('Detail Hak Akses Group (' + groupName + ')');
+            // 1. Set ID dan Title
+            $("#hidden_group_id").val(id);
+            $('#title-group-name').text('Mapping Hak Akses (' + groupName + ')');
 
-        $(".auth-permissions").html(`
-        <div class="d-flex justify-content-center align-items-center w-100" style="grid-column: 1 / -1; min-height: 250px;">
-            <span class="spinner spinner-primary mr-5"></span>
-            <span class="text-muted font-weight-bold font-size-lg">Memuat Detail Permission...</span>
+            // 2. Loading State
+            $(".auth-permissions").html(`
+        <div class="d-flex flex-column justify-content-center align-items-center w-100" style="grid-column: 1 / -1; min-height: 200px;">
+            <span class="spinner spinner-primary mb-3"></span>
+            <span class="text-muted font-weight-bold">Memuat Detail Permission...</span>
         </div>
-        `);
+    `);
 
-        $("#modal-view-permission").modal("show");
+            $("#modal-view-permission").modal("show");
 
-        $.ajax({
-        url: '{{ URL::to('/permission/auth-group/get-permissions') }}',
-        type: 'POST',
-        data: {
-        id: id,
-        _token: '{{ csrf_token() }}'
-        },
-        success: function(res) {
-        let html = '';
+            // 3. Tembak AJAX
+            $.ajax({
+                url: '{{ URL::to('/permission/auth-group/get-permissions') }}',
+                type: 'POST',
+                data: {
+                    id: id,
+                    _token: '{{ csrf_token() }}'
+                },
+                success: function(res) {
+                    let html = '';
 
-        if (res.auth_permissions.length > 0) {
-        res.auth_permissions.forEach(data => {
-        // Ceklis dan style tambahan dihapus, murni pakai class .selected dari CSS lu
-        html += `
-        <li class="permission-item selected shadow-sm" style="cursor: default;">
-            <div class="text-dark-75 font-weight-bolder" style="word-break: break-all;">
-                ${data.codename}
-            </div>
-        </li>`;
+                    // RENDER PERMISSION AKTIF
+                    if (res.auth_permissions.length > 0) {
+                        html += `
+                <div class="separator-text text-primary mt-2 mb-2" style="grid-column: 1 / -1; font-weight: 800; font-size: 14px; border-bottom: 2px solid #E5E7EB; padding-bottom: 8px;">
+                    <i class="fas fa-check-circle text-primary mr-2"></i> Permission Aktif
+                </div>`;
+
+                        res.auth_permissions.forEach(data => {
+                            html += renderPermissionItem(data, true);
+                        });
+                    }
+
+                    // RENDER PERMISSION TERSEDIA (BELUM AKTIF)
+                    if (res.permissions_left.length > 0) {
+                        html += `
+                <div class="separator-text text-muted mt-6 mb-2" style="grid-column: 1 / -1; font-weight: 800; font-size: 14px; border-bottom: 2px solid #E5E7EB; padding-bottom: 8px;">
+                    <i class="fas fa-box-open text-muted mr-2"></i> Tersedia (Belum Diaktifkan)
+                </div>`;
+
+                        res.permissions_left.forEach(data => {
+                            html += renderPermissionItem(data, false);
+                        });
+                    }
+
+                    // Kalau kosong melompong
+                    if (html === '') {
+                        html = `
+                <div class="text-center py-10 w-100" style="grid-column: 1 / -1;">
+                    <h5 class="text-muted font-weight-bold">Belum Ada Hak Akses Master</h5>
+                </div>`;
+                    }
+
+                    $(".auth-permissions").html(html);
+                },
+                error: function(err) {
+                    $(".auth-permissions").html(`
+                <div class="text-center text-danger py-10 w-100" style="grid-column: 1 / -1;">
+                    <h6 class="font-weight-bolder">Oopss... Gagal Memuat Data!</h6>
+                </div>
+            `);
+                }
+            });
+        }
+
+        // 1. Fungsi render template kotak Checkbox (Kembalikan ke aslinya)
+        function renderPermissionItem(data, isChecked) {
+            return `
+    <li class="permission-item ${isChecked ? 'selected' : ''}">
+        <label class="checkbox checkbox-primary m-0 w-100 cursor-pointer d-flex align-items-center">
+            <input type="checkbox" name="permissions[]" ${isChecked ? 'checked' : ''} value="${data.id}" class="perm-checkbox">
+            <span></span>
+            <div class="ml-3 text-dark-75 font-weight-bolder" style="font-size: 13px;">${data.codename}</div>
+        </label>
+    </li>`;
+        }
+
+        // 2. Efek highlight ketika dicentang / di-uncheck (Hanya pakai class 'selected')
+        $(document).on('change', '.perm-checkbox', function() {
+            if ($(this).is(':checked')) {
+                $(this).closest('.permission-item').addClass('selected');
+            } else {
+                $(this).closest('.permission-item').removeClass('selected');
+            }
         });
-        } else {
-        // 2. Tampilan Empty State (Jika belum ada permission)
-        html = `
-        <div class="text-center py-10 w-100" style="grid-column: 1 / -1;">
-            <div class="symbol symbol-light-secondary symbol-75 mb-4">
-                <span class="symbol-label">
-                    <i class="fas fa-folder-open text-muted font-size-h1"></i>
-                </span>
-            </div>
-            <h5 class="text-muted font-weight-bold">Belum Ada Hak Akses</h5>
-            <p class="text-muted font-size-sm mb-0">Group ini belum memiliki permission yang terhubung.</p>
-        </div>`;
-        }
 
-        $(".auth-permissions").html(html);
-        },
-        error: function(err) {
-        // 3. Tampilan Error State (Jika koneksi/query gagal)
-        $(".auth-permissions").html(`
-        <div class="text-center text-danger py-10 w-100" style="grid-column: 1 / -1;">
-            <i class="fas fa-exclamation-triangle font-size-h1 text-danger mb-3"></i>
-            <h6 class="font-weight-bolder">Oopss... Gagal Memuat Data!</h6>
-            <span class="text-muted font-size-sm">Silakan tutup modal dan coba lagi.</span>
-        </div>
-        `);
-        }
+        // Aksi Submit Form
+        $('#change-permission-form').submit(function(e) {
+            e.preventDefault();
+            var data = $(this).serialize();
+
+            Swal.fire({
+                title: 'Menyimpan Perubahan...',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            $.ajax({
+                url: '{{ URL::to('/permission/auth-group/change-permissions') }}',
+                type: 'POST',
+                data: data,
+                success: function(response) {
+                    if (response.success == 1) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Berhasil',
+                            text: response.message || 'Permission Group berhasil diperbarui!',
+                            timer: 1500,
+                            showConfirmButton: false
+                        }).then(() => {
+                            $('#modal-view-permission').modal('hide');
+                            location.reload();
+                        });
+                    } else {
+                        Swal.fire('Gagal', 'Tidak bisa menyimpan data', 'error');
+                    }
+                },
+                error: function(error) {
+                    Swal.close();
+                    if (error.status == 422) {
+                        Swal.fire('Validasi Gagal', 'Silakan periksa kembali inputan Anda', 'warning');
+                    } else {
+                        Swal.fire('Error', 'Terjadi kesalahan sistem saat menyimpan data', 'error');
+                    }
+                }
+            });
         });
-        }
-        // function renderPermissionItem(data, isChecked) {
-        //     return `
-        //     <li class="permission-item ${isChecked ? 'selected' : ''}">
-        //         <label class="checkbox checkbox-primary m-0 w-100 cursor-pointer">
-        //             <input type="checkbox" name="permissions[]" ${isChecked ? 'checked' : '' } value="${data.id}"
-        //                 class="perm-checkbox">
-        //             <span></span>
-        //             <div class="ml-3 text-dark-75 font-weight-bolder">${data.codename}</div>
-        //         </label>
-        //     </li>`;
-        // }
-
-        // $(document).on('change', '.perm-checkbox', function () {
-        //     if($(this).is(':checked')){
-        //         $(this).closest('.permission-item').addClass('selected');
-        //     } else {
-        //         $(this).closest('.permission-item').removeClass('selected');
-        //     }
-        // })
-
-        // $('#change-permission-form').submit(function(e) {
-        //     e.preventDefault();
-        //     var data = $(this).serialize();
-        //     $.ajax({
-        //         url: '{{ URL::to('/permission/auth-group/change-permissions') }}',
-        //         type: 'POST',
-        //         data: data,
-        //         success: function(response) {
-        //             if (response.success == 1) {
-        //                 setTimeout(function() {
-        //                     location.reload();
-        //                 }, 500);
-        //             } else {
-        //                 alert("Tidak bisa menyimpan data, silahkan periksa inputan anda");
-        //             }
-        //         },
-        //         error: function(error) {
-        //             if (error.status == 422) {
-        //                 $('.help-block').text('');
-        //                 $.each(error.responseJSON.errors, (index, item) => {
-        //                     $('._' + index + ' .help-block').text(item);
-        //                 });
-        //             }
-        //         }
-        //     })
-        // });
-</script>
+    </script>
 @endpush

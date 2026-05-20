@@ -11,7 +11,7 @@ use Maatwebsite\Excel\Concerns\WithStyles;
 use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class KaryawanBaruExport implements FromCollection, WithHeadings, WithMapping, ShouldAutoSize, WithStyles, WithColumnFormatting
+class KaryawanAktifExport implements FromCollection, WithHeadings, WithMapping, ShouldAutoSize, WithStyles, WithColumnFormatting
 {
     protected $tanggal;
     protected $showAll;
@@ -49,6 +49,7 @@ class KaryawanBaruExport implements FromCollection, WithHeadings, WithMapping, S
             'Bagian',
             'Tanggal Masuk',
             'Fasilitas Loker',
+            'Goodie Bag',
         ];
     }
 
@@ -57,6 +58,8 @@ class KaryawanBaruExport implements FromCollection, WithHeadings, WithMapping, S
         $statusLoker = $karyawan->penghuni
         ? ($karyawan->penghuni->kode_rak . ' - ' . $karyawan->penghuni->no_loker)
         : 'Belum / Tidak memiliki Loker';
+
+        $statusGoodieBag = $karyawan->is_goobag == 'Y' ? 'Sudah Diberikan' : 'Belum Diberikan';
 
         return [
             ' ' . $karyawan->nik,
@@ -67,6 +70,7 @@ class KaryawanBaruExport implements FromCollection, WithHeadings, WithMapping, S
             $karyawan->kode_bagian,
             $karyawan->tanggal_masuk ? \Carbon\Carbon::parse($karyawan->tanggal_masuk)->format('d-m-Y') : '-',
             $statusLoker,
+            $statusGoodieBag,
         ];
     }
 
