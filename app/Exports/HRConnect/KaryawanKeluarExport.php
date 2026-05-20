@@ -1,45 +1,92 @@
 <?php
-
 namespace App\Exports\HRConnect;
 
 use App\HrKaryawan;
-use Illuminate\Support\Collection;
-use Illuminate\Contracts\View\View;
-use Maatwebsite\Excel\Concerns\FromView;
+use Maatwebsite\Excel\Concerns\FromCollection;
+use Maatwebsite\Excel\Concerns\ShouldAutoSize;
+use Maatwebsite\Excel\Concerns\WithColumnFormatting;
+use Maatwebsite\Excel\Concerns\WithHeadings;
+use Maatwebsite\Excel\Concerns\WithMapping;
+use Maatwebsite\Excel\Concerns\WithStyles;
+use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
+use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-
-class KaryawanKeluarExport implements FromView
+class KaryawanKeluarExport implements FromCollection, WithHeadings, WithMapping, ShouldAutoSize, WithStyles, WithColumnFormatting
 {
-    protected $data;
+    protected $tanggal;
+    protected $showAll;
 
-    public function __construct($data)
+    public function __construct($tanggal, $showAll)
     {
-        $this->data = $data;
+        $this->tanggal = $tanggal;
+        $this->showAll = $showAll;
     }
 
-    public function view(): View
+    public function collection()
     {
-        $karyawanCollection = new Collection();
+        // $query = HrKaryawan::where('tanggal_masuk', '>', '2025-01-01')
+        //     ->orderBy('tanggal_masuk', 'asc');
+        $query = HrKaryawan::with(['penghuni' => function($q) {
+            $q->where('is_active', 'Y');
+        }])->where('tanggal_masuk', '>', '2025-01-01')
+        ->orderBy('tanggal_masuk','desc');
 
-        foreach ($this->data as $item) {
-            $karyawan = HrKaryawan::where('id', $item['id'])
-                                    ->first();
-
-            if($karyawan) {
-                $karyawanCollection->push([
-                    'nama' => $item['nama'],
-                    'nik' => $item['nik'],
-                    'kode_divisi' => $item['kode_divisi'],
-                    'kode_bagian' => $item['kode_bagian'],
-                    'kode_admin' => $item['kode_admin'],
-                    'alasan_keluar' => $item['alasan_keluar'],
-                    'tanggal_keluar' => $item['tanggal_keluar'],
-                ]);
-            }
+        if ($this->showAll == 0 && ! empty($this->tanggal)) {
+            $query->where('tanggal_masuk', $this->tanggal);
         }
 
-        return view('hr-connect.exports.karyawan_keluar', [
-            'karyawanCollection' => $karyawanCollection
-        ]);
+        return $query->get();
+    }
+
+    public function headings(): array
+    {
+        return [
+            'NIK',
+            'Nama Lengkap',
+            'Jenis Kelamin',
+            'Kategori',
+            'Divisi',
+            'Bagian',
+            'Tanggal Masuk',
+            'Fasilitas Loker',
+        ];
+    }
+
+    public function map($karyawan): array
+    {
+        $statusLoker = $karyawan->penghuni
+        ? ($karyawan->penghuni->kode_rak . ' - ' . $karyawan->penghuni->no_loker)
+        : 'Belum / Tidak memiliki Loker';
+
+        return [
+            ' ' . $karyawan->nik,
+            $karyawan->nama,
+            $karyawan->jenis_kelamin == 'L' ? 'Laki-Laki' : ($karyawan->jenis_kelamin == 'P' ? 'Perempuan' : '-'),
+            $karyawan->staff == 'Y' ? 'Staff' : ($karyawan->staff == 'N' ? 'Non Staff' : '-'),
+            $karyawan->kode_divisi,
+            $karyawan->kode_bagian,
+            $karyawan->tanggal_masuk ? \Carbon\Carbon::parse($karyawan->tanggal_masuk)->format('d-m-Y') : '-',
+            $statusLoker,
+        ];
+    }
+
+    public function styles(Worksheet $sheet)
+    {
+        return [
+            1 => [
+                'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+                'fill' => [
+                    'fillType'   => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                    'startColor' => ['rgb' => '4F81BD'],
+                ],
+            ],
+        ];
+    }
+
+    public function columnFormats(): array
+    {
+        return [
+            'A' => NumberFormat::FORMAT_TEXT,
+        ];
     }
 }

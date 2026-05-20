@@ -2,81 +2,85 @@
 
 @push('styles')
     <link rel="stylesheet" href="{{ asset('assets/css/select2.min.css') }}">
+    <style>
+        .select2-container--default .select2-selection--single {
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            height: 38px;
+        }
+
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            line-height: 36px;
+        }
+
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 36px;
+        }
+
+        .copy-nik:hover {
+            color: #007bff;
+            text-decoration: underline;
+        }
+    </style>
 @endpush
 
 @section('content')
     <div class="container-fluid">
-        <div class="row">
-            <div class="col-lg-2">
-                <label>Tanggal:</label>
-                <input type="date" class="form-control mb-3" id="tanggalFilter">
+        <div class="row mb-3 align-items-end">
+            <div class="col-lg-3">
+                <label class="form-label font-weight-bold text-muted">Filter Tanggal</label>
+                <select class="form-select form-control shadow-sm" id="tanggalFilter">
+                    <option value="" disabled selected>Pilih Tanggal</option>
+                    @if ($tanggalTersedia->isEmpty())
+                        <option value="" disabled>Belum ada jadwal karyawan masuk</option>
+                    @else
+                        @foreach ($tanggalTersedia as $date)
+                            <option value="{{ $date }}">
+                                {{ \Carbon\Carbon::parse($date)->translatedFormat('d F Y') }}
+                            </option>
+                        @endforeach
+                    @endif
+                </select>
             </div>
             <div class="col-lg-2">
-                <label>.</label><br>
-                <button class="btn btn-primary" onclick="tampilkanSemua()">Show All</button>
-            </div>
-            {{-- <div class="col-lg-6">
-                <label>.</label><br>
-                <button class="btn btn-success" onClick="uploadExcelModal()">Upload Excel</button>
-                &nbsp;&nbsp;
-                <a href="/assets/media/hr_connect/ga_shift_in.xlsx" download="GA - Shift In.xlsx"
-                    class="btn btn-info">Template</a>&nbsp;&nbsp;
-                <button class="btn btn-primary" onClick="ketentuanUploadModal()">Ketentuan Upload</button>
-            </div> --}}
-        </div>
-        <div class="row">
-            <div class="col-lg-12">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0">Karyawan Masuk</h5>
-                    </div>
-                    <div class="card-body">
-                        <table id="tableAjax" class="table table-bordered" style="width:100%">
-                            <thead>
-                                <tr>
-                                    <th style="width: 25%;">Nama</th>
-                                    <th style="width: 10%;">NIK</th>
-                                    <th style="width: 13%;">Kategori</th>
-                                    <th style="width: 25%;">
-                                        Loker Baju <br>
-                                        <small class="text-muted">
-                                            <i>
-                                                *Otomatis pilih loker sepatu
-                                            </i>
-                                        </small>
-                                    </th>
-                                    <th style="width: 7%;">ID Card</th>
-                                    <th style="width: 10%;">Dept</th>
-                                    <th style="width: 10%;">Tgl Join</th>
-                                </tr>
-                            </thead>
-                        </table>
-                    </div>
-                </div>
-                <button type="button" class="btn btn-secondary custom-toggle active mb-3" data-bs-toggle="button"
-                    id="btnSubmit">
-                    <span class="icon-on"><i class="ri-alarm-line align-bottom me-1"></i> Mohon Tunggu</span>
-                    <span class="icon-off">Submit</span>
+                <button class="btn btn-soft-secondary w-100 shadow-sm" onclick="tampilkanSemua()">
+                    <i class="ri-refresh-line align-bottom me-1"></i> Reset Filter
                 </button>
             </div>
         </div>
-    </div>
 
-    {{-- Modal --}}
-    <div class="modal fade" id="modalData" aria-hidden="true" aria-labelledby="..." tabindex="-1">
-        <div class="modal-dialog modal-dialog-scrollable">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="modalDataLabel">Upload Karyawan Masuk</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body text-center">
-                    <div class="mt-1">
-                        <div class="row">
-                            <div class="col-lg-12">
-                                <input type="file" class="form-control" id="fileUpload" accept=".xlsx">
-                                <button class="btn btn-primary mt-2" id="uploadExcel">Upload</button>
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-white border-bottom p-4">
+                        <div class="row align-items-center">
+                            <div class="col-lg-8">
+                                <h5 class="card-title mb-0" style="font-weight: 600; color: #495057;">
+                                    <i class="ri-login-box-line text-success me-2"></i> Plotting Fasilitas Karyawan Masuk
+                                </h5>
                             </div>
+                            <div class="col-lg-4 text-end">
+                                <button class="btn btn-secondary font-weight-bolder shadow-sm" id="btnExportExcel">
+                                    <i class="ri-file-excel-2-line align-bottom me-1"></i> Export Data
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body pb-4">
+                        <div class="table-responsive">
+                            <table id="tableAjax" class="table table-bordered table-hover align-middle" style="width:100%">
+                                <thead class="table-light text-muted">
+                                    <tr>
+                                        <th style="width: 25%;">Nama Lengkap</th>
+                                        <th style="width: 10%;">NIK</th>
+                                        <th style="width: 10%;">Kategori</th>
+                                        <th style="width: 20%;">Alokasi Nomor Loker</th>
+                                        <th style="width: 5%;">Divisi</th>
+                                        <th style="width: 15%;">Tanggal Masuk</th>
+                                        <th style="width: 15%; text-align: center;">Tindakan</th>
+                                    </tr>
+                                </thead>
+                            </table>
                         </div>
                     </div>
                 </div>
@@ -84,66 +88,20 @@
         </div>
     </div>
 
-    <div class="modal fade" id="modalKetentuanUpload" aria-hidden="true" aria-labelledby="..." tabindex="-1">
-        <div class="modal-dialog modal-lg modal-dialog-scrollable">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="modalKetentuanUploadLabel">Ketentuan Upload</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="mt-1">
-                        <div class="row">
-                            <div class="col-lg-12">
-                                <h5 style="font-weight: bold">Contoh Template</h5>
-                                <table class="table table-bordered">
-                                    <tr>
-                                        <th>NIK</th>
-                                        <th>Nama</th>
-                                        <th>Kode Blok</th>
-                                        <th>No Loker</th>
-                                        <th>ID Card</th>
-                                    </tr>
-                                    <tr>
-                                        <td>123456789</td>
-                                        <td>Testing 1</td>
-                                        <td>SL</td>
-                                        <td>12</td>
-                                        <td>1</td>
-                                    </tr>
-                                </table>
-                                <h5 style="font-weight: bold">Aturan Penulisan</h5>
-                                <ol>
-                                    <li>NIK harus sesuai.</li>
-                                    <li>Kode Blok harus sesuai.</li>
-                                    <li>No Loker harus sesuai.</li>
-                                    <li>Bila ID Card tidak 1 maka data tidak diproses (dinyatakan belum lengkap)</li>
-                                </ol>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+    @include('hr-connect.ga.partials._modal_verifikasi')
 @endsection
 
 @push('scripts')
     <script src="{{ asset('assets/plugins/global/select2.full.min.js') }}"></script>
-    {{-- <script src="/assets/velzon/js/pages/select2.init.js"></script> --}}
     <script src="{{ asset('assets/velzon/libs/moment/moment.js') }}"></script>
+
     <script>
         $(document).ready(function() {
-            const lokersPria = {!! json_encode($lokers_pria->sortBy('no_loker')->values()) !!};
-            const lokersWanita = {!! json_encode($lokers_wanita->sortBy('no_loker')->values()) !!};
+            const lokerPria = {!! json_encode($lokerPria) !!};
+            const lokerWanita = {!! json_encode($lokerWanita) !!};
 
-            let containerPria = {!! json_encode($lokers_pria->toArray()) !!};
-            let lokers_pria = containerPria;
-
-            let defaultTanggal = moment().format("YYYY-MM-DD");
             let showAll = 1;
-
-            $("#tanggalFilter").val(defaultTanggal);
+            let defaultTanggal = "";
 
             $(document).on("change", "#tanggalFilter", function() {
                 defaultTanggal = $(this).val();
@@ -153,6 +111,8 @@
 
             window.tampilkanSemua = function() {
                 showAll = 1;
+                defaultTanggal = '';
+                $("#tanggalFilter").val("");
                 $("#tableAjax").DataTable().draw();
             };
 
@@ -169,26 +129,23 @@
                     duration: 3000,
                     gravity: "top",
                     position: 'right',
-                    backgroundColor: "linear-gradient(to right, #28a745, #218838)",
+                    backgroundColor: "#212529",
                 }).showToast();
             }
+
+            $(document).on('click', '.copy-nik', function() {
+                let nik = $(this).attr('data-nik');
+                if (nik) copyToClipboard(nik);
+            });
 
             let table = $("#tableAjax").dataTable({
                 processing: true,
                 serverSide: true,
                 paging: true,
                 ordering: false,
-                dom: "<'row'<'col-sm-12 text-right'Bf>>\
-                        <'row'<'col-sm-12'tr>>\
-                        <'row'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7 dataTables_pager'lp>>",
-                buttons: [{
-                    extend: 'excel',
-                    text: 'Export to Excel',
-                    filename: 'karyawan masuk - GA',
-                    exportOptions: {
-                        columns: [0, 1, 4, 5]
-                    }
-                }, ],
+                dom: "<'row mb-3'<'col-sm-12 col-md-6'l><'col-sm-12 col-md-6 text-end'f>>" +
+                    "<'row'<'col-sm-12'tr>>" +
+                    "<'row mt-3'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>",
                 ajax: {
                     url: "{{ url('/hr-connect/dept-ga/karyawan-masuk/getData') }}",
                     type: "GET",
@@ -201,264 +158,316 @@
                         data: 'nama'
                     },
                     {
-                        data: 'nik'
-                    },
-                    {
                         render: function(data, type, row) {
-                            return `
-                                <select class="js-example-basic-single staff-select" data-id="${row.id}">
-                                    <option value="">-- Pilih --</option>
-                                    <option value="staff">Staff</option>
-                                    <option value="non_staff">Non Staff</option>
-                                    <option value="mitra_kerja">Mitra Kerja</option>
-                                </select>
-                            `;
+                            return `<span class="copy-nik fw-bold" style="cursor: pointer;" data-nik="${row.nik}" title="Klik untuk Copy NIK">${row.nik}</span>`;
                         }
                     },
                     {
-                        render: function (data, type, row) {
+                        render: function(data, type, row) {
+                            return row.staff === 'Y' ?
+                                '<span class="badge bg-primary" style="font-size: 0.85rem;">Staff</span>' :
+                                '<span class="badge bg-secondary" style="font-size: 0.85rem;">Non Staff</span>';
+                        }
+                    },
+                    {
+                        render: function(data, type, row) {
+                            let isReadOnly = row.penghuni ? 'disabled' : '';
+                            let selectBox = `<select class="form-control lokerNo js-example-basic-single" ${isReadOnly}>
+                                <option value="" disabled>Pilih Loker</option>`;
 
-                            let selectBox =
-                                '<select class="js-example-basic-single lokerNo" disabled>' +
-                                '<option value="">-- Pilih --</option>';
+                            if (row.penghuni) {
+                                selectBox +=
+                                    `<option value="${row.penghuni.id}" selected data-nik="${row.nik}" data-nama="${row.nama}">${row.penghuni.kode_rak} - ${row.penghuni.no_loker}</option>`;
+                            } else {
+                                let kategori = row.staff === 'Y' ? 'staff' : 'non_staff';
+                                let listLoker = row.jenis_kelamin === 'L' ? lokerPria : lokerWanita;
+                                let rekomendasiLokerId = null;
 
-                            let lockers = row.jenis_kelamin === 'L'
-                                ? lokersPria
-                                : lokersWanita;
+                                listLoker.forEach(function(loker) {
+                                    let bolehMasuk = false;
 
-                            lockers.forEach(function (loker) {
-                                selectBox += `
-                                    <option value="${loker.id}"
+                                    if (kategori === 'staff' && loker.total_penghuni == 0) {
+                                        bolehMasuk = true;
+                                    } else if (kategori === 'non_staff' && loker
+                                        .total_penghuni < loker.kapasitas && loker
+                                        .kategori_tersedia !== 'staff') {
+                                        bolehMasuk = true;
+                                    }
+
+                                    if (bolehMasuk) {
+                                        if (rekomendasiLokerId === null) {
+                                            rekomendasiLokerId = loker.id;
+                                        }
+
+                                        let terpilih = (loker.id === rekomendasiLokerId) ?
+                                            'selected' : '';
+
+                                        selectBox += `
+                                        <option value="${loker.id}" ${terpilih}
                                         data-nik="${row.nik}"
                                         data-nama="${row.nama}"
-                                        data-divisi="${row.kode_divisi}"
-                                        data-jk="${row.jenis_kelamin}"
                                         data-kode-rak="${loker.kode_rak}"
-                                        data-no-loker="${loker.no_loker}">
-                                        ${loker.kode_rak}-${loker.no_loker}
-                                    </option>`;
-                            });
+                                        data-no-loker="${loker.no_loker}"
+                                        >${loker.kode_rak} - ${loker.no_loker} (Isi: ${loker.total_penghuni}/${loker.kapasitas})
+                                        </option>`;
+                                    }
+                                });
+                            }
 
                             selectBox += '</select>';
                             return selectBox;
                         }
                     },
                     {
-                        render: function(data, type, row) {
-                            return `
-                            <center>
-                                <input type="checkbox" class="check_id_card" value="${row.id}" data-nik="${row.nik}">
-                            </center>`;
-                        }
-                    },
-                    {
                         data: 'kode_divisi'
                     },
                     {
-                        data: 'tanggal_masuk'
+                        render: function(data, type, row) {
+                            return row.tanggal_masuk ? moment(row.tanggal_masuk).format(
+                                'DD MMM YYYY') : '-';
+                        }
+                    },
+                    {
+                        render: function(data, type, row) {
+                            if (row.penghuni) {
+                                return `<center><span class="badge bg-success px-3 py-2 shadow-sm" style="font-size: 0.85rem;"><i class="ri-check-double-line align-bottom me-1"></i> Tervalidasi</span></center>`;
+                            } else {
+                                return `
+                                <center>
+                                    <button type="button" class="btn btn-sm btn-outline-success fw-bold btn-verifikasi shadow-sm" data-idcard="${row.id}" data-rfid="${row.cardnodevice}" style="font-size: 0.85rem;">
+                                        <i class="ri-barcode-box-line align-bottom me-1"></i> Verifikasi
+                                    </button>
+                                </center>
+                                `;
+                            }
+                        }
                     },
                 ],
             });
 
             table.on('draw.dt', function() {
-                $('.js-example-basic-single').select2();
+                $('.js-example-basic-single').select2({
+                    minimumResultsForSearch: 10
+                });
+                $('.lokerNo').trigger('change');
             });
 
-            $("#btnSubmit").hide();
+            $(document).on('click', '.btn-verifikasi', function() {
+                let btn = $(this);
+                let tr = btn.closest('tr');
+                let rowData = $('#tableAjax').DataTable().row(tr).data();
+                let selectedLokerOption = tr.find('.lokerNo option:selected');
 
-            $(document).on('change', '.staff-select', function() {
-                let row = $(this).closest('tr');
-                let lokerSelect = row.find('.lokerNo');
-
-                if ($(this).val()) {
-                    lokerSelect.prop('disabled', false);
-                    lokerSelect.find('option:first').text('-- Pilih --');
-                } else {
-                    lokerSelect.prop('disabled', true);
-                    lokerSelect.val('');
-                    lokerSelect.find('option:first').text('-- Pilih --');
-                }
-
-                // refresh select2
-                lokerSelect.trigger('change.select2');
-            });
-
-            $(document).on('change', '.check_id_card', function() {
-                $("#btnSubmit").show();
-
-                // Jika udah di ceklis ya copy nik setelah - 
-                if (this.checked) {
-                    let nik = $(this).data('nik');
-
-                    if (typeof nik === 'string' || typeof nik === 'number') {
-                        nik = String(nik);
-                        var splited = nik.split('-');
-
-                        var nik_copied = splited.length > 1 ? splited[1] : splited[0];
-
-                        if (nik_copied) {
-                            copyToClipboard(nik_copied);
-                        }
-                    } else {
-                        console.error("NIK bukan string atau angka:", nik);
-                    }
-                }
-            });
-
-            $("#btnSubmit").click(function() {
-                let dataToSend = [];
-
-                $("#tableAjax tbody input[type=checkbox]:checked").each(function() {
-                    let row = $(this).closest('tr');
-                    let idCard = $(this).val();
-                    let nik = row.find('.lokerNo option:selected').data('nik');
-                    let nama = row.find('.lokerNo option:selected').data('nama');
-                    let divisi = row.find('.lokerNo option:selected').data('divisi');
-                    let jk = row.find('.lokerNo option:selected').data('jk');
-                    let kodeRak = row.find('.lokerNo option:selected').data('kode-rak');
-                    let noLoker = row.find('.lokerNo option:selected').data('no-loker');
-                    let lokerId = row.find('.lokerNo').val();
-                    let staff = row.find('.staff-select').val();
-
-                    dataToSend.push({
-                        lokerId: lokerId,
-                        idCard: idCard,
-                        kodeRak: kodeRak,
-                        noLoker: noLoker,
-                        nik: nik,
-                        nama: nama,
-                        jk: jk,
-                        divisi: divisi,
-                        staff: staff
-                    });
-
-                    console.log({dataToSend});
-                });
-
-                let lokerMap = {};
-                let errorMessage = null;
-
-                $.each(dataToSend, function(index, data) {
-                    console.log({data});
-                    
-                    if (!lokerMap[data.lokerId]) {
-                        lokerMap[data.lokerId] = {
-                            staffTypes: []
-                        };
-                    }
-
-                    lokerMap[data.lokerId].staffTypes.push(data.staff);
-                });
-
-                // validasi per loker
-                $.each(lokerMap, function(lokerId, info) {
-                    let uniqueTypes = [...new Set(info.staffTypes)];
-
-                    // tidak boleh campur kategori
-                    if (uniqueTypes.length > 1) {
-                        errorMessage = 'Tidak boleh memilih loker yang sama dengan kategori staff yang berbeda.';
-                        return false;
-                    }
-
-                    let type = uniqueTypes[0];
-
-                    // staff max 1 orang
-                    if (type === 'staff' && info.staffTypes.length > 1) {
-                        errorMessage = 'Loker staff hanya boleh dipilih oleh 1 orang.';
-                        return false;
-                    }
-
-                    // non staff / mitra kerja max 2 orang
-                    if ((type === 'non_staff' || type === 'mitra_kerja') && info.staffTypes.length > 2) {
-                        errorMessage = 'Loker non staff / mitra kerja maksimal 2 orang.';
-                        return false;
-                    }
-                });
-
-                if (errorMessage) {
-                    Swal.fire({
-                        title: "Gagal!",
-                        icon: "error",
-                        text: errorMessage
-                    });
-
-                    $("#btnSubmit").hide();
+                let lokerId = selectedLokerOption.val();
+                if (!lokerId) {
+                    Swal.fire('Peringatan', 'Silahkan pilih alokasi loker terlebih dahulu!', 'warning');
                     return;
-                } else {
+                }
+
+                $('#verif_target_nik').val(rowData.nik);
+                $('#verif_nama').val(rowData.nama);
+
+                let textKategori = rowData.staff === 'Y' ? 'Staff' : 'Non Staff';
+                $('#verif_kategori').val(textKategori);
+                $('#verif_loker_tujuan').val(
+                    `${selectedLokerOption.data('kode-rak')} - ${selectedLokerOption.data('no-loker')}`);
+
+                $('#verif_hidden_idcard').val(btn.data('idcard'));
+                $('#verif_hidden_lokerid').val(selectedLokerOption.val());
+                $('#verif_hidden_koderak').val(selectedLokerOption.data('kode-rak'));
+                $('#verif_hidden_noloker').val(selectedLokerOption.data('no-loker'));
+                $('#verif_hidden_divisi').val(rowData.kode_divisi);
+                $('#verif_hidden_jk').val(rowData.jenis_kelamin);
+
+                $('#verif_detail_container').hide();
+                $('#verif_footer').hide();
+
+                $('#verif_rfid_scan').val('').prop('disabled', false);
+                $('#verif_foto_img').attr('src', "{{ asset('assets/media/users/default.jpg') }}");
+
+                $('#verif_status_text')
+                    .removeClass('bg-success bg-danger bg-warning')
+                    .addClass('bg-secondary')
+                    .html('<i class="ri-rfid-line mr-1"></i> Menunggu proses scan Kartu ID...');
+
+                $('#btnSimpanVerifikasi').prop('disabled', true);
+                $('#modalVerifikasi').modal('show');
+            });
+
+            $('#modalVerifikasi').on('shown.bs.modal', function() {
+                $('#verif_rfid_scan').focus();
+            });
+
+            $('#verif_rfid_scan').on('keypress', function(e) {
+                if (e.which === 13) {
+                    e.preventDefault();
+                    let scannedRfid = $(this).val().trim();
+                    let targetNik = $('#verif_target_nik').val();
+
+                    if (!scannedRfid) return;
+
+                    $(this).prop('disabled', true);
+                    $('#verif_status_text')
+                        .removeClass('bg-secondary bg-success bg-danger')
+                        .addClass('bg-warning')
+                        .html(
+                            '<i class="spinner-border spinner-border-sm mr-1"></i> Sedang memverifikasi data...'
+                        );
+
+                    $('#verif_detail_container').slideUp(200);
+                    $('#verif_footer').slideUp(200);
+                    $('#btnSimpanVerifikasi').prop('disabled', true);
+
                     $.ajax({
-                        url: "{{ url('/hr-connect/dept-ga/karyawan-masuk/updateStatus') }}",
-                        type: "POST",
-                        data: {
-                            data: dataToSend
-                        },
-                        success: function(response) {
-                            Toastify({
-                                text: "Berhasil memberikan fasilitas!",
-                                duration: 3000,
-                                gravity: "top",
-                                position: 'right',
-                                backgroundColor: "linear-gradient(to right, #28a745, #218838)",
-                            }).showToast();
-
-                            lokers_pria = containerPria
-                            table.api().draw();
-
-                            $("#btnSubmit").hide();
-                        },
-                        error: function(xhr, status, error) {
-                            console.error(xhr.responseJSON.message);
-                            Swal.fire({
-                                title: "Error",
-                                icon: "error",
-                                text: xhr.responseJSON.message || "Terjadi kesalahan saat memproses data."
-                            });
+                        url: "{{ url('/loker/search-karyawan') }}/" + scannedRfid,
+                        type: "GET"
+                    }).then(response => {
+                        if (!response.success) {
+                            throw new Error(response.message ||
+                                'Data karyawan tidak ditemukan di Database Pusat.');
                         }
+
+                        if (String(response.data.nik) !== String(targetNik)) {
+                            throw new Error(
+                                `Kartu ID tidak sesuai! Ini milik: ${response.data.nama}`);
+                        }
+
+                        if (response.data.foto) {
+                            $('#verif_foto_img').attr('src', response.data.foto);
+                        }
+
+                        $('#verif_status_text')
+                            .removeClass('bg-warning bg-danger bg-secondary')
+                            .addClass('bg-success')
+                            .html(
+                                '<i class="ri-checkbox-circle-line mr-1 text-white"></i> Verifikasi berhasil! Silakan simpan.'
+                            );
+
+                        $('#btnSimpanVerifikasi').prop('disabled', false);
+
+                        $('#verif_detail_container').slideDown(400);
+                        $('#verif_footer').slideDown(400);
+
+                    }).catch(error => {
+                        let errorMsg = error.responseJSON?.message || error.message ||
+                            'Terjadi kesalahan sistem.';
+
+                        $('#verif_status_text')
+                            .removeClass('bg-warning bg-success bg-secondary')
+                            .addClass('bg-danger')
+                            .html(
+                                `<i class="ri-error-warning-line mr-1 text-white"></i> ${errorMsg}`
+                            );
+
+                        $('#verif_rfid_scan').prop('disabled', false).val('').focus();
                     });
                 }
             });
 
-            $(document).on("click", "#uploadExcel", function() {
-                let excelFile = $("#fileUpload")[0].files[0];
-                let formData = new FormData();
-                formData.append('excel_file', excelFile);
+            $('#btnSimpanVerifikasi').click(function() {
+                let btn = $(this);
+
+                let dataToSend = [{
+                    idCard: $('#verif_hidden_idcard').val(),
+                    lokerId: $('#verif_hidden_lokerid').val(),
+                    kodeRak: $('#verif_hidden_koderak').val(),
+                    noLoker: $('#verif_hidden_noloker').val(),
+                    nik: $('#verif_target_nik').val(),
+                    nama: $('#verif_nama').val(),
+                    jk: $('#verif_hidden_jk').val(),
+                    divisi: $('#verif_hidden_divisi').val(),
+                    staff: $('#verif_kategori').val() === 'STAFF' ? 'staff' : 'non_staff'
+                }];
+
+                let originalBtnText = btn.html();
+                btn.prop('disabled', true).html(
+                    '<i class="spinner-border spinner-border-sm me-1"></i> Memproses...');
 
                 $.ajax({
+                    url: "{{ url('/hr-connect/dept-ga/karyawan-masuk/updateStatus') }}",
                     type: "POST",
-                    url: "/hr-connect/dept-ga/karyawan-masuk/uploadExcel",
-                    data: formData,
-                    processData: false,
-                    contentType: false,
-                    success: function(res) {
-                        console.log(res);
-                        $("#modalData").modal("hide");
+                    data: {
+                        _token: "{{ csrf_token() }}",
+                        data: dataToSend
+                    },
+                    success: function(response) {
+                        let lokerId = $('#verif_hidden_lokerid').val();
+                        let jk = $('#verif_hidden_jk').val();
+                        let staffValue = $('#verif_kategori').val();
+                        let kategoriBaru = staffValue === 'Staff' ? 'staff' : 'non_staff';
 
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Success',
-                            text: res.message,
-                            timer: 2000,
-                            showConfirmButton: false
-                        }).then(() => {
-                            setTimeout(function() {
-                                location.reload();
-                            }, 2000);
-                        });
+                        let targetArray = (jk === 'L') ? lokerPria : lokerWanita;
+                        let lokerIndex = targetArray.findIndex(l => l.id == lokerId);
+
+                        if (lokerIndex !== -1) {
+                            targetArray[lokerIndex].total_penghuni += 1;
+                            if (!targetArray[lokerIndex].kategori_tersedia || targetArray[
+                                    lokerIndex].kategori_tersedia == null) {
+                                targetArray[lokerIndex].kategori_tersedia = kategoriBaru;
+                            }
+                        }
+
+                        $('#modalVerifikasi').modal('hide');
+                        Toastify({
+                            text: "Verifikasi & plotting loker berhasil disimpan!",
+                            duration: 4000,
+                            gravity: "top",
+                            position: "right",
+                            backgroundColor: "#0ab39c",
+                        }).showToast();
+
+                        $('#tableAjax').DataTable().draw(false);
                     },
                     error: function(xhr) {
-                        let message = xhr.responseJSON.message ||
-                            'Terjadi kesalahan saat mengunggah file.';
-                        alert(message);
+                        Swal.fire("Gagal", xhr.responseJSON?.message ||
+                            "Terjadi kesalahan server saat memproses data.", "error");
+                        btn.prop('disabled', false).html(originalBtnText);
                     }
                 });
             });
+
+            $('#btnExportExcel').click(function(e) {
+                e.preventDefault();
+
+                if (showAll === 0 && (!defaultTanggal || defaultTanggal === '')) {
+                    Swal.fire('Peringatan', 'Silahkan pilih tanggal filter terlebih dahulu!', 'warning');
+                    return;
+                }
+
+                let btn = $(this);
+                let originalBtnText = btn.html();
+                btn.prop('disabled', true).html(
+                    '<i class="spinner-border spinner-border-sm me-1"></i> Mengunduh...');
+
+                let hiddenForm = $('<form>', {
+                    'method': 'POST',
+                    'action': `{{ url('/hr-connect/dept-ga/karyawan-masuk/export') }}`,
+                });
+
+                hiddenForm.append($('<input>', {
+                    'type': 'hidden',
+                    'name': '_token',
+                    'value': "{{ csrf_token() }}"
+                }));
+                hiddenForm.append($('<input>', {
+                    'type': 'hidden',
+                    'name': 'tanggal',
+                    'value': defaultTanggal
+                }));
+                hiddenForm.append($('<input>', {
+                    'type': 'hidden',
+                    'name': 'tampilkan_semua',
+                    'value': showAll
+                }));
+
+                $('body').append(hiddenForm);
+                hiddenForm.submit();
+                hiddenForm.remove();
+
+                setTimeout(function() {
+                    btn.prop('disabled', false).html(originalBtnText);
+                }, 1500);
+            });
         });
-
-        function uploadExcelModal() {
-            $("#modalData").modal("show");
-        }
-
-        function ketentuanUploadModal() {
-            $("#modalKetentuanUpload").modal("show");
-        }
     </script>
 @endpush
