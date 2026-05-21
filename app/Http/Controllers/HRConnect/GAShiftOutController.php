@@ -32,7 +32,23 @@ class GAShiftOutController extends Controller
 
         $data = $query->get();
 
-        return Datatables::of($data)->make(true);
+        return Datatables::of($data)
+        ->addColumn('checkStaff', function($row) {
+            $dataLoker = DB::table('loker_penghuni')
+            ->where('nik', $row->nik)
+            ->first();
+
+            if($dataLoker) {
+                if(strtolower($dataLoker->kategori_karyawan) == 'staff') {
+                    return 'Y';
+                } else {
+                    return 'N';
+                }
+            }
+
+            return $row->staff;
+        })
+        ->make(true);
     }
 
     public function index()

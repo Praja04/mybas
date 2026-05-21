@@ -43,10 +43,10 @@
         <div class="row">
             <div class="col-lg-12">
                 <div class="card shadow-sm border-0">
-                    <div class="card-header bg-white border-bottom p-4">
+                    <div class="card-header border-bottom p-4">
                         <div class="row align-items-center">
                             <div class="col-lg-6">
-                                <h5 class="card-title mb-0" style="font-weight: 600; color: #495057;">
+                                <h5 class="card-title mb-0" style="font-weight: 600;">
                                     <i class="ri-logout-box-r-line text-warning me-2"></i> Clearance Loker Karyawan
                                 </h5>
                             </div>
@@ -136,17 +136,20 @@
                     },
                     {
                         render: function(data, type, row) {
-                            return row.staff === 'Y' ?
-                                '<span class="badge bg-primary" style="font-size: 0.85rem;">Staff</span>' :
-                                '<span class="badge bg-secondary" style="font-size: 0.85rem;">Non Staff</span>';
+                            return row.checkStaff === 'Y' ?
+                                '<span class="badge bg-secondary" style="font-size: 0.85rem;">Staff</span>' :
+                                '<span class="badge bg-warning" style="font-size: 0.85rem;">Non Staff</span>';
                         }
                     },
                     {
                         render: function(data, type, row) {
                             if (row.penghuni) {
+                                let kodeRak = row.penghuni.kode_rak;
+                                let rak = (kodeRak == 'LP') ? 'P' : 'W';
+
                                 return `
                                 <div class="text-center">
-                                    <span class="badge bg-info shadow-sm px-2 py-1" style="font-size: 0.85rem;"><i class="ri-archive-line me-1"></i> ${row.penghuni.kode_rak} - ${row.penghuni.no_loker}</span>
+                                    <span class="badge bg-secondary shadow-sm px-2 py-1" style="font-size: 0.85rem;"><i class="ri-archive-line me-1"></i> ${rak} - ${row.penghuni.no_loker}</span>
                                 </div>
                                 `;
                             }

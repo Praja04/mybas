@@ -5,10 +5,10 @@
         <div class="row">
             <div class="col-lg-12">
                 <div class="card shadow-sm border-0">
-                    <div class="card-header bg-white border-bottom p-4">
+                    <div class="card-header border-bottom p-4">
                         <div class="row align-items-center">
                             <div class="col-lg-8">
-                                <h5 class="card-title mb-0" style="font-weight: 600; color: #495057;">
+                                <h5 class="card-title mb-0" style="font-weight: 600;">
                                     <i class="ri-gift-line text-info me-2"></i> Persiapan Fasilitas Goodie Bag & APD
                                 </h5>
                             </div>
@@ -76,9 +76,9 @@
                         render: function(data, type, row) {
                             return `
                             <center>
-                                <button class="btn btn-sm btn-outline-success fw-bold btnConfirm shadow-sm" 
-                                    data-id="${row.id}" 
-                                    data-jumlah="${data}" 
+                                <button class="btn btn-sm btn-outline-success fw-bold btnConfirm shadow-sm"
+                                    data-id="${row.id}"
+                                    data-jumlah="${data}"
                                     data-tgl="${row.tanggal_masuk}" style="font-size: 0.85rem;">
                                     <i class="ri-check-line align-bottom me-1"></i> Konfirmasi Selesai
                                 </button>

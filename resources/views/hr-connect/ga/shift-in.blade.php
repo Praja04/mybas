@@ -52,10 +52,10 @@
         <div class="row">
             <div class="col-lg-12">
                 <div class="card shadow-sm border-0">
-                    <div class="card-header bg-white border-bottom p-4">
+                    <div class="card-header border-bottom p-4">
                         <div class="row align-items-center">
                             <div class="col-lg-8">
-                                <h5 class="card-title mb-0" style="font-weight: 600; color: #495057;">
+                                <h5 class="card-title mb-0 " style="font-weight: 600;">
                                     <i class="ri-login-box-line text-success me-2"></i> Plotting Fasilitas Karyawan Masuk
                                 </h5>
                             </div>
@@ -164,33 +164,33 @@
                     },
                     {
                         render: function(data, type, row) {
-                            return row.staff === 'Y' ?
-                                '<span class="badge bg-primary" style="font-size: 0.85rem;">Staff</span>' :
-                                '<span class="badge bg-secondary" style="font-size: 0.85rem;">Non Staff</span>';
+                            return row.checkStaff === 'Y' ?
+                                '<span class="badge bg-secondary" style="font-size: 0.85rem;">Staff</span>' :
+                                '<span class="badge bg-warning" style="font-size: 0.85rem;">Non Staff</span>';
                         }
                     },
                     {
                         render: function(data, type, row) {
                             let isReadOnly = row.penghuni ? 'disabled' : '';
-                            let selectBox = `<select class="form-control lokerNo js-example-basic-single" ${isReadOnly}>
-                                <option value="" disabled>Pilih Loker</option>`;
 
                             if (row.penghuni) {
-                                selectBox +=
-                                    `<option value="${row.penghuni.id}" selected data-nik="${row.nik}" data-nama="${row.nama}">${row.penghuni.kode_rak} - ${row.penghuni.no_loker}</option>`;
+                                let kodeRak = row.penghuni.kode_rak;
+                                let rak = (kodeRak === 'LP') ? 'P' : ((kodeRak === 'LW') ? 'W' : kodeRak);
+                                return `<select class="form-control" disabled>
+                                            <option>${rak} - ${row.penghuni.no_loker}</option>
+                                        </select>`;
                             } else {
-                                let kategori = row.staff === 'Y' ? 'staff' : 'non_staff';
+                                let kategori = row.checkStaff === 'Y' ? 'staff' : 'non_staff';
                                 let listLoker = row.jenis_kelamin === 'L' ? lokerPria : lokerWanita;
                                 let rekomendasiLokerId = null;
 
+                                let opsiLoker = `<option value="" disabled>Pilih Loker</option>`;
                                 listLoker.forEach(function(loker) {
                                     let bolehMasuk = false;
 
                                     if (kategori === 'staff' && loker.total_penghuni == 0) {
                                         bolehMasuk = true;
-                                    } else if (kategori === 'non_staff' && loker
-                                        .total_penghuni < loker.kapasitas && loker
-                                        .kategori_tersedia !== 'staff') {
+                                    } else if (kategori === 'non_staff' && loker.total_penghuni < loker.kapasitas && loker.kategori_tersedia !== 'staff') {
                                         bolehMasuk = true;
                                     }
 
@@ -199,23 +199,77 @@
                                             rekomendasiLokerId = loker.id;
                                         }
 
-                                        let terpilih = (loker.id === rekomendasiLokerId) ?
-                                            'selected' : '';
+                                        let terpilih = (loker.id === rekomendasiLokerId) ? 'selected' : '';
+                                        let opsiRak = (loker.kode_rak === 'LP') ? 'P' : ((loker.kode_rak === 'LW') ? 'W' : loker.kode_rak);
 
-                                        selectBox += `
-                                        <option value="${loker.id}" ${terpilih}
-                                        data-nik="${row.nik}"
-                                        data-nama="${row.nama}"
-                                        data-kode-rak="${loker.kode_rak}"
-                                        data-no-loker="${loker.no_loker}"
-                                        >${loker.kode_rak} - ${loker.no_loker} (Isi: ${loker.total_penghuni}/${loker.kapasitas})
-                                        </option>`;
+                                        opsiLoker += `<option value="${loker.id}" ${terpilih} data-nik="${row.nik}" data-nama="${row.nama}" data-kode-rak="${loker.kode_rak}" data-no-loker="${loker.no_loker}">
+                                            ${opsiRak} - ${loker.no_loker} (Isi: ${loker.total_penghuni}/${loker.kapasitas})
+                                            </option>`;
                                     }
                                 });
+
+                                return `
+                                    <button type="button" class="btn btn-sm btn-outline-secondary btn-butuh-loker w-100">
+                                        <i class="ri-add-circle-fill me-1"></i> Butuh Loker
+                                    </button>
+
+                                    <div class="wrapper-select-loker d-none">
+                                        <select class="form-control lokerNo js-example-basic-single">
+                                            ${opsiLoker}
+                                        </select>
+                                    </div>
+                                `;
                             }
 
-                            selectBox += '</select>';
-                            return selectBox;
+                            // let selectBox = `<select class="form-control lokerNo js-example-basic-single" ${isReadOnly}>
+                            //     <option value="" disabled>Pilih Loker</option>`;
+
+                            // if (row.penghuni) {
+                            //     let kodeRak = row.penghuni.kode_rak;
+                            //     let rak = (kodeRak == 'LP') ? 'P' : 'W';
+
+                            //     selectBox +=
+                            //         `<option value="${row.penghuni.id}" selected data-nik="${row.nik}" data-nama="${row.nama}">${rak} - ${row.penghuni.no_loker}</option>`;
+                            // } else {
+                            //     let kategori = row.staff === 'Y' ? 'staff' : 'non_staff';
+                            //     let listLoker = row.jenis_kelamin === 'L' ? lokerPria : lokerWanita;
+                            //     let rekomendasiLokerId = null;
+
+                            //     listLoker.forEach(function(loker) {
+                            //         let bolehMasuk = false;
+
+                            //         if (kategori === 'staff' && loker.total_penghuni == 0) {
+                            //             bolehMasuk = true;
+                            //         } else if (kategori === 'non_staff' && loker
+                            //             .total_penghuni < loker.kapasitas && loker
+                            //             .kategori_tersedia !== 'staff') {
+                            //             bolehMasuk = true;
+                            //         }
+
+                            //         if (bolehMasuk) {
+                            //             if (rekomendasiLokerId === null) {
+                            //                 rekomendasiLokerId = loker.id;
+                            //             }
+
+                            //             let terpilih = (loker.id === rekomendasiLokerId) ?
+                            //                 'selected' : '';
+
+                            //             let kodeRak = (loker.kode_rak === 'LP') ? 'P' : ((loker.kode_rak === 'LW') ? 'W' : loker.kode_rak);
+
+                            //             selectBox += `
+                            //             <option value="${loker.id}" ${terpilih}
+                            //             data-nik="${row.nik}"
+                            //             data-nama="${row.nama}"
+                            //             data-kode-rak="${loker.kode_rak}"
+                            //             data-no-loker="${loker.no_loker}"
+                            //             >${kodeRak} - ${loker.no_loker} (Isi: ${loker.total_penghuni}/${loker.kapasitas})
+                            //             </option>`;
+                            //         }
+                            //     });
+                            // }
+
+                            // selectBox += '</select>';
+                            // return selectBox;
                         }
                     },
                     {
@@ -234,7 +288,7 @@
                             } else {
                                 return `
                                 <center>
-                                    <button type="button" class="btn btn-sm btn-outline-success fw-bold btn-verifikasi shadow-sm" data-idcard="${row.id}" data-rfid="${row.cardnodevice}" style="font-size: 0.85rem;">
+                                    <button type="button" class="btn btn-sm btn-dark fw-bold btn-verifikasi shadow-sm" data-idcard="${row.id}" data-rfid="${row.cardnodevice}" style="font-size: 0.85rem;" disabled>
                                         <i class="ri-barcode-box-line align-bottom me-1"></i> Verifikasi
                                     </button>
                                 </center>
@@ -251,6 +305,37 @@
                 });
                 $('.lokerNo').trigger('change');
             });
+
+            $(document).on('click', '.btn-butuh-loker', function(e) {
+                e.preventDefault();
+                let btn = $(this);
+
+                let wrapperLoker = btn.siblings('.wrapper-select-loker');
+
+                btn.addClass('d-none');
+                wrapperLoker.removeClass('d-none');
+
+                wrapperLoker.find('.js-example-basic-single').select2();
+
+                wrapperLoker.find('.js-example-basic-single').trigger('change');
+            })
+
+            $(document).on('change', '.wrapper-select-loker select', function() {
+                let selectLoker = $(this);
+                let tr = selectLoker.closest('tr');
+                let btnVerifikasi = tr.find('.btn-verifikasi');
+
+                if (selectLoker.val() && !selectLoker.closest('.wrapper-select-loker').hasClass('d-none')) {
+                    btnVerifikasi.prop('disabled', false)
+                    .removeClass('btn-dark')
+                    .addClass('btn-outline-success');
+                } else {
+                    btnVerifikasi.prop('disabled', true)
+                    .removeClass('btn-outline-success')
+                    .addClass('btn-dark');
+                }
+            });
+
 
             $(document).on('click', '.btn-verifikasi', function() {
                 let btn = $(this);
