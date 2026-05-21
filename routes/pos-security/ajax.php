@@ -37,6 +37,7 @@ Route::group(
 
         Route::post('/absensi-rest-log', [AbsensiRestLogAjax::class, 'search'])->name("ajax.pos-security.absensirestlog.search");
         Route::get('/blacklist/show', [BlacklistAjax::class, 'show'])->name('ajax.pos-security.blacklist.show');
+        Route::post('/blacklist/cancel', [BlacklistAjax::class, 'cancel'])->name('ajax.pos-security.blacklist.cancel');
 
         Route::post('/dashboard/filter', [DashboardAjax::class, 'filter'])->name('ajax.pos-security.dashboard.filter');
         Route::post('/dashboard/statistik', [DashboardAjax::class, 'statistikPerusahaanDepartemen'])->name('ajax.pos-security.dashboard.statistik');

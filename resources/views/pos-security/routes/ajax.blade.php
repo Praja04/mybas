@@ -10,6 +10,7 @@
     var API_CEK_KENDARAAN_SHOW = '{{ route('ajax.pos-security.cek-kendaraan.show') }}';
 
     var API_BLACKLIST_SHOW = '{{ route('ajax.pos-security.blacklist.show') }}';
+    var API_BLACKLIST_CANCEL = '{{ route('ajax.pos-security.blacklist.cancel') }}';
 
     var API_DASHBOARD_FILTER = '{{ route('ajax.pos-security.dashboard.filter') }}';
     var API_DASHBOARD_FILTER_STATISTIK = '{{ route('ajax.pos-security.dashboard.statistik') }}';
