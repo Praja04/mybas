@@ -67,8 +67,8 @@
                  </div>
              </div>
              <div class="modal-footer">
-                 {{-- <button onclick="triggerReportLostCard()" class="btn btn-warning">Lapor Kartu Hilang</button>
-                 <button onclick="triggerBlacklistVisitor()" class="btn btn-danger">Blacklist</button> --}}
+                 <button onclick="triggerReportLostCard()" class="btn btn-warning">Lapor Kartu Hilang</button>
+                 <button onclick="triggerBlacklistVisitor()" class="btn btn-danger">Blacklist</button>
                  <button class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
              </div>
          </div>

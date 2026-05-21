@@ -374,30 +374,72 @@ class SupplierFormAjax extends Controller
 
         $input_no_identitas = $request->input('nomorktp');
 
-        // Cek blacklist
-        $blacklist = DB::table('ga_lgtk_blacklist_identitas')
-        ->where(function ($q) use ($input_no_identitas, $normalized_nama, $input_tanggal_lahir) {
-            $q->where('no_identitas', $input_no_identitas)
-            ->orWhere(function ($q2) use ($normalized_nama, $input_tanggal_lahir) {
-                $q2->whereRaw('LOWER(TRIM(nama)) = ?', [$normalized_nama])
-                ->where('tanggal_lahir', $input_tanggal_lahir);
-            });
-        })
-        ->where('aktif',
-            true
-        )
-        ->first();
+        // 1. HARD BLACKLIST CHECK
+        // Kriteria: No identitas sama persis, ATAU Kombinasi Nama + Tanggal Lahir sama persis (jika tanggal lahir diisi)
+        $hardBlacklist = DB::table('ga_lgtk_blacklist_identitas')
+            ->where('aktif', true)
+            ->where(function ($q) use ($input_no_identitas, $normalized_nama, $input_tanggal_lahir) {
+                $q->where('no_identitas', $input_no_identitas);
+                if ($input_tanggal_lahir) {
+                    $q->orWhere(function ($q2) use ($normalized_nama, $input_tanggal_lahir) {
+                        $q2->whereRaw('LOWER(TRIM(nama)) = ?', [$normalized_nama])
+                           ->where('tanggal_lahir', $input_tanggal_lahir);
+                    });
+                }
+            })
+            ->first();
 
-        if ($blacklist) {
+        if ($hardBlacklist) {
             return response()->json([
                 'success' => false,
-                'message' => sprintf(
-                    'Identitas a.n. %s, Tanggal Lahir: %s, diblacklist karena: %s.',
-                    $blacklist->nama ?? '-',
-                    $blacklist->tanggal_lahir,
-                    $blacklist->alasan_blacklist ?? '-'
-                )
+                'blacklist_type' => 'hard',
+                'message' => 'Data telah di-blacklist! Pengunjung dengan identitas ini dilarang masuk area perusahaan.',
+                'blacklist_data' => [
+                    'nama' => strtoupper($hardBlacklist->nama),
+                    'no_identitas' => strtoupper($hardBlacklist->no_identitas),
+                    'alasan_blacklist' => $hardBlacklist->alasan_blacklist,
+                    'tanggal_blacklist' => $hardBlacklist->tanggal_blacklist ? Carbon::parse($hardBlacklist->tanggal_blacklist)->format('d-m-Y') : '-',
+                ]
             ], 403);
+        }
+
+        // 2. SOFT BLACKLIST CHECK (Hanya jika bypass_warning tidak dikirim atau false)
+        $bypassWarning = filter_var($request->input('bypass_warning'), FILTER_VALIDATE_BOOLEAN);
+        if (!$bypassWarning) {
+            // Kasus A: Nama sama persis dengan daftar blacklist (aktif), tetapi Tanggal Lahir berbeda / tidak diisi
+            $softNameMatch = DB::table('ga_lgtk_blacklist_identitas')
+                ->where('aktif', true)
+                ->whereRaw('LOWER(TRIM(nama)) = ?', [$normalized_nama])
+                ->first();
+
+            // Kasus B: Nama mirip (LIKE) DAN Tanggal Lahir sama (jika tanggal lahir diisi)
+            $softSimilarMatch = null;
+            if ($input_tanggal_lahir) {
+                $softSimilarMatch = DB::table('ga_lgtk_blacklist_identitas')
+                    ->where('aktif', true)
+                    ->where('tanggal_lahir', $input_tanggal_lahir)
+                    ->where(function ($q) use ($normalized_nama) {
+                        $q->whereRaw('LOWER(TRIM(nama)) LIKE ?', ['%' . $normalized_nama . '%'])
+                          ->orWhereRaw('? LIKE CONCAT("%", LOWER(TRIM(nama)), "%")', [$normalized_nama]);
+                    })
+                    ->first();
+            }
+
+            $softBlacklist = $softNameMatch ?: $softSimilarMatch;
+
+            if ($softBlacklist) {
+                return response()->json([
+                    'success' => false,
+                    'status' => 'warning_blacklist',
+                    'message' => 'Peringatan: Terdapat kemiripan data dengan daftar blacklist!',
+                    'blacklist_data' => [
+                        'nama' => strtoupper($softBlacklist->nama),
+                        'no_identitas' => strtoupper($softBlacklist->no_identitas),
+                        'alasan_blacklist' => $softBlacklist->alasan_blacklist,
+                        'tanggal_blacklist' => $softBlacklist->tanggal_blacklist ? Carbon::parse($softBlacklist->tanggal_blacklist)->format('d-m-Y') : '-',
+                    ]
+                ], 200);
+            }
         }
 
         try {

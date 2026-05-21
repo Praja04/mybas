@@ -102,7 +102,7 @@ $menus = [
             ],
             [
                 'path' => 'pos-security/blacklist',
-                'label' => 'Blacklist Tamu',
+                'label' => 'Blacklist Tamu/Supplier',
                 'icon' => 'mdi-account-cancel-outline',
                 'submenu' => [],
             ],
