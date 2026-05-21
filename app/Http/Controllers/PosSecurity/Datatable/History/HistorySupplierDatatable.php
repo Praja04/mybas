@@ -84,6 +84,16 @@ class HistorySupplierDatatable extends Controller
                                     <i class="ri-eye-fill align-bottom me-2 text-muted"></i>View Detail
                                 </a>
                             </li>
+                            <li>
+                                <a href="#!" class="dropdown-item text-danger" onclick="triggerBlacklistVisitor(\'' . $item->trnvisitorid . '\')">
+                                    <i class="ri-close-circle-fill align-bottom me-2 text-danger"></i>Blacklist
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#!" class="dropdown-item text-warning" onclick="triggerReportLostCard(\'' . $item->trnvisitorid . '\')">
+                                    <i class="ri-alert-fill align-bottom me-2 text-warning"></i>Lapor Kartu Hilang
+                                </a>
+                            </li>
                         </ul>
                     </div>';
             })

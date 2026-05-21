@@ -1,5 +1,14 @@
 @extends('pos-security.layouts.base')
 
+@push('styles')
+    <style>
+        .ga-blacklist-datatables tbody td:not(:first-child):not(:last-child),
+        #blacklistDetailModal .modal-body td {
+            text-transform: uppercase;
+        }
+    </style>
+@endpush
+
 @push('scripts')
     <script type="module" src="{{ asset('assets/js/pos-security/blacklist/pages/blacklist-datatable.js') }}"></script>
 

@@ -1,6 +1,6 @@
-function openVisitorActionModal(trnvisitorid) {
+function openVendorActionModal(trnvisitorid) {
     $.get(
-        API_GET_VISITOR_DETAIL_SUPPLIER + "?id=" + trnvisitorid,
+        API_GET_VISITOR_DETAIL_VENDOR + "?id=" + trnvisitorid,
         function (response) {
             if (!response.success) {
                 Swal.fire("Gagal", response.message, "error");
@@ -11,7 +11,6 @@ function openVisitorActionModal(trnvisitorid) {
 
             // Kirim data ke masing-masing modal handler
             VisitorDetailModal.show(data); // Modal info utama
-            LostCardReporter.prepare(data); // Modal kartu hilang
             BlacklistManager.prepare(data); // Modal blacklist
         }
     );
@@ -25,7 +24,6 @@ const VisitorDetailModal = {
         $("#detailPerusahaan").text(data.namacomp);
         $("#detailPurpose").text(data.purpose);
         $("#detailNopol").text(data.nopol);
-        $("#detailNamaKernet").text(data.nama_kernet);
         $("#detailNoHpDriver").text(data.nohpdriver);
         $("#detailTglLahir").text(data.tgl_lahir);
         $("#detailWaktuMasuk").text(`${data.datein} ${data.timein}`);
@@ -62,24 +60,8 @@ const VisitorDetailModal = {
     },
 };
 
-// Tombol aksi lanjutan dari modal detail
-function triggerReportLostCard(visitorId) {
-    if (!visitorId) {
-        LostCardReporter.open();
-        return;
-    }
-    $.get(
-        API_GET_VISITOR_DETAIL_SUPPLIER + "?id=" + visitorId,
-        function (response) {
-            if (!response.success) {
-                Swal.fire("Gagal", response.message, "error");
-                return;
-            }
-
-            LostCardReporter.prepare(response.data);
-            LostCardReporter.open();
-        }
-    );
+function triggerReportLostCard() {
+    Swal.fire("Informasi", "Fitur Lapor Kartu Hilang hanya tersedia untuk Supplier.", "info");
 }
 
 function triggerBlacklistVisitor(visitorId) {
@@ -88,7 +70,7 @@ function triggerBlacklistVisitor(visitorId) {
         return;
     }
     $.get(
-        API_GET_VISITOR_DETAIL_SUPPLIER + "?id=" + visitorId,
+        API_GET_VISITOR_DETAIL_VENDOR + "?id=" + visitorId,
         function (response) {
             if (!response.success) {
                 Swal.fire("Gagal", response.message, "error");
@@ -101,99 +83,6 @@ function triggerBlacklistVisitor(visitorId) {
     );
 }
 
-const LostCardReporter = {
-    _data: {},
-
-    prepare(data) {
-        this._data = data;
-
-        // Prefill form (hidden data)
-        $("#lost_no_kartu").val(data.no_kartu);
-        $("#lost_no_identitas").val(data.no_ktp_sim);
-        $("#lost_nama").val(data.namavisitor);
-
-        // Informasi tambahan
-        $("#lost_info_nama").text(data.namavisitor || "-");
-        $("#lost_info_no_identitas").text(data.no_ktp_sim || "-");
-        $("#lost_info_no_kartu").text(data.no_kartu || "-");
-        $("#lost_info_perusahaan").text(data.namacomp || "-");
-        $("#lost_info_waktu_masuk").text(
-            `${data.datein} ${data.timein}` || "-"
-        );
-        $("#lost_info_tujuan").text(data.purpose || "-");
-        $("#lost_info_nopol").text(data.nopol || "-");
-        $("#lost_info_nohp").text(data.nohpdriver || "-");
-        $("#lost_info_kernet").text(data.nama_kernet || "-");
-        $("#lost_info_plant").text(data.plant || "-");
-
-        // Tampilkan info umum
-        $("#lost_info_nama").text(data.namavisitor || "-");
-        $("#lost_info_identitas").text(data.no_ktp_sim || "-");
-        $("#lost_info_kartu").text(data.no_kartu || "-");
-        $("#lost_info_perusahaan").text(data.namacomp || "-");
-        $("#lost_info_masuk").text(`${data.datein} ${data.timein}` || "-");
-
-        // Foto KTP
-        $("#lostKtpFoto").attr(
-            "src",
-            data.imgvisitorpathin || "https://via.placeholder.com/150"
-        );
-
-        // Foto selfie
-        let selfieContainer = $("#lostSelfieContainer");
-        selfieContainer.html("");
-        try {
-            const fotoList = JSON.parse(data.foto);
-            fotoList.forEach((url) => {
-                selfieContainer.append(
-                    `<img src="${url}" class="img-thumbnail" style="max-width: 120px;">`
-                );
-            });
-        } catch (e) {
-            console.warn("Selfie hilang", e);
-        }
-    },
-
-    open() {
-        const modalEl = document.getElementById("modalReportLostCard");
-        if (modalEl) {
-            const modalInstance = bootstrap.Modal.getOrCreateInstance(modalEl);
-            modalInstance.show();
-        } else {
-            console.error("Element modalReportLostCard tidak ditemukan.");
-        }
-    },
-
-    submit() {
-        const payload = {
-            no_kartu: $("#lost_no_kartu").val(),
-            no_identitas: $("#lost_no_identitas").val(),
-            nama: $("#lost_nama").val(),
-            alasan_hilang: $("#alasan_hilang").val(),
-            dilaporkan_oleh: $("#dilaporkan_oleh").val(),
-        };
-
-        $.post(API_REPORT_LOST_CARD_SUPPLIER, payload, function (res) {
-            if (res.success) {
-                Swal.fire(
-                    "Berhasil",
-                    "Laporan kartu hilang disimpan.",
-                    "success"
-                );
-                $("#modalReportLostCard").modal("hide");
-            } else {
-                Swal.fire("Gagal", res.message, "error");
-            }
-        });
-    },
-};
-
-// Submit handler
-$("#formReportLostCard").on("submit", function (e) {
-    e.preventDefault();
-    LostCardReporter.submit();
-});
-
 const BlacklistManager = {
     _data: {},
 
@@ -204,7 +93,7 @@ const BlacklistManager = {
         $("#bl_no_identitas").val(data.no_ktp_sim || "");
         $("#bl_nama").val(data.namavisitor || "");
         $("#tanggal_lahir").val(data.tgl_lahir || "");
-        $("#jenis_identitas").val(data.jenis_identitas || "");
+        $("#jenis_identitas").val(data.jenis_identitas || "KTP");
 
         // Informasi tambahan
         $("#bl_trnvisitorid").val(data.trnvisitorid || data.id || "");
@@ -216,7 +105,7 @@ const BlacklistManager = {
         $("#bl_info_tujuan").text(data.purpose || "-");
         $("#bl_info_nopol").text(data.nopol || "-");
         $("#bl_info_nohp").text(data.nohpdriver || "-");
-        $("#bl_info_kernet").text(data.nama_kernet || "-");
+        $("#bl_info_kernet").text("-");
         $("#bl_info_plant").text(data.plant || "-");
 
         $("#blKtpFoto").attr("src", data.imgvisitorpathin || "");
@@ -261,7 +150,7 @@ const BlacklistManager = {
             },
         });
 
-        $.post(API_BLOCK_SUPPLIER, payload, function (res) {
+        $.post(API_BLOCK_VENDOR, payload, function (res) {
             if (res.success) {
                 Swal.fire("Sukses", "Visitor diblacklist.", "success");
                 $("#modalBlacklistVisitor").modal("hide");

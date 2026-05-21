@@ -20,6 +20,11 @@
     var API_FORM_UPDATE_SECURITY = '{{ route('ajax.pos-security.master.security.update', ':id') }}';
 
     var API_RESET_KARTU = '{{ route('pos-security.kartu.reset') }}';
+
+    var API_BLOCK_SUPPLIER = '{{ route('ajax.pos-security.visitor-transaksi.block') }}';
+    var API_REPORT_LOST_CARD_SUPPLIER = '{{ route('ajax.pos-security.visitor-transaksi.reportLost') }}';
+    var API_GET_VISITOR_DETAIL_VENDOR = '{{ route('ajax.pos-security.vendor-transaksi.detail') }}';
+    var API_BLOCK_VENDOR = '{{ route('ajax.pos-security.vendor-transaksi.block') }}';
 </script>
 
 {{-- <script>

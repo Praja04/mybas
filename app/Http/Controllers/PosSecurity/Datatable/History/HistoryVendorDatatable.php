@@ -166,20 +166,14 @@ class HistoryVendorDatatable extends Controller
             ->editColumn('NOHPDRIVER', fn($item) => $item->NOHPDRIVER ?: '-')
             ->addColumn('action', function ($item) {
                 return '<div class="dropdown d-inline-block">
-            <button class="btn btn-soft-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-              <i class="ri-more-fill align-middle"></i>
-            </button>
-
-        </div>';
-                // return '<div class="dropdown d-inline-block">
-                //     <button class="btn btn-soft-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                //       <i class="ri-more-fill align-middle"></i>
-                //     </button>
-                //     <ul class="dropdown-menu dropdown-menu-end">
-                //       <li><a href="#" class="dropdown-item" onclick="viewVisitorDetail(\'' . $item->trnvisitorid . '\')"><i class="ri-eye-fill align-bottom me-2 text-muted"></i>View Detail</a></li>
-                //       <li><a href="#" class="dropdown-item text-danger" onclick="blockVisitor(\'' . $item->trnvisitorid . '\')"><i class="ri-close-circle-fill align-bottom me-2 text-muted"></i>Block Visitor</a></li>
-                //     </ul>
-                // </div>';
+                    <button class="btn btn-soft-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="ri-more-fill align-middle"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a href="#" class="dropdown-item" onclick="openVendorActionModal(\'' . $item->trnvisitorid . '\')"><i class="ri-eye-fill align-bottom me-2 text-muted"></i>View Detail</a></li>
+                        <li><a href="#" class="dropdown-item text-danger" onclick="triggerBlacklistVisitor(\'' . $item->trnvisitorid . '\')"><i class="ri-close-circle-fill align-bottom me-2 text-danger"></i>Blacklist</a></li>
+                    </ul>
+                </div>';
             })
             ->rawColumns(['photo_visitor', 'img_visitor', 'qr_image', 'namacomp', 'waktu_masuk', 'waktu_keluar', 'namavisitor', 'action', "is_kacamata", "kondisi_kacamata", "photo_visitor_out", 'kondisi_kacamata_out'])
             ->make(true);

@@ -17,6 +17,8 @@ Route::group(
         Route::post('/store-vendor-tamu', [TamuFormAjax::class, 'store'])->name("ajax.pos-security.vendor-transaksi.store_vendor");
         Route::post('/search-vendor-tamu', [TamuFormAjax::class, 'search'])->name("ajax.pos-security.vendor-transaksi.search_vendor");
         Route::post('/kembalikan-vendor-tamu', [TamuFormAjax::class, 'kembali_kartu'])->name("ajax.pos-security.vendor-transaksi.kembali_kartu");
+        Route::post('/tamu/block', [TamuFormAjax::class, 'blacklist'])->name('ajax.pos-security.vendor-transaksi.block');
+        Route::get('/tamu/detail', [TamuFormAjax::class, 'getVisitorDetail'])->name('ajax.pos-security.vendor-transaksi.detail');
 
         // transaksi supplier
         Route::post('/store-supplier', [SupplierFormAjax::class, 'store'])->name("ajax.pos-security.visitor-transaksi.store");
