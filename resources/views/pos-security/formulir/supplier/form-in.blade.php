@@ -38,27 +38,27 @@
 
                             <div class="mb-3">
                                 <label class="form-label fw-semibold" for="namavisitor">Nama Supir / Kernet <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" name="namavisitor" id="namavisitor" required placeholder="Masukkan nama supir/kernet">
+                                <input type="text" class="form-control" name="namavisitor" id="namavisitor" required style="text-transform: uppercase;" placeholder="Masukkan nama supir/kernet">
                             </div>
 
                             <div class="mb-3">
                                 <label class="form-label fw-semibold" for="namacomp">Nama Perusahaan <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="namacomp" name="namacomp" required placeholder="Masukkan nama perusahaan">
+                                <input type="text" class="form-control" id="namacomp" name="namacomp" required style="text-transform: uppercase;" placeholder="Masukkan nama perusahaan">
                             </div>
 
                             <div class="mb-3">
                                 <label class="form-label fw-semibold" for="nohpdriver">Nomor HP <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="nohpdriver" name="nohpdriver" required placeholder="Masukkan nomor HP aktif">
+                                <input type="text" class="form-control" id="nohpdriver" name="nohpdriver" required style="text-transform: uppercase;" placeholder="Masukkan nomor HP aktif">
                             </div>
 
                             <div class="mb-3">
                                 <label class="form-label fw-semibold" for="nomor-ktp">No. KTP / SIM <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" name="nomorktp" id="nomor-ktp" required placeholder="Masukkan nomor identitas">
+                                <input type="text" class="form-control" name="nomorktp" id="nomor-ktp" required style="text-transform: uppercase;" placeholder="Masukkan nomor identitas">
                             </div>
 
                             <div class="mb-3">
                                 <label class="form-label fw-semibold" for="nopol">Nomor Polisi <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="nopol" name="nopol" required placeholder="Contoh: B 1234 CD">
+                                <input type="text" class="form-control" id="nopol" name="nopol" required style="text-transform: uppercase;" placeholder="Contoh: B 1234 CD">
                             </div>
 
                             <div class="mb-3">

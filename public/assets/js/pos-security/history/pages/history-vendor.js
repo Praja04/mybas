@@ -122,10 +122,12 @@ export class ContentDatatable {
                         orderable: false,
                         searchable: false,
                     },
-                    // {
-                    //     data: "action",
-                    //     name: "action",
-                    // },
+                    {
+                        data: "action",
+                        name: "action",
+                        orderable: false,
+                        searchable: false,
+                    },
                 ],
             },
             // priority column
@@ -226,7 +228,7 @@ contentDatatable
     });
 
 // Tombol Filter ditekan
-$("#filter-form").on("submit", function (e) {
+$(document).on("submit", ".filter-form-vendor", function (e) {
     e.preventDefault();
 
     // const formData = $(this).serializeArray();
@@ -266,7 +268,7 @@ $("#filter-form").on("submit", function (e) {
 });
 
 // Reset button
-$("#filter-form").on("reset", function () {
+$(document).on("reset", ".filter-form-vendor", function () {
     setTimeout(() => {
         // reloadDataTable({}); // Reset filter jadi kosong
         contentDatatable._datatable.dataSend = {};

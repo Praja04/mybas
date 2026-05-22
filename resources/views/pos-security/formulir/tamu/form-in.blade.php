@@ -25,13 +25,13 @@
                             <div class="mb-3">
                                 <label class="form-label fw-semibold">Nama Vendor / Tamu / Transporter <span
                                         class="text-danger">*</span></label>
-                                <input type="text" name="namavisitor" class="form-control"
+                                <input type="text" name="namavisitor" class="form-control" style="text-transform: uppercase;"
                                     placeholder="Contoh: John Doe" required>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label fw-semibold">Nama Perusahaan / Instansi <span
                                         class="text-danger">*</span></label>
-                                <input type="text" name="namacomp" class="form-control"
+                                <input type="text" name="namacomp" class="form-control" style="text-transform: uppercase;"
                                     placeholder="Contoh: PT Maju Jaya" required>
                             </div>
 
@@ -65,14 +65,14 @@
                             <div class="mb-3" id="nopolGroup" style="display: none;">
                                 <label class="form-label fw-semibold">Nomor Polisi <span
                                         class="text-danger">*</span></label>
-                                <input type="text" class="form-control" name="nopol" id="nopolInput"
+                                <input type="text" class="form-control" name="nopol" id="nopolInput" style="text-transform: uppercase;"
                                     placeholder="Contoh: B 1234 CD">
                             </div>
 
                             <div class="mb-3">
                                 <label class="form-label fw-semibold">No. KTP / SIM <span
                                         class="text-danger">*</span></label>
-                                <input type="text" class="form-control" name="nomorktp" required
+                                <input type="text" class="form-control" name="nomorktp" required style="text-transform: uppercase;"
                                     placeholder="Masukkan nomor identitas">
                             </div>
 
@@ -86,14 +86,14 @@
                             <div class="mb-3">
                                 <label class="form-label fw-semibold">Keperluan <span
                                         class="text-danger">*</span></label>
-                                <input type="text" name="keperluan" class="form-control"
+                                <input type="text" name="keperluan" class="form-control" style="text-transform: uppercase;"
                                     placeholder="Contoh: Meeting, Pengiriman Barang" required>
                             </div>
 
                             <div class="mb-3">
                                 <label class="form-label fw-semibold">Bertemu Dengan <span
                                         class="text-danger">*</span></label>
-                                <input type="text" name="host" class="form-control"
+                                <input type="text" name="host" class="form-control" style="text-transform: uppercase;"
                                     placeholder="Contoh: Pak Budi Santoso" required>
                             </div>
 

@@ -51,4 +51,29 @@ class BlacklistAjax extends Controller
             return response()->json(['success' => false, 'message' => 'Data tidak ditemukan'], 404);
         }
     }
+
+    public function cancel(Request $request)
+    {
+        try {
+            $id = $request->input('id');
+            if (!$id) {
+                return response()->json(['success' => false, 'message' => 'ID tidak ditemukan'], 400);
+            }
+
+            $blacklist = BlacklistIdentitas::find($id);
+            if (!$blacklist) {
+                return response()->json(['success' => false, 'message' => 'Data blacklist tidak ditemukan'], 404);
+            }
+
+            $blacklist->aktif = false;
+            $blacklist->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Status blacklist berhasil dibatalkan.'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Terjadi kesalahan: ' . $e->getMessage()], 500);
+        }
+    }
 }

@@ -69,6 +69,15 @@ class BlacklistDatatable extends Controller
             ->editColumn('diblacklist_oleh', fn($item) => e($item->diblacklist_oleh ?: '-'))
             ->editColumn('aktif', fn($item) => $item->aktif ? '<span class="badge bg-success">Aktif</span>' : '<span class="badge bg-danger">Nonaktif</span>')
             ->addColumn('action', function ($item) {
+                $cancelOption = '';
+                if ($item->aktif) {
+                    $cancelOption = '
+              <li>
+                <a href="#!" class="dropdown-item text-danger" onclick="cancelBlacklist(' . $item->id . ')">
+                  <i class="ri-close-circle-fill align-bottom me-2"></i> Batalkan Blacklist
+                </a>
+              </li>';
+                }
                 return '
           <div class="dropdown d-inline-block">
             <button class="btn btn-soft-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -79,7 +88,7 @@ class BlacklistDatatable extends Controller
                 <a href="#!" class="dropdown-item" onclick="openBlacklistDetailModal(' . $item->id . ')">
                   <i class="ri-eye-fill align-bottom me-2 text-muted"></i> Lihat Detail
                 </a>
-              </li>
+              </li>' . $cancelOption . '
             </ul>
           </div>';
             })
