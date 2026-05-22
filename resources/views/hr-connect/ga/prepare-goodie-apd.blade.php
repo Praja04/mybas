@@ -13,7 +13,7 @@
                                 </h5>
                             </div>
                             <div class="col-lg-4 text-end">
-                                <button class="btn btn-primary font-weight-bolder shadow-sm" id="btnConfirmAll">
+                                <button class="btn btn-primary font-weight-bolder shadow-sm" id="btnConfirmAll" data-bs-toggle="tooltip" data-bs-placement="top" title="Konfirmasi semua jadwal persiapan sekaligus">
                                     <i class="ri-check-double-fill align-bottom me-1"></i> Konfirmasi Semua Persiapan
                                 </button>
                             </div>
@@ -24,8 +24,8 @@
                             <table id="tableAjax" class="table table-bordered table-hover align-middle" style="width:100%">
                                 <thead class="table-light text-muted">
                                     <tr>
-                                        <th style="width: 30%;">Tanggal Masuk</th>
-                                        <th style="width: 30%;">Total Karyawan</th>
+                                        <th style="width: 30%;">Jadwal Tanggal Masuk</th>
+                                        <th style="width: 30%;">Total Karyawan (Set Fasilitas)</th>
                                         <th style="width: 40%; text-align: center;">Tindakan</th>
                                     </tr>
                                 </thead>
@@ -67,7 +67,7 @@
                         data: "count",
                         orderable: false,
                         render: function(data) {
-                            return `<span class="badge bg-soft-info text-info fs-13 px-3 py-2 shadow-sm"><i class="ri-group-line me-1 align-bottom"></i> ${data} Orang</span>`;
+                            return `<span class="badge bg-soft-info text-info fs-13 px-3 py-2 shadow-sm"><i class="ri-group-line me-1 align-bottom"></i> ${data} Set Persiapan</span>`;
                         }
                     },
                     {
@@ -79,7 +79,11 @@
                                 <button class="btn btn-sm btn-outline-success fw-bold btnConfirm shadow-sm"
                                     data-id="${row.id}"
                                     data-jumlah="${data}"
-                                    data-tgl="${row.tanggal_masuk}" style="font-size: 0.85rem;">
+                                    data-tgl="${row.tanggal_masuk}"
+                                    data-bs-toggle="tooltip"
+                                    data-bs-placement="top"
+                                    title="Tandai fasilitas untuk jadwal ini telah siap"
+                                    style="font-size: 0.85rem;">
                                     <i class="ri-check-line align-bottom me-1"></i> Konfirmasi Selesai
                                 </button>
                             </center>`;
@@ -91,32 +95,38 @@
                 ]
             });
 
+            table.on('draw.dt', function() {
+                $('[data-bs-toggle="tooltip"]').tooltip();
+            });
+
             $('#btnConfirmAll').click(function() {
                 let btn = $(this);
                 let dt = $("#tableAjax").DataTable();
 
+                btn.tooltip('hide');
+
                 if (!dt.data().any()) {
                     Swal.fire('Informasi',
-                        'Tidak ada data persiapan fasilitas yang perlu dikonfirmasi saat ini.', 'info');
+                        'Tidak ada jadwal persiapan fasilitas yang perlu dikonfirmasi saat ini.', 'info');
                     return;
                 }
 
                 Swal.fire({
-                    title: "Konfirmasi Massal Persiapan",
-                    html: "Anda akan mengonfirmasi bahwa <b>seluruh</b> fasilitas Goodie Bag dan APD di daftar ini telah siap didistribusikan. Lanjutkan?",
+                    title: "Konfirmasi Massal",
+                    html: "Anda akan mengonfirmasi bahwa <b>seluruh</b> persiapan fasilitas Goodie Bag dan APD untuk semua jadwal di daftar ini telah siap didistribusikan. Lanjutkan proses?",
                     icon: "warning",
                     showCancelButton: true,
                     confirmButtonColor: "#0ab39c",
                     cancelButtonColor: "#878a99",
-                    confirmButtonText: "<i class='ri-check-double-line'></i> Ya, Semua Telah Siap",
+                    confirmButtonText: "<i class='ri-check-double-line me-1'></i> Ya, Eksekusi Semua",
                     cancelButtonText: "Batal",
                     reverseButtons: true
                 }).then((result) => {
                     if (result.isConfirmed) {
                         let originalText = btn.html();
                         btn.prop('disabled', true).html(
-                            '<i class="spinner-border spinner-border-sm me-1"></i> Memproses...'
-                            );
+                            '<i class="spinner-border spinner-border-sm me-1"></i> Memproses Data...'
+                        );
 
                         $.ajax({
                             type: "POST",
@@ -128,8 +138,7 @@
                                 dt.ajax.reload(null, false);
 
                                 Toastify({
-                                    text: res.msg ||
-                                        "Seluruh data persiapan berhasil dikonfirmasi!",
+                                    text: res.msg || "Seluruh jadwal persiapan berhasil dikonfirmasi!",
                                     duration: 4000,
                                     gravity: "top",
                                     position: "right",
@@ -139,8 +148,8 @@
                                 btn.prop('disabled', false).html(originalText);
                             },
                             error: function(xhr) {
-                                Swal.fire("Gagal",
-                                    "Terjadi kesalahan sistem saat menyimpan data.",
+                                Swal.fire("Gagal Memproses",
+                                    "Terjadi kesalahan sistem saat memproses konfirmasi massal.",
                                     "error");
                                 btn.prop('disabled', false).html(originalText);
                             }
@@ -157,14 +166,16 @@
 
                 let tanggalFormat = moment(tgl_masuk).format('DD MMMM YYYY');
 
+                btn.tooltip('hide');
+
                 Swal.fire({
                     title: "Konfirmasi Persiapan",
-                    html: `Apakah Anda sudah mempersiapkan fasilitas sebanyak <b>${jumlah} set</b> untuk karyawan yang masuk pada tanggal <b>${tanggalFormat}</b>?`,
+                    html: `Anda akan mengonfirmasi kesiapan fasilitas sebanyak <b>${jumlah} set</b> untuk jadwal masuk <b>${tanggalFormat}</b>. Lanjutkan?`,
                     icon: "info",
                     showCancelButton: true,
                     confirmButtonColor: "#0ab39c",
                     cancelButtonColor: "#878a99",
-                    confirmButtonText: "<i class='ri-check-line'></i> Ya, Sudah Siap",
+                    confirmButtonText: "<i class='ri-check-line me-1'></i> Ya, Sudah Siap",
                     cancelButtonText: "Batal",
                     reverseButtons: true
                 }).then((result) => {
@@ -172,7 +183,7 @@
                         let originalText = btn.html();
                         btn.prop('disabled', true).html(
                             '<i class="spinner-border spinner-border-sm me-1"></i> Memproses...'
-                            );
+                        );
 
                         $.ajax({
                             type: "POST",
@@ -187,8 +198,7 @@
                                 dt.ajax.reload(null, false);
 
                                 Toastify({
-                                    text: res.msg ||
-                                        "Konfirmasi persiapan berhasil disimpan!",
+                                    text: res.msg || `Konfirmasi persiapan untuk tanggal ${tanggalFormat} berhasil disimpan!`,
                                     duration: 4000,
                                     gravity: "top",
                                     position: "right",
@@ -197,7 +207,7 @@
                             },
                             error: function(xhr) {
                                 Swal.fire("Gagal",
-                                    "Terjadi kesalahan sistem saat menyimpan data.",
+                                    "Terjadi kesalahan sistem saat menyimpan data konfirmasi.",
                                     "error");
                                 btn.prop('disabled', false).html(originalText);
                             }

@@ -28,11 +28,11 @@
     <div class="container-fluid">
         <div class="row mb-3 align-items-end">
             <div class="col-lg-3">
-                <label class="form-label font-weight-bold text-muted">Filter Tanggal</label>
+                <label class="form-label font-weight-bold text-muted">Filter Jadwal Masuk</label>
                 <select class="form-select form-control shadow-sm" id="tanggalFilter">
                     <option value="" disabled selected>Pilih Tanggal</option>
                     @if ($tanggalTersedia->isEmpty())
-                        <option value="" disabled>Belum ada jadwal karyawan masuk</option>
+                        <option value="" disabled>Belum ada data jadwal karyawan masuk</option>
                     @else
                         @foreach ($tanggalTersedia as $date)
                             <option value="{{ $date }}">
@@ -55,12 +55,12 @@
                     <div class="card-header border-bottom p-4">
                         <div class="row align-items-center">
                             <div class="col-lg-8">
-                                <h5 class="card-title mb-0 " style="font-weight: 600;">
-                                    <i class="ri-login-box-line text-success me-2"></i> Plotting Fasilitas Karyawan Masuk
+                                <h5 class="card-title mb-0" style="font-weight: 600;">
+                                    <i class="ri-login-box-line text-success me-2"></i> Alokasi Loker Karyawan Baru
                                 </h5>
                             </div>
                             <div class="col-lg-4 text-end">
-                                <button class="btn btn-secondary font-weight-bolder shadow-sm" id="btnExportExcel">
+                                <button class="btn btn-secondary font-weight-bolder shadow-sm" id="btnExportExcel" data-bs-toggle="tooltip" data-bs-placement="top" title="Unduh data alokasi ke Excel">
                                     <i class="ri-file-excel-2-line align-bottom me-1"></i> Export Data
                                 </button>
                             </div>
@@ -125,7 +125,7 @@
                 textArea.remove();
 
                 Toastify({
-                    text: "NIK telah disalin: " + text,
+                    text: "NIK berhasil disalin: " + text,
                     duration: 3000,
                     gravity: "top",
                     position: 'right',
@@ -159,7 +159,7 @@
                     },
                     {
                         render: function(data, type, row) {
-                            return `<span class="copy-nik fw-bold" style="cursor: pointer;" data-nik="${row.nik}" title="Klik untuk Copy NIK">${row.nik}</span>`;
+                            return `<span class="copy-nik fw-bold" style="cursor: pointer;" data-nik="${row.nik}" data-bs-toggle="tooltip" data-bs-placement="top" title="Klik untuk menyalin NIK">${row.nik}</span>`;
                         }
                     },
                     {
@@ -184,7 +184,7 @@
                                 let listLoker = row.jenis_kelamin === 'L' ? lokerPria : lokerWanita;
                                 let rekomendasiLokerId = null;
 
-                                let opsiLoker = `<option value="" disabled>Pilih Loker</option>`;
+                                let opsiLoker = `<option value="" disabled selected>Pilih Loker</option>`;
                                 listLoker.forEach(function(loker) {
                                     let bolehMasuk = false;
 
@@ -209,7 +209,7 @@
                                 });
 
                                 return `
-                                    <button type="button" class="btn btn-sm btn-outline-secondary btn-butuh-loker w-100">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary btn-butuh-loker w-100" data-bs-toggle="tooltip" data-bs-placement="top" title="Tambahkan alokasi loker">
                                         <i class="ri-add-circle-fill me-1"></i> Butuh Loker
                                     </button>
 
@@ -220,56 +220,6 @@
                                     </div>
                                 `;
                             }
-
-                            // let selectBox = `<select class="form-control lokerNo js-example-basic-single" ${isReadOnly}>
-                            //     <option value="" disabled>Pilih Loker</option>`;
-
-                            // if (row.penghuni) {
-                            //     let kodeRak = row.penghuni.kode_rak;
-                            //     let rak = (kodeRak == 'LP') ? 'P' : 'W';
-
-                            //     selectBox +=
-                            //         `<option value="${row.penghuni.id}" selected data-nik="${row.nik}" data-nama="${row.nama}">${rak} - ${row.penghuni.no_loker}</option>`;
-                            // } else {
-                            //     let kategori = row.staff === 'Y' ? 'staff' : 'non_staff';
-                            //     let listLoker = row.jenis_kelamin === 'L' ? lokerPria : lokerWanita;
-                            //     let rekomendasiLokerId = null;
-
-                            //     listLoker.forEach(function(loker) {
-                            //         let bolehMasuk = false;
-
-                            //         if (kategori === 'staff' && loker.total_penghuni == 0) {
-                            //             bolehMasuk = true;
-                            //         } else if (kategori === 'non_staff' && loker
-                            //             .total_penghuni < loker.kapasitas && loker
-                            //             .kategori_tersedia !== 'staff') {
-                            //             bolehMasuk = true;
-                            //         }
-
-                            //         if (bolehMasuk) {
-                            //             if (rekomendasiLokerId === null) {
-                            //                 rekomendasiLokerId = loker.id;
-                            //             }
-
-                            //             let terpilih = (loker.id === rekomendasiLokerId) ?
-                            //                 'selected' : '';
-
-                            //             let kodeRak = (loker.kode_rak === 'LP') ? 'P' : ((loker.kode_rak === 'LW') ? 'W' : loker.kode_rak);
-
-                            //             selectBox += `
-                            //             <option value="${loker.id}" ${terpilih}
-                            //             data-nik="${row.nik}"
-                            //             data-nama="${row.nama}"
-                            //             data-kode-rak="${loker.kode_rak}"
-                            //             data-no-loker="${loker.no_loker}"
-                            //             >${kodeRak} - ${loker.no_loker} (Isi: ${loker.total_penghuni}/${loker.kapasitas})
-                            //             </option>`;
-                            //         }
-                            //     });
-                            // }
-
-                            // selectBox += '</select>';
-                            // return selectBox;
                         }
                     },
                     {
@@ -277,18 +227,17 @@
                     },
                     {
                         render: function(data, type, row) {
-                            return row.tanggal_masuk ? moment(row.tanggal_masuk).format(
-                                'DD MMM YYYY') : '-';
+                            return row.tanggal_masuk ? moment(row.tanggal_masuk).format('DD MMM YYYY') : '-';
                         }
                     },
                     {
                         render: function(data, type, row) {
                             if (row.penghuni) {
-                                return `<center><span class="badge bg-success px-3 py-2 shadow-sm" style="font-size: 0.85rem;"><i class="ri-check-double-line align-bottom me-1"></i> Tervalidasi</span></center>`;
+                                return `<center><span class="badge bg-success px-3 py-2 shadow-sm" style="font-size: 0.85rem;" data-bs-toggle="tooltip" title="Loker telah diverifikasi dan aktif"><i class="ri-check-double-line align-bottom me-1"></i> Tervalidasi</span></center>`;
                             } else {
                                 return `
                                 <center>
-                                    <button type="button" class="btn btn-sm btn-dark fw-bold btn-verifikasi shadow-sm" data-idcard="${row.id}" data-rfid="${row.cardnodevice}" style="font-size: 0.85rem;" disabled>
+                                    <button type="button" class="btn btn-sm btn-dark fw-bold btn-verifikasi shadow-sm" data-idcard="${row.id}" data-rfid="${row.cardnodevice}" style="font-size: 0.85rem;" disabled data-bs-toggle="tooltip" title="Scan ID Card untuk memverifikasi">
                                         <i class="ri-barcode-box-line align-bottom me-1"></i> Verifikasi
                                     </button>
                                 </center>
@@ -304,19 +253,20 @@
                     minimumResultsForSearch: 10
                 });
                 $('.lokerNo').trigger('change');
+                $('[data-bs-toggle="tooltip"]').tooltip();
             });
 
             $(document).on('click', '.btn-butuh-loker', function(e) {
                 e.preventDefault();
                 let btn = $(this);
-
                 let wrapperLoker = btn.siblings('.wrapper-select-loker');
 
+                // Sembunyikan tooltip saat tombol diklik agar tidak "nyangkut"
+                btn.tooltip('hide');
                 btn.addClass('d-none');
+
                 wrapperLoker.removeClass('d-none');
-
                 wrapperLoker.find('.js-example-basic-single').select2();
-
                 wrapperLoker.find('.js-example-basic-single').trigger('change');
             })
 
@@ -327,15 +277,14 @@
 
                 if (selectLoker.val() && !selectLoker.closest('.wrapper-select-loker').hasClass('d-none')) {
                     btnVerifikasi.prop('disabled', false)
-                    .removeClass('btn-dark')
-                    .addClass('btn-outline-success');
+                        .removeClass('btn-dark')
+                        .addClass('btn-outline-success');
                 } else {
                     btnVerifikasi.prop('disabled', true)
-                    .removeClass('btn-outline-success')
-                    .addClass('btn-dark');
+                        .removeClass('btn-outline-success')
+                        .addClass('btn-dark');
                 }
             });
-
 
             $(document).on('click', '.btn-verifikasi', function() {
                 let btn = $(this);
@@ -345,7 +294,7 @@
 
                 let lokerId = selectedLokerOption.val();
                 if (!lokerId) {
-                    Swal.fire('Peringatan', 'Silahkan pilih alokasi loker terlebih dahulu!', 'warning');
+                    Swal.fire('Peringatan', 'Silakan pilih nomor alokasi loker terlebih dahulu!', 'warning');
                     return;
                 }
 
@@ -354,8 +303,11 @@
 
                 let textKategori = rowData.staff === 'Y' ? 'Staff' : 'Non Staff';
                 $('#verif_kategori').val(textKategori);
-                $('#verif_loker_tujuan').val(
-                    `${selectedLokerOption.data('kode-rak')} - ${selectedLokerOption.data('no-loker')}`);
+
+                let rawKodeRak = selectedLokerOption.data('kode-rak')
+                let displayRak = (rawKodeRak === 'LP') ? 'P' : ((rawKodeRak === 'LW') ? 'W' : rawKodeRak);
+
+                $('#verif_loker_tujuan').val(`${displayRak} - ${selectedLokerOption.data('no-loker')}`);
 
                 $('#verif_hidden_idcard').val(btn.data('idcard'));
                 $('#verif_hidden_lokerid').val(selectedLokerOption.val());
@@ -395,9 +347,7 @@
                     $('#verif_status_text')
                         .removeClass('bg-secondary bg-success bg-danger')
                         .addClass('bg-warning')
-                        .html(
-                            '<i class="spinner-border spinner-border-sm mr-1"></i> Sedang memverifikasi data...'
-                        );
+                        .html('<i class="spinner-border spinner-border-sm mr-1"></i> Memverifikasi data ID Card...');
 
                     $('#verif_detail_container').slideUp(200);
                     $('#verif_footer').slideUp(200);
@@ -408,13 +358,11 @@
                         type: "GET"
                     }).then(response => {
                         if (!response.success) {
-                            throw new Error(response.message ||
-                                'Data karyawan tidak ditemukan di Database Pusat.');
+                            throw new Error(response.message || 'Data karyawan tidak ditemukan di Database Pusat.');
                         }
 
                         if (String(response.data.nik) !== String(targetNik)) {
-                            throw new Error(
-                                `Kartu ID tidak sesuai! Ini milik: ${response.data.nama}`);
+                            throw new Error(`Kartu ID tidak sesuai! Ini milik: ${response.data.nama}`);
                         }
 
                         if (response.data.foto) {
@@ -424,9 +372,7 @@
                         $('#verif_status_text')
                             .removeClass('bg-warning bg-danger bg-secondary')
                             .addClass('bg-success')
-                            .html(
-                                '<i class="ri-checkbox-circle-line mr-1 text-white"></i> Verifikasi berhasil! Silakan simpan.'
-                            );
+                            .html('<i class="ri-checkbox-circle-line mr-1 text-white"></i> Verifikasi berhasil! Silakan simpan.');
 
                         $('#btnSimpanVerifikasi').prop('disabled', false);
 
@@ -434,15 +380,12 @@
                         $('#verif_footer').slideDown(400);
 
                     }).catch(error => {
-                        let errorMsg = error.responseJSON?.message || error.message ||
-                            'Terjadi kesalahan sistem.';
+                        let errorMsg = error.responseJSON?.message || error.message || 'Terjadi kesalahan sistem.';
 
                         $('#verif_status_text')
                             .removeClass('bg-warning bg-success bg-secondary')
                             .addClass('bg-danger')
-                            .html(
-                                `<i class="ri-error-warning-line mr-1 text-white"></i> ${errorMsg}`
-                            );
+                            .html(`<i class="ri-error-warning-line mr-1 text-white"></i> ${errorMsg}`);
 
                         $('#verif_rfid_scan').prop('disabled', false).val('').focus();
                     });
@@ -465,8 +408,7 @@
                 }];
 
                 let originalBtnText = btn.html();
-                btn.prop('disabled', true).html(
-                    '<i class="spinner-border spinner-border-sm me-1"></i> Memproses...');
+                btn.prop('disabled', true).html('<i class="spinner-border spinner-border-sm me-1"></i> Memproses Data...');
 
                 $.ajax({
                     url: "{{ url('/hr-connect/dept-ga/karyawan-masuk/updateStatus') }}",
@@ -486,15 +428,14 @@
 
                         if (lokerIndex !== -1) {
                             targetArray[lokerIndex].total_penghuni += 1;
-                            if (!targetArray[lokerIndex].kategori_tersedia || targetArray[
-                                    lokerIndex].kategori_tersedia == null) {
+                            if (!targetArray[lokerIndex].kategori_tersedia || targetArray[lokerIndex].kategori_tersedia == null) {
                                 targetArray[lokerIndex].kategori_tersedia = kategoriBaru;
                             }
                         }
 
                         $('#modalVerifikasi').modal('hide');
                         Toastify({
-                            text: "Verifikasi & plotting loker berhasil disimpan!",
+                            text: "Verifikasi sukses! Fasilitas loker berhasil dialokasikan.",
                             duration: 4000,
                             gravity: "top",
                             position: "right",
@@ -504,8 +445,7 @@
                         $('#tableAjax').DataTable().draw(false);
                     },
                     error: function(xhr) {
-                        Swal.fire("Gagal", xhr.responseJSON?.message ||
-                            "Terjadi kesalahan server saat memproses data.", "error");
+                        Swal.fire("Gagal", xhr.responseJSON?.message || "Terjadi kesalahan server saat memproses data.", "error");
                         btn.prop('disabled', false).html(originalBtnText);
                     }
                 });
@@ -515,14 +455,13 @@
                 e.preventDefault();
 
                 if (showAll === 0 && (!defaultTanggal || defaultTanggal === '')) {
-                    Swal.fire('Peringatan', 'Silahkan pilih tanggal filter terlebih dahulu!', 'warning');
+                    Swal.fire('Peringatan', 'Silakan pilih filter tanggal terlebih dahulu!', 'warning');
                     return;
                 }
 
                 let btn = $(this);
                 let originalBtnText = btn.html();
-                btn.prop('disabled', true).html(
-                    '<i class="spinner-border spinner-border-sm me-1"></i> Mengunduh...');
+                btn.prop('disabled', true).html('<i class="spinner-border spinner-border-sm me-1"></i> Mengunduh Dokumen...');
 
                 let hiddenForm = $('<form>', {
                     'method': 'POST',

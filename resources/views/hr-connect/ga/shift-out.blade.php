@@ -19,11 +19,11 @@
     <div class="container-fluid">
         <div class="row mb-3 align-items-end">
             <div class="col-lg-3">
-                <label class="form-label font-weight-bold text-muted">Filter Tanggal</label>
+                <label class="form-label font-weight-bold text-muted">Filter Tanggal Keluar</label>
                 <select class="form-select form-control shadow-sm" id="tanggalFilter">
                     <option value="" disabled selected>Pilih Tanggal</option>
                     @if ($tanggalTersedia->isEmpty())
-                        <option value="" disabled>Belum ada jadwal karyawan masuk</option>
+                        <option value="" disabled>Belum ada data karyawan keluar</option>
                     @else
                         @foreach ($tanggalTersedia as $date)
                             <option value="{{ $date }}">
@@ -52,17 +52,17 @@
                             </div>
                             <div class="col-lg-6 text-end">
                                 <button class="btn btn-secondary font-weight-bolder shadow-sm me-2"
-                                    id="btnExportExcel">
+                                    id="btnExportExcel" data-bs-toggle="tooltip" data-bs-placement="top" title="Unduh data ke format Excel">
                                     <i class="ri-file-excel-2-line align-bottom me-1"></i> Export Data
                                 </button>
 
-                                <button class="btn btn-warning font-weight-bolder shadow-sm me-2" id="btnToggleMassal">
+                                <button class="btn btn-warning font-weight-bolder shadow-sm me-2" id="btnToggleMassal" data-bs-toggle="tooltip" data-bs-placement="top" title="Aktifkan mode cabut loker massal">
                                     <i class="ri-checkbox-multiple-line align-bottom me-1"></i> Pilih Massal
                                 </button>
 
                                 <button class="btn btn-soft-success font-weight-bolder shadow-sm" id="btnSubmit"
                                     style="display: none;">
-                                    <i class="ri-key-2-line align-bottom me-1"></i> Cabut Terpilih (<span
+                                    <i class="ri-key-2-line align-bottom me-1"></i> Proses Cabut Massal (<span
                                         id="countChecked">0</span>)
                                 </button>
                             </div>
@@ -155,7 +155,7 @@
                             }
                             return `
                             <div class="text-center">
-                                <span class="text-muted"> Tidak Ada Loker</span>
+                                <span class="text-muted fst-italic" style="font-size: 0.85rem;"><i class="ri-forbid-line me-1"></i> Tanpa Fasilitas Loker</span>
                             </div>`;
                         }
                     },
@@ -171,17 +171,15 @@
                                 <div class="d-flex justify-content-center align-items-center gap-2">
                                     <input type="checkbox" class="form-check-input checklist d-none"
                                         value="${row.id}"
-                                        data-nik="${row.nik}"
-                                        data-alasan="${row.alasan_keluar || 'Resign / Habis Kontrak'}">
+                                        data-nik="${row.nik}">
 
                                     <button type="button" class="btn btn-sm btn-outline-danger btn-hapusSatuan fw-bold"
                                         data-id="${row.id}"
                                         data-nama="${row.nama}"
                                         data-nik="${row.nik}"
-                                        data-alasan="${row.alasan_keluar || 'Resign / Habis Kontrak'}"
                                         data-bs-toggle="tooltip"
                                         data-bs-placement="top"
-                                        title="Cabut & kosongkan loker NIK ${row.nik}" style="font-size: 0.85rem;">
+                                        title="Proses clearance untuk NIK ${row.nik}" style="font-size: 0.85rem;">
                                         <i class="ri-key-2-line"></i> Cabut Loker
                                     </button>
                                 </div>
@@ -196,7 +194,7 @@
 
                 if (isBulkMode) {
                     $('#headerTindakan').html(`
-            <input type="checkbox" id="selectAll" class="form-check-input" style="cursor: pointer;">
+            <input type="checkbox" id="selectAll" class="form-check-input" style="cursor: pointer;" data-bs-toggle="tooltip" title="Pilih Semua">
         `);
                     $('.btn-hapusSatuan').addClass('d-none');
                     $('.checklist').removeClass('d-none');
@@ -205,6 +203,8 @@
                     $('.btn-hapusSatuan').removeClass('d-none');
                     $('.checklist').addClass('d-none');
                 }
+
+                $('[data-bs-toggle="tooltip"]').tooltip();
             });
 
             $(document).on("change", "#selectAll", function() {
@@ -230,10 +230,10 @@
 
                 if (isBulkMode) {
                     $(this).removeClass('btn-warning').addClass('btn-danger')
-                        .html('<i class="ri-close-line align-bottom me-1"></i> Batal Pilih');
+                        .html('<i class="ri-close-line align-bottom me-1"></i> Batal Pilih Massal');
 
                     $('#headerTindakan').html(`
-            <input type="checkbox" id="selectAll" class="form-check-input" style="cursor: pointer;">
+            <input type="checkbox" id="selectAll" class="form-check-input" style="cursor: pointer;" data-bs-toggle="tooltip" title="Pilih Semua">
         `);
 
                     $('.btn-hapusSatuan').addClass('d-none');
@@ -251,6 +251,8 @@
                     $("#btnSubmit").fadeOut();
                     $("#countChecked").text(0);
                 }
+
+                $('[data-bs-toggle="tooltip"]').tooltip();
             });
 
             $(document).on("change", ".checklist", function() {
@@ -273,7 +275,7 @@
                     dataToSend.push({
                         id_karyawan: $(this).val(),
                         nik: $(this).attr('data-nik'),
-                        alasan: $(this).data('alasan')
+                        alasan: "Pencabutan Loker Massal"
                     });
                 });
 
@@ -281,12 +283,12 @@
 
                 Swal.fire({
                     title: "Konfirmasi Clearance Massal",
-                    html: `Anda akan mencabut fasilitas loker untuk <b>${dataToSend.length} karyawan terpilih</b>. Aksi ini akan mengosongkan aset loker secara permanen. Lanjutkan?`,
+                    html: `Anda akan mencabut fasilitas loker untuk <b>${dataToSend.length} karyawan terpilih</b>. Aksi ini akan mengosongkan aset loker secara permanen. Lanjutkan proses?`,
                     icon: "warning",
                     showCancelButton: true,
-                    confirmButtonColor: "#d33",
+                    confirmButtonColor: "#0ab39c",
                     cancelButtonColor: "#878a99",
-                    confirmButtonText: "<i class='ri-check-double-line'></i> Ya, Eksekusi Semua",
+                    confirmButtonText: "<i class='ri-check-double-line me-1'></i> Ya, Eksekusi Semua",
                     cancelButtonText: "Batal",
                     reverseButtons: true
                 }).then((result) => {
@@ -300,7 +302,7 @@
                             },
                             success: function(response) {
                                 Toastify({
-                                    text: `Sebanyak ${dataToSend.length} fasilitas loker berhasil dicabut.`,
+                                    text: `Proses massal berhasil! Sebanyak ${dataToSend.length} fasilitas loker telah dicabut.`,
                                     duration: 4000,
                                     backgroundColor: "#0ab39c",
                                     gravity: "top",
@@ -311,8 +313,8 @@
                                 $("#btnSubmit").fadeOut();
                             },
                             error: function(xhr) {
-                                Swal.fire('Gagal!',
-                                    'Terjadi kesalahan sistem saat memproses data.',
+                                Swal.fire('Gagal Memproses!',
+                                    'Terjadi kesalahan sistem saat memproses data clearance massal.',
                                     'error');
                             }
                         });
@@ -332,15 +334,16 @@
                 if (hasLoker) {
                     Swal.fire({
                         title: "Konfirmasi Cabut Loker",
-                        html: `Nama: <b>${nama}</b><br>NIK: <b>${nik}</b><br>Loker: <b>${rowData.penghuni.kode_rak} - ${rowData.penghuni.no_loker}</b><br>Masukkan alasan:`,
+                        html: `<div class="text-start mt-3">Nama: <b>${nama}</b><br>NIK: <b>${nik}</b><br>Loker: <b>${rowData.penghuni.kode_rak} - ${rowData.penghuni.no_loker}</b><br><br>Masukkan alasan clearance:</div>`,
                         input: 'text',
-                        inputPlaceholder: 'Contoh: Resign, Kabur...',
+                        inputPlaceholder: 'Contoh: Resign, Habis Kontrak...',
                         showCancelButton: true,
-                        confirmButtonColor: "#d33",
-                        confirmButtonText: "Ya, Cabut Loker",
+                        confirmButtonColor: "#0ab39c",
+                        confirmButtonText: "Proses Clearance",
                         cancelButtonText: "Batal",
+                        reverseButtons: true,
                         inputValidator: (value) => {
-                            if (!value) return 'Alasan wajib diisi, Bro!'
+                            if (!value) return 'Alasan pencabutan wajib diisi!'
                         }
                     }).then((result) => {
                         if (result.isConfirmed) {
@@ -349,16 +352,17 @@
                     });
                 } else {
                     Swal.fire({
-                        title: "Konfirmasi Cabut Loker",
-                        html: `Nama: <b>${nama}</b><br>NIK: <b>${nik}</b><br>Karyawan tidak memiliki fasilitas loker. Tetap cabut loker?`,
+                        title: "Peringatan Fasilitas Loker",
+                        html: `Nama: <b>${nama}</b><br>NIK: <b>${nik}</b><br><br>Karyawan ini tidak terdaftar memiliki fasilitas loker. Tetap lanjutkan proses clearance?`,
                         icon: "question",
                         showCancelButton: true,
-                        confirmButtonColor: "#d33",
-                        confirmButtonText: "Ya, Cabut Loker",
-                        cancelButtonText: "Batal"
+                        confirmButtonColor: "#0ab39c",
+                        confirmButtonText: "Ya, Lanjutkan",
+                        cancelButtonText: "Batal",
+                        reverseButtons: true
                     }).then((result) => {
                         if (result.isConfirmed) {
-                            prosesClearance(idKaryawan, nik, 'Karyawan tanpa Loker');
+                            prosesClearance(idKaryawan, nik, 'Clearance Karyawan Tanpa Loker');
                         }
                     });
                 }
@@ -380,14 +384,14 @@
                     },
                     success: function() {
                         Toastify({
-                            text: "Clearance berhasil!",
+                            text: "Clearance data karyawan berhasil diproses!",
                             duration: 3000,
                             backgroundColor: "#0ab39c"
                         }).showToast();
                         $("#tableAjax").DataTable().draw(false);
                     },
                     error: function() {
-                        Swal.fire('Gagal!', 'Kesalahan sistem.', 'error');
+                        Swal.fire('Gagal Memproses!', 'Terjadi kesalahan sistem internal.', 'error');
                     }
                 });
             }
@@ -402,7 +406,7 @@
                 let originalBtnText = btn.html();
 
                 btn.prop('disabled', true)
-                    .html('<i class="spinner-border spinner-border-sm me-1"></i> Mengunduh...')
+                    .html('<i class="spinner-border spinner-border-sm me-1"></i> Mengunduh Dokumen...')
 
                 let hiddenForm = $('<form>', {
                     'method': 'POST',

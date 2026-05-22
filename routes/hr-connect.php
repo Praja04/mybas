@@ -78,7 +78,7 @@ Route::middleware(['auth', 'rules'])->group(function () {
 
             // Karyawan Keluar
             Route::prefix('/karyawan-keluar')->group(function () {
-                Route::get('/', 'HRConnect\GAShiftOutController@index');
+                Route::get('/', 'HRConnect\GAShiftOutController@index')->name('ga.karyawan-keluar');
                 Route::get('/getData', 'HRConnect\GAShiftOutController@getData');
                 Route::post('/update', 'HRConnect\GAShiftOutController@update');
                 Route::post('/export', 'HRConnect\GAShiftOutController@exportExcel');
