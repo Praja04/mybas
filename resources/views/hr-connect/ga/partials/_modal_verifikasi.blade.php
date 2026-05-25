@@ -161,7 +161,7 @@
                                     </div>
                                 </div>
 
-                                <div class="bg-light-info rounded p-3 border border-info border-left-info"
+                                <div id="wrapper_verif_loker" class="bg-light-info rounded p-3 border border-info border-left-info"
                                     style="border-left-width: 4px !important;">
                                     <span class="text-info font-weight-bold d-block mb-1"
                                         style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px;">
