@@ -18,16 +18,16 @@ Route::middleware(['auth', 'rules'])->group(function () {
         });
 
         // Masters User Loker
-        Route::prefix('/masters/loker-user')->group(function () {
-            Route::get('/', 'HRConnect\LokerMasterUserController@index');
-            Route::get('/getData', 'HRConnect\LokerMasterUserController@getData');
-            Route::post('/store', 'HRConnect\LokerMasterUserController@store');
-            Route::get('/show/{id}', 'HRConnect\LokerMasterUserController@show');
-            Route::get('/get-by-nik/{nik}', 'HRConnect\LokerMasterUserController@getByNik');
-            Route::post('/{id}', 'HRConnect\LokerMasterUserController@update');
-            Route::delete('/{id}', 'HRConnect\LokerMasterUserController@destroy');
-            Route::delete('/delete-by-nik/{nik}', 'HRConnect\LokerMasterUserController@destroyByNik');
-        });
+        // Route::prefix('/masters/loker-user')->group(function () {
+        //     Route::get('/', 'HRConnect\LokerMasterUserController@index');
+        //     Route::get('/getData', 'HRConnect\LokerMasterUserController@getData');
+        //     Route::post('/store', 'HRConnect\LokerMasterUserController@store');
+        //     Route::get('/show/{id}', 'HRConnect\LokerMasterUserController@show');
+        //     Route::get('/get-by-nik/{nik}', 'HRConnect\LokerMasterUserController@getByNik');
+        //     Route::post('/{id}', 'HRConnect\LokerMasterUserController@update');
+        //     Route::delete('/{id}', 'HRConnect\LokerMasterUserController@destroy');
+        //     Route::delete('/delete-by-nik/{nik}', 'HRConnect\LokerMasterUserController@destroyByNik');
+        // });
 
         // Dep. Admin
         // [x] Bebenah route Admin Department

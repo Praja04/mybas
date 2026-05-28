@@ -38,7 +38,7 @@ class KaryawanMasukToHR implements ShouldQueue
         $eksternalMails = [];
 
         foreach ($this->to as $email) {
-            if (Str::endsWith($email, ["@myemail.bas.co.id", "@prakarsaalamsegar.com"])) {
+            if (Str::endsWith($email, ["@myemail.pas", "@prakarsaalamsegar.com"])) {
                 $internalMails[] = $email;
             } else {
                 $eksternalMails[] = $email;

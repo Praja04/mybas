@@ -2,6 +2,7 @@
 namespace App\Exports\HRConnect;
 
 use App\HrKaryawan;
+use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithColumnFormatting;
@@ -13,60 +14,66 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 class KaryawanKeluarExport implements FromCollection, WithHeadings, WithMapping, ShouldAutoSize, WithStyles, WithColumnFormatting
 {
-    protected $tanggal;
-    protected $showAll;
+    protected $data; // Hanya 1 parameter penangkap array keranjang
 
-    public function __construct($tanggal, $showAll)
+    public function __construct($data)
     {
-        $this->tanggal = $tanggal;
-        $this->showAll = $showAll;
+        $this->data = $data;
     }
 
     public function collection()
     {
-        // $query = HrKaryawan::where('tanggal_masuk', '>', '2025-01-01')
-        //     ->orderBy('tanggal_masuk', 'asc');
-        $query = HrKaryawan::with(['penghuni' => function($q) {
-            $q->where('is_active', 'Y');
-        }])->where('tanggal_masuk', '>', '2025-01-01')
-        ->orderBy('tanggal_masuk','desc');
+        // 1. Ekstrak NIK dari array keranjang
+        // Catatan: Di fungsi checkout, NIK disimpan di array dengan key 'nik'
+        $niks = collect($this->data)->pluck('nik')->filter()->toArray();
 
-        if ($this->showAll == 0 && ! empty($this->tanggal)) {
-            $query->where('tanggal_masuk', $this->tanggal);
+        // Pagar Betis: Kalau kosong, return Excel kosong
+        if (empty($niks)) {
+            return new Collection();
         }
 
-        return $query->get();
+        // 2. Tarik Database (Gak perlu relasi loker untuk Admin)
+        return HrKaryawan::whereIn('nik', $niks)->get();
     }
 
     public function headings(): array
     {
+        // Urutan disamakan dengan Tabel UI Checkout Admin + Kolom Alasan & Tgl
         return [
+            'Nama',
             'NIK',
-            'Nama Lengkap',
-            'Jenis Kelamin',
-            'Kategori',
-            'Divisi',
-            'Bagian',
-            'Tanggal Masuk',
-            'Fasilitas Loker',
+            'Divisi / Dept',
+            'Kode Bagian',
+            'Kode Admin',
+            'Kode Group',
+            'Alasan Keluar',
+            'Tgl Keluar',
         ];
     }
 
     public function map($karyawan): array
     {
-        $statusLoker = $karyawan->penghuni
-        ? ($karyawan->penghuni->kode_rak . ' - ' . $karyawan->penghuni->no_loker)
-        : 'Belum / Tidak memiliki Loker';
+        // Cari alasan dan tanggal keluar dari array keranjang ($this->data)
+        // karena data ini belum tentu ke-update instan di DB (tergantung antrean)
+        $detailCart = collect($this->data)->firstWhere('nik', $karyawan->nik);
+
+        $alasanKeluar = $detailCart['alasan_keluar'] ?? $karyawan->alasan_keluar ?? '-';
+        $tglKeluar    = $detailCart['tanggal_keluar'] ?? $karyawan->tanggal_keluar;
+
+        // Format tanggal biar enak dibaca HR
+        $formattedTglKeluar = ($tglKeluar && $tglKeluar !== '0000-00-00')
+            ? \Carbon\Carbon::parse($tglKeluar)->format('d-m-Y')
+            : '-';
 
         return [
-            ' ' . $karyawan->nik,
             $karyawan->nama,
-            $karyawan->jenis_kelamin == 'L' ? 'Laki-Laki' : ($karyawan->jenis_kelamin == 'P' ? 'Perempuan' : '-'),
-            $karyawan->staff == 'Y' ? 'Staff' : ($karyawan->staff == 'N' ? 'Non Staff' : '-'),
+            ' ' . $karyawan->nik, // Kasih spasi biar Excel gak ngehapus 0 di depan
             $karyawan->kode_divisi,
             $karyawan->kode_bagian,
-            $karyawan->tanggal_masuk ? \Carbon\Carbon::parse($karyawan->tanggal_masuk)->format('d-m-Y') : '-',
-            $statusLoker,
+            $karyawan->kode_admin,
+            $karyawan->kode_group,
+            $alasanKeluar,
+            $formattedTglKeluar,
         ];
     }
 
@@ -77,7 +84,7 @@ class KaryawanKeluarExport implements FromCollection, WithHeadings, WithMapping,
                 'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
                 'fill' => [
                     'fillType'   => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
-                    'startColor' => ['rgb' => '4F81BD'],
+                    'startColor' => ['rgb' => 'DC3545'], // Warna Merah (Danger) khas Checkout
                 ],
             ],
         ];
@@ -86,7 +93,8 @@ class KaryawanKeluarExport implements FromCollection, WithHeadings, WithMapping,
     public function columnFormats(): array
     {
         return [
-            'A' => NumberFormat::FORMAT_TEXT,
+            // NIK sekarang pindah ke kolom B, format jadi TEXT
+            'B' => NumberFormat::FORMAT_TEXT,
         ];
     }
 }

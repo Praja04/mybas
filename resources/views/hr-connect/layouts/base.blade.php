@@ -30,13 +30,13 @@ $menus = [
                 'icon' => 'mdi-account-cog',
                 'submenu' => [],
             ],
-            [
-                'path' => 'hr-connect/masters/loker-user',
-                'label' => 'Loker User',
-                'permission' => 'hr_connect_master',
-                'icon' => 'mdi-account-cog',
-                'submenu' => [],
-            ],
+            // [
+            //     'path' => 'hr-connect/masters/loker-user',
+            //     'label' => 'Loker User',
+            //     'permission' => 'hr_connect_master',
+            //     'icon' => 'mdi-account-cog',
+            //     'submenu' => [],
+            // ],
         ],
     ],
     [

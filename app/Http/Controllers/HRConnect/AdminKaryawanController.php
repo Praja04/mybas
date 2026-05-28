@@ -120,8 +120,8 @@ class AdminKaryawanController extends Controller
                 ];
 
                 if ($status_proses === 'IN') {
-                    $updateData['kode_group']  = $kode_group;
-                    $updateData['kode_admin']  = $kode_admin;
+                    $updateData['kode_group'] = $kode_group;
+                    $updateData['kode_admin'] = $kode_admin;
                 } else {
                     $updateData['kode_group'] = null;
                     $updateData['kode_admin'] = null;

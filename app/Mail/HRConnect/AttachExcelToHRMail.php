@@ -33,7 +33,7 @@ class AttachExcelToHRMail extends Mailable
         $nama_file = "Lampiran Karyawan Baru per Tanggal {$tgl_now}.xlsx";
 
         return $this->subject('HRConnect - File Lampiran Karyawan Baru')
-            ->view('mail.hr-connect.attachExcelToHr')
+            ->view('mail.hr-connect.attachExcelToHrIN')
             ->attach(Excel::download(
                 new KaryawanBaruExport($this->data),
                 $nama_file
