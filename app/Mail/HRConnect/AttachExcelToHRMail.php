@@ -1,14 +1,11 @@
 <?php
-
 namespace App\Mail\HRConnect;
 
-use App\HrKaryawan;
-use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\HRConnect\KaryawanBaruExport;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use App\Exports\HRConnect\KaryawanBaruExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class AttachExcelToHRMail extends Mailable
 {
@@ -32,21 +29,15 @@ class AttachExcelToHRMail extends Mailable
      */
     public function build()
     {
-        // $hr_karyawan = collect($this->data);
-        // $url = public_path('images/hr_connect.jpg');
-        $nama_file = 'Lampiran Karyawan Baru' . date('d-m-Y') . '.xlsx';
+        $tgl_now   = date('d-m-Y');
+        $nama_file = "Lampiran Karyawan Baru per Tanggal {$tgl_now}.xlsx";
 
         return $this->subject('HRConnect - File Lampiran Karyawan Baru')
             ->view('mail.hr-connect.attachExcelToHr')
-            // ->with(['data' => $hr_karyawan])
-            // ->attach(
-            //     (new KaryawanBaruExport($this->data))->download($nama_file),
-            //     ['as' => $nama_file]
-            // );
             ->attach(Excel::download(
                 new KaryawanBaruExport($this->data),
                 $nama_file
-                )->getFile(), ['as' => $nama_file]
+            )->getFile(), ['as' => $nama_file]
             );
     }
 }

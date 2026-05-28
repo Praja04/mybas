@@ -1,24 +1,24 @@
 <?php
-
 namespace App\Mail\HRConnect;
 
+use App\Exports\HRConnect\KaryawanKeluarFromAdminToGAExport;
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
+use Maatwebsite\Excel\Facades\Excel;
 
 class FyiGaShiftingOutMail extends Mailable
 {
     use Queueable, SerializesModels;
-    public $link;
+    public $dataList;
     /**
      * Create a new message instance.
      *
      * @return void
      */
-    public function __construct($link)
+    public function __construct($dataList)
     {
-        $this->link = $link;
+        $this->dataList = $dataList;
     }
 
     /**
@@ -28,10 +28,17 @@ class FyiGaShiftingOutMail extends Mailable
      */
     public function build()
     {
-        $data['link'] = $this->link;
+        $tgl_now   = date('d-m-Y');
+        $nama_file = "Lampiran Karyawan Keluar per Tanggal {$tgl_now}.xlsx";
 
         return $this
-                ->subject('HRConnect - Informasi Permohonan Penghapusan Data Karyawan')
-                ->view('mail.hr-connect.FyiToGaShiftOut', $data);
+            ->subject('HRConnect - Informasi Permohonan Penghapusan Data Karyawan')
+            ->view('mail.hr-connect.FyiToGaShiftOut', [
+                'list_karyawan' => $this->dataList['list_karyawan'],
+                'link'          => $this->dataList['tautan'],
+            ])
+            ->attach(Excel::download(
+                new KaryawanKeluarFromAdminToGAExport($this->dataList['list_karyawan']), $tgl_now, $nama_file
+            )->getFile(), ['as' => $nama_file]);
     }
 }

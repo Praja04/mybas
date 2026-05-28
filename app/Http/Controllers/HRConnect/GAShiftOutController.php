@@ -8,6 +8,7 @@ use App\Jobs\HRConnect\KaryawanKeluarSelesaiToHR;
 use App\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Facades\Excel;
 use Yajra\Datatables\Datatables;
 
@@ -63,7 +64,6 @@ class GAShiftOutController extends Controller
     {
         $data = $req->input('data');
 
-        // 1. Safety Check: Validasi jika paket data kosong
         if (empty($data)) {
             return response()->json([
                 'success' => false,
@@ -74,14 +74,12 @@ class GAShiftOutController extends Controller
         DB::beginTransaction();
 
         try {
-            // 2. Looping Eksekusi Clearance
             foreach ($data as $item) {
                 $nik        = $item['nik'];
                 $idKaryawan = $item['id_karyawan'];
 
                 $alasanKeluar = $item['alasan'] ?? 'Pencabutan Loker Massal';
 
-                // Tarik data karyawan asli dari database
                 $karyawan = HrKaryawan::find($idKaryawan);
                 if (! $karyawan) {
                     continue;
@@ -90,7 +88,6 @@ class GAShiftOutController extends Controller
 
                 $penghuni = DB::table('loker_penghuni')->where('nik', $nik)->first();
 
-                // 3. Catat Sejarah Transaksi Loker (Keterangan diperhalus)
                 DB::table('loker_transaksi')->insert([
                     'nik'            => $nik,
                     'nama'           => $nama,
@@ -104,43 +101,41 @@ class GAShiftOutController extends Controller
                     'created_at'     => now(),
                 ]);
 
-                // 4. Cabut Loker dari tabel penghuni
                 if ($penghuni) {
                     DB::table('loker_penghuni')->where('id', $penghuni->id)->delete();
                 }
 
-                // 5. Update Status Karyawan di HR (Menjalankan Wasiat Developer Lama!)
                 $karyawan->update([
-                    'out_complete'   => 'Y',
+                    'out_complete' => 'Y',
                     // 'is_active'      => 'N',
                     // 'tanggal_keluar' => now()->format('Y-m-d'),
                 ]);
             }
 
-            // Kunci semua perubahan di Database
             DB::commit();
 
-            // =========================================================================
-            // 6. PROSES PENGIRIMAN EMAIL (MODE TESTING)
-            // =========================================================================
+            $email_hr = User::whereHas('group.permissions', function ($query) {
+                $query->where('codename', 'hr_connect_notified_out');
+            })->select('email')
+                ->whereNotNull('email')
+                ->groupBy('email')
+                ->get();
 
-            // Email penerima masih di-hardcode untuk testing
-            $to   = ['akunbaru291222@gmail.com'];
-            $link = route('ga.karyawan-keluar');
+            if ($email_hr->isNotEmpty()) {
+                $to   = $email_hr->pluck('email')->toArray();
+                $link = url('/hr-connect/dept-ga/karyawan-keluar');
 
-            // Kita kembalikan ke dispatch() biasa, BUKAN dispatchNow().
-            // Pastikan terminal lu menjalankan: php artisan queue:work
-            KaryawanKeluarSelesaiToHR::dispatch($to, $data, $link);
+                KaryawanKeluarSelesaiToHR::dispatch($to, $data, $link);
+            }
 
             return response()->json([
                 'success' => true,
-                'message' => 'Proses clearance berhasil diselesaikan dan email notifikasi sedang dikirim.',
+                'message' => 'Proses clearance berhasil dan email sedang dikirim.',
             ]);
-
         } catch (\Exception $e) {
-            // Jika ada 1 aja yang gagal, batalkan SEMUA perubahan database
             DB::rollBack();
 
+            Log::error('GA Shift Out Error: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal memproses data clearance: ' . $e->getMessage(),

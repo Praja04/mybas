@@ -46,22 +46,25 @@ class GAGoodieApdController extends Controller
                     'is_goobag' => 'Y',
                 ]);
 
-            $to = User::whereHas('group.permissions', function ($query) {
+            DB::commit();
+
+            $email_hr = User::whereHas('group.permissions', function ($query) {
                 $query->where('codename', 'hr_connect_notified_in');
-            })
+            })->select('email')
                 ->whereNotNull('email')
                 ->groupBy('email')
-                ->pluck('email')
-                ->toArray();
+                ->get();
 
-            if (! empty($to)) {
+            if ($email_hr->isNotEmpty()) {
+                $to = $email_hr->pluck('email')->toArray();
+
                 GoodieNotify::dispatch($to, $count, $tgl_masuk);
             }
 
-            DB::commit();
-            return response()->json(['success' => true, 'msg' => 'Data berhasil diperbarui!']);
+            return response()->json(['success' => true, 'msg' => 'Proses konfirmasi berhasil dan email sedang dikirim!']);
         } catch (\Throwable $e) {
             DB::rollBack();
+            
             Log::error('GA Goodie Update Error: ' . $e->getMessage());
             return response()->json([
                 'success' => false,

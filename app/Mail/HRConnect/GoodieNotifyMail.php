@@ -12,6 +12,7 @@ class GoodieNotifyMail extends Mailable
     use Queueable, SerializesModels;
     public $count;
     public $tgl_masuk;
+    public $link;
     /**
      * Create a new message instance.
      *
@@ -34,7 +35,7 @@ class GoodieNotifyMail extends Mailable
                     ->view('mail.hr-connect.FyiGoodieApd')
                     ->with([
                         'count' => $this->count,
-                        'tgl_masuk' => $this->tgl_masuk
+                        'tgl_masuk' => $this->tgl_masuk,
                     ]);
     }
 }

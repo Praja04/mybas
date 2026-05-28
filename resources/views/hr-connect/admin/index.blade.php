@@ -2,9 +2,71 @@
 
 @push('styles')
     <link rel="stylesheet" href="{{ asset('assets/css/select2.min.css') }}">
+
     <style>
         .checkwish:disabled {
             cursor: not-allowed;
+            opacity: 0.5;
+        }
+
+        /* Tune up Select2 biar rapi di dalam tabel */
+        .select2-container--default .select2-selection--single {
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            height: 36px;
+        }
+
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            line-height: 34px;
+            font-size: 0.85rem;
+        }
+
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 34px;
+        }
+
+        /* Styling Table Header */
+        .table-custom-header th {
+            background-color: #f3f6f9 !important;
+            font-weight: 600;
+            color: #495057;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            letter-spacing: 0.5px;
+        }
+
+        /* Modal Custom Styling */
+        .modal-content {
+            border-radius: 16px;
+            border: 0;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .modal-header {
+            border-bottom: 1px solid #f0f0f0;
+            background-color: #fafbfc;
+            border-radius: 16px 16px 0 0;
+        }
+
+        /* Custom Tab Admin */
+        .tab-admin .nav-link {
+            background-color: #ffffff;
+            color: #6c757d;
+            border: 1px solid #e9ebec;
+            transition: all 0.3s ease;
+        }
+
+        .tab-admin .nav-link:hover {
+            border-color: #2166db;
+            /* Efek hover warna hijau khas velzon */
+            color: #2166db;
+        }
+
+        .tab-admin .nav-link.active {
+            background-color: #2166db !important;
+            /* Warna saat aktif */
+            color: #ffffff !important;
+            border-color: #2166db !important;
         }
     </style>
 @endpush
@@ -13,352 +75,112 @@
     <div class="container-fluid">
         <div class="row">
             @if (!$hrd_ir)
-                <ul class="nav nav-pills nav-justified mb-3" role="tablist">
-                    <li class="nav-item">
-                        <a class="nav-link waves-effect waves-light active" data-bs-toggle="tab" href="#floting"
-                            role="tab">
-                            Ploting Kode Group
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link waves-effect waves-light" data-bs-toggle="tab" href="#okb" role="tab">
-                            Karyawan Aktif
-                        </a>
-                    </li>
-                </ul>
+                <div class="col-lg-12">
+                    <ul class="nav nav-pills nav-justified tab-admin mb-4 gap-3" role="tablist">
+                        <li class="nav-item">
+                            <a class="nav-link active fw-bold shadow-sm rounded" data-bs-toggle="tab" href="#floting"
+                                role="tab" style="padding: 14px; font-size: 0.95rem;">
+                                <i class="ri-user-add-line align-bottom me-1 fs-5"></i> Proses Karyawan Masuk
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link fw-bold shadow-sm rounded" data-bs-toggle="tab" href="#okb" role="tab"
+                                style="padding: 14px; font-size: 0.95rem;">
+                                <i class="ri-team-line align-bottom me-1 fs-5"></i> Proses Karyawan Aktif
+                            </a>
+                        </li>
+                    </ul>
+                </div>
             @endif
+
             <div class="col-lg-12">
-
                 <div class="tab-content text-muted">
-                    {{-- Floting Kode --}}
-                    <div class="tab-pane {{ !$hrd_ir ? 'active' : '' }}" id="floting" role="tabpanel">
-                        <div class="row">
-                            <div class="col-lg-12 mb-3">
-                                <button class="btn btn-sm btn-success" onClick="uploadExcelModal()">Upload Excel</button>
-                                &nbsp;&nbsp;
-                                <a href="/assets/media/hr_connect/Admin - Ploting Kode Group.xlsx"
-                                    class="btn btn-sm btn-info">Template</a>&nbsp;&nbsp;
-                                <button class="btn btn-sm btn-primary" onClick="ketentuanUploadPlotingModal()">Ketentuan
-                                    Upload</button>
-                            </div>
-                        </div>
-                        <div class="card">
-                            <div class="card-header">
-                                <h5 class="card-title mb-0">Ploting Kode Group</h5>
-                            </div>
-                            <div class="card-body">
-                                <table id="tableAjax" class="table table-bordered" style="width:100%">
-                                    <thead>
-                                        <tr>
-                                            <th>Pilih</th>
-                                            <th>Tgl Masuk</th>
-                                            <th>NIK</th>
-                                            <th>Nama</th>
-                                            <th>Proses</th>
-                                            <th>Kode Admin</th>
-                                            <th>Kode Group</th>
-                                            <th>Dept</th>
-                                            <th>Kode Bagian</th>
-                                        </tr>
-                                    </thead>
-                                </table>
-                            </div>
-                        </div>
-                        <button type="button" class="btn btn-secondary custom-toggle active mb-3" data-bs-toggle="button"
-                            id="btnSubmit">
-                            <span class="icon-on"><i class="ri-alarm-line align-bottom me-1"></i> Mohon Tunggu</span>
-                            <span class="icon-off">Submit</span>
-                        </button>
-                    </div>
+                    @include('hr-connect.admin.partials.table._plot_karyawan')
 
-                    {{-- Karyawan Aktif --}}
-                    <div class="tab-pane {{ $hrd_ir ? 'active' : '' }}" id="okb" role="tabpanel">
-                        <button type="button" class="btn btn-success mb-2 rounded-pill" id="btnCart">
-                            lihat cart
-                            <span class="badge bg-warning text-dark ms-2" id="cart-count">0</span>
-                        </button>
-                        <div class="row">
-                            <div class="col-lg-12 mb-3 mt-5">
-                                <button class="btn btn-sm btn-success" onClick="uploadExcelCheckoutModal()">Upload
-                                    Excel</button>
-                                &nbsp;&nbsp;
-                                <a href="/assets/media/hr_connect/admin_checkout.xlsx" download="Admin - Checkout.xlsx"
-                                    class="btn btn-sm btn-info">Template</a>&nbsp;&nbsp;
-                                <button class="btn btn-sm btn-primary" onClick="ketentuanUploadCheckoutModal()">Ketentuan
-                                    Upload</button>
-                            </div>
-                        </div>
-                        <div class="card">
-                            <div class="card-header">
-                                <h5 class="card-title mb-0">Data Karyawan Aktif</h5>
-                            </div>
-                            <div class="card-body">
-                                <table id="tableAjax2" class="table table-bordered" style="width:100%">
-                                    <thead>
-                                        <tr>
-                                            <th scope="col" width="10%">
-                                                Cart
-                                            </th>
-                                            <th width="20%">Nik</th>
-                                            <th width="30%">Nama</th>
-                                            <th>Divisi</th>
-                                            <th>Kode Admin</th>
-                                            <th>Kode Bagian</th>
-                                            <th>Kode Group</th>
-                                        </tr>
-                                    </thead>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
+                    @include('hr-connect.admin.partials.table._checkout_karyawan')
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- SeeProfile !-->
-    <div class="modal fade" id="seeProfile" aria-hidden="true" aria-labelledby="..." tabindex="-1">
-        <div class="modal-dialog modal-dialog-scrollable">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <div id="p_name"></div>
-                </div>
-                <div class="modal-body">
-                    <div class="mt-1">
-                        <div id="p_container"></div>
-                    </div>
-                </div>
-            </div>
+    <div class="modal modal-xl fade" id="seeCart" aria-hidden="true" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+            @include('hr-connect.admin.partials.modal._karyawan_keluar')
         </div>
     </div>
 
-    <!-- SeeCart !-->
-    <div class="modal modal-xl fade" id="seeCart" aria-hidden="true" aria-labelledby="..." tabindex="-1">
-        <div class="modal-dialog modal-dialog-scrollable">
-            <div class="modal-content">
-                <div class="modal-header">
-                    Cart List
-                </div>
-                <div class="modal-body text-center">
-                    <div class="mt-1">
-                        <div class="row">
-                            <div class="col-lg-10 mx-auto">
-                                <div class="row mb-3">
-                                    <div class="col-lg-3">
-                                        <select id="pilihAlasanKeluar" class="form-select">
-                                            <option value="">Pilih Alasan Keluar</option>
-                                            <option value="Resign">Resign</option>
-                                            <option value="Habis Kontrak">Habis Kontrak</option>
-                                            <option value="Kabur">Kabur</option>
-                                            <option value="Cut Probation">Cut Probation</option>
-                                            <option value="PHK">PHK</option>
-                                            <option value="Cancel Join">Cancel Join</option>
-                                            <option value="Pensiun">Pensiun</option>
-                                            <option value="Pensiun Dini">Pensiun Dini</option>
-                                            <option value="Dikualifikasi Mengundurkan Diri">Dikualifikasi Mengundurkan Diri
-                                            </option>
-                                            <option value="Cut Probation Lebih Awal">Cut Probation Lebih Awal</option>
-                                        </select>
-                                    </div>
-                                    <div class="col-lg-3">
-                                        <input type="date" class="form-control" id="pilihTanggalKeluar">
-                                    </div>
-                                </div>
-                                <div class="row">
-                                    <div class="col-lg-12">
-                                        <table id="cart-table" class="table table-bordered" style="width:100%">
-                                            <thead>
-                                                <tr>
-                                                    <th style="width: 20%;">Nama</th>
-                                                    <th style="width: 20%;">NIK</th>
-                                                    <th style="width: 10%;">Dept</th>
-                                                    <th style="width: 10%;">Alasan Keluar</th>
-                                                    <th style="width: 10%;">Tanggal Keluar</th>
-                                                    <th style="width: 10%;">Batal</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody></tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <button class="btn btn-md btn-success mt-3 text-white rounded-pill" id="btnCheckout">
-                            Checkout
-                        </button>
-                    </div>
-                </div>
-            </div>
+    {{-- Modal Upload Masuk --}}
+    <div class="modal fade" id="modalData" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            @include('hr-connect.admin.partials.modal._upload_karyawan_masuk')
         </div>
     </div>
 
-    {{-- Modal --}}
-    <div class="modal fade" id="modalData" aria-hidden="true" aria-labelledby="..." tabindex="-1">
-        <div class="modal-dialog modal-dialog-scrollable">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="modalDataLabel">Upload Karyawan Masuk</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body text-center">
-                    <div class="mt-1">
-                        <div class="row">
-                            <div class="col-lg-12">
-                                <input type="file" class="form-control" id="fileUpload" accept=".xlsx">
-                                <button class="btn btn-primary mt-2" id="uploadExcel">Upload</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+    {{-- Modal Upload Keluar --}}
+    <div class="modal fade" id="modalData2" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            @include('hr-connect.admin.partials.modal._upload_karyawan_keluar')
         </div>
     </div>
 
-    <div class="modal fade" id="modalData2" aria-hidden="true" aria-labelledby="..." tabindex="-1">
-        <div class="modal-dialog modal-dialog-scrollable">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="modalData2Label">Upload Karyawan Keluar</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body text-center">
-                    <div class="mt-1">
-                        <div class="row">
-                            <div class="col-lg-12">
-                                <input type="file" class="form-control" id="fileUploadCheckout" accept=".xlsx">
-                                <button class="btn btn-primary mt-2" id="uploadCheckoutExcel">Upload</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+    {{-- Modal Info Plotting --}}
+    <div class="modal fade" id="ketentuanUploadPlotingModal" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+            @include('hr-connect.admin.partials.modal._info_plot_karyawan')
         </div>
     </div>
 
-    <div class="modal fade" id="ketentuanUploadPlotingModal" aria-hidden="true" aria-labelledby="..." tabindex="-1">
-        <div class="modal-dialog modal-lg modal-dialog-scrollable">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="ketentuanUploadPlotingModalLabel">Ketentuan Upload Karyawan Masuk</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="mt-1">
-                        <div class="row">
-                            <div class="col-lg-12">
-                                <h5 style="font-weight: bold">Contoh Template</h5>
-                                <table class="table table-bordered">
-                                    <tr>
-                                        <th>Tgl Masuk</th>
-                                        <th>NIK</th>
-                                        <th>Nama</th>
-                                        <th>Dept</th>
-                                        <th>Kode Bagian</th>
-                                        <th>Proses</th>
-                                        <th>Kode Admin</th>
-                                        <th>Kode Group</th>
-                                    </tr>
-                                    <tr>
-                                        <td>10/9/2024</td>
-                                        <td>123456789</td>
-                                        <td>Testing 1</td>
-                                        <td>PRO</td>
-                                        <td>PRN_02</td>
-                                        <td>IN</td>
-                                        <td>PAS_PRN_A</td>
-                                        <td>ENG_PRN_A</td>
-                                    </tr>
-                                    <tr>
-                                        <td>10/9/2024</td>
-                                        <td>132674758</td>
-                                        <td>Testing 2</td>
-                                        <td>PRO</td>
-                                        <td>PRN_02</td>
-                                        <td>NO-IN</td>
-                                        <td></td>
-                                        <td></td>
-                                    </tr>
-                                </table>
-                                <h5 style="font-weight: bold">Aturan Penulisan</h5>
-                                <ol>
-                                    <li>NIK harus sesuai.</li>
-                                    <li><u>Bila Proses nya NO-IN silahkan kosongkan Kode Admin dan Kode Group</u></li>
-                                </ol>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal fade" id="ketentuanUploadCheckoutModal" aria-hidden="true" aria-labelledby="..." tabindex="-1">
-        <div class="modal-dialog modal-lg modal-dialog-scrollable">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="ketentuanUploadCheckoutModalLabel">Ketentuan Upload Karyawan Keluar</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="mt-1">
-                        <div class="row">
-                            <div class="col-lg-12">
-                                <h5 style="font-weight: bold">Contoh Template</h5>
-                                <table class="table table-bordered">
-                                    <tr>
-                                        <th>NIK</th>
-                                        <th>Nama</th>
-                                        <th>Divisi</th>
-                                        <th>Kode Admin</th>
-                                        <th>Kode Bagian</th>
-                                        <th>Kode Group</th>
-                                        <th>Alasan Keluar</th>
-                                        <th>Tanggal Keluar</th>
-                                    </tr>
-                                    <tr>
-                                        <td>123456789</td>
-                                        <td>Testing 1</td>
-                                        <td>PRO</td>
-                                        <td>PAS_PRN_A</td>
-                                        <td>PRN_02</td>
-                                        <td>ENG_PRN_A</td>
-                                        <td>Habis Kontrak</td>
-                                        <td>10/20/2024</td>
-                                    </tr>
-                                    <tr>
-                                        <td>132674758</td>
-                                        <td>Testing 2</td>
-                                        <td>PRO</td>
-                                        <td>PAS_PRN_02</td>
-                                        <td>PRN_02</td>
-                                        <td>PRN_02_BNP17</td>
-                                        <td>Habis Kontrak</td>
-                                        <td>10/20/2024</td>
-                                    </tr>
-                                </table>
-                                <h5 style="font-weight: bold">Aturan Penulisan</h5>
-                                <ol>
-                                    <li>NIK harus sesuai.</li>
-                                    <li>Harus isi alasan keluar.</li>
-                                    <li><u>Tanggal keluar silahkan isi dengan format bulan/tanggal/tahun seperti:
-                                            10/09/2024</u></li>
-                                </ol>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+    {{-- Modal Info Checkout --}}
+    <div class="modal fade" id="ketentuanUploadCheckoutModal" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+            @include('hr-connect.admin.partials.modal._info_checkout_karyawan')
         </div>
     </div>
 @endsection
 
 @push('scripts')
     <script src="{{ asset('assets/plugins/global/select2.full.min.js') }}"></script>
-    {{-- <script src="{{ asset('assets/velzon/js/pages/select2.init.js') }}"></script> --}}
+
     <script>
+        // ==========================================
+        // FUNGSI GLOBAL (Bisa dipake di semua Tab)
+        // ==========================================
+        const CART_KEY = "karyawan_aktif_cartContainer";
+
+        window.getCart = function() {
+            let rawCart = localStorage.getItem(CART_KEY);
+            return rawCart ? JSON.parse(rawCart) : [];
+        }
+
+        window.setCart = function(cartData) {
+            localStorage.setItem(CART_KEY, JSON.stringify(cartData));
+        }
+
+        // Modal Toggle
+        window.uploadExcelModal = function() {
+            $("#modalData").modal("show");
+        }
+        window.uploadExcelCheckoutModal = function() {
+            $("#modalData2").modal("show");
+        }
+        window.ketentuanUploadPlotingModal = function() {
+            $("#ketentuanUploadPlotingModal").modal("show");
+        }
+        window.ketentuanUploadCheckoutModal = function() {
+            $("#ketentuanUploadCheckoutModal").modal("show");
+        }
+
+        $(document).ready(function() {
+            // Set jumlah badge cart saat halaman pertama kali diload
+            $('#cart-count').text(window.getCart().length);
+        });
+    </script>
+
+    {{-- <script>
         var cartContainer = JSON.parse(localStorage.getItem("karyawan_aktif_cartContainer")) || [];
 
         $(document).ready(function() {
+            // Logika Cart Header Select
             $('#pilihAlasanKeluar').change(function() {
                 var selectedAlasanKeluar = $(this).val();
                 if (selectedAlasanKeluar !== "") {
@@ -366,8 +188,6 @@
                     updateCartAlasanKeluar(selectedAlasanKeluar);
                 }
             });
-
-            updateCartTable();
 
             $(document).on('change', '#pilihTanggalKeluar', function() {
                 var selectedTanggalKeluar = $(this).val();
@@ -377,9 +197,20 @@
                 }
             });
 
+            updateCartTable();
+
+            // AJAX Upload Excel
             $(document).on("click", "#uploadExcel", function() {
                 let excelFile = $("#fileUpload")[0].files[0];
+                if (!excelFile) return alert("Pilih file dulu Bro!");
+
                 let formData = new FormData();
+                let btn = $(this);
+                let originalText = btn.html();
+
+                btn.html(
+                    '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Mengupload...'
+                ).prop('disabled', true);
                 formData.append('excel_file', excelFile);
 
                 $.ajax({
@@ -390,30 +221,34 @@
                     contentType: false,
                     success: function(res) {
                         $("#modalData").modal("hide");
-
                         Swal.fire({
                             icon: 'success',
-                            title: 'Success',
+                            title: 'Berhasil!',
                             text: res.message,
                             timer: 2000,
                             showConfirmButton: false
                         }).then(() => {
-                            setTimeout(function() {
-                                location.reload();
-                            }, 2000);
+                            location.reload();
                         });
                     },
                     error: function(xhr) {
-                        let message = xhr.responseJSON.message ||
-                            'Terjadi kesalahan saat mengunggah file.';
-                        alert(message);
+                        alert(xhr.responseJSON.message || 'Terjadi kesalahan.');
+                        btn.html(originalText).prop('disabled', false);
                     }
                 });
             });
 
             $(document).on("click", "#uploadCheckoutExcel", function() {
                 let excelFile = $("#fileUploadCheckout")[0].files[0];
+                if (!excelFile) return alert("Pilih file dulu Bro!");
+
                 let formData = new FormData();
+                let btn = $(this);
+                let originalText = btn.html();
+
+                btn.html(
+                    '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Mengupload...'
+                ).prop('disabled', true);
                 formData.append('excel_file', excelFile);
 
                 $.ajax({
@@ -424,30 +259,25 @@
                     contentType: false,
                     success: function(res) {
                         $("#modalData2").modal("hide");
-
                         Swal.fire({
                             icon: 'success',
-                            title: 'Success',
+                            title: 'Berhasil!',
                             text: res.message,
                             timer: 2000,
                             showConfirmButton: false
                         }).then(() => {
-                            setTimeout(function() {
-                                location.reload();
-                            }, 2000);
+                            location.reload();
                         });
                     },
                     error: function(xhr) {
-                        let message = xhr.responseJSON.message ||
-                            'Terjadi kesalahan saat mengunggah file.';
-                        alert(message);
+                        alert(xhr.responseJSON.message || 'Terjadi kesalahan.');
+                        btn.html(originalText).prop('disabled', false);
                     }
                 });
             });
-
-            updateCartTable();
         });
 
+        // Modals Toggle
         function uploadExcelModal() {
             $("#modalData").modal("show");
         }
@@ -464,14 +294,10 @@
             $("#ketentuanUploadCheckoutModal").modal("show");
         }
 
-        // Start Floting Kode Group 
-        $("#btnSubmit").hide();
-        // $("#btnSubmit2").hide();
-
+        // Start Floting Kode Group
         let table = $("#tableAjax").dataTable({
-            processing: false,
+            processing: true,
             serverSide: true,
-
             ajax: {
                 type: "GET",
                 url: "/hr-connect/dept-adm/data-karyawan/getDataFloting"
@@ -479,55 +305,16 @@
             data: null,
             columns: [{
                     render: function(data, type, row) {
-                        return `
-                <center>
-                    <input type="checkbox" class="checkwish" data-check="${row.id}" disabled />
-                </center>
-                `;
+                        return `<center><div class="form-check d-flex justify-content-center"><input class="form-check-input checkwish" type="checkbox" data-check="${row.id}" disabled style="transform: scale(1.3);"></div></center>`;
                     }
-                },
-                {
-                    data: 'tanggal_masuk'
-                },
-                {
-                    data: 'nik'
                 },
                 {
                     data: 'nama'
                 },
                 {
-                    render: function(data, type, row) {
-                        return `
-                    <select class="form-select statusProses">
-                        // Jangan Diubah Value nya
-                        <option value="IN">In</option>
-                        <option value="NO-IN">No-In</option>
-                    </select>
-                `;
-                    }
-                },
-                {
-                    render: function(data, type, row) {
-                        return `
-                    <select class="js-example-basic-single kodeAdmin">
-                        <option value="">Pilih</option>
-                        @foreach ($pkw_admin as $admin)
-                        <option value="{{ $admin->kode_admin }}">{{ $admin->kode_admin }}</option>
-                        @endforeach
-                    </select>
-                `;
-                    }
-                },
-                {
-                    render: function(data, type, row) {
-                        return `
-                    <select class="js-example-basic-single kodeGroup">
-                        <option value="">Pilih</option>
-                        @foreach ($pkw_group as $group)
-                        <option value="{{ $group->kode_group }}">{{ $group->kode_group }}</option>
-                        @endforeach
-                    </select>
-                `;
+                    data: 'nik',
+                    render: function(data) {
+                        return `<span class="fw-bold">${data}</span>`;
                     }
                 },
                 {
@@ -536,11 +323,47 @@
                 {
                     data: 'kode_bagian'
                 },
+                {
+                    render: function(data, type, row) {
+                        return `
+                            <select class="form-select form-select-sm shadow-sm statusProses">
+                                <option value="IN">IN</option>
+                                <option value="NO-IN">NO-IN</option>
+                            </select>`;
+                    }
+                },
+                {
+                    render: function(data, type, row) {
+                        return `
+                        <select class="js-example-basic-single kodeAdmin form-control">
+                            <option value="">-- Pilih --</option>
+                            @foreach ($pkw_admin as $admin)
+                            <option value="{{ $admin->kode_admin }}">{{ $admin->kode_admin }}</option>
+                            @endforeach
+                        </select>`;
+                    }
+                },
+                {
+                    render: function(data, type, row) {
+                        return `
+                        <select class="js-example-basic-single kodeGroup form-control">
+                            <option value="">-- Pilih --</option>
+                            @foreach ($pkw_group as $group)
+                            <option value="{{ $group->kode_group }}">{{ $group->kode_group }}</option>
+                            @endforeach
+                            </select>`;
+                    }
+                },
+                {
+                    data: 'tanggal_masuk'
+                },
             ]
         });
 
         table.on('draw.dt', function() {
-            $('.js-example-basic-single').select2();
+            $('.js-example-basic-single').select2({
+                width: '100%'
+            });
         });
 
         $(document).on("change", ".statusProses", function() {
@@ -548,20 +371,21 @@
             let statusProses = $(this).val();
             let checkwish = row.find(".checkwish");
             let kodeGroup = row.find('.kodeGroup');
+            let kodeAdmin = row.find('.kodeAdmin');
 
             if (statusProses == "NO-IN") {
                 checkwish.prop("checked", true);
-                kodeGroup.prop("disabled", true);
-                kodeGroup.empty().append('<option value="">Pilih</option>');
+                kodeGroup.prop("disabled", true).val('').trigger('change');
+                kodeAdmin.prop("disabled", true).val('').trigger('change');
 
-                $("#btnSubmit").show();
-            } else if (statusProses == "IN") {
+                row.addClass('table-danger');
+                $("#btnSubmit").removeClass('d-none');
+            } else {
                 kodeGroup.prop("disabled", false);
+                kodeAdmin.prop("disabled", false);
+                row.removeClass('table-danger');
+                if (!kodeGroup.val()) checkwish.prop("checked", false);
             }
-        });
-
-        $(document).on('change', '.checkwish', function() {
-            $("#btnSubmit").show();
         });
 
         $(document).on('change', '.kodeGroup', function() {
@@ -571,32 +395,33 @@
 
             if (selectedValue) {
                 checkwish.prop('checked', true);
-                $("#btnSubmit").show();
+                $("#btnSubmit").removeClass('d-none');
+                row.addClass('table-success');
             } else {
                 checkwish.prop('checked', false);
-
+                row.removeClass('table-success');
                 if ($(".checkwish:checked").length === 0) {
-                    $("#btnSubmit").hide();
+                    $("#btnSubmit").addClass('d-none');
                 }
             }
         });
 
-        // DONE
+        // Submit Plotting
         $("#btnSubmit").click(function() {
             let dataToSend = [];
+            let btn = $(this);
+            let originalHtml = btn.html();
 
             $("#tableAjax tbody input[type=checkbox]:checked").each(function() {
                 let row = $(this).closest('tr');
-
                 let idCheckwish = row.find('.checkwish').data("check");
                 let kodeGroup = row.find('.kodeGroup').val();
                 let kodeAdmin = row.find('.kodeAdmin').val();
                 let p_in = row.find('.statusProses').val();
 
-                if (p_in == "IN") {
-                    if (kodeGroup == "") {
-                        alert('Kode Group harus diisi!');
-                    }
+                if (p_in == "IN" && (!kodeGroup || !kodeAdmin)) {
+                    Swal.fire('Info', 'Kode Group dan Kode Admin wajib diisi untuk status IN!', 'warning');
+                    return false; // Break loop
                 }
                 dataToSend.push({
                     idCheckwish: idCheckwish,
@@ -606,27 +431,33 @@
                 });
             });
 
+            if (dataToSend.length === 0) return;
+
+            btn.html('<i class="spinner-border spinner-border-sm me-1"></i> Menyimpan...').prop('disabled', true);
+
             $.ajax({
                 url: "{{ url('/hr-connect/dept-adm/data-karyawan/setGroupCode') }}",
                 type: "POST",
                 data: {
-                    data: dataToSend
+                    data: dataToSend,
+                    _token: "{{ csrf_token() }}"
                 },
                 success: function(response) {
                     Toastify({
-                        text: "Berhasil memberikan fasilitas!",
+                        text: "Berhasil memberikan fasilitas grup!",
                         duration: 3000,
                         gravity: "top",
                         position: 'right',
-                        backgroundColor: "linear-gradient(to right, #28a745, #218838)",
+                        backgroundColor: "#0ab39c",
                     }).showToast();
 
-                    table.api().draw();
-                    table2.api().draw();
-                    $("#btnSubmit").hide();
+                    table.api().draw(false);
+                    table2.api().draw(false);
+                    btn.addClass('d-none').html(originalHtml).prop('disabled', false);
                 },
-                error: function(xhr, status, error) {
-                    console.error(xhr.responseText);
+                error: function(xhr) {
+                    alert('Gagal menyimpan data!');
+                    btn.html(originalHtml).prop('disabled', false);
                 }
             });
         });
@@ -634,68 +465,41 @@
 
         // Start Karyawan Aktif
         let table2 = $("#tableAjax2").dataTable({
-            processing: false,
+            processing: true,
             serverSide: true,
-            // paging: false,
-            // dom: "<'row'<'col-sm-12 text-right'Bf>>\
-            //         <'row'<'col-sm-12'tr>>\
-            //         <'row'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7 dataTables_pager'lp>>",
-            // buttons: [
-            //     {
-            //         extend: 'excel',
-            //         text: 'Export to Excel',
-            //         filename: 'Admin - Checkout',
-            //         exportOptions: {
-            //             columns: [1,2,3,4,5,6]
-            //         }
-            //     },
-            // ], 
             ajax: {
                 type: "GET",
                 url: "/hr-connect/dept-adm/data-karyawan/getDataOkb"
             },
             columns: [{
                     render: function(data, type, row) {
-
                         var cartContainer = JSON.parse(localStorage.getItem(
                             "karyawan_aktif_cartContainer")) || [];
-
-                        var found = cartContainer.find(function(cart) {
-                            return cart.id == row.id;
-                        });
-
-                        // console.log(cartContainer, found);
+                        var found = cartContainer.find(cart => cart.id == row.id);
 
                         if (found) {
-                            return `
-                    <center>
-                        <button class="btn btn-icon btn-success" onClick="removeFromCart('${row.id}')">
-                            <i class="mdi mdi-cart cartId" data-cart="${row.id}"></i>
-                        </button>
-                    </center>
-                    `;
+                            return `<center><button class="btn btn-sm btn-danger rounded-circle shadow-sm" onClick="removeFromCart('${row.id}')" data-bs-toggle="tooltip" title="Hapus dari Cart"><i class="ri-shopping-cart-2-fill"></i></button></center>`;
                         }
-
-                        return `
-                <center>
-                    <button class="btn btn-icon" onClick="addToCart('${row.id}', '${row.nik}', '${row.nama}', '${row.kode_bagian}','${row.kode_divisi}','${row.kode_bagian}','${row.kode_admin}')">
-                        <i class="mdi mdi-cart cartId" data-cart="${row.id}"></i>
-                    </button>
-                </center>
-                `;
+                        return `<center><button class="btn btn-sm btn-soft-dark rounded-circle shadow-sm" onClick="addToCart('${row.id}', '${row.nik}', '${row.nama}', '${row.kode_bagian}','${row.kode_divisi}','${row.kode_bagian}','${row.kode_admin}')" data-bs-toggle="tooltip" title="Masukkan ke Cart"><i class="ri-shopping-cart-2-line"></i></button></center>`;
                     }
-                },
-                {
-                    data: 'nik'
                 },
                 {
                     data: 'nama'
                 },
                 {
+                    data: 'nik',
+                    render: function(data) {
+                        return `<span class="fw-bold">${data}</span>`;
+                    }
+                },
+                {
                     data: 'kode_divisi'
                 },
                 {
-                    data: 'kode_admin'
+                    data: 'kode_admin',
+                    render: function(data) {
+                        return `<span class="badge bg-light text-dark border border-secondary">${data}</span>`;
+                    }
                 },
                 {
                     data: 'kode_bagian'
@@ -706,200 +510,18 @@
             ],
         });
 
-        // DONE
-        $(document).on("click", "#btnCheckout", function() {
-            let cartContainer = JSON.parse(localStorage.getItem("karyawan_aktif_cartContainer")) || [];
-
-            if (cartContainer.length === 0) {
-                Toastify({
-                    text: "Tidak ada karyawan di dalam cart!",
-                    duration: 3000,
-                    gravity: "top",
-                    position: 'right',
-                    backgroundColor: "linear-gradient(to right, #ff9999, #ff6666)",
-                }).showToast();
-
-                return;
-            }
-
-            if (!validateAlasanKeluar()) {
-                Toastify({
-                    text: "Mohon pilih alasan keluar sebelum checkout!",
-                    duration: 3000,
-                    gravity: "top",
-                    position: 'right',
-                    backgroundColor: "linear-gradient(to right, #ff9999, #ff6666)",
-                }).showToast();
-
-                return;
-            }
-
-            if (!validateTglKeluar()) {
-                Toastify({
-                    text: "Mohon pilih tanggal keluar sebelum checkout!",
-                    duration: 3000,
-                    gravity: "top",
-                    position: 'right',
-                    backgroundColor: "linear-gradient(to right, #ff9999, #ff6666)",
-                }).showToast();
-
-                return;
-            }
-
-            $.ajax({
-                type: "POST",
-                url: "/hr-connect/dept-adm/data-karyawan/checkout",
-                data: {
-                    data: cartContainer,
-                },
-                success: function(response) {
-                    localStorage.removeItem("karyawan_aktif_cartContainer");
-                    Toastify({
-                        text: "Berhasil melakukan checkout!",
-                        duration: 3000,
-                        gravity: "top",
-                        position: 'right',
-                        backgroundColor: "linear-gradient(to right, #28a745, #218838)",
-                    }).showToast();
-
-                    // localStorage.setItem("karyawan_aktif_cartContainer", JSON.stringify([]));
-
-                    $('#cart-count').text(0);
-
-                    updateCartTable();
-
-                    $("#seeCart").modal("hide");
-                },
-                error: function(xhr, status, error) {
-                    console.error(xhr.responseText);
-                }
-            });
+        table2.on('draw.dt', function() {
+            $('[data-bs-toggle="tooltip"]').tooltip();
         });
 
-        function validateAlasanKeluar() {
-            let isValid = true;
-            $("#cart-table tbody select.alasanKeluar").each(function() {
-                if (!$(this).val()) {
-                    isValid = false;
-                    return false;
-                }
-            });
-            return isValid;
-        }
-
-        function validateTglKeluar() {
-            let isValid = true;
-            $("#cart-table tbody input.tglKeluar").each(function() {
-                if (!$(this).val()) {
-                    isValid = false;
-                    return false;
-                }
-            });
-            return isValid;
-        }
-
-        // DONE
         $("#btnCart").click(function() {
             $("#seeCart").modal("show");
         });
-
         $('#cart-count').text(cartContainer.length);
-
-        function updateReason(cartId, reason) {
-            var cartContainer = JSON.parse(localStorage.getItem("karyawan_aktif_cartContainer")) || [];
-            cartContainer.forEach(function(cart) {
-                if (cart.id === cartId) {
-                    cart.alasan_keluar = reason;
-                }
-            });
-            localStorage.setItem("karyawan_aktif_cartContainer", JSON.stringify(cartContainer));
-            updateCartTable();
-        }
-
-        function updateTglKeluar(cartId, tglKeluar) {
-            var cartContainer = JSON.parse(localStorage.getItem("karyawan_aktif_cartContainer")) || [];
-            cartContainer.forEach(function(cart) {
-                if (cart.id === cartId) {
-                    cart.tanggal_keluar = tglKeluar;
-                }
-            });
-            localStorage.setItem("karyawan_aktif_cartContainer", JSON.stringify(cartContainer));
-            updateCartTable();
-        }
-
-        function updateCartAlasanKeluar(alasan_keluar) {
-            var cartContainer = JSON.parse(localStorage.getItem("karyawan_aktif_cartContainer")) || [];
-
-            cartContainer.forEach(function(cart) {
-                cart.alasan_keluar = alasan_keluar;
-            });
-
-            localStorage.setItem("karyawan_aktif_cartContainer", JSON.stringify(cartContainer));
-            updateCartTable();
-        }
-
-        function updateCartTable(data) {
-            $('#cart-table tbody').empty();
-
-            var cartContainer = JSON.parse(localStorage.getItem("karyawan_aktif_cartContainer")) || [];
-            var cartData = data || cartContainer;
-
-            cartData.forEach(function(cart) {
-                $('#cart-table tbody').append(`
-            <tr>
-                <td>${cart.nama}</td>
-                <td>${cart.nik}</td>
-                <td>${cart.dept}</td>
-                <td>
-                    <select class="form-select alasanKeluar" data-cart-id="${cart.id}" onChange="updateReason('${cart.id}', this.value)">
-                        <option value="">Pilih</option>
-                        <option value="Resign" ${cart.alasan_keluar === 'Resign' ? 'selected' : ''}>Resign</option>
-                        <option value="Habis Kontrak" ${cart.alasan_keluar === 'Habis Kontrak' ? 'selected' : ''}>Habis Kontrak</option>
-                        <option value="Kabur" ${cart.alasan_keluar === 'Kabur' ? 'selected' : ''}>Kabur</option>
-                        <option value="Cut Probation" ${cart.alasan_keluar === 'Cut Probation' ? 'selected' : ''}>Cut Probation</option>
-                        <option value="PHK" ${cart.alasan_keluar === 'PHK' ? 'selected' : ''}>PHK</option>
-                        <option value="Cancel Join" ${cart.alasan_keluar === 'Cancel Join' ? 'selected' : ''}>Cancel Join</option>
-                        <option value="Pensiun" ${cart.alasan_keluar === 'Pensiun' ? 'selected' : ''}>Pensiun</option>
-                        <option value="Pensiun Dini" ${cart.alasan_keluar === 'Pensiun Dini' ? 'selected' : ''}>Pensiun Dini</option>
-                        <option value="Dikualifikasi Mengundurkan Diri" ${cart.alasan_keluar === 'Dikualifikasi Mengundurkan Diri' ? 'selected' : ''}>Dikualifikasi Mengundurkan Diri</option>
-                        <option value="Cut Probation Lebih Awal" ${cart.alasan_keluar === 'Cut Probation Lebih Awal' ? 'selected' : ''}>Cut Probation Lebih Awal</option>
-                    </select>
-                </td>
-                <td>
-                    <input type="date" class="form-control tglKeluar" data-cart-id="${cart.id}" onChange="updateTglKeluar('${cart.id}', this.value)" value="${cart.tanggal_keluar || ''}">
-                </td>
-                <td>
-                    <button class="btn btn-sm btn-danger removeCartId" onClick="removeFromCart('${cart.id}')">
-                        <i class="mdi mdi-delete"></i>
-                    </button>
-                </td>
-            </tr>
-        `);
-            });
-
-            // Reload table without refresh pagination
-            table2.api().draw(false);
-        }
 
         function addToCart(id, nik, nama, dept, kode_divisi, kode_bagian, kode_admin) {
             var cartContainer = JSON.parse(localStorage.getItem("karyawan_aktif_cartContainer")) || [];
-            var foundIndex = cartContainer.findIndex(function(cart) {
-                return cart.id === id;
-            });
-
-            if (foundIndex !== -1) {
-                cartContainer[foundIndex] = {
-                    id: id,
-                    nik: nik,
-                    nama: nama,
-                    dept: dept,
-                    kode_divisi: kode_divisi,
-                    kode_bagian: kode_bagian,
-                    kode_admin: kode_admin,
-                    alasan_keluar: '',
-                    tanggal_keluar: ''
-                };
-            } else {
+            if (!cartContainer.find(cart => cart.id === id)) {
                 cartContainer.push({
                     id: id,
                     nik: nik,
@@ -912,28 +534,126 @@
                     tanggal_keluar: ''
                 });
             }
-
             localStorage.setItem("karyawan_aktif_cartContainer", JSON.stringify(cartContainer));
             $('#cart-count').text(cartContainer.length);
+            table2.api().draw(false);
             updateCartTable();
         }
 
-        // DONE
         function removeFromCart(id) {
             let cartContainer = JSON.parse(localStorage.getItem("karyawan_aktif_cartContainer")) || [];
-            let found = cartContainer.findIndex(function(cart) {
-                return cart.id === id;
-            });
+            cartContainer = cartContainer.filter(cart => cart.id !== id);
+            localStorage.setItem("karyawan_aktif_cartContainer", JSON.stringify(cartContainer));
+            $('#cart-count').text(cartContainer.length);
+            table2.api().draw(false);
+            updateCartTable();
+        }
 
-            if (found !== -1) {
-                cartContainer.splice(found, 1);
-                localStorage.setItem("karyawan_aktif_cartContainer", JSON.stringify(cartContainer));
+        function updateReason(cartId, reason) {
+            var cartContainer = JSON.parse(localStorage.getItem("karyawan_aktif_cartContainer")) || [];
+            cartContainer.forEach(c => {
+                if (c.id === cartId) c.alasan_keluar = reason;
+            });
+            localStorage.setItem("karyawan_aktif_cartContainer", JSON.stringify(cartContainer));
+        }
+
+        function updateTglKeluar(cartId, tglKeluar) {
+            var cartContainer = JSON.parse(localStorage.getItem("karyawan_aktif_cartContainer")) || [];
+            cartContainer.forEach(c => {
+                if (c.id === cartId) c.tanggal_keluar = tglKeluar;
+            });
+            localStorage.setItem("karyawan_aktif_cartContainer", JSON.stringify(cartContainer));
+        }
+
+        function updateCartAlasanKeluar(alasan) {
+            var cartContainer = JSON.parse(localStorage.getItem("karyawan_aktif_cartContainer")) || [];
+            cartContainer.forEach(c => c.alasan_keluar = alasan);
+            localStorage.setItem("karyawan_aktif_cartContainer", JSON.stringify(cartContainer));
+            updateCartTable();
+        }
+
+        function updateCartTanggalKeluar(tgl) {
+            var cartContainer = JSON.parse(localStorage.getItem("karyawan_aktif_cartContainer")) || [];
+            cartContainer.forEach(c => c.tanggal_keluar = tgl);
+            localStorage.setItem("karyawan_aktif_cartContainer", JSON.stringify(cartContainer));
+            updateCartTable();
+        }
+
+        function updateCartTable() {
+            $('#cart-table tbody').empty();
+            var cartContainer = JSON.parse(localStorage.getItem("karyawan_aktif_cartContainer")) || [];
+
+            if (cartContainer.length === 0) {
+                $('#cart-table tbody').append(
+                    `<tr><td colspan="6" class="text-center text-muted py-4"><i class="ri-shopping-cart-line fs-1 d-block mb-2"></i>Keranjang masih kosong</td></tr>`
+                );
+                return;
             }
 
-            $('#cart-count').text(cartContainer.length);
-
-            updateCartTable()
+            cartContainer.forEach(function(cart) {
+                $('#cart-table tbody').append(`
+                <tr>
+                    <td class="fw-bold text-primary">${cart.nama}</td>
+                    <td>${cart.nik}</td>
+                    <td><span class="badge bg-light text-dark border">${cart.dept}</span></td>
+                    <td>
+                        <select class="form-select form-select-sm shadow-sm alasanKeluar" data-cart-id="${cart.id}" onChange="updateReason('${cart.id}', this.value)">
+                            <option value="">-- Pilih --</option>
+                            <option value="Resign" ${cart.alasan_keluar === 'Resign' ? 'selected' : ''}>Resign</option>
+                            <option value="Habis Kontrak" ${cart.alasan_keluar === 'Habis Kontrak' ? 'selected' : ''}>Habis Kontrak</option>
+                            <option value="Kabur" ${cart.alasan_keluar === 'Kabur' ? 'selected' : ''}>Kabur</option>
+                            <option value="Cut Probation" ${cart.alasan_keluar === 'Cut Probation' ? 'selected' : ''}>Cut P</option>
+                            <option value="PHK" ${cart.alasan_keluar === 'PHK' ? 'selected' : ''}>PHK</option>
+                        </select>
+                    </td>
+                    <td>
+                        <input type="date" class="form-control form-control-sm shadow-sm tglKeluar" data-cart-id="${cart.id}" onChange="updateTglKeluar('${cart.id}', this.value)" value="${cart.tanggal_keluar || ''}">
+                    </td>
+                    <td class="text-center">
+                        <button class="btn btn-sm btn-soft-danger rounded-circle removeCartId" onClick="removeFromCart('${cart.id}')"><i class="ri-delete-bin-line"></i></button>
+                    </td>
+                </tr>`);
+            });
         }
-        // End Karyawan Aktif
-    </script>
+
+        $("#btnCheckout").click(function() {
+            let cartContainer = JSON.parse(localStorage.getItem("karyawan_aktif_cartContainer")) || [];
+            if (cartContainer.length === 0) return Swal.fire('Oops!', 'Keranjang masih kosong Bro!', 'warning');
+
+            let isValid = true;
+            cartContainer.forEach(c => {
+                if (!c.alasan_keluar || !c.tanggal_keluar) isValid = false;
+            });
+
+            if (!isValid) return Swal.fire('Oops!',
+                'Pastikan semua alasan dan tanggal keluar sudah terisi di dalam tabel!', 'warning');
+
+            let btn = $(this);
+            let originalBtn = btn.html();
+            btn.html('<i class="spinner-border spinner-border-sm me-1"></i> Memproses...').prop('disabled', true);
+
+            $.ajax({
+                type: "POST",
+                url: "/hr-connect/dept-adm/data-karyawan/checkout",
+                data: {
+                    data: cartContainer,
+                    _token: "{{ csrf_token() }}"
+                },
+                success: function(response) {
+                    localStorage.removeItem("karyawan_aktif_cartContainer");
+                    $('#cart-count').text(0);
+                    updateCartTable();
+                    table2.api().draw(false);
+                    $("#seeCart").modal("hide");
+
+                    Swal.fire('Sukses!', 'Berhasil melakukan checkout karyawan.', 'success');
+                    btn.html(originalBtn).prop('disabled', false);
+                },
+                error: function(xhr) {
+                    Swal.fire('Gagal!', 'Terjadi kesalahan sistem.', 'error');
+                    btn.html(originalBtn).prop('disabled', false);
+                }
+            });
+        });
+    </script> --}}
 @endpush

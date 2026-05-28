@@ -12,41 +12,42 @@ use Maatwebsite\Excel\Concerns\WithStyles;
 use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class KaryawanKeluarFromGAToHrKaryawan implements FromCollection, WithHeadings, WithMapping, ShouldAutoSize, WithStyles, WithColumnFormatting
+class KaryawanKeluarFromAdminToGAExport implements FromCollection, WithHeadings, WithMapping, ShouldAutoSize, WithStyles, WithColumnFormatting
 {
-    protected $data;
+    protected $list_karyawan;
 
-    public function __construct($data)
+    public function __construct($list_karyawan)
     {
-        $this->data = $data;
+        $this->list_karyawan = $list_karyawan;
     }
 
     public function collection()
     {
-        $allId = collect($this->data)->pluck('id_karyawan')->filter()->toArray();
+        $all_niks = collect($this->list_karyawan)->pluck('nik')->filter()->toArray();
 
-        if (empty($allId)) {
+        if (empty($all_niks)) {
             return new Collection();
         }
 
-        $allKaryawan = HrKaryawan::whereIn('id', $allId)->get()->keyBy('id');
+        $karyawans = HrKaryawan::whereIn('nik', $all_niks)->get()->keyBy('nik');
 
         $karyawanCollection = new Collection();
 
-        foreach ($this->data as $item) {
-            $karyawanId = $item['id_karyawan'];
-            $karyawan = $allKaryawan->get($karyawanId);
+        foreach ($this->list_karyawan as $item) {
+            $nik = $item['nik'];
+
+            $karyawan = $karyawans->get($nik);
 
             if ($karyawan) {
-                $tglKeluar = (! empty($karyawan->tanggal_keluar) && $karyawan->tanggal_keluar !== '0000-00-00') ? \Carbon\Carbon::parse($karyawan->tanggal_keluar)->format('d-m-Y') : now()->format('d-m-Y');
+                $tglKeluar = (! empty($item['tanggal_keluar']))
+                    ? \Carbon\Carbon::parse($item['tanggal_keluar'])->format('d-m-Y')
+                    : now()->format('d-m-Y');
 
                 $karyawanCollection->push([
                     'nik'            => $karyawan->nik,
                     'nama'           => $karyawan->nama,
-                    'kode_divisi'    => $karyawan->kode_divisi,
                     'kode_bagian'    => $karyawan->kode_bagian,
-                    'kode_admin'     => $karyawan->kode_admin,
-                    'alasan_keluar'  => $item['alasan'] ?? 'Pencabutan Loker Massal',
+                    'alasan_keluar'  => $item['alasan_keluar'] ?? 'Checkout Admin',
                     'tanggal_keluar' => $tglKeluar,
                 ]);
             }
@@ -60,10 +61,8 @@ class KaryawanKeluarFromGAToHrKaryawan implements FromCollection, WithHeadings, 
         return [
             'NIK',
             'Nama Lengkap',
-            'Kode Divisi',
             'Kode Bagian',
-            'Kode Admin',
-            'Alasan Keluar (GA)',
+            'Alasan Keluar',
             'Tanggal Keluar',
         ];
     }
@@ -73,9 +72,7 @@ class KaryawanKeluarFromGAToHrKaryawan implements FromCollection, WithHeadings, 
         return [
             ' ' . $row['nik'],
             $row['nama'],
-            $row['kode_divisi'],
             $row['kode_bagian'],
-            $row['kode_admin'],
             $row['alasan_keluar'],
             $row['tanggal_keluar'],
         ];
@@ -88,7 +85,7 @@ class KaryawanKeluarFromGAToHrKaryawan implements FromCollection, WithHeadings, 
                 'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
                 'fill' => [
                     'fillType'   => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
-                    'startColor' => ['rgb' => '4F81BD'], // Warna Biru Soft disamakan persis!
+                    'startColor' => ['rgb' => 'E5A93A'],
                 ],
             ],
         ];

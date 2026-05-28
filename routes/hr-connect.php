@@ -38,7 +38,9 @@ Route::middleware(['auth', 'rules'])->group(function () {
             Route::get('/getDataCart', 'HRConnect\AdminKaryawanController@getDataCart');
             Route::post('/checkout', 'HRConnect\AdminKaryawanController@checkout');
             Route::post('/setGroupCode', 'HRConnect\AdminKaryawanController@setGroupCode');
+            Route::get('/template-plot-karyawan', 'HRConnect\AdminKaryawanController@templatePlotKaryawan')->name('hr-connect.admin.template-masuk');
             Route::post('/uploadExcelKaryawanMasuk', 'HRConnect\AdminKaryawanController@uploadExcelKaryawanMasuk');
+            Route::get('/template-keluar', 'HRConnect\AdminKaryawanController@templateCheckoutKaryawan')->name('hr-connect.admin.template-keluar');
             Route::post('/uploadExcelKaryawanKeluar', 'HRConnect\AdminKaryawanController@uploadExcelKaryawanKeluar');
         });
         // Dep. HRD IR
@@ -73,7 +75,7 @@ Route::middleware(['auth', 'rules'])->group(function () {
                 Route::post('/updateData', 'HRConnect\GAGoodieApdController@updateData');
                 Route::post('/confirmAll', 'HRConnect\GAGoodieApdController@confirmAll');
                 Route::post('/updateDataDitolak', 'HRConnect\GAGoodieApdController@updateDataDitolak');
-                Route::get('/', 'HRConnect\GAGoodieApdController@index');
+                Route::get('/', 'HRConnect\GAGoodieApdController@index')->name('ga.perlengkapan-goodie-apd');
             });
 
             // Karyawan Keluar
