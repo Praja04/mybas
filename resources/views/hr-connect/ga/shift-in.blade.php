@@ -6,20 +6,30 @@
         .select2-container--default .select2-selection--single {
             border: 1px solid #ced4da;
             border-radius: 4px;
-            height: 38px;
-        }
-
-        .select2-container--default .select2-selection--single .select2-selection__rendered {
-            line-height: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
         }
 
         .select2-container--default .select2-selection--single .select2-selection__arrow {
-            height: 36px;
+            height: 34px;
+        }
+
+        .copy-nik {
+            cursor: pointer;
+            transition: all 0.2s ease;
         }
 
         .copy-nik:hover {
-            color: #007bff;
+            color: #0ab39c !important;
             text-decoration: underline;
+        }
+
+        .table-custom-header th {
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 0.5px;
         }
     </style>
 @endpush
@@ -32,7 +42,7 @@
                 <select class="form-select form-control shadow-sm" id="tanggalFilter">
                     <option value="" disabled selected>Pilih Tanggal</option>
                     @if ($tanggalTersedia->isEmpty())
-                        <option value="" disabled>Belum ada data jadwal karyawan masuk</option>
+                        <option value="" disabled>Belum ada jadwal karyawan masuk</option>
                     @else
                         @foreach ($tanggalTersedia as $date)
                             <option value="{{ $date }}">
@@ -43,7 +53,7 @@
                 </select>
             </div>
             <div class="col-lg-2">
-                <button class="btn btn-soft-secondary w-100 shadow-sm" onclick="tampilkanSemua()">
+                <button class="btn btn-soft-secondary w-100 shadow-sm" id="btnResetFilter">
                     <i class="ri-refresh-line align-bottom me-1"></i> Reset Filter
                 </button>
             </div>
@@ -60,8 +70,8 @@
                                 </h5>
                             </div>
                             <div class="col-lg-4 text-end">
-                                <button class="btn btn-secondary font-weight-bolder shadow-sm" id="btnExportExcel"
-                                    data-bs-toggle="tooltip" data-bs-placement="top" title="Unduh data alokasi ke Excel">
+                                <button class="btn btn-sm btn-soft-success font-weight-bolder shadow-sm" id="btnExportExcel"
+                                    data-bs-toggle="tooltip" title="Unduh data alokasi ke Excel">
                                     <i class="ri-file-excel-2-line align-bottom me-1"></i> Export Data
                                 </button>
                             </div>
@@ -69,15 +79,16 @@
                     </div>
                     <div class="card-body pb-4">
                         <div class="table-responsive">
-                            <table id="tableAjax" class="table table-bordered table-hover align-middle" style="width:100%">
+                            <table id="tableAjax" class="table table-bordered table-hover align-middle table-custom-header"
+                                style="width:100%">
                                 <thead class="table-light text-muted">
                                     <tr>
-                                        <th style="width: 25%;">Nama Lengkap</th>
+                                        <th style="width: 20%;">Nama Lengkap</th>
                                         <th style="width: 10%;">NIK</th>
                                         <th style="width: 10%;">Kategori</th>
-                                        <th style="width: 20%;">Alokasi Nomor Loker</th>
+                                        <th style="width: 25%;">Alokasi Loker</th>
                                         <th style="width: 5%;">Divisi</th>
-                                        <th style="width: 15%;">Tanggal Masuk</th>
+                                        <th style="width: 15%;">Tgl Masuk</th>
                                         <th style="width: 15%; text-align: center;">Tindakan</th>
                                     </tr>
                                 </thead>
@@ -98,48 +109,68 @@
 
     <script>
         $(document).ready(function() {
+            // ==========================================
+            // 1. GLOBAL VARIABLES & STATE
+            // ==========================================
             const lokerPria = {!! json_encode($lokerPria) !!};
             const lokerWanita = {!! json_encode($lokerWanita) !!};
-
-            let showAll = 1;
-            let defaultTanggal = "";
-
-            $(document).on("change", "#tanggalFilter", function() {
-                defaultTanggal = $(this).val();
-                showAll = 0;
-                $("#tableAjax").DataTable().draw();
-            });
-
-            window.tampilkanSemua = function() {
-                showAll = 1;
-                defaultTanggal = '';
-                $("#tanggalFilter").val("");
-                $("#tableAjax").DataTable().draw();
+            let state = {
+                showAll: 1,
+                defaultTanggal: ""
             };
 
+            // ==========================================
+            // 2. HELPER FUNCTIONS
+            // ==========================================
             function copyToClipboard(text) {
-                var textArea = document.createElement("textarea");
-                textArea.value = text;
-                document.body.appendChild(textArea);
-                textArea.select();
-                document.execCommand("Copy");
-                textArea.remove();
+                let tempInput = $("<input>");
+                $("body").append(tempInput);
+                tempInput.val(text).select();
+                document.execCommand("copy");
+                tempInput.remove();
 
                 Toastify({
-                    text: "NIK berhasil disalin: " + text,
+                    text: "NIK Disalin: " + text,
                     duration: 3000,
                     gravity: "top",
                     position: 'right',
-                    backgroundColor: "#212529",
+                    backgroundColor: "#0ab39c",
                 }).showToast();
             }
 
-            $(document).on('click', '.copy-nik', function() {
-                let nik = $(this).attr('data-nik');
-                if (nik) copyToClipboard(nik);
-            });
+            function generateLokerOptions(row) {
+                let kategori = row.checkStaff === 'Y' ? 'staff' : 'non_staff';
+                let listLoker = row.jenis_kelamin === 'L' ? lokerPria : lokerWanita;
+                let rekomendasiLokerId = null;
+                let opsiLoker = `<option value="" disabled selected>Pilih Loker</option>`;
 
-            let table = $("#tableAjax").dataTable({
+                listLoker.forEach(function(loker) {
+                    let bolehMasuk = false;
+                    if (kategori === 'staff' && loker.total_penghuni == 0) {
+                        bolehMasuk = true;
+                    } else if (kategori === 'non_staff' && loker.total_penghuni < loker.kapasitas && loker
+                        .kategori_tersedia !== 'staff') {
+                        bolehMasuk = true;
+                    }
+
+                    if (bolehMasuk) {
+                        if (rekomendasiLokerId === null) rekomendasiLokerId = loker.id;
+                        let terpilih = (loker.id === rekomendasiLokerId) ? 'selected' : '';
+                        let opsiRak = (loker.kode_rak === 'LP') ? 'P' : ((loker.kode_rak === 'LW') ? 'W' :
+                            loker.kode_rak);
+
+                        opsiLoker += `<option value="${loker.id}" ${terpilih} data-nik="${row.nik}" data-nama="${row.nama}" data-kode-rak="${loker.kode_rak}" data-no-loker="${loker.no_loker}">
+                                        ${opsiRak} - ${loker.no_loker} (Isi: ${loker.total_penghuni}/${loker.kapasitas})
+                                      </option>`;
+                    }
+                });
+                return opsiLoker;
+            }
+
+            // ==========================================
+            // 3. DATATABLES INITIALIZATION
+            // ==========================================
+            let table = $("#tableAjax").DataTable({
                 processing: true,
                 serverSide: true,
                 paging: true,
@@ -151,191 +182,90 @@
                     url: "{{ url('/hr-connect/dept-ga/karyawan-masuk/getData') }}",
                     type: "GET",
                     data: function(d) {
-                        d.tanggal = defaultTanggal;
-                        d.tampilkan_semua = showAll;
+                        d.tanggal = state.defaultTanggal;
+                        d.tampilkan_semua = state.showAll;
                     }
                 },
                 columns: [{
-                        data: 'nama'
+                        data: 'nama',
+                        render: data => `<span class="fw-bold">${data}</span>`
                     },
                     {
-                        render: function(data, type, row) {
-                            return `<span class="copy-nik fw-bold" style="cursor: pointer;" data-nik="${row.nik}" data-bs-toggle="tooltip" data-bs-placement="top" title="Klik untuk menyalin NIK">${row.nik}</span>`;
-                        }
+                        data: 'nik',
+                        render: data =>
+                            `<span class="copy-nik fw-bold text-dark" data-nik="${data}" data-bs-toggle="tooltip" title="Salin NIK">${data}</span>`
                     },
                     {
-                        render: function(data, type, row) {
-                            return row.checkStaff === 'Y' ?
-                                '<span class="badge bg-secondary" style="font-size: 0.85rem;">Staff</span>' :
-                                '<span class="badge bg-warning" style="font-size: 0.85rem;">Non Staff</span>';
-                        }
+                        data: 'checkStaff',
+                        render: data => data === 'Y' ? '<span class="badge bg-secondary">Staff</span>' :
+                            '<span class="badge bg-warning">Non Staff</span>'
                     },
                     {
+                        data: null,
                         render: function(data, type, row) {
-                            // let isReadOnly = row.penghuni ? 'disabled' : '';
-
-                            // if (row.penghuni) {
-                            //     let kodeRak = row.penghuni.kode_rak;
-                            //     let rak = (kodeRak === 'LP') ? 'P' : ((kodeRak === 'LW') ? 'W' : kodeRak);
-                            //     return `<select class="form-control" disabled>
-                        //                 <option>${rak} - ${row.penghuni.no_loker}</option>
-                        //             </select>`;
-                            // } else {
-                            //     let kategori = row.checkStaff === 'Y' ? 'staff' : 'non_staff';
-                            //     let listLoker = row.jenis_kelamin === 'L' ? lokerPria : lokerWanita;
-                            //     let rekomendasiLokerId = null;
-
-                            //     let opsiLoker = `<option value="" disabled selected>Pilih Loker</option>`;
-                            //     listLoker.forEach(function(loker) {
-                            //         let bolehMasuk = false;
-
-                            //         if (kategori === 'staff' && loker.total_penghuni == 0) {
-                            //             bolehMasuk = true;
-                            //         } else if (kategori === 'non_staff' && loker.total_penghuni < loker.kapasitas && loker.kategori_tersedia !== 'staff') {
-                            //             bolehMasuk = true;
-                            //         }
-
-                            //         if (bolehMasuk) {
-                            //             if (rekomendasiLokerId === null) {
-                            //                 rekomendasiLokerId = loker.id;
-                            //             }
-
-                            //             let terpilih = (loker.id === rekomendasiLokerId) ? 'selected' : '';
-                            //             let opsiRak = (loker.kode_rak === 'LP') ? 'P' : ((loker.kode_rak === 'LW') ? 'W' : loker.kode_rak);
-
-                            //             opsiLoker += `<option value="${loker.id}" ${terpilih} data-nik="${row.nik}" data-nama="${row.nama}" data-kode-rak="${loker.kode_rak}" data-no-loker="${loker.no_loker}">
-                        //                 ${opsiRak} - ${loker.no_loker} (Isi: ${loker.total_penghuni}/${loker.kapasitas})
-                        //                 </option>`;
-                            //         }
-                            //     });
-
-                            //     return `
-                        //         <button type="button" class="btn btn-sm btn-outline-secondary btn-butuh-loker w-100" data-bs-toggle="tooltip" data-bs-placement="top" title="Tambahkan alokasi loker">
-                        //             <i class="ri-add-circle-fill me-1"></i> Butuh Loker
-                        //         </button>
-
-                        //         <div class="wrapper-select-loker d-none">
-                        //             <select class="form-control lokerNo js-example-basic-single">
-                        //                 ${opsiLoker}
-                        //             </select>
-                        //         </div>
-                        //     `;
-                            // }
-
                             if (row.penghuni) {
-                                let kodeRak = row.penghuni.kode_rak;
-                                let rak = (kodeRak === 'LP') ? 'P' : ((kodeRak === 'LW') ? 'W' :
-                                    kodeRak);
-                                return `<select class="form-control" disabled>
-                                            <option>${rak} - ${row.penghuni.no_loker}</option>
-                                        </select>`;
+                                let rak = (row.penghuni.kode_rak === 'LP') ? 'P' : ((row.penghuni
+                                    .kode_rak === 'LW') ? 'W' : row.penghuni.kode_rak);
+                                return `<select class="form-select form-select-sm bg-light" disabled><option>${rak} - ${row.penghuni.no_loker}</option></select>`;
+                            }
+
+                            let opsiLoker = generateLokerOptions(row);
+
+                            if (row.in_complete === 'Y') {
+                                return `
+                                    <div class="d-flex flex-column align-items-center gap-1 mb-1 wrapper-tombol-awal">
+                                        <span class="badge bg-soft-danger text-danger border border-danger w-100 py-1 mb-1"><i class="ri-close-circle-line align-bottom"></i> Tanpa Loker</span>
+                                        <button type="button" class="btn btn-sm btn-outline-primary btn-butuh-loker w-100" title="Tambahkan loker susulan">
+                                            <i class="ri-add-circle-fill me-1"></i> Susulkan Loker
+                                        </button>
+                                    </div>
+                                    <div class="wrapper-select-loker d-none mb-1">
+                                        <select class="form-select form-select-sm lokerNo js-example-basic-single">${opsiLoker}</select>
+                                    </div>
+                                    <input type="hidden" class="status-tanpa-loker" value="0">
+                                `;
                             } else {
-                                let kategori = row.checkStaff === 'Y' ? 'staff' : 'non_staff';
-                                let listLoker = row.jenis_kelamin === 'L' ? lokerPria : lokerWanita;
-                                let rekomendasiLokerId = null;
-
-                                let opsiLoker =
-                                    `<option value="" disabled selected>Pilih Loker</option>`;
-                                listLoker.forEach(function(loker) {
-                                    let bolehMasuk = false;
-                                    if (kategori === 'staff' && loker.total_penghuni == 0) {
-                                        bolehMasuk = true;
-                                    } else if (kategori === 'non_staff' && loker
-                                        .total_penghuni < loker.kapasitas && loker
-                                        .kategori_tersedia !== 'staff') {
-                                        bolehMasuk = true;
-                                    }
-
-                                    if (bolehMasuk) {
-                                        if (rekomendasiLokerId === null) {
-                                            rekomendasiLokerId = loker.id;
-                                        }
-                                        let terpilih = (loker.id === rekomendasiLokerId) ?
-                                            'selected' : '';
-                                        let opsiRak = (loker.kode_rak === 'LP') ? 'P' : ((
-                                                loker.kode_rak === 'LW') ? 'W' : loker
-                                            .kode_rak);
-
-                                        opsiLoker +=
-                                            `<option value="${loker.id}" ${terpilih} data-nik="${row.nik}" data-nama="${row.nama}" data-kode-rak="${loker.kode_rak}" data-no-loker="${loker.no_loker}"> ${opsiRak} - ${loker.no_loker} (Isi: ${loker.total_penghuni}/${loker.kapasitas}) </option>`
-                                    }
-                                });
-
-                                if (row.in_complete === 'Y') {
-                                    return `
-                                        <div class="d-flex flex-column align-items-center gap-1 mb-1 wrapper-tombol-awal">
-                                            <span class="badge bg-light text-danger border border-danger w-100 py-1 mb-1"><i class="ri-close-circle-line align-bottom"></i> Tidak Diberikan Loker</span>
-                                            <button type="button" class="btn btn-sm btn-outline-primary btn-butuh-loker w-100" data-bs-toggle="tooltip" title="Tambahkan loker susulan">
-                                                <i class="ri-add-circle-fill me-1"></i> Susulkan Loker
-                                            </button>
-                                        </div>
-                                        <div class="wrapper-select-loker d-none mb-1">
-                                            <select class="form-control lokerNo js-example-basic-single">
-                                                ${opsiLoker}
-                                            </select>
-                                        </div>
-                                        <input type="hidden" class="status-tanpa-loker" value="0">
-                                    `;
-                                } else {
-                                    return `
-                                        <div class="d-flex gap-1 mb-1 wrapper-tombol-awal">
-                                            <button type="button" class="btn btn-sm btn-outline-secondary btn-butuh-loker w-50" data-bs-toggle="tooltip" title="Tambahkan alokasi loker">
-                                                <i class="ri-add-circle-fill me-1"></i> Butuh
-                                            </button>
-                                            <button type="button" class="btn btn-sm btn-outline-danger btn-tanpa-loker w-50" data-bs-toggle="tooltip" title="Lanjut tanpa loker">
-                                                <i class="ri-close-circle-fill me-1"></i> Tanpa
-                                            </button>
-                                        </div>
-                                        <div class="wrapper-select-loker d-none mb-1">
-                                            <select class="form-control lokerNo js-example-basic-single">
-                                                ${opsiLoker}
-                                            </select>
-                                        </div>
-                                        <div class="wrapper-teks-tanpa-loker d-none mb-1 text-center">
-                                            <span class="badge bg-light text-danger border border-danger w-100 py-2" style="font-size:0.85rem">
-                                                <i class="ri-close-circle-line align-bottom me-1"></i> Tidak Butuh Loker
-                                            </span>
-                                        </div>
-                                        <input type="hidden" class="status-tanpa-loker" value="0">
-                                    `;
-                                }
+                                return `
+                                    <div class="d-flex gap-1 mb-1 wrapper-tombol-awal">
+                                        <button type="button" class="btn btn-sm btn-outline-secondary btn-butuh-loker w-50" title="Beri Loker"><i class="ri-add-circle-fill me-1"></i> Butuh</button>
+                                        <button type="button" class="btn btn-sm btn-outline-danger btn-tanpa-loker w-50" title="Tanpa Loker"><i class="ri-close-circle-fill me-1"></i> Tanpa</button>
+                                    </div>
+                                    <div class="wrapper-select-loker d-none mb-1">
+                                        <select class="form-select form-select-sm lokerNo js-example-basic-single">${opsiLoker}</select>
+                                    </div>
+                                    <div class="wrapper-teks-tanpa-loker d-none mb-1 text-center">
+                                        <span class="badge bg-soft-danger text-danger border border-danger w-100 py-2"><i class="ri-close-circle-line align-bottom me-1"></i> Tidak Butuh Loker</span>
+                                    </div>
+                                    <input type="hidden" class="status-tanpa-loker" value="0">
+                                `;
                             }
                         }
                     },
                     {
-                        data: 'kode_divisi'
+                        data: 'kode_divisi',
+                        render: data => data ? data : '-'
                     },
                     {
-                        render: function(data, type, row) {
-                            return row.tanggal_masuk ? moment(row.tanggal_masuk).format(
-                                'DD MMM YYYY') : '-';
-                        }
+                        data: 'tanggal_masuk',
+                        render: data => data ? moment(data).format('DD MMM YYYY') : '-'
                     },
                     {
+                        data: null,
                         render: function(data, type, row) {
                             if (row.penghuni) {
-                                return `<center><span class="badge bg-success px-3 py-2 shadow-sm" style="font-size: 0.85rem;" data-bs-toggle="tooltip" title="Loker telah diverifikasi dan aktif"><i class="ri-check-double-line align-bottom me-1"></i> Tervalidasi</span></center>`;
+                                return `<center><span class="badge bg-success px-3 py-2 shadow-sm"><i class="ri-check-double-line align-bottom me-1"></i> Tervalidasi</span></center>`;
                             } else if (row.in_complete === 'Y') {
                                 return `
-                                <center>
-                                    <span class="badge bg-danger text-light px-3 py-2 shadow-sm mb-2 d-block badge-status-verif" style="font-size: 0.85rem;" data-bs-toggle="tooltip" title="Selesai tanpa loker"><i class="ri-check-double-line align-bottom me-1"></i> Tervalidasi (Tanpa Loker)</span>
-                                    <button type="button" class="btn btn-sm btn-dark fw-bold btn-verifikasi shadow-sm d-none" data-idcard="${row.id}" data-rfid="${row.cardnodevice}" style="font-size: 0.85rem;" disabled>
-                                        <i class="ri-barcode-box-line align-bottom me-1"></i> Verif Susulan
-                                    </button>
-                                </center>
-                                `;
+                                    <center>
+                                        <span class="badge bg-danger px-3 py-2 shadow-sm mb-2 d-block badge-status-verif"><i class="ri-check-double-line align-bottom me-1"></i> Tervalidasi (Tanpa Loker)</span>
+                                        <button type="button" class="btn btn-sm btn-dark fw-bold btn-verifikasi shadow-sm d-none" data-idcard="${row.id}" data-rfid="${row.cardnodevice}" disabled><i class="ri-barcode-box-line align-bottom me-1"></i> Verif Susulan</button>
+                                    </center>`;
                             } else {
-                                return `
-                                <center>
-                                    <button type="button" class="btn btn-sm btn-dark fw-bold btn-verifikasi shadow-sm" data-idcard="${row.id}" data-rfid="${row.cardnodevice}" style="font-size: 0.85rem;" disabled data-bs-toggle="tooltip" title="Scan ID Card untuk memverifikasi">
-                                        <i class="ri-barcode-box-line align-bottom me-1"></i> Verifikasi
-                                    </button>
-                                </center>
-                                `;
+                                return `<center><button type="button" class="btn btn-sm btn-dark fw-bold btn-verifikasi shadow-sm" data-idcard="${row.id}" data-rfid="${row.cardnodevice}" disabled><i class="ri-barcode-box-line align-bottom me-1"></i> Verifikasi</button></center>`;
                             }
                         }
                     },
-                ],
+                ]
             });
 
             table.on('draw.dt', function() {
@@ -346,344 +276,228 @@
                 $('[data-bs-toggle="tooltip"]').tooltip();
             });
 
+            // ==========================================
+            // 4. EVENT LISTENERS
+            // ==========================================
+
+            // Filter Events
+            $("#tanggalFilter").on("change", function() {
+                state.defaultTanggal = $(this).val();
+                state.showAll = 0;
+                table.draw();
+            });
+
+            $("#btnResetFilter").on("click", function() {
+                state.showAll = 1;
+                state.defaultTanggal = '';
+                $("#tanggalFilter").val("");
+                table.draw();
+            });
+
+            // Action UI Events
+            $(document).on('click', '.copy-nik', function() {
+                let nik = $(this).data('nik');
+                if (nik) copyToClipboard(nik);
+            });
+
             $(document).on('click', '.btn-butuh-loker', function(e) {
                 e.preventDefault();
-                let btn = $(this);
-                let td = btn.closest('td');
-                let wrapperTombol = btn.closest('.wrapper-tombol-awal');
-                let wrapperLoker = td.find('.wrapper-select-loker');
+                let tr = $(this).closest('tr');
+                $(this).closest('.wrapper-tombol-awal').addClass('d-none');
 
-                // Sembunyikan tooltip saat tombol diklik agar tidak "nyangkut"
-                btn.tooltip('hide');
-                wrapperTombol.addClass('d-none');
+                let wrapperLoker = tr.find('.wrapper-select-loker').removeClass('d-none');
+                wrapperLoker.find('.js-example-basic-single').select2().trigger('change');
 
-                wrapperLoker.removeClass('d-none');
-                wrapperLoker.find('.js-example-basic-single').select2();
-                wrapperLoker.find('.js-example-basic-single').trigger('change');
-
-                let tr = btn.closest('tr');
                 tr.find('.badge-status-verif').addClass('d-none');
                 tr.find('.btn-verifikasi').removeClass('d-none');
-            })
-
-            $(document).on('change', '.wrapper-select-loker select', function() {
-                let selectLoker = $(this);
-                let tr = selectLoker.closest('tr');
-                let btnVerifikasi = tr.find('.btn-verifikasi');
-
-                if (selectLoker.val() && !selectLoker.closest('.wrapper-select-loker').hasClass('d-none')) {
-                    btnVerifikasi.prop('disabled', false)
-                        .removeClass('btn-dark')
-                        .addClass('btn-outline-success');
-                } else {
-                    btnVerifikasi.prop('disabled', true)
-                        .removeClass('btn-outline-success')
-                        .addClass('btn-dark');
-                }
             });
 
             $(document).on('click', '.btn-tanpa-loker', function(e) {
                 e.preventDefault();
+                let tr = $(this).closest('tr');
+                $(this).closest('.wrapper-tombol-awal').addClass('d-none');
 
-                let btn = $(this);
-                let td = btn.closest('td');
-                let tr = btn.closest('tr');
-                let wrapperTombol = btn.closest('.wrapper-tombol-awal');
-                let wrapperTeks = tr.find('.wrapper-teks-tanpa-loker');
-                let inputStatus = td.find('.status-tanpa-loker');
-                let btnVerifikasi = tr.find('.btn-verifikasi');
+                tr.find('.wrapper-teks-tanpa-loker').removeClass('d-none');
+                tr.find('.status-tanpa-loker').val('1');
 
-                btn.tooltip('hide');
-                wrapperTombol.addClass('d-none');
-
-                wrapperTeks.removeClass('d-none');
-
-                inputStatus.val('1');
-
-                btnVerifikasi.prop('disabled', false)
-                    .removeClass('btn-dark')
-                    .addClass('btn-outline-danger')
+                tr.find('.btn-verifikasi').prop('disabled', false)
+                    .removeClass('btn-dark').addClass('btn-outline-danger')
                     .html('<i class="ri-barcode-box-line"></i> Verifikasi (Tanpa Loker)');
-            })
+            });
 
+            $(document).on('change', '.wrapper-select-loker select', function() {
+                let tr = $(this).closest('tr');
+                let btnVerif = tr.find('.btn-verifikasi');
+                if ($(this).val() && !$(this).closest('.wrapper-select-loker').hasClass('d-none')) {
+                    btnVerif.prop('disabled', false).removeClass('btn-dark').addClass(
+                    'btn-outline-success');
+                } else {
+                    btnVerif.prop('disabled', true).removeClass('btn-outline-success').addClass('btn-dark');
+                }
+            });
+
+            // Modal Verification Events
             $(document).on('click', '.btn-verifikasi', function() {
                 let btn = $(this);
                 let tr = btn.closest('tr');
                 let rowData = $('#tableAjax').DataTable().row(tr).data();
-
                 let isWithoutLoker = tr.find('.status-tanpa-loker').val() === '1';
-                let selectedLokerOption = tr.find('.lokerNo option:selected');
+                let selectedLoker = tr.find('.lokerNo option:selected');
 
                 if (isWithoutLoker) {
-                    $('#verif_loker_tujuan').val('');
-                    $('#verif_hidden_lokerid').val('');
-                    $('#verif_hidden_koderak').val('');
-                    $('#verif_hidden_noloker').val('');
-
+                    $('#verif_loker_tujuan, #verif_hidden_lokerid, #verif_hidden_koderak, #verif_hidden_noloker')
+                        .val('');
                     $('#wrapper_verif_loker').hide();
                 } else {
-                    let lokerId = selectedLokerOption.val();
-                    if (!lokerId) {
-                        Swal.fire('Peringatan', 'Silakan pilih nomor alokasi loker terlebih dahulu!',
-                            'warning');
-                        return;
-                    }
+                    if (!selectedLoker.val()) return Swal.fire('Peringatan',
+                        'Pilih nomor alokasi loker terlebih dahulu!', 'warning');
 
-                    let rawKodeRak = selectedLokerOption.data('kode-rak');
-                    let displayRak = (rawKodeRak === 'LP') ? 'P' : ((rawKodeRak === 'LW') ? 'W' :
-                        rawKodeRak);
-                    $('#verif_loker_tujuan').val(`${displayRak} - ${selectedLokerOption.data('no-loker')}`);
-
-                    $('#verif_hidden_lokerid').val(selectedLokerOption.val());
-                    $('#verif_hidden_koderak').val(selectedLokerOption.data('kode-rak'));
-                    $('#verif_hidden_noloker').val(selectedLokerOption.data('no-loker'));
-
+                    let rakRaw = selectedLoker.data('kode-rak');
+                    let rakDisplay = (rakRaw === 'LP') ? 'P' : ((rakRaw === 'LW') ? 'W' : rakRaw);
+                    $('#verif_loker_tujuan').val(`${rakDisplay} - ${selectedLoker.data('no-loker')}`);
+                    $('#verif_hidden_lokerid').val(selectedLoker.val());
+                    $('#verif_hidden_koderak').val(rakRaw);
+                    $('#verif_hidden_noloker').val(selectedLoker.data('no-loker'));
                     $('#wrapper_verif_loker').show();
                 }
 
                 $('#verif_target_nik').val(rowData.nik);
                 $('#verif_nama').val(rowData.nama);
-
-                let textKategori = rowData.staff === 'Y' ? 'Staff' : 'Non Staff';
-                $('#verif_kategori').val(textKategori);
-
+                $('#verif_kategori').val(rowData.staff === 'Y' ? 'Staff' : 'Non Staff');
                 $('#verif_hidden_idcard').val(btn.data('idcard'));
                 $('#verif_hidden_divisi').val(rowData.kode_divisi);
                 $('#verif_hidden_jk').val(rowData.jenis_kelamin);
 
-                $('#verif_detail_container').hide();
-                $('#verif_footer').hide();
-
+                $('#verif_detail_container, #verif_footer').hide();
                 $('#verif_rfid_scan').val('').prop('disabled', false);
                 $('#verif_foto_img').attr('src', "{{ asset('assets/media/users/default.jpg') }}");
-
-                $('#verif_status_text')
-                    .removeClass('bg-success bg-danger bg-warning')
-                    .addClass('bg-secondary')
-                    .html('<i class="ri-rfid-line mr-1"></i> Menunggu proses scan Kartu ID...');
+                $('#verif_status_text').removeClass('bg-success bg-danger bg-warning').addClass(
+                    'bg-secondary').html('<i class="ri-rfid-line mr-1"></i> Menunggu scan Kartu ID...');
 
                 $('#btnSimpanVerifikasi').prop('disabled', true);
                 $('#modalVerifikasi').modal('show');
             });
 
-            // let lokerId = selectedLokerOption.val();
-            // if (!lokerId) {
-            //     Swal.fire('Peringatan', 'Silakan pilih nomor alokasi loker terlebih dahulu!',
-            //         'warning');
-            //     return;
-            // }
+            $('#modalVerifikasi').on('shown.bs.modal', function() {
+                $('#verif_rfid_scan').focus();
+            });
 
-            // $('#verif_target_nik').val(rowData.nik); $('#verif_nama').val(rowData.nama);
+            $('#verif_rfid_scan').on('keypress', function(e) {
+                if (e.which === 13) {
+                    e.preventDefault();
+                    let scannedRfid = $(this).val().trim();
+                    let targetNik = $('#verif_target_nik').val();
+                    if (!scannedRfid) return;
 
-            // let textKategori = rowData.staff === 'Y' ? 'Staff' : 'Non Staff'; $('#verif_kategori').val(
-            //     textKategori);
+                    $(this).prop('disabled', true);
+                    $('#verif_status_text').removeClass('bg-secondary bg-success bg-danger').addClass(
+                        'bg-warning').html(
+                        '<i class="spinner-border spinner-border-sm mr-1"></i> Memverifikasi...');
+                    $('#verif_detail_container, #verif_footer').slideUp(200);
 
-            // let rawKodeRak = selectedLokerOption.data('kode-rak')
-            // let displayRak = (rawKodeRak === 'LP') ? 'P' : ((rawKodeRak === 'LW') ? 'W' : rawKodeRak);
+                    $.ajax({
+                        url: "{{ url('/loker/search-karyawan') }}/" + scannedRfid,
+                        type: "GET"
+                    }).then(res => {
+                        if (!res.success) throw new Error(res.message || 'Data tidak ditemukan.');
+                        if (String(res.data.nik) !== String(targetNik)) throw new Error(
+                            `Kartu ID tidak sesuai! Ini milik: ${res.data.nama}`);
 
-            // $('#verif_loker_tujuan').val(`${displayRak} - ${selectedLokerOption.data('no-loker')}`);
+                        if (res.data.foto) $('#verif_foto_img').attr('src', res.data.foto);
+                        $('#verif_status_text').removeClass('bg-warning bg-danger').addClass(
+                            'bg-success').html(
+                            '<i class="ri-checkbox-circle-line mr-1"></i> Verifikasi berhasil!');
 
-            // $('#verif_hidden_idcard').val(btn.data('idcard')); $('#verif_hidden_lokerid').val(
-            //     selectedLokerOption.val()); $('#verif_hidden_koderak').val(selectedLokerOption.data(
-            //     'kode-rak')); $('#verif_hidden_noloker').val(selectedLokerOption.data('no-loker')); $(
-            //     '#verif_hidden_divisi').val(rowData.kode_divisi); $('#verif_hidden_jk').val(rowData
-            //     .jenis_kelamin);
-
-            // $('#verif_detail_container').hide(); $('#verif_footer').hide();
-
-            // $('#verif_rfid_scan').val('').prop('disabled', false); $('#verif_foto_img').attr('src',
-            //     "{{ asset('assets/media/users/default.jpg') }}");
-
-            // $('#verif_status_text')
-            // .removeClass('bg-success bg-danger bg-warning')
-            // .addClass('bg-secondary')
-            // .html('<i class="ri-rfid-line mr-1"></i> Menunggu proses scan Kartu ID...');
-
-            // $('#btnSimpanVerifikasi').prop('disabled', true); $('#modalVerifikasi').modal('show');
-        });
-
-        $('#modalVerifikasi').on('shown.bs.modal', function() {
-            $('#verif_rfid_scan').focus();
-        });
-
-        $('#verif_rfid_scan').on('keypress', function(e) {
-            if (e.which === 13) {
-                e.preventDefault();
-                let scannedRfid = $(this).val().trim();
-                let targetNik = $('#verif_target_nik').val();
-
-                if (!scannedRfid) return;
-
-                $(this).prop('disabled', true);
-                $('#verif_status_text')
-                    .removeClass('bg-secondary bg-success bg-danger')
-                    .addClass('bg-warning')
-                    .html(
-                        '<i class="spinner-border spinner-border-sm mr-1"></i> Memverifikasi data ID Card...'
-                    );
-
-                $('#verif_detail_container').slideUp(200);
-                $('#verif_footer').slideUp(200);
-                $('#btnSimpanVerifikasi').prop('disabled', true);
-
-                $.ajax({
-                    url: "{{ url('/loker/search-karyawan') }}/" + scannedRfid,
-                    type: "GET"
-                }).then(response => {
-                    if (!response.success) {
-                        throw new Error(response.message ||
-                            'Data karyawan tidak ditemukan di Database Pusat.');
-                    }
-
-                    if (String(response.data.nik) !== String(targetNik)) {
-                        throw new Error(
-                            `Kartu ID tidak sesuai! Ini milik: ${response.data.nama}`);
-                    }
-
-                    if (response.data.foto) {
-                        $('#verif_foto_img').attr('src', response.data.foto);
-                    }
-
-                    $('#verif_status_text')
-                        .removeClass('bg-warning bg-danger bg-secondary')
-                        .addClass('bg-success')
-                        .html(
-                            '<i class="ri-checkbox-circle-line mr-1 text-white"></i> Verifikasi berhasil! Silakan simpan.'
-                        );
-
-                    $('#btnSimpanVerifikasi').prop('disabled', false);
-
-                    $('#verif_detail_container').slideDown(400);
-                    $('#verif_footer').slideDown(400);
-
-                }).catch(error => {
-                    let errorMsg = error.responseJSON?.message || error.message ||
-                        'Terjadi kesalahan sistem.';
-
-                    $('#verif_status_text')
-                        .removeClass('bg-warning bg-success bg-secondary')
-                        .addClass('bg-danger')
-                        .html(
-                            `<i class="ri-error-warning-line mr-1 text-white"></i> ${errorMsg}`
-                        );
-
-                    $('#verif_rfid_scan').prop('disabled', false).val('').focus();
-                });
-            }
-        });
-
-        $('#btnSimpanVerifikasi').click(function() {
-            let btn = $(this);
-
-            let dataToSend = [{
-                idCard: $('#verif_hidden_idcard').val(),
-                lokerId: $('#verif_hidden_lokerid').val(),
-                kodeRak: $('#verif_hidden_koderak').val(),
-                noLoker: $('#verif_hidden_noloker').val(),
-                nik: $('#verif_target_nik').val(),
-                nama: $('#verif_nama').val(),
-                jk: $('#verif_hidden_jk').val(),
-                divisi: $('#verif_hidden_divisi').val(),
-                staff: $('#verif_kategori').val() === 'STAFF' ? 'staff' : 'non_staff'
-            }];
-
-            let originalBtnText = btn.html();
-            btn.prop('disabled', true).html(
-                '<i class="spinner-border spinner-border-sm me-1"></i> Memproses Data...');
-
-            $.ajax({
-                url: "{{ url('/hr-connect/dept-ga/karyawan-masuk/updateStatus') }}",
-                type: "POST",
-                data: {
-                    _token: "{{ csrf_token() }}",
-                    data: dataToSend
-                },
-                success: function(response) {
-                    let lokerId = $('#verif_hidden_lokerid').val();
-                    let jk = $('#verif_hidden_jk').val();
-                    let staffValue = $('#verif_kategori').val();
-                    let kategoriBaru = staffValue === 'Staff' ? 'staff' : 'non_staff';
-
-                    // PERBAIKAN: Hanya jalankan update memori jika karyawan DAPAT loker
-                    if (lokerId && lokerId !== "") {
-                        let targetArray = (jk === 'L') ? lokerPria : lokerWanita;
-                        let lokerIndex = targetArray.findIndex(l => l.id == lokerId);
-
-                        if (lokerIndex !== -1) {
-                            targetArray[lokerIndex].total_penghuni += 1;
-                            if (!targetArray[lokerIndex].kategori_tersedia || targetArray[lokerIndex]
-                                .kategori_tersedia == null) {
-                                targetArray[lokerIndex].kategori_tersedia = kategoriBaru;
-                            }
-                        }
-                    }
-
-                    $('#modalVerifikasi').modal('hide');
-
-                    // Notifikasi dibedakan bahasanya sedikit
-                    let toastMsg = lokerId ?
-                        "Verifikasi sukses! Fasilitas loker berhasil dialokasikan." :
-                        "Verifikasi sukses! Karyawan tercatat tanpa fasilitas loker.";
-
-                    Toastify({
-                        text: toastMsg,
-                        duration: 4000,
-                        gravity: "top",
-                        position: "right",
-                        backgroundColor: "#0ab39c",
-                    }).showToast();
-
-                    $('#tableAjax').DataTable().draw(false);
-                },
-                error: function(xhr) {
-                    Swal.fire("Gagal", xhr.responseJSON?.message ||
-                        "Terjadi kesalahan server saat memproses data.", "error");
-                    btn.prop('disabled', false).html(originalBtnText);
+                        $('#btnSimpanVerifikasi').prop('disabled', false);
+                        $('#verif_detail_container, #verif_footer').slideDown(400);
+                    }).catch(err => {
+                        $('#verif_status_text').removeClass('bg-warning bg-success').addClass(
+                            'bg-danger').html(
+                            `<i class="ri-error-warning-line mr-1"></i> ${err.message || 'Terjadi kesalahan'}`
+                            );
+                        $('#verif_rfid_scan').prop('disabled', false).val('').focus();
+                    });
                 }
             });
-        });
 
-        $('#btnExportExcel').click(function(e) {
-            e.preventDefault();
+            // Submit Verifikasi Event
+            $('#btnSimpanVerifikasi').click(function() {
+                let btn = $(this);
+                let originalHtml = btn.html();
+                btn.prop('disabled', true).html(
+                    '<i class="spinner-border spinner-border-sm me-1"></i> Menyimpan...');
 
-            if (showAll === 0 && (!defaultTanggal || defaultTanggal === '')) {
-                Swal.fire('Peringatan', 'Silakan pilih filter tanggal terlebih dahulu!', 'warning');
-                return;
-            }
+                let payload = [{
+                    idCard: $('#verif_hidden_idcard').val(),
+                    lokerId: $('#verif_hidden_lokerid').val(),
+                    kodeRak: $('#verif_hidden_koderak').val(),
+                    noLoker: $('#verif_hidden_noloker').val(),
+                    nik: $('#verif_target_nik').val(),
+                    nama: $('#verif_nama').val(),
+                    jk: $('#verif_hidden_jk').val(),
+                    divisi: $('#verif_hidden_divisi').val(),
+                    staff: $('#verif_kategori').val() === 'Staff' ? 'staff' : 'non_staff'
+                }];
 
-            let btn = $(this);
-            let originalBtnText = btn.html();
-            btn.prop('disabled', true).html(
-                '<i class="spinner-border spinner-border-sm me-1"></i> Mengunduh Dokumen...');
-
-            let hiddenForm = $('<form>', {
-                'method': 'POST',
-                'action': `{{ url('/hr-connect/dept-ga/karyawan-masuk/export') }}`,
+                $.post("{{ url('/hr-connect/dept-ga/karyawan-masuk/updateStatus') }}", {
+                    _token: "{{ csrf_token() }}",
+                    data: payload
+                }).done(function(res) {
+                    $('#modalVerifikasi').modal('hide');
+                    Toastify({
+                        text: payload[0].lokerId ?
+                            "Fasilitas loker berhasil dialokasikan!" :
+                            "Karyawan tercatat tanpa fasilitas loker.",
+                        duration: 3000,
+                        gravity: "top",
+                        position: "right",
+                        backgroundColor: "#0ab39c"
+                    }).showToast();
+                    table.DataTable().draw(false);
+                }).fail(function(xhr) {
+                    Swal.fire("Gagal", xhr.responseJSON?.message || "Terjadi kesalahan server.",
+                        "error");
+                    btn.prop('disabled', false).html(originalHtml);
+                });
             });
 
-            hiddenForm.append($('<input>', {
-                'type': 'hidden',
-                'name': '_token',
-                'value': "{{ csrf_token() }}"
-            }));
-            hiddenForm.append($('<input>', {
-                'type': 'hidden',
-                'name': 'tanggal',
-                'value': defaultTanggal
-            }));
-            hiddenForm.append($('<input>', {
-                'type': 'hidden',
-                'name': 'tampilkan_semua',
-                'value': showAll
-            }));
+            // Export Excel
+            $('#btnExportExcel').click(function(e) {
+                e.preventDefault();
+                if (state.showAll === 0 && !state.defaultTanggal) return Swal.fire('Peringatan',
+                    'Silakan pilih tanggal!', 'warning');
 
-            $('body').append(hiddenForm);
-            hiddenForm.submit();
-            hiddenForm.remove();
+                let btn = $(this);
+                let originalText = btn.html();
+                btn.prop('disabled', true).html(
+                    '<i class="spinner-border spinner-border-sm me-1"></i> Mengunduh...');
 
-            setTimeout(function() {
-                btn.prop('disabled', false).html(originalBtnText);
-            }, 1500);
+                let form = $('<form>', {
+                    method: 'POST',
+                    action: `{{ url('/hr-connect/dept-ga/karyawan-masuk/export') }}`
+                });
+                form.append($('<input>', {
+                    type: 'hidden',
+                    name: '_token',
+                    value: "{{ csrf_token() }}"
+                }));
+                form.append($('<input>', {
+                    type: 'hidden',
+                    name: 'tanggal',
+                    value: state.defaultTanggal
+                }));
+                form.append($('<input>', {
+                    type: 'hidden',
+                    name: 'tampilkan_semua',
+                    value: state.showAll
+                }));
+
+                $('body').append(form);
+                form.submit();
+                form.remove();
+
+                setTimeout(() => btn.prop('disabled', false).html(originalText), 1500);
+            });
         });
     </script>
 @endpush

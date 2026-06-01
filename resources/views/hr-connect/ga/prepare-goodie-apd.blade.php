@@ -1,5 +1,21 @@
 @extends('hr-connect.layouts.base')
 
+@push('styles')
+    <style>
+        .table-custom-header th {
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 0.5px;
+            vertical-align: middle;
+        }
+
+        #tableAjax tbody td {
+            vertical-align: middle;
+        }
+    </style>
+@endpush
+
 @section('content')
     <div class="container-fluid">
         <div class="row">
@@ -11,9 +27,14 @@
                                 <h5 class="card-title mb-0" style="font-weight: 600;">
                                     <i class="ri-gift-line text-info me-2"></i> Persiapan Fasilitas Goodie Bag & APD
                                 </h5>
+                                <p class="text-muted mb-0 mt-2" style="font-size: 0.85rem;">
+                                    Konfirmasi ketersediaan paket perlengkapan (Goodie Bag & APD) untuk kloter karyawan
+                                    baru.
+                                </p>
                             </div>
-                            <div class="col-lg-4 text-end">
-                                <button class="btn btn-primary font-weight-bolder shadow-sm" id="btnConfirmAll" data-bs-toggle="tooltip" data-bs-placement="top" title="Konfirmasi semua jadwal persiapan sekaligus">
+                            <div class="col-lg-4 text-end mt-3 mt-lg-0">
+                                <button class="btn btn-primary font-weight-bolder shadow-sm" id="btnConfirmAll"
+                                    data-bs-toggle="tooltip" title="Konfirmasi semua jadwal sekaligus">
                                     <i class="ri-check-double-fill align-bottom me-1"></i> Konfirmasi Semua Persiapan
                                 </button>
                             </div>
@@ -21,12 +42,13 @@
                     </div>
                     <div class="card-body pb-4">
                         <div class="table-responsive">
-                            <table id="tableAjax" class="table table-bordered table-hover align-middle" style="width:100%">
-                                <thead class="table-light text-muted">
+                            <table id="tableAjax" class="table table-bordered table-hover align-middle table-custom-header"
+                                style="width:100%">
+                                <thead class="table-light text-muted text-center">
                                     <tr>
                                         <th style="width: 30%;">Jadwal Tanggal Masuk</th>
-                                        <th style="width: 30%;">Total Karyawan (Set Fasilitas)</th>
-                                        <th style="width: 40%; text-align: center;">Tindakan</th>
+                                        <th style="width: 30%;">Total Karyawan (Butuh Set)</th>
+                                        <th style="width: 40%;">Tindakan</th>
                                     </tr>
                                 </thead>
                             </table>
@@ -44,11 +66,15 @@
 
     <script>
         $(document).ready(function() {
+            // ==========================================
+            // 1. INIT GLOBAL & DATATABLES
+            // ==========================================
             moment.locale('id');
 
             let table = $('#tableAjax').DataTable({
                 processing: true,
-                serverSide: false,
+                serverSide: false, // Karena data udah di-groupBy dari controller
+                ordering: false, // Ordering sudah di-handle controller (desc)
                 paging: true,
                 dom: "<'row mb-3'<'col-sm-12 col-md-6'l><'col-sm-12 col-md-6 text-end'f>>" +
                     "<'row'<'col-sm-12'tr>>" +
@@ -59,39 +85,34 @@
                 },
                 columns: [{
                         data: "tanggal_masuk",
+                        className: "text-center",
                         render: function(data) {
                             return `<span class="fw-bold text-dark">${moment(data).format('DD MMMM YYYY')}</span>`;
                         }
                     },
                     {
                         data: "count",
-                        orderable: false,
+                        className: "text-center",
                         render: function(data) {
-                            return `<span class="badge bg-soft-info text-info fs-13 px-3 py-2 shadow-sm"><i class="ri-group-line me-1 align-bottom"></i> ${data} Set Persiapan</span>`;
+                            return `<span class="badge bg-soft-info text-info fs-13 px-3 py-2 shadow-sm"><i class="ri-group-line me-1 align-bottom"></i> ${data} Set Fasilitas</span>`;
                         }
                     },
                     {
                         data: "count",
-                        orderable: false,
+                        className: "text-center",
                         render: function(data, type, row) {
                             return `
-                            <center>
                                 <button class="btn btn-sm btn-outline-success fw-bold btnConfirm shadow-sm"
                                     data-id="${row.id}"
                                     data-jumlah="${data}"
                                     data-tgl="${row.tanggal_masuk}"
                                     data-bs-toggle="tooltip"
-                                    data-bs-placement="top"
-                                    title="Tandai fasilitas untuk jadwal ini telah siap"
+                                    title="Tandai fasilitas kloter ini siap"
                                     style="font-size: 0.85rem;">
                                     <i class="ri-check-line align-bottom me-1"></i> Konfirmasi Selesai
-                                </button>
-                            </center>`;
+                                </button>`;
                         }
                     }
-                ],
-                order: [
-                    [0, 'desc']
                 ]
             });
 
@@ -99,16 +120,19 @@
                 $('[data-bs-toggle="tooltip"]').tooltip();
             });
 
+            // ==========================================
+            // 2. EVENT LISTENER: KONFIRMASI MASSAL
+            // ==========================================
             $('#btnConfirmAll').click(function() {
                 let btn = $(this);
-                let dt = $("#tableAjax").DataTable();
+                let originalText = btn.html();
 
                 btn.tooltip('hide');
 
-                if (!dt.data().any()) {
-                    Swal.fire('Informasi',
-                        'Tidak ada jadwal persiapan fasilitas yang perlu dikonfirmasi saat ini.', 'info');
-                    return;
+                if (!table.data().any()) {
+                    return Swal.fire('Informasi',
+                        'Tidak ada jadwal persiapan fasilitas yang perlu dikonfirmasi saat ini.', 'info'
+                        );
                 }
 
                 Swal.fire({
@@ -123,10 +147,9 @@
                     reverseButtons: true
                 }).then((result) => {
                     if (result.isConfirmed) {
-                        let originalText = btn.html();
                         btn.prop('disabled', true).html(
                             '<i class="spinner-border spinner-border-sm me-1"></i> Memproses Data...'
-                        );
+                            );
 
                         $.ajax({
                             type: "POST",
@@ -135,42 +158,45 @@
                                 _token: "{{ csrf_token() }}",
                             },
                             success: function(res) {
-                                dt.ajax.reload(null, false);
+                                table.ajax.reload(null, false);
+                                btn.prop('disabled', false).html(originalText);
 
                                 Toastify({
-                                    text: res.msg || "Seluruh jadwal persiapan berhasil dikonfirmasi!",
+                                    text: res.message ||
+                                        "Seluruh jadwal persiapan berhasil dikonfirmasi!",
                                     duration: 4000,
                                     gravity: "top",
                                     position: "right",
                                     backgroundColor: "#0ab39c",
                                 }).showToast();
-
-                                btn.prop('disabled', false).html(originalText);
                             },
                             error: function(xhr) {
-                                Swal.fire("Gagal Memproses",
+                                btn.prop('disabled', false).html(originalText);
+                                Swal.fire("Gagal Memproses", xhr.responseJSON
+                                    ?.message ||
                                     "Terjadi kesalahan sistem saat memproses konfirmasi massal.",
                                     "error");
-                                btn.prop('disabled', false).html(originalText);
                             }
                         });
                     }
                 });
             });
 
+            // ==========================================
+            // 3. EVENT LISTENER: KONFIRMASI PER-KLOTER
+            // ==========================================
             $(document).on("click", ".btnConfirm", function() {
                 let btn = $(this);
                 let jumlah = btn.data("jumlah");
                 let tgl_masuk = btn.data("tgl");
-                let dt = $("#tableAjax").DataTable();
-
+                let originalText = btn.html();
                 let tanggalFormat = moment(tgl_masuk).format('DD MMMM YYYY');
 
                 btn.tooltip('hide');
 
                 Swal.fire({
                     title: "Konfirmasi Persiapan",
-                    html: `Anda akan mengonfirmasi kesiapan fasilitas sebanyak <b>${jumlah} set</b> untuk jadwal masuk <b>${tanggalFormat}</b>. Lanjutkan?`,
+                    html: `Anda mengonfirmasi kesiapan fasilitas sebanyak <b>${jumlah} set</b> untuk jadwal masuk <b>${tanggalFormat}</b>. Lanjutkan?`,
                     icon: "info",
                     showCancelButton: true,
                     confirmButtonColor: "#0ab39c",
@@ -180,25 +206,25 @@
                     reverseButtons: true
                 }).then((result) => {
                     if (result.isConfirmed) {
-                        let originalText = btn.html();
+
                         btn.prop('disabled', true).html(
                             '<i class="spinner-border spinner-border-sm me-1"></i> Memproses...'
-                        );
+                            );
 
                         $.ajax({
                             type: "POST",
                             url: "{{ url('/hr-connect/dept-ga/perlengkapan-goodie-apd/updateData') }}",
                             data: {
                                 _token: "{{ csrf_token() }}",
-                                confirm: 'Y',
                                 tgl_masuk: tgl_masuk,
                                 jumlah: jumlah
                             },
                             success: function(res) {
-                                dt.ajax.reload(null, false);
+                                table.ajax.reload(null, false);
 
                                 Toastify({
-                                    text: res.msg || `Konfirmasi persiapan untuk tanggal ${tanggalFormat} berhasil disimpan!`,
+                                    text: res.msg ||
+                                        `Konfirmasi persiapan untuk tanggal ${tanggalFormat} berhasil disimpan!`,
                                     duration: 4000,
                                     gravity: "top",
                                     position: "right",
@@ -206,15 +232,16 @@
                                 }).showToast();
                             },
                             error: function(xhr) {
-                                Swal.fire("Gagal",
+                                btn.prop('disabled', false).html(originalText);
+                                Swal.fire("Gagal", xhr.responseJSON?.msg ||
                                     "Terjadi kesalahan sistem saat menyimpan data konfirmasi.",
                                     "error");
-                                btn.prop('disabled', false).html(originalText);
                             }
                         });
                     }
                 });
             });
+
         });
     </script>
 @endpush

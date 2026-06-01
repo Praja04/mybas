@@ -1,334 +1,394 @@
 @extends('hr-connect.layouts.base')
 
 @push('styles')
-<style>
-input[type="checkbox"]:disabled {
-    opacity: 1; 
-    border-width: 2px; 
-}
-</style>
+    <style>
+        .checklist {
+            width: 1.3rem;
+            height: 1.3rem;
+            cursor: pointer;
+        }
+
+        .form-check-input.checklist:checked {
+            background-color: #0ab39c !important;
+            border-color: #0ab39c !important;
+        }
+    </style>
 @endpush
 
 @section('content')
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-lg-2">
-            <label>Tanggal:</label>
-            <input type="date" class="form-control mb-3" id="tanggalFilter">
-        </div>
-        <div class="col-lg-2">
-            <label>.</label><br>
-            <button class="btn btn-primary" onClick="tampilkanSemua()">Show All</button>
-        </div>
-        <div class="col-6">
-            <label>.</label><br>
-            <button class="btn btn-success" onClick="uploadExcelModal()">Upload Excel</button>
-            &nbsp;&nbsp;
-            <a href="/assets/media/hr_connect/HRD IR - Karyawan Keluar.xlsx" class="btn btn-info">Template</a>&nbsp;&nbsp;
-            <button class="btn btn-primary" onClick="ketentuanUploadModal()">Ketentuan Upload</button>
-        </div>
-    </div>
-    <div class="row">
-        <div class="col-lg-12">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">Karyawan Keluar</h5>
-                </div>
-                <div class="card-body">
-                    <table id="tableAjax" class="table table-bordered" style="width:100%">
-                        <thead>
-                            <tr>
-                                <th data-ordering="false" style="width: 5%;">
-                                    <center>
-                                        <input type="checkbox" id="checkAll" />
-                                    </center>
-                                </th>
-                                <th data-ordering="false" style="width: 20%;">NIK</th>
-                                <th data-ordering="false" style="width: 30%;">Nama</th>
-                                <th data-ordering="false">Kode Jabatan</th>
-                                <th data-ordering="false">Kode Bagian</th>
-                                <th data-ordering="false">Kode Group</th>
-                                <th data-ordering="false">Tgl Keluar</th>
-                                <th data-ordering="false">Alasan Keluar</th>
-                            </tr>
-                        </thead>
-                    </table>
-                </div>
+    <div class="container-fluid">
+        <!-- Bagian Filter -->
+        <div class="row mb-3 align-items-end">
+            <div class="col-lg-3">
+                <label class="form-label font-weight-bold text-muted">Filter Tanggal Checkout</label>
+                <select class="form-select form-control shadow-sm" id="tanggalFilter">
+                    <option value="" disabled selected>Pilih Tanggal</option>
+                    @if ($tanggalTersedia->isEmpty())
+                        <option value="" disabled>Belum ada antrean karyawan keluar</option>
+                    @else
+                        @foreach ($tanggalTersedia as $date)
+                            <option value="{{ $date }}">
+                                {{ \Carbon\Carbon::parse($date)->translatedFormat('d F Y') }}
+                            </option>
+                        @endforeach
+                    @endif
+                </select>
             </div>
-            <button type="button" class="btn btn-secondary custom-toggle active mb-3" data-bs-toggle="button" id="btnSubmit">Submit</button>
+            <div class="col-lg-2">
+                <button class="btn btn-soft-secondary w-100 shadow-sm" onclick="tampilkanSemua()">
+                    <i class="ri-refresh-line align-bottom me-1"></i> Reset Filter
+                </button>
+            </div>
         </div>
-    </div>
-</div>
 
-<div class="modal fade" id="modalData" aria-hidden="true" aria-labelledby="..." tabindex="-1">
-    <div class="modal-dialog modal-dialog-scrollable">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="modalDataLabel">HRD IR Upload Karyawan Keluar</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body text-center">
-                <div class="mt-1">
-                    <div class="row">
-                        <div class="col-lg-12">
-                            <input type="file" class="form-control" id="fileUpload" accept=".xlsx">
-                            <button class="btn btn-primary mt-2" id="uploadExcel">Upload</button>
-                        </div>
-                    </div>
-                </div>
+        <!-- Bagian Tabel & Aksi -->
+        <div class="row">
+            <div class="col-lg-12">
+                @include('hr-connect.hrd.partials._table_karyawan_keluar')
             </div>
         </div>
     </div>
-</div>
 
-<div class="modal fade" id="modalKetentuanUpload" aria-hidden="true" aria-labelledby="..." tabindex="-1">
-    <div class="modal-dialog modal-lg modal-dialog-scrollable">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="modalKetentuanUploadLabel">Ketentuan Upload</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <div class="mt-1">
-                    <div class="row">
-                        <div class="col-lg-12">
-                            <h5 style="font-weight: bold">Contoh Template</h5>
-                            <table class="table table-bordered">
-                                <tr>
-                                    <th>NIK</th>
-                                    <th>Nama</th>
-                                    <th>Dept</th>
-                                    <th>Alasan Keluar</th>
-                                    <th>Tgl Keluar</th>
-                                    <th>Status</th>
-                                </tr>
-                                <tr>
-                                    <td>123456789</td>	
-                                    <td>Testing 1</td>	
-                                    <td>PRN_02</td>	
-                                    <td>Habis Kontrak</td>	
-                                    <td>10/20/2024</td>	
-                                    <td>1</td>	
-                                </tr>
-                                <tr>
-                                    <td>132674758</td>	
-                                    <td>Testing 2</td>	
-                                    <td>PRN_02</td>	
-                                    <td>Habis Kontrak</td>	
-                                    <td>10/20/2024</td>	
-                                    <td>0</td>	
-                                </tr>
-                            </table>
-                            <h5 style="font-weight: bold">Aturan Penulisan</h5>
-                            <ol>
-                                <li>NIK harus sesuai.</li>
-                                <li>Bila Status tidak 1 maka data tidak diproses.</li>
-                            </ol>
-                        </div>
-                    </div>
+    <!-- Modal Upload Excel -->
+    <div class="modal fade" id="modalData" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header p-4 bg-light">
+                    <h5 class="modal-title fw-bold"><i class="ri-file-upload-line text-primary me-2"></i> Upload Finalisasi
+                        Massal</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4 text-center">
+                    <input type="file" class="form-control mb-3" id="fileUpload" accept=".xlsx, .xls">
+                    <button class="btn btn-primary w-100 fw-bold" id="uploadExcel">
+                        <i class="ri-upload-cloud-2-line align-bottom me-1"></i> Proses Upload
+                    </button>
                 </div>
             </div>
         </div>
     </div>
-</div>
+
+    <!-- Modal Ketentuan Upload -->
+    <div class="modal fade" id="modalKetentuanUpload" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            @include('hr-connect.hrd.partials._modal_ketentuan_upload')
+        </div>
+    </div>
 @endsection
 
 @push('scripts')
-<script src="{{ asset('assets/velzon/libs/moment/moment.js') }}"></script>
-<script>
-$(document).ready(function(){
-    $("#btnSubmit").hide();
+    <script src="{{ asset('assets/velzon/libs/moment/moment.js') }}"></script>
+    <script>
+        $(document).ready(function() {
+            let showAll = 1;
+            let defaultTanggal = '';
+            let isBulkMode = false;
 
-    let defaultTanggal = moment().format("YYYY-MM-DD");
-    // let defaultTanggal = "semua";
-    let showAll = 1;
+            // --- FILTER LOGIC ---
+            $(document).on("change", "#tanggalFilter", function() {
+                defaultTanggal = $(this).val();
+                showAll = 0;
+                $("#tableAjax").DataTable().draw();
+            });
 
-    $("#tanggalFilter").val("");
+            window.tampilkanSemua = function() {
+                $("#tanggalFilter").val("");
+                defaultTanggal = '';
+                showAll = 1;
+                $("#tableAjax").DataTable().draw();
+            };
 
-    $(document).on("change", "#tanggalFilter", function(){
-        defaultTanggal = $(this).val();
-        showAll = 0;
-        $("#tableAjax").DataTable().draw();
-    });
-
-    window.tampilkanSemua = function() {
-        showAll = 1;
-        $("#tableAjax").DataTable().draw(); 
-    };
-
-    $(document).on('change', '#checkAll', function() {
-        let isChecked = $(this).is(':checked');
-        $("#tableAjax tbody input[type=checkbox].checklist").prop('checked', isChecked);
-        $("#btnSubmit").show();
-    });
-    
-    function copyToClipboard(text) {
-        var textArea = document.createElement("textarea");
-        textArea.value = text;
-        document.body.appendChild(textArea);
-        textArea.select();
-        document.execCommand("Copy");
-        textArea.remove();
-        
-        Toastify({
-            text: "NIK telah disalin: " + text,
-            duration: 3000,
-            gravity: "top",
-            position: 'right',
-            backgroundColor: "linear-gradient(to right, #28a745, #218838)",
-        }).showToast();
-    }
-
-    $(document).on('change', '.checklist', function(){
-        $("#btnSubmit").show();
-
-        // Jika udah di ceklis ya copy nik setelah - 
-        if (this.checked) {
-            let nik = $(this).data('nik');
-
-            if (typeof nik === 'string' || typeof nik === 'number') {
-                nik = String(nik);
-                var splited = nik.split('-'); 
-
-                var nik_copied = splited.length > 1 ? splited[1] : splited[0];
-
-                if (nik_copied) {
-                    copyToClipboard(nik_copied);
-                }
-            } else {
-                console.error("NIK bukan string atau angka:", nik);
+            // --- MODALS ---
+            window.uploadExcelModal = function() {
+                $("#modalData").modal("show");
             }
-        }
-    });
-
-    let table = $("#tableAjax").dataTable({
-        processing: false,
-        serverSide: true,
-        paging: false,
-        ordering: false,
-        dom: "<'row'<'col-sm-12 text-right'Bf>>\
-            <'row'<'col-sm-12'tr>>\
-            <'row'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7 dataTables_pager'lp>>",
-        buttons: [
-            {
-                extend: 'excel',
-                text: 'Export to Excel',
-                filename: 'HRD IR - Karyawan Keluar',
-                exportOptions: {
-                    columns: [1,2,3,4,5,6,7]
-                }
-            },
-        ],
-        ajax: {
-            type: "GET",
-            url: "/hr-connect/dept-hrd/karyawan-keluar/getData",
-            data: function(d){
-                d.tanggal = defaultTanggal;
-                d.tampilkan_semua = showAll;
+            window.ketentuanUploadModal = function() {
+                $("#modalKetentuanUpload").modal("show");
             }
-        },
-        columns: [
-            {
-                render: function(data, type, row){
-                    return `
-                    <center>
-                        <input type="checkbox" class="checklist" data-nik="${row.nik}" value="${row.id}">
-                    </center>
-                    `;
+
+            // --- DATATABLES INIT ---
+            let table = $("#tableAjax").DataTable({
+                processing: true,
+                serverSide: true,
+                ordering: false,
+                dom: "<'row mb-3'<'col-sm-12 col-md-6'l><'col-sm-12 col-md-6 text-end'f>>" +
+                    "<'row'<'col-sm-12'tr>>" +
+                    "<'row mt-3'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>",
+                ajax: {
+                    type: "GET",
+                    url: "{{ url('/hr-connect/dept-hrd/karyawan-keluar/getData') }}",
+                    data: function(d) {
+                        d.tanggal = defaultTanggal;
+                        d.tampilkan_semua = showAll;
+                    }
+                },
+                columns: [{
+                        data: 'nama'
+                    },
+                    {
+                        data: 'nik',
+                        render: function(data) {
+                            return `<span class="fw-bold">${data}</span>`;
+                        }
+                    },
+                    {
+                        data: 'kode_bagian'
+                    },
+                    {
+                        data: 'kode_group'
+                    },
+                    {
+                        data: 'tanggal_keluar',
+                        render: function(data) {
+                            if (data && data !== '0000-00-00') {
+                                return moment(data).format('DD MMM YYYY');
+                            }
+                            return `<span class="text-muted fst-italic" style="font-size:0.85rem;"><i class="ri-error-warning-line align-bottom"></i> Belum diset</span>`;
+                        }
+                    },
+                    {
+                        data: 'alasan_keluar',
+                        render: function(data) {
+                            let text = data ? data : 'Tidak ada keterangan';
+                            let badgeClass = data ? 'bg-light text-dark border' :
+                                'bg-soft-danger text-danger border border-danger';
+                            return `<span class="badge ${badgeClass}">${text}</span>`;
+                        }
+                    },
+                    {
+                        render: function(data, type, row) {
+                            return `
+                                <div class="d-flex justify-content-center align-items-center gap-2">
+                                    <input type="checkbox" class="form-check-input checklist d-none" value="${row.id}" data-nik="${row.nik}">
+                                    
+                                    <button type="button" class="btn btn-sm btn-outline-success fw-bold btn-validasiSatuan"
+                                        data-id="${row.id}" data-nama="${row.nama}" data-nik="${row.nik}"
+                                        data-bs-toggle="tooltip" title="Selesaikan dokumen NIK ${row.nik}">
+                                        <i class="ri-check-double-line"></i> Finalisasi
+                                    </button>
+                                </div>
+                            `;
+                        }
+                    }
+                ]
+            });
+
+            $('#tableAjax').on('draw.dt', function() {
+                if (isBulkMode) {
+                    $('#headerTindakan').html(
+                        `<input type="checkbox" id="selectAll" class="form-check-input" style="cursor: pointer;" data-bs-toggle="tooltip" title="Pilih Semua">`
+                    );
+                    $('.btn-validasiSatuan').addClass('d-none');
+                    $('.checklist').removeClass('d-none');
+                } else {
+                    $('#headerTindakan').text('Tindakan');
+                    $('.btn-validasiSatuan').removeClass('d-none');
+                    $('.checklist').addClass('d-none');
                 }
-            },
-            { data: 'nik' },
-            { data: 'nama' },
-            { data: 'kode_jabatan' },
-            { data: 'kode_bagian' },
-            { data: 'kode_group' },
-            { data: 'tanggal_keluar' },
-            { data: 'alasan_keluar' },
-        ]
-    });
-    
-    $(document).on("change",".checklist", function(){
-        $("#btnSubmit").show();
-        let isChecked = $(this).prop('checked');
-    });
+                $('[data-bs-toggle="tooltip"]').tooltip();
+            });
 
-    $(document).on("click","#btnSubmit", function(){
-        let dataToSend = [];
+            // --- UX LOGIC: TOGGLE MASSAL ---
+            $(document).on('click', '#btnToggleMassal', function() {
+                isBulkMode = !isBulkMode;
 
-        $("#tableAjax tbody input[type=checkbox].checklist:checked").each(function(){
-            let checklistId = $(this).val(); 
-            let status = 'check';
+                if (isBulkMode) {
+                    $(this).removeClass('btn-warning').addClass('btn-danger').html(
+                        '<i class="ri-close-line align-bottom me-1"></i> Batal Pilih Massal');
+                    $('#headerTindakan').html(
+                        `<input type="checkbox" id="selectAll" class="form-check-input" style="cursor: pointer;" data-bs-toggle="tooltip" title="Pilih Semua">`
+                    );
+                    $('.btn-validasiSatuan').addClass('d-none');
+                    $('.checklist').removeClass('d-none');
+                } else {
+                    $(this).removeClass('btn-danger').addClass('btn-warning').html(
+                        '<i class="ri-checkbox-multiple-line align-bottom me-1"></i> Pilih Massal');
+                    $('#headerTindakan').text('Tindakan');
+                    $('.checklist').addClass('d-none').prop('checked', false);
+                    $('#selectAll').prop('checked', false);
+                    $('.btn-validasiSatuan').removeClass('d-none');
+                    $("#btnSubmit").fadeOut();
+                    $("#countChecked").text(0);
+                }
+                $('[data-bs-toggle="tooltip"]').tooltip();
+            });
 
-            dataToSend.push({checklistId: checklistId, status: status});
-        });
-        
-        $.ajax({
-            type: "POST",
-            url: "/hr-connect/dept-hrd/karyawan-keluar/update",
-            data: {
-                data: dataToSend
-            },
-            success: function(response){
+            // --- UX LOGIC: CHECKBOX ---
+            function copyToClipboard(text) {
+                var textArea = document.createElement("textarea");
+                textArea.value = text;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand("Copy");
+                textArea.remove();
                 Toastify({
-                    text: "Berhasil memperbarui data karyawan keluar!",
-                    duration: 3000,
+                    text: "NIK Disalin: " + text,
+                    duration: 2000,
                     gravity: "top",
                     position: 'right',
-                    backgroundColor: "linear-gradient(to right, #28a745, #218838)",
+                    backgroundColor: "#0ab39c"
                 }).showToast();
-
-                table.api().draw();
-
-                $("#checkAll").prop('checked', false);
-
-                $("#btnSubmit").hide();
-            },
-            error: function(xhr, status, error){
-                console.error(xhr.responseText);
             }
-        })
-    });
 
-    $(document).on("click","#uploadExcel", function(){
-        let excelFile = $("#fileUpload")[0].files[0];
-        let formData = new FormData();
-        formData.append('excel_file', excelFile);
+            $(document).on("change", "#selectAll", function() {
+                let isChecked = $(this).prop("checked");
+                $(".checklist").prop("checked", isChecked);
 
-        $.ajax({
-            type: "POST",
-            url: "/hr-connect/dept-hrd/karyawan-keluar/uploadExcel",
-            data: formData,
-            processData: false,
-            contentType: false,
-            success: function(res) {
-                $("#modalData").modal("hide");
-                
+                let totalChecked = $(".checklist:checked").length;
+                $("#countChecked").text(totalChecked);
+                totalChecked > 0 ? $("#btnSubmit").fadeIn() : $("#btnSubmit").fadeOut();
+            });
+
+            $(document).on("change", ".checklist", function() {
+                let totalChecked = $(".checklist:checked").length;
+                $("#countChecked").text(totalChecked);
+                totalChecked > 0 ? $("#btnSubmit").fadeIn() : $("#btnSubmit").fadeOut();
+
+                if (totalChecked === $(".checklist").length) {
+                    $('#selectAll').prop('checked', true);
+                } else {
+                    $('#selectAll').prop('checked', false);
+                }
+
+                if (this.checked) {
+                    let nik = $(this).data('nik');
+                    if (nik) {
+                        let splited = String(nik).split('-');
+                        let nik_copied = splited.length > 1 ? splited[1] : splited[0];
+                        if (nik_copied) copyToClipboard(nik_copied);
+                    }
+                }
+            });
+
+            // --- PROSES VALIDASI SATUAN ---
+            $(document).on('click', '.btn-validasiSatuan', function() {
+                let idKaryawan = $(this).data('id');
+                let nama = $(this).data('nama');
+
                 Swal.fire({
-                    icon: 'success',
-                    title: 'Success',
-                    text: res.message,
-                    timer: 2000, 
-                    showConfirmButton: false
-                }).then(() => {
-                    setTimeout(function() {
-                        location.reload(); 
-                    }, 2000); 
+                    title: "Konfirmasi Finalisasi",
+                    html: `Anda akan menyelesaikan proses Offboarding (Clearance Dokumen) untuk <b>${nama}</b>. Lanjutkan?`,
+                    icon: "question",
+                    showCancelButton: true,
+                    confirmButtonColor: "#0ab39c",
+                    cancelButtonText: "Batal",
+                    confirmButtonText: "Ya, Finalisasi!",
+                    reverseButtons: true
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        prosesValidasi([{
+                            checklistId: idKaryawan,
+                            status: 'check'
+                        }]);
+                    }
                 });
-            },
-            error: function(xhr) {
-                let message = xhr.responseJSON.message || 'Terjadi kesalahan saat mengunggah file.';
-                alert(message);
+            });
+
+            // --- PROSES VALIDASI MASSAL ---
+            $(document).on("click", "#btnSubmit", function() {
+                let dataToSend = [];
+                $(".checklist:checked").each(function() {
+                    dataToSend.push({
+                        checklistId: $(this).val(),
+                        status: 'check'
+                    });
+                });
+
+                if (dataToSend.length === 0) return;
+
+                Swal.fire({
+                    title: "Finalisasi Massal",
+                    html: `Anda akan menyelesaikan proses Offboarding untuk <b>${dataToSend.length} karyawan</b> keluar. Pastikan urusan dokumen telah selesai. Apakah Anda yakin?`,
+                    icon: "warning",
+                    showCancelButton: true,
+                    confirmButtonColor: "#0ab39c",
+                    cancelButtonColor: "#878a99",
+                    confirmButtonText: "Ya, Eksekusi!",
+                    cancelButtonText: "Batal",
+                    reverseButtons: true
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        prosesValidasi(dataToSend);
+                    }
+                });
+            });
+
+            // Reusable AJAX Function
+            function prosesValidasi(dataArray) {
+                let btn = $("#btnSubmit");
+                let originalHtml = btn.html();
+                btn.html('<i class="spinner-border spinner-border-sm me-1"></i> Memproses...').prop('disabled',
+                    true);
+
+                $.ajax({
+                    type: "POST",
+                    url: "{{ url('/hr-connect/dept-hrd/karyawan-keluar/update') }}",
+                    data: {
+                        data: dataArray,
+                        _token: "{{ csrf_token() }}"
+                    },
+                    success: function(response) {
+                        Toastify({
+                            text: "Data berhasil difinalisasi dan email terkirim!",
+                            duration: 3000,
+                            gravity: "top",
+                            position: 'right',
+                            backgroundColor: "#0ab39c",
+                        }).showToast();
+
+                        $('#tableAjax').DataTable().draw(false);
+
+                        if (isBulkMode) $('#btnToggleMassal').trigger('click');
+                    },
+                    error: function(xhr) {
+                        Swal.fire('Gagal!', 'Terjadi kesalahan saat memproses data.', 'error');
+                        btn.html(originalHtml).prop('disabled', false);
+                    }
+                });
             }
+
+            // --- PROSES UPLOAD EXCEL ---
+            $(document).on("click", "#uploadExcel", function() {
+                let excelFile = $("#fileUpload")[0].files[0];
+                if (!excelFile) return Swal.fire('Oops', 'Pilih file excel terlebih dahulu!', 'warning');
+
+                let btn = $(this);
+                let originalText = btn.html();
+                let formData = new FormData();
+                formData.append('excel_file', excelFile);
+                formData.append('_token', "{{ csrf_token() }}");
+
+                btn.html('<span class="spinner-border spinner-border-sm me-2"></span>Mengupload...').prop(
+                    'disabled', true);
+
+                $.ajax({
+                    type: "POST",
+                    url: "{{ url('/hr-connect/dept-hrd/karyawan-keluar/uploadExcel') }}",
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function(res) {
+                        $("#modalData").modal("hide");
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Berhasil!',
+                            text: res.message,
+                            timer: 2000,
+                            showConfirmButton: false
+                        }).then(() => {
+                            $('#tableAjax').DataTable().draw(false);
+                            btn.html(originalText).prop('disabled', false);
+                            $("#fileUpload").val('');
+                        });
+                    },
+                    error: function(xhr) {
+                        let msg = xhr.responseJSON ? xhr.responseJSON.message :
+                            'Terjadi kesalahan sistem.';
+                        Swal.fire('Gagal!', msg, 'error');
+                        btn.html(originalText).prop('disabled', false);
+                    }
+                });
+            });
         });
-    });
-});
-
-function uploadExcelModal(){
-    $("#modalData").modal("show");
-}
-
-function ketentuanUploadModal(){
-    $("#modalKetentuanUpload").modal("show");
-}
-</script>
+    </script>
 @endpush

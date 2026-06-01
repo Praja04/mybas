@@ -24,11 +24,9 @@
         <a href="javascript:;" data-tilt data-tilt-perspective="70" data-tilt-speed="400" data-tilt-max="25"
             class="logo logo-dark lh-1 py-4" style="transform-style: preserve-3d">
             <span class="logo-sm bg-light px-2 py-1 rounded-3 text-dark fw-semibold fs-5">
-                {{-- <img src="{{ asset('assets/velzon/images/logo-sm.png') }}" alt="" height="22"> --}}
                 <span style="transform: translateZ(20px)" class="mdi mdi-{{ $nameIcon }}">{{ $shortName }}</span>
             </span>
             <span class="logo-lg bg-light px-2 py-1 rounded-3 text-dark fw-semibold fs-3">
-                {{-- <img src="{{ asset('assets/velzon/images/logo-dark.png') }}" alt="" height="17"> --}}
                 <span style="transform: translateZ(20px)"
                     class="mdi mdi-{{ $nameIcon }}">{!! $longName !!}</span>
             </span>
@@ -37,11 +35,9 @@
         <a href="javascript:;" data-tilt data-tilt-perspective="70" data-tilt-speed="400" data-tilt-max="25"
             class="logo logo-light lh-1 py-4" style="transform-style: preserve-3d">
             <span class="logo-sm bg-light px-2 py-1 rounded-3 text-dark fw-semibold fs-5">
-                {{-- <img src="{{ asset('assets/velzon/images/logo-sm.png') }}" alt="" height="22"> --}}
                 <span style="transform: translateZ(20px)" class="mdi mdi-{{ $nameIcon }}">{{ $shortName }}</span>
             </span>
             <span class="logo-lg bg-light px-2 py-1 rounded-3 text-dark fw-semibold fs-3 d-flex align-items-center">
-                {{-- <img src="{{ asset('assets/velzon/images/logo-light.png') }}" alt="" height="17"> --}}
                 <span style="transform: translateZ(20px)" class="mdi mdi-{{ $nameIcon }}"></span>
                 {!! $longName !!}
             </span>
@@ -55,8 +51,7 @@
     <div id="scrollbar" style="height: 96% !important;">
         <div class="container-fluid">
 
-            <div id="two-column-menu">
-            </div>
+            <div id="two-column-menu"></div>
             <ul class="navbar-nav" id="navbar-nav">
                 @foreach (json_decode($menus) as $menu)
                     @php
@@ -64,26 +59,19 @@
                             if (!property_exists($menuItem, 'permission')) {
                                 return true;
                             }
-
                             if (is_array($menuItem->permission)) {
                                 return count(array_intersect($menuItem->permission, $permissions)) > 0;
                             }
-
                             return in_array($menuItem->permission, $permissions);
                         });
                     @endphp
 
                     @if (property_exists($menu, 'permission'))
-                        {{-- If $menu->permission is an array --}}
                         @if (is_array($menu->permission))
-                            @php
-                                $isGranted = false;
-                            @endphp
+                            @php $isGranted = false; @endphp
                             @foreach ($menu->permission as $permission)
                                 @if (in_array($permission, $permissions))
-                                    @php
-                                        $isGranted = true;
-                                    @endphp
+                                    @php $isGranted = true; @endphp
                                     @break
                                 @endif
                             @endforeach
@@ -91,7 +79,6 @@
                                 @continue
                             @endif
                         @else
-                            {{-- If $menu->permission is not an array --}}
                             @if (!in_array($menu->permission, $permissions))
                                 @continue
                             @endif
@@ -108,14 +95,10 @@
                     @foreach ($visibleMenuItems as $menuItem)
                         @if (property_exists($menuItem, 'permission'))
                             @if (is_array($menuItem->permission))
-                                @php
-                                    $isGranted = false;
-                                @endphp
+                                @php $isGranted = false; @endphp
                                 @foreach ($menuItem->permission as $permission)
                                     @if (in_array($permission, $permissions))
-                                        @php
-                                            $isGranted = true;
-                                        @endphp
+                                        @php $isGranted = true; @endphp
                                         @break
                                     @endif
                                 @endforeach
@@ -128,20 +111,40 @@
                                 @endif
                             @endif
                         @endif
+
                         <li class="nav-item">
                             @if (count($menuItem->submenu) == 0)
-                                <a class="nav-link menu-link"
-                                    data-identity="{{ explode('/', $menuItem->path)[array_key_last(explode('/', $menuItem->path))] }}"
+                                <!-- MENU SINGLE (TANPA SUBMENU) -->
+                                <a class="nav-link menu-link {{ request()->is($menuItem->path . '*') ? 'active' : '' }}"
+                                    data-identity="{{ str_replace('/', '-', $menuItem->path) }}"
                                     href="{{ url($menuItem->path) }}">
                                     <i class="mdi {{ $menuItem->icon }}"></i> <span>{{ $menuItem->label }}</span>
                                 </a>
                             @else
-                                <a class="nav-link menu-link" href="#{{ $menuItem->path }}" data-bs-toggle="collapse"
-                                    role="button" aria-expanded="false" aria-controls="{{ $menuItem->path }}">
+                                <!-- MENU DENGAN SUBMENU (DROPDOWN) -->
+                                @php
+                                    // Bikin ID yang aman dari garis miring
+                                    $safeId = str_replace('/', '-', $menuItem->path);
+                                    // Cek apakah ada anak submenu yang lagi aktif
+                                    $isChildActive = false;
+                                    foreach ($menuItem->submenu as $sub) {
+                                        if (request()->is($sub->path . '*')) {
+                                            $isChildActive = true;
+                                            break;
+                                        }
+                                    }
+                                @endphp
+
+                                <a class="nav-link menu-link {{ $isChildActive ? 'active collapsed' : '' }}"
+                                    href="#{{ $safeId }}" data-bs-toggle="collapse" role="button"
+                                    aria-expanded="{{ $isChildActive ? 'true' : 'false' }}"
+                                    aria-controls="{{ $safeId }}">
                                     <i class="mdi {{ $menuItem->icon }}"></i> <span
                                         data-key="t-base-ui">{{ $menuItem->label }}</span>
                                 </a>
-                                <div class="collapse menu-dropdown mega-dropdown-menu" id="{{ $menuItem->path }}">
+
+                                <div class="collapse menu-dropdown mega-dropdown-menu {{ $isChildActive ? 'show' : '' }}"
+                                    id="{{ $safeId }}">
                                     <div class="row">
                                         <div class="col-lg-4">
                                             <ul class="nav nav-sm flex-column">
@@ -149,13 +152,12 @@
                                                     @if (property_exists($submenu, 'permission') && !in_array($submenu->permission, $permissions))
                                                         @continue
                                                     @endif
-                                                    @php
-                                                        $currentUrlArray = explode('/', url()->current());
-                                                    @endphp
+
+                                                    <!-- FIX BUG KTP: Pakai Full Path (Safe ID) buat Data Identity + Pengecekan request()->is() -->
                                                     <li class="nav-item">
-                                                        <a data-identity="{{ explode('/', $submenu->path)[array_key_last(explode('/', $submenu->path))] == $activeMenu ? end($currentUrlArray) : explode('/', $submenu->path)[array_key_last(explode('/', $submenu->path))] }}"
+                                                        <a data-identity="{{ str_replace('/', '-', $submenu->path) }}"
                                                             href="{{ url($submenu->path) }}"
-                                                            class="nav-link">{!! $submenu->label !!}</a>
+                                                            class="nav-link {{ request()->is($submenu->path) ? 'active' : '' }}">{!! $submenu->label !!}</a>
                                                     </li>
                                                 @endforeach
                                             </ul>
@@ -168,7 +170,6 @@
                 @endforeach
             </ul>
         </div>
-        <!-- Sidebar -->
     </div>
 
     <!-- Sidebar footer -->

@@ -139,12 +139,11 @@
 @endsection
 
 @push('scripts')
+    <script src="{{ asset('assets/velzon/libs/moment/moment.js') }}"></script>
+    <script src="{{ asset('assets/velzon/libs/moment/locale/id.js') }}"></script>
     <script src="{{ asset('assets/plugins/global/select2.full.min.js') }}"></script>
 
     <script>
-        // ==========================================
-        // FUNGSI GLOBAL (Bisa dipake di semua Tab)
-        // ==========================================
         const CART_KEY = "karyawan_aktif_cartContainer";
 
         window.getCart = function() {

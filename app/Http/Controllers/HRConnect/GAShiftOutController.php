@@ -14,50 +14,41 @@ use Yajra\Datatables\Datatables;
 
 class GAShiftOutController extends Controller
 {
+    public function index()
+    {
+        $tanggalTersedia = HrKaryawan::where('out_complete', 'N')
+            ->where('is_excuse_out', 'Y')
+            ->whereNotNull('tgl_shift_out')
+            ->select('tgl_shift_out')
+            ->distinct()
+            ->orderBy('tgl_shift_out', 'desc')
+            ->pluck('tgl_shift_out');
+
+        return view('hr-connect.ga.shift-out', compact('tanggalTersedia'));
+    }
+
     public function getData(Request $req)
     {
         $query = HrKaryawan::with(['penghuni' => function ($q) {
             $q->where('is_active', 'Y');
         }])
+            ->select('id', 'nik', 'nama', 'kode_divisi', 'kode_bagian', 'staff', 'tgl_shift_out', 'is_excuse_out', 'out_complete')
             ->where('out_complete', 'N')
-            ->where('tanggal_masuk', '>', '2025-01-01')
-            ->orderBy('tanggal_masuk', 'desc');
+            ->where('is_excuse_out', 'Y')
+            ->orderBy('tgl_shift_out', 'desc');
 
         if ($req->tampilkan_semua == 0 && ! empty($req->tanggal)) {
-            $query->where('tanggal_masuk', $req->tanggal);
+            $query->where('tgl_shift_out', $req->tanggal);
         }
 
-        $data = $query->get();
-
-        return Datatables::of($data)
+        return Datatables::of($query)
             ->addColumn('checkStaff', function ($row) {
-                $dataLoker = DB::table('loker_penghuni')
-                    ->where('nik', $row->nik)
-                    ->first();
-
-                if ($dataLoker) {
-                    if (strtolower($dataLoker->kategori_karyawan) == 'staff') {
-                        return 'Y';
-                    } else {
-                        return 'N';
-                    }
+                if ($row->penghuni) {
+                    return strtolower($row->penghuni->kategori_karyawan) == 'staff' ? 'Y' : 'N';
                 }
-
                 return $row->staff;
             })
             ->make(true);
-    }
-
-    public function index()
-    {
-        $tanggalTersedia = HrKaryawan::select('tanggal_masuk')
-            ->where('out_complete', 'N')
-            ->whereNotNull('tanggal_masuk')
-            ->groupBy('tanggal_masuk')
-            ->orderBy('tanggal_masuk', 'desc')
-            ->pluck('tanggal_masuk');
-
-        return view('hr-connect.ga.shift-out', compact('tanggalTersedia'));
     }
 
     public function update(Request $req)
@@ -75,18 +66,22 @@ class GAShiftOutController extends Controller
 
         try {
             foreach ($data as $item) {
-                $nik        = $item['nik'];
-                $idKaryawan = $item['id_karyawan'];
-
+                $nik          = $item['nik'];
+                $idKaryawan   = $item['id_karyawan'];
                 $alasanKeluar = $item['alasan'] ?? 'Pencabutan Loker Massal';
 
-                $karyawan = HrKaryawan::find($idKaryawan);
+                $karyawan = HrKaryawan::lockForUpdate()->find($idKaryawan);
                 if (! $karyawan) {
                     continue;
                 }
+
                 $nama = ucwords(strtolower($karyawan->nama ?? '-'));
 
-                $penghuni = DB::table('loker_penghuni')->where('nik', $nik)->first();
+                $penghuni = DB::table('loker_penghuni')
+                    ->where('nik', $nik)
+                    ->where('is_active', 'Y')
+                    ->lockForUpdate()
+                    ->first();
 
                 DB::table('loker_transaksi')->insert([
                     'nik'            => $nik,
@@ -102,43 +97,52 @@ class GAShiftOutController extends Controller
                 ]);
 
                 if ($penghuni) {
+                    // DB::table('loker_transaksi')->insert([
+                    //     'nik'            => $nik,
+                    //     'nama'           => $nama,
+                    //     'kode_rak'       => $penghuni->kode_rak,
+                    //     'no_loker'       => $penghuni->no_loker,
+                    //     'tipe_transaksi' => 'KELUAR',
+                    //     'operator'       => auth()->user()->name ?? 'Sistem GA',
+                    //     'keterangan'     => 'Clearance Loker: ' . $alasanKeluar,
+                    //     'created_at'     => now(),
+                    // ]);
+
                     DB::table('loker_penghuni')->where('id', $penghuni->id)->delete();
                 }
 
                 $karyawan->update([
                     'out_complete' => 'Y',
-                    // 'is_active'      => 'N',
-                    // 'tanggal_keluar' => now()->format('Y-m-d'),
                 ]);
             }
 
-            DB::commit();
-
             $email_hr = User::whereHas('group.permissions', function ($query) {
                 $query->where('codename', 'hr_connect_notified_out');
-            })->select('email')
+            })
                 ->whereNotNull('email')
-                ->groupBy('email')
-                ->get();
+                ->pluck('email')
+                ->unique()
+                ->toArray();
 
-            if ($email_hr->isNotEmpty()) {
-                $to   = $email_hr->pluck('email')->toArray();
-                $link = url('/hr-connect/dept-ga/karyawan-keluar');
+            DB::commit();
 
-                KaryawanKeluarSelesaiToHR::dispatch($to, $data, $link);
+            if (! empty($email_hr)) {
+                $link = url('/hr-connect/dept-hrd/karyawan-keluar');
+                KaryawanKeluarSelesaiToHR::dispatch($email_hr, $data, $link);
             }
 
             return response()->json([
                 'success' => true,
-                'message' => 'Proses clearance berhasil dan email sedang dikirim.',
+                'message' => 'Proses clearance loker berhasil dan email diteruskan ke HRD IR.',
             ]);
-        } catch (\Exception $e) {
-            DB::rollBack();
 
+        } catch (\Throwable $e) {
+            DB::rollBack();
             Log::error('GA Shift Out Error: ' . $e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal memproses data clearance: ' . $e->getMessage(),
+                'message' => 'Gagal memproses data clearance: Terjadi kesalahan server.',
             ], 500);
         }
     }
@@ -148,9 +152,8 @@ class GAShiftOutController extends Controller
         $byDate  = $request->input('tanggal');
         $showAll = $request->input('tampilkan_semua');
 
-        return Excel::download(
-            new KaryawanAktifExport($byDate, $showAll),
-            'Data Karyawan - ' . ($byDate != null ? 'Per Tanggal ' . $byDate : 'Data Keseluruhan') . '.xlsx'
-        );
+        $fileName = 'Data Karyawan Keluar GA - ' . (! empty($byDate) ? 'Per Tanggal ' . $byDate : 'Data Keseluruhan') . '.xlsx';
+
+        return Excel::download(new KaryawanAktifExport($byDate, $showAll), $fileName);
     }
 }

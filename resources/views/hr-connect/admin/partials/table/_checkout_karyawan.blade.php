@@ -1,17 +1,20 @@
 <div class="tab-pane {{ $hrd_ir ? 'active' : '' }}" id="okb" role="tabpanel">
+    {{-- <div class="tab-pane" id="okb" role="tabpanel"> --}}
     <div class="card shadow-sm border-0">
         <div class="card-header border-bottom p-4 d-flex justify-content-between align-items-center">
             <h5 class="card-title mb-0" style="font-weight: 600;">
                 <i class="ri-user-unfollow-line text-warning me-2"></i> Data Karyawan Aktif
             </h5>
+            {{-- @if (!$hrd_ir) --}}
             <div class="d-flex align-items-center gap-2">
-                <a href="{{ route('hr-connect.admin.template-keluar') }}" class="btn btn-sm btn-soft-info fw-bold">
+                <a href="{{ url('/hr-connect/dept-adm/template-keluar') }}"
+                    class="btn btn-sm btn-soft-info fw-bold shadow-sm">
                     <i class="ri-download-line align-bottom me-1"></i> Template
                 </a>
-                <button class="btn btn-sm btn-soft-secondary fw-bold" onClick="ketentuanUploadCheckoutModal()">
+                <button class="btn btn-sm btn-soft-secondary fw-bold shadow-sm" id="btnInfoCheckout">
                     <i class="ri-information-line align-bottom me-1"></i> Info
                 </button>
-                <button class="btn btn-sm btn-warning fw-bold shadow-sm text-dark" onClick="uploadExcelCheckoutModal()">
+                <button class="btn btn-sm btn-warning fw-bold shadow-sm text-dark" id="btnUploadExcelCheckout">
                     <i class="ri-file-excel-2-line align-bottom me-1"></i> Upload Excel
                 </button>
                 <div class="vr mx-2"></div>
@@ -19,21 +22,22 @@
                     id="btnCart">
                     <i class="ri-shopping-cart-2-line align-bottom me-1"></i> Lihat Cart
                     <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
-                        id="cart-count">
-                        0
-                    </span>
+                        id="cart-count">0</span>
                 </button>
             </div>
+            {{-- @endif --}}
         </div>
         <div class="card-body pb-4">
             <div class="table-responsive">
                 <table id="tableAjax2" class="table table-bordered table-hover align-middle table-custom-header"
                     style="width:100%">
-                    <thead>
+                    <thead class="table-light text-muted">
                         <tr>
-                            <th class="text-center" width="8%">Cart</th>
-                            <th width="25%">Nama</th>
-                            <th width="15%">NIK</th>
+                            {{-- @if (!$hrd_ir) --}}
+                            <th class="text-center" style="width: 8%;">Cart</th>
+                            {{-- @endif --}}
+                            <th style="width: 25%;">Nama Lengkap</th>
+                            <th style="width: 15%;">NIK</th>
                             <th>Divisi / Dept</th>
                             <th>Kode Bagian</th>
                             <th>Kode Admin</th>
@@ -49,46 +53,53 @@
 @push('scripts')
     <script>
         $(document).ready(function() {
-            // --- 1. INIT DATATABLES CHECKOUT ---
             let table2 = $("#tableAjax2").DataTable({
                 processing: true,
                 serverSide: true,
+                ordering: false,
+                dom: "<'row mb-3'<'col-sm-12 col-md-6'l><'col-sm-12 col-md-6 text-end'f>>" +
+                    "<'row'<'col-sm-12'tr>>" +
+                    "<'row mt-3'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>",
                 ajax: {
                     type: "GET",
-                    url: "/hr-connect/dept-adm/data-karyawan/getDataOkb"
+                    url: "{{ url('/hr-connect/dept-adm/data-karyawan/getDataOkb') }}"
                 },
                 columns: [{
+                        className: "text-center",
                         render: function(data, type, row) {
                             let cart = window.getCart();
                             if (cart.find(c => c.id == row.id)) {
-                                return `<center><button class="btn btn-sm btn-danger rounded-circle shadow-sm" onClick="removeFromCart('${row.id}')" data-bs-toggle="tooltip" title="Hapus dari Cart"><i class="ri-shopping-cart-2-fill"></i></button></center>`;
+                                return `<center><button class="btn btn-sm btn-danger rounded-circle shadow-sm btn-remove-item" data-id="${row.id}" data-bs-toggle="tooltip" title="Hapus dari Cart"><i class="ri-shopping-cart-2-fill"></i></button></center>`;
                             }
-                            return `<center><button class="btn btn-sm btn-soft-dark rounded-circle shadow-sm" onClick="addToCart('${row.id}', '${row.nik}', '${row.nama}', '${row.kode_divisi}', '${row.kode_bagian}', '${row.kode_admin}')" data-bs-toggle="tooltip" title="Masukkan ke Cart"><i class="ri-shopping-cart-2-line"></i></button></center>`;
+                            return `<center><button class="btn btn-sm btn-soft-dark rounded-circle shadow-sm btn-add-item" data-id="${row.id}" data-nik="${row.nik}" data-nama="${row.nama}" data-divisi="${row.kode_divisi}" data-bagian="${row.kode_bagian}" data-admin="${row.kode_admin}" data-bs-toggle="tooltip" title="Masukkan ke Cart"><i class="ri-shopping-cart-2-line"></i></button></center>`;
                         }
                     },
                     {
-                        data: 'nama'
+                        data: 'nama',
+                        render: data => `<span class="fw-bold">${data}</span>`
                     },
                     {
                         data: 'nik',
-                        render: function(data) {
-                            return `<span class="fw-bold">${data}</span>`;
+                        render: data => `<span class="fw-bold text-secondary">${data}</span>`
+                    },
+                    {
+                        data: 'kode_divisi',
+                        render: data => data ? data : '-'
+                    },
+                    {
+                        data: 'kode_bagian',
+                        render: data => data ? data : '-'
+                    },
+                    {
+                        data: 'text_admin',
+                        render: function(data, type, row) {
+                            let adm = row.kode_admin ? row.kode_admin : '-';
+                            return `<span class="badge bg-light text-dark border border-secondary">${adm}</span>`;
                         }
                     },
                     {
-                        data: 'kode_divisi'
-                    },
-                    {
-                        data: 'kode_bagian'
-                    },
-                    {
-                        data: 'kode_admin',
-                        render: function(data) {
-                            return `<span class="badge bg-light text-dark border border-secondary">${data}</span>`;
-                        }
-                    },
-                    {
-                        data: 'kode_group'
+                        data: 'kode_group',
+                        render: data => data ? data : '-'
                     },
                 ]
             });
@@ -97,22 +108,35 @@
                 $('[data-bs-toggle="tooltip"]').tooltip();
             });
 
-            // --- 2. LOGIKA CART CHECKOUT ---
             $("#btnCart").click(function() {
                 updateCartTable();
                 $("#seeCart").modal("show");
             });
 
-            window.addToCart = function(id, nik, nama, dept, kode_bagian, kode_admin) {
+            $("#btnInfoCheckout").click(function() {
+                if (typeof window.ketentuanUploadCheckoutModal === "function") {
+                    window.ketentuanUploadCheckoutModal();
+                }
+            });
+
+            $("#btnUploadExcelCheckout").click(function() {
+                if (typeof window.uploadExcelCheckoutModal === "function") {
+                    window.uploadExcelCheckoutModal();
+                }
+            });
+
+            $(document).on('click', '.btn-add-item', function() {
                 let cart = window.getCart();
-                if (!cart.find(c => c.id === id)) {
+                let id = $(this).data('id');
+
+                if (!cart.find(c => c.id == id)) {
                     cart.push({
-                        id,
-                        nik,
-                        nama,
-                        dept,
-                        kode_bagian,
-                        kode_admin,
+                        id: id,
+                        nik: $(this).data('nik'),
+                        nama: $(this).data('nama'),
+                        dept: $(this).data('divisi'),
+                        kode_bagian: $(this).data('bagian'),
+                        kode_admin: $(this).data('admin'),
                         alasan_keluar: '',
                         tanggal_keluar: ''
                     });
@@ -120,18 +144,19 @@
                     $('#cart-count').text(cart.length);
                     table2.draw(false);
                 }
-            };
+            });
 
-            window.removeFromCart = function(id) {
+            $(document).on('click', '.btn-remove-item', function() {
+                let id = $(this).data('id');
                 let cart = window.getCart();
-                let newCart = cart.filter(c => c.id !== id);
+                let newCart = cart.filter(c => c.id != id);
+
                 window.setCart(newCart);
                 $('#cart-count').text(newCart.length);
                 table2.draw(false);
                 updateCartTable();
-            };
+            });
 
-            // Header Update Massal Cart
             $(document).on('change', '#pilihAlasanKeluar', function() {
                 let val = $(this).val();
                 if (val) {
@@ -155,7 +180,7 @@
             window.updateReason = function(cartId, reason) {
                 let cart = window.getCart();
                 cart.forEach(c => {
-                    if (c.id === cartId) c.alasan_keluar = reason;
+                    if (c.id == cartId) c.alasan_keluar = reason;
                 });
                 window.setCart(cart);
             };
@@ -163,7 +188,7 @@
             window.updateTglKeluar = function(cartId, tglKeluar) {
                 let cart = window.getCart();
                 cart.forEach(c => {
-                    if (c.id === cartId) c.tanggal_keluar = tglKeluar;
+                    if (c.id == cartId) c.tanggal_keluar = tglKeluar;
                 });
                 window.setCart(cart);
             };
@@ -175,33 +200,33 @@
                 if (cart.length === 0) {
                     $('#cart-table tbody').append(
                         `<tr><td colspan="6" class="text-center text-muted py-4"><i class="ri-shopping-cart-line fs-1 d-block mb-2"></i>Keranjang kosong</td></tr>`
-                        );
+                    );
                     return;
                 }
 
                 cart.forEach(function(c) {
                     $('#cart-table tbody').append(`
-                <tr>
-                    <td class="fw-bold text-primary">${c.nama}</td>
-                    <td>${c.nik}</td>
-                    <td><span class="badge bg-light text-dark border">${c.dept}</span></td>
-                    <td>
-                        <select class="form-select form-select-sm shadow-sm alasanKeluar" onChange="updateReason('${c.id}', this.value)">
-                            <option value="">-- Pilih --</option>
-                            <option value="Resign" ${c.alasan_keluar === 'Resign' ? 'selected' : ''}>Resign</option>
-                            <option value="Habis Kontrak" ${c.alasan_keluar === 'Habis Kontrak' ? 'selected' : ''}>Habis Kontrak</option>
-                            <option value="Kabur" ${c.alasan_keluar === 'Kabur' ? 'selected' : ''}>Kabur</option>
-                            <option value="Cut Probation" ${c.alasan_keluar === 'Cut Probation' ? 'selected' : ''}>Cut P</option>
-                            <option value="PHK" ${c.alasan_keluar === 'PHK' ? 'selected' : ''}>PHK</option>
-                        </select>
-                    </td>
-                    <td><input type="date" class="form-control form-control-sm shadow-sm tglKeluar" onChange="updateTglKeluar('${c.id}', this.value)" value="${c.tanggal_keluar || ''}"></td>
-                    <td class="text-center"><button class="btn btn-sm btn-soft-danger rounded-circle" onClick="removeFromCart('${c.id}')"><i class="ri-delete-bin-line"></i></button></td>
-                </tr>`);
+                        <tr>
+                            <td class="fw-bold text-primary">${c.nama}</td>
+                            <td>${c.nik}</td>
+                            <td><span class="badge bg-light text-dark border">${c.dept}</span></td>
+                            <td>
+                                <select class="form-select form-select-sm shadow-sm alasanKeluar" onChange="updateReason('${c.id}', this.value)">
+                                    <option value="">-- Pilih --</option>
+                                    <option value="Resign" ${c.alasan_keluar === 'Resign' ? 'selected' : ''}>Resign</option>
+                                    <option value="Habis Kontrak" ${c.alasan_keluar === 'Habis Kontrak' ? 'selected' : ''}>Habis Kontrak</option>
+                                    <option value="Kabur" ${c.alasan_keluar === 'Kabur' ? 'selected' : ''}>Kabur</option>
+                                    <option value="Cut Probation" ${c.alasan_keluar === 'Cut Probation' ? 'selected' : ''}>Cut P</option>
+                                    <option value="PHK" ${c.alasan_keluar === 'PHK' ? 'selected' : ''}>PHK</option>
+                                </select>
+                            </td>
+                            <td><input type="date" class="form-control form-control-sm shadow-sm tglKeluar" onChange="updateTglKeluar('${c.id}', this.value)" value="${c.tanggal_keluar || ''}"></td>
+                            <td class="text-center"><button class="btn btn-sm btn-soft-danger rounded-circle btn-remove-item" data-id="${c.id}"><i class="ri-delete-bin-line"></i></button></td>
+                        </tr>
+                    `);
                 });
             }
 
-            // --- 3. SUBMIT CHECKOUT KE SERVER ---
             $("#btnCheckout").click(function() {
                 let cart = window.getCart();
                 if (cart.length === 0) return Swal.fire('Oops!', 'Keranjang kosong!', 'warning');
@@ -219,7 +244,7 @@
 
                 $.ajax({
                     type: "POST",
-                    url: "/hr-connect/dept-adm/data-karyawan/checkout",
+                    url: "{{ url('/hr-connect/dept-adm/data-karyawan/checkout') }}",
                     data: {
                         data: cart,
                         _token: "{{ csrf_token() }}"
@@ -229,9 +254,10 @@
                         $('#cart-count').text(0);
                         updateCartTable();
                         table2.draw(false);
-                        // Refresh tabel plotting jika ada
-                        if ($.fn.DataTable.isDataTable('#tableAjax')) $('#tableAjax')
-                        .DataTable().draw(false);
+
+                        if ($.fn.DataTable.isDataTable('#tableAjax')) {
+                            $('#tableAjax').DataTable().draw(false);
+                        }
 
                         $("#seeCart").modal("hide");
                         Swal.fire('Sukses!', 'Berhasil checkout karyawan.', 'success');
@@ -244,7 +270,6 @@
                 });
             });
 
-            // --- 4. UPLOAD EXCEL CHECKOUT ---
             $(document).on("click", "#uploadCheckoutExcel", function() {
                 let excelFile = $("#fileUploadCheckout")[0].files[0];
                 if (!excelFile) return Swal.fire('Oops', 'Pilih file dulu!', 'warning');
@@ -256,10 +281,11 @@
                 btn.html('<span class="spinner-border spinner-border-sm me-2"></span>Mengupload...').prop(
                     'disabled', true);
                 formData.append('excel_file', excelFile);
+                formData.append('_token', "{{ csrf_token() }}");
 
                 $.ajax({
                     type: "POST",
-                    url: "/hr-connect/dept-adm/data-karyawan/uploadExcelKaryawanKeluar",
+                    url: "{{ url('/hr-connect/dept-adm/data-karyawan/uploadExcelKaryawanKeluar') }}",
                     data: formData,
                     processData: false,
                     contentType: false,
