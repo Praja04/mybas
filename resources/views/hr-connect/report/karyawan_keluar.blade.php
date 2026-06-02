@@ -37,7 +37,7 @@
                 <div class="card shadow-sm border-0">
                     <div class="card-header border-bottom p-4">
                         <h5 class="card-title mb-0" style="font-weight: 600;">
-                            <i class="ri-file-chart-line text-danger me-2"></i> Report Karyawan Keluar
+                            <i class="ri-file-chart-line text-danger me-2"></i> Report Karyawan Keluar (Clearance GA)
                         </h5>
                     </div>
                     <div class="card-body pb-4">
@@ -46,7 +46,7 @@
                             <h6 class="text-muted fw-bold mb-3"><i class="ri-filter-3-line me-1"></i> Filter Data Report
                             </h6>
                             <div class="row g-2">
-                                <div class="col-lg-2">
+                                <div class="col-lg-3">
                                     <select class="js-example-basic-single form-control shadow-sm" id="pilihDivisi">
                                         <option value="">-- Semua Divisi --</option>
                                         @foreach ($kodeDivisi as $divisi)
@@ -54,7 +54,7 @@
                                         @endforeach
                                     </select>
                                 </div>
-                                <div class="col-lg-2">
+                                <div class="col-lg-3">
                                     <select class="js-example-basic-single form-control shadow-sm" id="pilihBagian">
                                         <option value="">-- Semua Bagian --</option>
                                         @foreach ($kodeBagian as $bagian)
@@ -62,7 +62,7 @@
                                         @endforeach
                                     </select>
                                 </div>
-                                <div class="col-lg-2">
+                                <div class="col-lg-3">
                                     <select class="js-example-basic-single form-control shadow-sm" id="pilihKodeGroup">
                                         <option value="">-- Semua Group --</option>
                                         @foreach ($kodeGroup as $group)
@@ -70,19 +70,13 @@
                                         @endforeach
                                     </select>
                                 </div>
-                                <div class="col-lg-3">
-                                    <select class="js-example-basic-single form-control shadow-sm" id="pilihLoker">
-                                        <option value="">-- Semua Loker --</option>
-                                        @foreach ($lokers as $loker)
-                                            <option value="{{ $loker->kode_blok . '-' . $loker->no_loker }}">
-                                                Rak {{ $loker->kode_blok }} - Loker {{ $loker->no_loker }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </div>
                                 <div class="col-lg-2">
-                                    <input type="date" class="form-control shadow-sm" id="pilihTanggalKeluar"
-                                        data-bs-toggle="tooltip" title="Filter Berdasarkan Tanggal Keluar">
+                                    {{-- <input type="date" class="form-control shadow-sm" id="pilihTanggalKeluar"
+                                        data-bs-toggle="tooltip" title="Filter Berdasarkan Tanggal Cabut Loker"> --}}
+                                    <select id="pilihTanggalKeluar" class="form-control shadow-sm" data-bs-toggle="tooltip"
+                                        title="Filter Berdasarkan Bulan Clearance">
+                                        <option value="" selected>-- Semua Bulan --</option>
+                                    </select>
                                 </div>
                                 <div class="col-lg-1">
                                     <button class="btn btn-soft-danger w-100 shadow-sm" id="btnResetFilter"
@@ -98,17 +92,14 @@
                                 style="width:100%">
                                 <thead class="table-light text-muted">
                                     <tr>
-                                        <th rowspan="2" style="width: 20%;">Nama Lengkap</th>
-                                        <th rowspan="2" style="width: 10%;">NIK</th>
-                                        <th rowspan="2">Kode Divisi</th>
-                                        <th rowspan="2">Kode Bagian</th>
-                                        <th rowspan="2">Kode Group</th>
-                                        <th colspan="2" class="text-center bg-soft-danger">History Loker</th>
-                                        <th rowspan="2" style="width: 15%;">Tanggal Keluar</th>
-                                    </tr>
-                                    <tr class="bg-soft-danger">
-                                        <th style="width: 8%;">Kode Rak</th>
-                                        <th style="width: 8%;">No. Loker</th>
+                                        <th style="width: 20%;">Nama Lengkap</th>
+                                        <th style="width: 10%;">NIK</th>
+                                        <th>Kode Divisi</th>
+                                        <th>Kode Bagian</th>
+                                        <th>Kode Group</th>
+                                        <th style="width: 10%;">Status</th>
+                                        <th style="width: 15%;">Catatan GA</th>
+                                        <th style="width: 15%;">Tanggal Clearance</th>
                                     </tr>
                                 </thead>
                             </table>
@@ -126,82 +117,110 @@
     <script src="{{ asset('assets/velzon/libs/moment/moment.js') }}"></script>
     <script>
         $(document).ready(function() {
-            // --- INIT SELECT2 ---
             $('.js-example-basic-single').select2({
                 width: '100%'
             });
             $('[data-bs-toggle="tooltip"]').tooltip();
 
-            // --- INIT DATATABLES ---
+            $('#pilihTanggalKeluar').select2({
+                placeholder: '-- Semua Bulan --',
+                allowClear: true,
+                width: '100%',
+                ajax: {
+                    url: "{{ route('hr-connect.reportKaryawanKeluar.getFilterBulanTahunOut') }}",
+                    dataType: 'JSON',
+                    delay: 250,
+                    data: function(params) {
+                        return {
+                            q: params.term,
+                            page: params.page || 1
+                        };
+                    },
+                    processResults: function(data, params) {
+                        params.page = params.page || 1;
+                        return {
+                            results: data.results,
+                            pagination: {
+                                more: data.pagination.more
+                            }
+                        };
+                    },
+                    cache: true
+                }
+            });
+
             let table = $("#tableAjax").DataTable({
                 processing: true,
                 serverSide: true,
                 ordering: false,
-                paging: true, // Hidupkan paging
+                paging: true,
                 pageLength: 25,
                 dom: "<'row mb-3'<'col-sm-12 col-md-6 d-flex align-items-center'l><'col-sm-12 col-md-6 d-flex justify-content-end'f>>" +
                     "<'row'<'col-sm-12'tr>>" +
                     "<'row mt-3'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>",
                 ajax: {
                     type: "GET",
-                    url: "{{ url('/hr-connect/report/getDataKaryawanKeluar') }}"
+                    url: "{{ url('/hr-connect/report/getDataKaryawanKeluar') }}",
+                    data: function(d) {
+                        d.tanggal = $('#pilihTanggalKeluar').val();
+                    }
                 },
-                columns: [
-                    {
+                columns: [{
                         data: 'nama',
-                        name: 'hr_karyawan.nama',
-                        render: function(data) {
-                            return `<span class="fw-bold">${data}</span>`;
-                        }
+                        name: 'nama',
+                        render: data => `<span class="fw-bold">${data}</span>`
                     },
                     {
                         data: 'nik',
-                        name: 'hr_karyawan.nik'
+                        name: 'nik'
                     },
                     {
                         data: 'kode_divisi',
-                        name: 'hr_karyawan.kode_divisi'
+                        name: 'kode_divisi'
                     },
                     {
                         data: 'kode_bagian',
-                        name: 'hr_karyawan.kode_bagian'
+                        name: 'kode_bagian'
                     },
                     {
                         data: 'kode_group',
-                        name: 'hr_karyawan.kode_group'
+                        name: 'kode_group'
                     },
                     {
-                        data: 'kode_blok',
-                        name: 'loker_transaksi.kode_rak', // INI KUNCI PENYELAMATNYA (Pake tabel transaksi)
+                        data: 'status_in',
+                        name: 'status_in',
+                        className: 'text-center',
                         render: function(data) {
-                            return (data && data !== '-') ?
-                                `<center><span class="badge bg-light text-dark border">${data}</span></center>` :
-                                `<center>-</center>`;
+                            if (data === 'NO-IN') {
+                                return `<span class="badge bg-danger shadow-sm px-2 py-1">NO-IN</span>`;
+                            } else if (data === 'IN') {
+                                return `<span class="badge bg-success shadow-sm px-2 py-1">IN</span>`;
+                            }
+                            return `<span class="badge bg-secondary shadow-sm px-2 py-1">${data}</span>`;
                         }
                     },
                     {
-                        data: 'no_loker',
-                        name: 'loker_transaksi.no_loker', // INI KUNCI PENYELAMATNYA (Pake tabel transaksi)
+                        data: 'alasan_ga',
+                        name: 'alasan_ga',
                         render: function(data) {
-                            return (data && data !== '-') ?
-                                `<center><span class="badge bg-light text-dark border">${data}</span></center>` :
-                                `<center>-</center>`;
+                            return data ? data :
+                                `<span class="text-muted fst-italic">Tidak ada catatan</span>`;
                         }
                     },
                     {
-                        data: 'tanggal_keluar',
-                        name: 'hr_karyawan.tanggal_keluar',
+                        data: 'tgl_shift_out',
+                        name: 'tgl_shift_out',
+                        className: 'text-center',
                         render: function(data) {
                             if (!data || data === '0000-00-00') {
                                 return `<span class="text-muted fst-italic">Belum diset</span>`;
                             }
                             return moment(data).format('DD MMMM YYYY');
                         }
-                    },
+                    }
                 ]
             });
 
-            // --- LOGIKA FILTER ---
             $("#pilihDivisi").on('change', function() {
                 table.column(2).search($(this).val()).draw();
             });
@@ -212,26 +231,14 @@
                 table.column(4).search($(this).val()).draw();
             });
 
-            $("#pilihLoker").on('change', function() {
-                let search = $(this).val();
-                if (search) {
-                    let parts = search.split('-');
-                    table.column(5).search(parts[0]).draw();
-                    table.column(6).search(parts[1]).draw();
-                } else {
-                    table.column(5).search('').draw();
-                    table.column(6).search('').draw();
-                }
-            });
-
             $("#pilihTanggalKeluar").on('change', function() {
-                table.column(7).search($(this).val()).draw();
+                table.draw();
             });
 
-            // --- TOMBOL RESET FILTER ---
             $("#btnResetFilter").on('click', function() {
                 $('.js-example-basic-single').val('').trigger('change');
-                $('#pilihTanggalKeluar').val('');
+                $('#pilihTanggalKeluar').val(null).trigger('change');
+
                 table.search('').columns().search('').draw();
             });
         });

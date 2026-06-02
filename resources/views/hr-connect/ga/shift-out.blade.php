@@ -29,7 +29,7 @@
 
 @section('content')
     <div class="container-fluid">
-        <div class="row mb-3 align-items-end">
+        {{-- <div class="row mb-3 align-items-end">
             <div class="col-lg-3">
                 <label class="form-label font-weight-bold text-muted">Filter Tanggal Checkout (Admin)</label>
                 <select class="form-select form-control shadow-sm" id="tanggalFilter">
@@ -50,7 +50,7 @@
                     <i class="ri-refresh-line align-bottom me-1"></i> Reset Filter
                 </button>
             </div>
-        </div>
+        </div> --}}
 
         <div class="row">
             <div class="col-lg-12">

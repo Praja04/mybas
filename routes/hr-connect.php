@@ -54,6 +54,7 @@ Route::middleware(['auth', 'rules'])->group(function () {
             Route::post('/karyawan-keluar/update', 'HRConnect\HrdController@update');
             Route::post('/karyawan-keluar/uploadExcel', 'HRConnect\HrdController@uploadExcel');
             Route::get('/report-karyawan-keluar', 'HRConnect\HrdController@report');
+            Route::get('/report-karyawan-keluar/getFilterBulanTahunFinalisasi', 'HRConnect\HrdController@getFilterBulanTahunFinalisasi')->name('hr-connect.hrd.getFilterBulanTahunFinalisasi');
             Route::get('/report-karyawan-keluar/getDataReport', 'HRConnect\HrdController@getDataReport');
         });
         // Dep. GA
@@ -91,6 +92,8 @@ Route::middleware(['auth', 'rules'])->group(function () {
         Route::prefix('/report')->group(function () {
             Route::get('/getDataKaryawanMasuk', 'HRConnect\ReportKaryawanMasukController@getData');
             Route::get('/getDataKaryawanKeluar', 'HRConnect\ReportKaryawanKeluarController@getData');
+            Route::get('/getFilterBulanTahunIn', 'HRConnect\ReportKaryawanMasukController@getFilterBulanTahun')->name('hr-connect.reportKaryawanMasuk.getFilterBulanTahunIn');
+            Route::get('/getFilterBulanTahunOut', 'HRConnect\ReportKaryawanKeluarController@getFilterBulanTahun')->name('hr-connect.reportKaryawanKeluar.getFilterBulanTahunOut');
             Route::get('/karyawan-masuk', 'HRConnect\ReportKaryawanMasukController@index');
             Route::get('/karyawan-keluar', 'HRConnect\ReportKaryawanKeluarController@index');
             Route::get('/kalender-karyawan', 'HRConnect\ReportKalenderKaryawanController@index');

@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Jobs\HRConnect\KaryawanKeluarSelesaiToHR;
 use App\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Facades\Excel;
@@ -16,15 +17,16 @@ class GAShiftOutController extends Controller
 {
     public function index()
     {
-        $tanggalTersedia = HrKaryawan::where('out_complete', 'N')
-            ->where('is_excuse_out', 'Y')
-            ->whereNotNull('tgl_shift_out')
-            ->select('tgl_shift_out')
-            ->distinct()
-            ->orderBy('tgl_shift_out', 'desc')
-            ->pluck('tgl_shift_out');
+        // $tanggalTersedia = HrKaryawan::where('out_complete', 'N')
+        //     ->where('is_excuse_out', 'Y')
+        //     ->whereNotNull('tgl_shift_out')
+        //     ->select('tgl_shift_out')
+        //     ->distinct()
+        //     ->orderBy('tgl_shift_out', 'desc')
+        //     ->pluck('tgl_shift_out');
 
-        return view('hr-connect.ga.shift-out', compact('tanggalTersedia'));
+        return view('hr-connect.ga.shift-out');
+        // compact('tanggalTersedia')
     }
 
     public function getData(Request $req)
@@ -123,6 +125,8 @@ class GAShiftOutController extends Controller
                 ->pluck('email')
                 ->unique()
                 ->toArray();
+
+            Cache::forget('list_bulan_karyawan_keluar_ga');
 
             DB::commit();
 

@@ -36,7 +36,7 @@
 
 @section('content')
     <div class="container-fluid">
-        <div class="row mb-3 align-items-end">
+        {{-- <div class="row mb-3 align-items-end">
             <div class="col-lg-3">
                 <label class="form-label font-weight-bold text-muted">Filter Jadwal Masuk</label>
                 <select class="form-select form-control shadow-sm" id="tanggalFilter">
@@ -57,24 +57,29 @@
                     <i class="ri-refresh-line align-bottom me-1"></i> Reset Filter
                 </button>
             </div>
-        </div>
+        </div> --}}
 
         <div class="row">
             <div class="col-lg-12">
                 <div class="card shadow-sm border-0">
-                    <div class="card-header border-bottom p-4">
-                        <div class="row align-items-center">
-                            <div class="col-lg-8">
-                                <h5 class="card-title mb-0" style="font-weight: 600;">
-                                    <i class="ri-login-box-line text-success me-2"></i> Alokasi Loker Karyawan Baru
-                                </h5>
+                    <div class="card-header border-bottom p-4 d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center">
+                            <div class="avatar-sm me-3">
+                                <div class="avatar-title bg-soft-success text-success rounded-circle fs-4 shadow-sm">
+                                    <i class="ri-login-box-line"></i>
+                                </div>
                             </div>
-                            <div class="col-lg-4 text-end">
-                                <button class="btn btn-sm btn-soft-success font-weight-bolder shadow-sm" id="btnExportExcel"
-                                    data-bs-toggle="tooltip" title="Unduh data alokasi ke Excel">
-                                    <i class="ri-file-excel-2-line align-bottom me-1"></i> Export Data
-                                </button>
+                            <div>
+                                <h5 class="card-title mb-1" style="font-weight: 600;">Alokasi Loker Karyawan Baru</h5>
+                                <p class="text-muted mb-0 fs-13">Manajemen pembagian fasilitas loker fisik dan history
+                                    penempatan</p>
                             </div>
+                        </div>
+                        <div class="flex-shrink-0">
+                            <button class="btn btn-sm btn-success fw-bold shadow-sm" id="btnExportExcel"
+                                data-bs-toggle="tooltip" title="Unduh data alokasi ke Excel">
+                                <i class="ri-file-excel-2-line align-bottom me-1"></i> Export Data
+                            </button>
                         </div>
                     </div>
                     <div class="card-body pb-4">
@@ -330,7 +335,7 @@
                 let btnVerif = tr.find('.btn-verifikasi');
                 if ($(this).val() && !$(this).closest('.wrapper-select-loker').hasClass('d-none')) {
                     btnVerif.prop('disabled', false).removeClass('btn-dark').addClass(
-                    'btn-outline-success');
+                        'btn-outline-success');
                 } else {
                     btnVerif.prop('disabled', true).removeClass('btn-outline-success').addClass('btn-dark');
                 }
@@ -414,7 +419,7 @@
                         $('#verif_status_text').removeClass('bg-warning bg-success').addClass(
                             'bg-danger').html(
                             `<i class="ri-error-warning-line mr-1"></i> ${err.message || 'Terjadi kesalahan'}`
-                            );
+                        );
                         $('#verif_rfid_scan').prop('disabled', false).val('').focus();
                     });
                 }

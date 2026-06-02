@@ -46,7 +46,7 @@
                             <h6 class="text-muted fw-bold mb-3"><i class="ri-filter-3-line me-1"></i> Filter Data Report
                             </h6>
                             <div class="row g-2">
-                                <div class="col-lg-2">
+                                <div class="col-lg-3">
                                     <select class="js-example-basic-single form-control shadow-sm" id="pilihDivisi">
                                         <option value="">-- Semua Divisi --</option>
                                         @foreach ($kodeDivisi as $divisi)
@@ -54,7 +54,7 @@
                                         @endforeach
                                     </select>
                                 </div>
-                                <div class="col-lg-2">
+                                <div class="col-lg-3">
                                     <select class="js-example-basic-single form-control shadow-sm" id="pilihBagian">
                                         <option value="">-- Semua Bagian --</option>
                                         @foreach ($kodeBagian as $bagian)
@@ -62,7 +62,7 @@
                                         @endforeach
                                     </select>
                                 </div>
-                                <div class="col-lg-2">
+                                <div class="col-lg-3">
                                     <select class="js-example-basic-single form-control shadow-sm" id="pilihKodeGroup">
                                         <option value="">-- Semua Group --</option>
                                         @foreach ($kodeGroup as $group)
@@ -70,19 +70,11 @@
                                         @endforeach
                                     </select>
                                 </div>
-                                <div class="col-lg-3">
-                                    <select class="js-example-basic-single form-control shadow-sm" id="pilihLoker">
-                                        <option value="">-- Semua Loker --</option>
-                                        @foreach ($lokers as $loker)
-                                            <option value="{{ $loker->kode_blok . '-' . $loker->no_loker }}">
-                                                Rak {{ $loker->kode_blok }} - Loker {{ $loker->no_loker }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </div>
                                 <div class="col-lg-2">
-                                    <input type="date" class="form-control shadow-sm" id="pilihTanggalMasuk"
-                                        data-bs-toggle="tooltip" title="Filter Berdasarkan Tanggal Masuk">
+                                    {{-- <input type="date" class="form-control shadow-sm" id="pilihTanggalMasuk"
+                                        data-bs-toggle="tooltip" title="Filter Berdasarkan Tanggal Masuk"> --}}
+                                    <select id="pilihTanggalMasuk" class="form-control shadow-sm" data-bs-toggle="tooltip"
+                                        title="Filter Berdasarkan Tanggal Masuk" value="">-- Semua Bulan --</select>
                                 </div>
                                 <div class="col-lg-1">
                                     <button class="btn btn-soft-danger w-100 shadow-sm" id="btnResetFilter"
@@ -98,17 +90,13 @@
                                 style="width:100%">
                                 <thead class="table-light text-muted">
                                     <tr>
-                                        <th rowspan="2" style="width: 20%;">Nama Lengkap</th>
-                                        <th rowspan="2" style="width: 10%;">NIK</th>
-                                        <th rowspan="2">Kode Divisi</th>
-                                        <th rowspan="2">Kode Bagian</th>
-                                        <th rowspan="2">Kode Group</th>
-                                        <th colspan="2" class="text-center bg-soft-info">Fasilitas Loker</th>
-                                        <th rowspan="2" style="width: 15%;">Tanggal Masuk</th>
-                                    </tr>
-                                    <tr class="bg-soft-info">
-                                        <th style="width: 8%;">Kode Rak</th>
-                                        <th style="width: 8%;">No. Loker</th>
+                                        <th style="width: 20%;">Nama Lengkap</th>
+                                        <th style="width: 10%;">NIK</th>
+                                        <th>Kode Divisi</th>
+                                        <th>Kode Bagian</th>
+                                        <th>Kode Group</th>
+                                        <th style="width: 10%;">Status</th>
+                                        <th style="width: 15%;">Tanggal Masuk</th>
                                     </tr>
                                 </thead>
                             </table>
@@ -133,6 +121,34 @@
             });
             $('[data-bs-toggle="tooltip"]').tooltip();
 
+            $('#pilihTanggalMasuk').select2({
+                width: '100%',
+                placeholder: '-- Semua Bulan --',
+                allowClear: true,
+                ajax: {
+                    url: "{{ route('hr-connect.reportKaryawanMasuk.getFilterBulanTahunIn') }}",
+                    dataType: 'JSON',
+                    delay: 250,
+                    data: function(params) {
+                        return {
+                            q: params.term,
+                            page: params.page || 1,
+                        };
+                    },
+                    processResults: function(data, params) {
+                        params.page = params.page || 1;
+
+                        return {
+                            results: data.results,
+                            pagination: {
+                                more: data.pagination.more
+                            }
+                        };
+                    },
+                    cache: true,
+                }
+            })
+
             let table = $("#tableAjax").DataTable({
                 processing: true,
                 serverSide: true,
@@ -144,7 +160,10 @@
                     "<'row mt-3'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>",
                 ajax: {
                     type: "GET",
-                    url: "{{ url('/hr-connect/report/getDataKaryawanMasuk') }}"
+                    url: "{{ url('/hr-connect/report/getDataKaryawanMasuk') }}",
+                    data: function(d) {
+                        d.tanggal = $('#pilihTanggalMasuk').val();
+                    }
                 },
                 columns: [{
                         data: 'nama',
@@ -170,22 +189,35 @@
                         name: 'hr_karyawan.kode_group',
                         render: data => data ? data : '-'
                     },
+                    // {
+                    //     data: 'kode_blok',
+                    //     name: 'loker_transaksi.kode_rak', // FIX BUG: Disesuaikan dengan tabel JOIN History
+                    //     render: function(data) {
+                    //         return data ?
+                    //             `<center><span class="badge bg-light text-dark border shadow-sm">${data}</span></center>` :
+                    //             `<center>-</center>`;
+                    //     }
+                    // },
+                    // {
+                    //     data: 'no_loker',
+                    //     name: 'loker_transaksi.no_loker', // FIX BUG: Disesuaikan dengan tabel JOIN History
+                    //     render: function(data) {
+                    //         return data ?
+                    //             `<center><span class="badge bg-light text-dark border shadow-sm">${data}</span></center>` :
+                    //             `<center>-</center>`;
+                    //     }
+                    // },
                     {
-                        data: 'kode_blok',
-                        name: 'loker_transaksi.kode_rak', // FIX BUG: Disesuaikan dengan tabel JOIN History
-                        render: function(data) {
-                            return data ?
-                                `<center><span class="badge bg-light text-dark border shadow-sm">${data}</span></center>` :
-                                `<center>-</center>`;
-                        }
-                    },
-                    {
-                        data: 'no_loker',
-                        name: 'loker_transaksi.no_loker', // FIX BUG: Disesuaikan dengan tabel JOIN History
-                        render: function(data) {
-                            return data ?
-                                `<center><span class="badge bg-light text-dark border shadow-sm">${data}</span></center>` :
-                                `<center>-</center>`;
+                        data: 'status_in',
+                        name: 'status_in',
+                        className: 'text-center',
+                        render: function(data, type, row) {
+                            if (row.status_in === 'NO-IN' || row.in_complete === 'N') {
+                                return `<span class="badge bg-danger shadow-sm px-2 py-1">NO-IN</span>`;
+                            } else if (row.status_in === 'IN') {
+                                return `<span class="badge bg-success shadow-sm px-2 py-1">IN</span>`;
+                            }
+                            return `<span class="badge bg-secondary shadow-sm px-2 py-1">${data}</span>`;
                         }
                     },
                     {
@@ -211,7 +243,9 @@
                 table.column(4).search($(this).val()).draw();
             });
             $("#pilihTanggalMasuk").on('change', function() {
-                table.column(7).search($(this).val()).draw();
+                let nilaiBulan = $(this).val();
+                console.log('Bulan yang dikirim ke Controller: ' + nilaiBulan);
+                table.draw();
             });
 
             $("#pilihLoker").on('change', function() {
@@ -228,7 +262,7 @@
 
             $("#btnResetFilter").on('click', function() {
                 $('.js-example-basic-single').val('').trigger('change');
-                $('#pilihTanggalMasuk').val('');
+                $('#pilihTanggalMasuk').val(null).trigger('change');
                 table.search('').columns().search('').draw();
             });
         });

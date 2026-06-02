@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Loker\Penghuni;
 use App\Models\Loker\Rak;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Facades\Excel;
@@ -20,18 +21,20 @@ class GAShiftInController extends Controller
         $title = 'GA - Karyawan Masuk';
 
         // Hanya tarik tanggal dari karyawan yang BELUM selesai urusan lokernya
-        $tanggalTersedia = HrKaryawan::where([
-            'is_excuse_out' => 'N',
-            'in_kode_group' => 'Y',
-            'p_no'          => 'N',
-            'active'        => 'Y',
-            'shutdown'      => 'N',
-        ])
-            ->whereNotNull('tanggal_masuk')
-            ->where('tanggal_masuk', '!=', '0000-00-00')
-            ->distinct()
-            ->orderBy('tanggal_masuk', 'desc')
-            ->pluck('tanggal_masuk');
+        // $tanggalTersedia = HrKaryawan::where([
+        //     'is_excuse_out' => 'N',
+        //     'in_kode_group' => 'Y',
+        //     'in_complete'   => 'N',
+        //     'p_no'          => 'N',
+        //     'active'        => 'Y',
+        //     'shutdown'      => 'N',
+        // ])
+        //     ->whereNotNull('tanggal_masuk')
+        //     ->where('tanggal_masuk', '!=', '0000-00-00')
+        //     ->distinct()
+        //     ->orderBy('tanggal_masuk', 'desc')
+        //     ->pluck('tanggal_masuk');
+
         // ->whereDate('tanggal_masuk', '>', '2024-09-30')
         // ->whereNotNull('tanggal_masuk')
         // ->select('tanggal_masuk')
@@ -49,7 +52,7 @@ class GAShiftInController extends Controller
         $lokerPria   = $this->filterLoker($allLokersPria, $penghuniPria);
         $lokerWanita = $this->filterLoker($allLokersWanita, $penghuniWanita);
 
-        return view('hr-connect.ga.shift-in', compact('title', 'lokerPria', 'lokerWanita', 'tanggalTersedia'));
+        return view('hr-connect.ga.shift-in', compact('title', 'lokerPria', 'lokerWanita'));
     }
 
     // Helper Function untuk Filter Loker biar Controller Gak Berantakan
@@ -86,6 +89,7 @@ class GAShiftInController extends Controller
             ->where([
                 'is_excuse_out' => 'N',
                 'in_kode_group' => 'Y',
+                'in_complete'   => 'N',
                 'p_no'          => 'N',
                 'active'        => 'Y',
                 'shutdown'      => 'N',
@@ -93,9 +97,9 @@ class GAShiftInController extends Controller
             ->orderBy('tanggal_masuk', 'desc');
         // ->whereDate('tanggal_masuk', '>', '2024-09-30');
 
-        if ($req->tampilkan_semua == 0 && ! empty($req->tanggal)) {
-            $query->where('tanggal_masuk', $req->tanggal);
-        }
+        // if ($req->tampilkan_semua == 0 && ! empty($req->tanggal)) {
+        //     $query->where('tanggal_masuk', $req->tanggal);
+        // }
 
         $query->orderBy('tanggal_masuk', 'desc');
 
@@ -193,6 +197,8 @@ class GAShiftInController extends Controller
                 // 2. Tandai Karyawan Selesai di HRConnect
                 HrKaryawan::where('id', $item['idCard'])->update(['in_complete' => 'Y']);
             }
+
+            Cache::forget('list_bulan_karyawan_masuk_ga');
 
             DB::commit();
             return response()->json(['success' => true, 'message' => 'Validasi loker & Goodie Bag berhasil disimpan.']);

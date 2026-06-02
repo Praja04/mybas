@@ -7,6 +7,7 @@ use App\Imports\HRConnect\HrdIrKaryawanKeluar;
 use App\Jobs\HRConnect\KaryawanKeluarSelesaiToHR;
 use App\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
@@ -34,17 +35,20 @@ class HrdController extends Controller
     {
         $data['title'] = 'HRD IR - Report Karyawan Keluar';
 
-        $data['tanggalTersedia'] = HrKaryawan::where('checked_ir', 'Y')
-            ->whereNotNull('tanggal_keluar')
-            ->where('tanggal_keluar', '!=', '0000-00-00')
-            ->select('tanggal_keluar')
-            ->distinct()
-            ->orderBy('tanggal_keluar', 'desc')
-            ->pluck('tanggal_keluar')
-            ->toArray();
+        $data['kodeDivisi'] = HrKaryawan::whereNotNull('kode_divisi')->where('kode_divisi', '!=', '')->distinct()->pluck('kode_divisi')->toArray();
+        $data['kodeBagian'] = HrKaryawan::whereNotNull('kode_bagian')->where('kode_bagian', '!=', '')->distinct()->pluck('kode_bagian')->toArray();
+        $data['kodeGroup']  = HrKaryawan::whereNotNull('kode_group')->where('kode_group', '!=', '')->distinct()->pluck('kode_group')->toArray();
+
+        // $data['tanggalTersedia'] = HrKaryawan::where('checked_ir', 'Y')
+        //     ->whereNotNull('tanggal_keluar')
+        //     ->where('tanggal_keluar', '!=', '0000-00-00')
+        //     ->select('tanggal_keluar')
+        //     ->distinct()
+        //     ->orderBy('tanggal_keluar', 'desc')
+        //     ->pluck('tanggal_keluar')
+        //     ->toArray();
 
         return view('hr-connect.hrd.report-karyawan-keluar', $data);
-
     }
 
     public function restore()
@@ -53,9 +57,56 @@ class HrdController extends Controller
         return view('hr-connect.hrd.restore', $data);
     }
 
+    public function getFilterBulanTahunFinalisasi(Request $req)
+    {
+        $search = $req->input('q');
+        $page   = $req->input('page', 1);
+
+        $allMonths = Cache::remember('list_bulan_finalisasi_hrd', now()->addHours(24), function () {
+            return HrKaryawan::select(
+                DB::raw("DATE_FORMAT(tanggal_keluar, '%Y-%m') as id_bulan"),
+                DB::raw("DATE_FORMAT(tanggal_keluar, '%M %Y') as text")
+            )
+                ->where([
+                    'in_kode_group' => 'Y',
+                    'is_excuse_out' => 'Y',
+                    'out_complete'  => 'Y',
+                    'checked_ir'    => 'Y',
+                ])
+                ->whereNotNull('tanggal_keluar')
+                ->where('tanggal_keluar', '!=', '0000-00-00')
+                ->distinct()
+                ->orderBy('id_bulan', 'desc')
+                ->get()
+                ->map(function ($month) {
+                    return (object) [
+                        'id'   => $month->id_bulan,
+                        'text' => $month->text,
+                    ];
+                });
+        });
+
+        if (! empty($search)) {
+            $allMonths = $allMonths->filter(function ($item) use ($search) {
+                return stripos(strtolower($item->text), strtolower($search)) !== false;
+            })->values();
+        }
+
+        $perPage = 10;
+        $offset  = ($page - 1) * $perPage;
+        $items   = $allMonths->slice($offset, $perPage)->values();
+
+        return response()->json([
+            'results'    => $items,
+            'pagination' => [
+                'more' => ($offset + $perPage) < $allMonths->count(),
+            ],
+        ]);
+    }
+
     public function getData(Request $req)
     {
-        $hr = HrKaryawan::select('id', 'nama', 'nik', 'kode_jabatan', 'kode_bagian', 'kode_group', 'tanggal_keluar', 'alasan_keluar', 'tgl_shift_out')
+        $hr = HrKaryawan::select('id', 'nama', 'nik', 'kode_divisi', 'kode_bagian', 'kode_group', 'tanggal_keluar', 'alasan_keluar', 'tgl_shift_out')
             ->where([
                 'is_excuse_out' => 'Y',
                 'out_complete'  => 'Y',
@@ -73,7 +124,7 @@ class HrdController extends Controller
 
     public function getDataReport(Request $req)
     {
-        $hr = HrKaryawan::select('id', 'nama', 'nik', 'kode_jabatan', 'kode_bagian', 'kode_group', 'tanggal_keluar', 'alasan_keluar', 'tgl_shift_out')
+        $hr = HrKaryawan::select('id', 'nama', 'nik', 'kode_divisi', 'kode_bagian', 'kode_group', 'tanggal_keluar', 'alasan_keluar', 'tgl_shift_out', 'p_in', 'p_no')
             ->where([
                 'in_kode_group' => 'Y',
                 'is_excuse_out' => 'Y',
@@ -83,13 +134,31 @@ class HrdController extends Controller
             ->whereNotNull('tanggal_keluar')
             ->where('tanggal_keluar', '!=', '0000-00-00');
 
-        if ($req->tanggal != 'semua' && ! empty($req->tanggal)) {
-            $hr->where('tanggal_keluar', $req->tanggal);
+        if (! empty($req->divisi)) {$hr->where('kode_divisi', $req->divisi);}
+        if (! empty($req->bagian)) {$hr->where('kode_bagian', $req->bagian);}
+        if (! empty($req->group)) {$hr->where('kode_group', $req->group);}
+
+        if (! empty($req->tanggal)) {
+            $parts = explode('-', $req->tanggal);
+
+            if (count($parts) == 2) {
+                $hr->whereYear('tanggal_keluar', $parts[0])
+                    ->whereMonth('tanggal_keluar', $parts[1]);
+            }
         }
 
         $hr->orderBy('tanggal_keluar', 'desc');
 
-        return Datatables::of($hr)->make(true);
+        return Datatables::of($hr)
+            ->addColumn('status_in', function ($row) {
+                if ($row->p_no == 'Y') {
+                    return 'NO-IN';
+                } elseif ($row->p_in == 'Y') {
+                    return 'IN';
+                }
+                return 'BELUM DISET';
+            })
+            ->make(true);
     }
 
     public function getDataPemulihan(Request $req)
@@ -137,6 +206,8 @@ class HrdController extends Controller
                 ->pluck('email')
                 ->unique()
                 ->toArray();
+
+            Cache::forget('list_bulan_finalisasi_hrd');
 
             DB::commit();
 
