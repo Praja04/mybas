@@ -18,17 +18,18 @@ class SioPollingController extends Controller
         return (strtotime($expired_date) - strtotime(date('Y-m-d'))) / 86400; // hitung hari 
     }
 
-    public function sendEmail($sertifikat)
-    {
-        $emails = DB::table('sigra_email_penerima')
-            ->where('jenis', 'SIO')
-            ->where('active', 'Y')
-            ->get();
+    // public function sendEmail($sertifikat)
+    // {
+    //     return; // Matikan sementara
+    //     $emails = DB::table('sigra_email_penerima')
+    //         ->where('jenis', 'SIO')
+    //         ->where('active', 'Y')
+    //         ->get();
 
-        foreach ($emails as $email) {
-            Mail::to($email->email_penerima)->send(new EmailSIO($sertifikat));
-        }
-    }
+    //     foreach ($emails as $email) {
+    //         Mail::to($email->email_penerima)->send(new EmailSIO($sertifikat));
+    //     }
+    // }
 
     public function checkSio()
     {
