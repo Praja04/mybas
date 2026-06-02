@@ -19,4 +19,9 @@ class SIO extends Model
     {
         return $this->belongsTo(Department::class, 'dept_id');
     }
+
+    public function sertifikasi()
+    {
+        return $this->hasMany(SIOSertifikasi::class, 'id_sio')->where('status', '!=', 'deleted');
+    }
 }

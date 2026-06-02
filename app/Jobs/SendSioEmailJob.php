@@ -35,22 +35,22 @@ class SendSioEmailJob implements ShouldQueue
      * @return void
      */
     public function handle()
+<<<<<<< Updated upstream
     {
         // Log::info('SendSioEmailJob STARTED - DISABLED TEMPORARILY');
         return; // Matikan sementara
+=======
+>>>>>>> Stashed changes
         Log::info('SendSioEmailJob STARTED');
 
         $certificates = [];
 
-        $sioList = SIO::with(['department', 'perusahaan'])
+        $sioList = SIO::with(['department', 'perusahaan', 'sertifikasi'])
             ->where('status', 'active')
             ->get();
 
         foreach ($sioList as $data) {
-            $sertifikasi = SIOSertifikasi::where('id_sio', $data->id)
-                ->where('status', '!=', 'deleted')
-                ->orderBy('tanggal_terbit', 'desc')
-                ->first();
+            $sertifikasi = $data->sertifikasi->sortByDesc('tanggal_terbit')->first();
 
             if (!$sertifikasi) {
                 continue;

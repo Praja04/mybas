@@ -57,7 +57,7 @@ class KontrakVendorController extends Controller
     public function getAll()
     {
         $kontrak_vendors = [];
-        $vendors = MasterVendor::where('status', '!=', 'deleted')->get();
+        $vendors = MasterVendor::with(['perusahaan', 'kontrakVendor'])->where('status', '!=', 'deleted')->get();
 
         foreach ($vendors as $key => $data) {
             if ($data->status == 'inactive') {
@@ -66,7 +66,7 @@ class KontrakVendorController extends Controller
                 $label_status = 'success';
             }
 
-            $kontrak_vendor = KontrakVendor::where('id_vendor', $data->id)->where('status', '!=', 'deleted')->orderBy('tanggal_selesai', 'desc')->first();
+            $kontrak_vendor = $data->kontrakVendor->sortByDesc('tanggal_selesai')->first();
 
             if ($kontrak_vendor != null) {
                 $overdue = $this->expired($kontrak_vendor->tanggal_selesai);

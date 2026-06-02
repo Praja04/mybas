@@ -14,10 +14,10 @@ class OperasionalExport implements FromArray
         $sertifikasi_operasional = [];
         $sertifikasi_operasional[] = ['no', 'perusahaan', 'nama_perizinan', 'nomor_perizinan', 'tanggal_sertifikasi', 'tanggal_expired', 'remarks', 'tahun'];
 
-        $operasional = Operasional::where('status', '!=', 'deleted')->get();
+        $operasional = Operasional::with(['perusahaan', 'sertifikasi'])->where('status', '!=', 'deleted')->get();
 
         foreach ($operasional as $key => $data) {
-            $sertifikasi = SertifikasiOperasional::where('id_operasional', $data->id)->where('status', '!=', 'deleted')->orderBy('tahun', 'desc')->first();
+            $sertifikasi = $data->sertifikasi->sortByDesc('tahun')->first();
 
             if ($sertifikasi != null) {
                 $array = [

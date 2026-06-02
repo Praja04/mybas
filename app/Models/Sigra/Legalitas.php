@@ -13,4 +13,9 @@ class Legalitas extends Model
     {
         return $this->belongsTo(Perusahaan::class, 'id_perusahaan');
     }
+
+    public function sertifikasi()
+    {
+        return $this->hasMany(SertifikasiLegalitas::class, 'id_legalitas')->where('status', '!=', 'deleted');
+    }
 }

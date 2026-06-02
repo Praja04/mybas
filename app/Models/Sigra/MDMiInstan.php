@@ -13,4 +13,9 @@ class MDMiInstan extends Model
     {
         return $this->belongsTo(Perusahaan::class, 'id_perusahaan');
     }
+
+    public function sertifikat()
+    {
+        return $this->hasMany(SertifikatMDMiInstan::class, 'id_varian')->where('status', '!=', 'deleted');
+    }
 }
