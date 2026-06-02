@@ -18,18 +18,17 @@ class SioPollingController extends Controller
         return (strtotime($expired_date) - strtotime(date('Y-m-d'))) / 86400; // hitung hari 
     }
 
-    // public function sendEmail($sertifikat)
-    // {
-    //     return; // Matikan sementara
-    //     $emails = DB::table('sigra_email_penerima')
-    //         ->where('jenis', 'SIO')
-    //         ->where('active', 'Y')
-    //         ->get();
+    public function sendEmail($sertifikat)
+    {
+        $emails = DB::table('sigra_email_penerima')
+            ->where('jenis', 'SIO')
+            ->where('active', 'Y')
+            ->get();
 
-    //     foreach ($emails as $email) {
-    //         Mail::to($email->email_penerima)->send(new EmailSIO($sertifikat));
-    //     }
-    // }
+        foreach ($emails as $email) {
+            Mail::to($email->email_penerima)->send(new EmailSIO($sertifikat));
+        }
+    }
 
     public function checkSio()
     {
@@ -60,17 +59,14 @@ class SioPollingController extends Controller
 
             $certificates = [];
 
-            $sioList = SIO::with('department')
+            $sioList = SIO::with(['department', 'perusahaan', 'sertifikasi'])
                 // ->where('status', '!=', 'deleted')
                 // ->where('status', '!=', 'inactive')
                 ->where('status', 'active')
                 ->get();
 
             foreach ($sioList as $data) {
-                $sertifikasi = SIOSertifikasi::where('id_sio', $data->id)
-                    ->where('status', '!=', 'deleted')
-                    ->orderBy('tanggal_terbit', 'desc')
-                    ->first();
+                $sertifikasi = $data->sertifikasi->sortByDesc('tanggal_terbit')->first();
 
                 if ($sertifikasi) {
                     $selisih_hari = $this->expired($sertifikasi->tanggal_habis);
