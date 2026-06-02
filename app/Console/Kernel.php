@@ -26,11 +26,11 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule)
     {
         // Cek sigra expired every mondey at 07:00
-        $schedule->command('sigra:check-kontrak-vendor')->mondays()->at('07:00');
-        $schedule->command('sigra:check-legalitas')->mondays()->at('07:00');
-        $schedule->command('sigra:check-operasional')->mondays()->at('07:00');
+        // $schedule->command('sigra:check-kontrak-vendor')->mondays()->at('07:00');
+        // $schedule->command('sigra:check-legalitas')->mondays()->at('07:00');
+        // $schedule->command('sigra:check-operasional')->mondays()->at('07:00');
         // $schedule->command('sigra:check-sio')->mondays()->at('07:00');
-        $schedule->command('sigra:check-sio')->everyMinute(); // testing
+        // $schedule->command('sigra:check-sio')->everyMinute(); // testing
     }
 
     /**
