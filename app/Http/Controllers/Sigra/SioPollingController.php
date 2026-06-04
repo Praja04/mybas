@@ -59,17 +59,14 @@ class SioPollingController extends Controller
 
             $certificates = [];
 
-            $sioList = SIO::with('department')
+            $sioList = SIO::with(['department', 'perusahaan', 'sertifikasi'])
                 // ->where('status', '!=', 'deleted')
                 // ->where('status', '!=', 'inactive')
                 ->where('status', 'active')
                 ->get();
 
             foreach ($sioList as $data) {
-                $sertifikasi = SIOSertifikasi::where('id_sio', $data->id)
-                    ->where('status', '!=', 'deleted')
-                    ->orderBy('tanggal_terbit', 'desc')
-                    ->first();
+                $sertifikasi = $data->sertifikasi->sortByDesc('tanggal_terbit')->first();
 
                 if ($sertifikasi) {
                     $selisih_hari = $this->expired($sertifikasi->tanggal_habis);

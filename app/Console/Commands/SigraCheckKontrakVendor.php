@@ -67,14 +67,11 @@ class SigraCheckKontrakVendor extends Command
     {
         $certificates = [];
 
-        $kontrak_vendor = MasterVendor::where('status', '!=', 'deleted')
+        $kontrak_vendor = MasterVendor::with(['perusahaan', 'kontrakVendor'])->where('status', '!=', 'deleted')
             ->where('status', '!=', 'inactive')->get();
 
         foreach ($kontrak_vendor as $key => $data) {
-            $sertifikasi = KontrakVendor::where('id_vendor', $data->id)
-                ->where('status', '!=', 'deleted')
-                ->orderBy('tanggal_selesai', 'desc')
-                ->first();
+            $sertifikasi = $data->kontrakVendor->sortByDesc('tanggal_selesai')->first();
 
 
             if ($sertifikasi != null) {

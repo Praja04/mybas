@@ -68,11 +68,11 @@ class SigraChecklegalitas extends Command
     {
         $certificates = [];
 
-        $legalitas = Legalitas::where('status', '!=', 'deleted')
+        $legalitas = Legalitas::with(['perusahaan', 'sertifikasi'])->where('status', '!=', 'deleted')
             ->where('status', '!=', 'inactive')->get();
 
         foreach ($legalitas as $key => $data) {
-            $sertifikasi = SertifikasiLegalitas::where('id_legalitas', $data->id)->where('status', '!=', 'deleted')->orderBy('tanggal_habis', 'desc')->first();
+            $sertifikasi = $data->sertifikasi->sortByDesc('tanggal_habis')->first();
 
             // if ($sertifikasi != null && $sertifikasi->tanggal_habis != null) {
             //     if ($this->expired($sertifikasi->tanggal_habis) <= 30) {

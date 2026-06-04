@@ -65,16 +65,13 @@ class SioController extends Controller
         $flags = $this->sioAccessFlags();
 
         $sertifikasi_sio = [];
-        $sioList = SIO::with('department')->where('status', '!=', 'deleted')->get();
+        $sioList = SIO::with(['department', 'perusahaan', 'sertifikasi'])->where('status', '!=', 'deleted')->get();
 
 
         foreach ($sioList as $key => $sio) {
             $label_status = $sio->status == 'inactive' ? 'secondary' : 'success';
 
-            $sertifikasi = SIOSertifikasi::where('id_sio', $sio->id)
-                ->where('status', '!=', 'deleted')
-                ->orderBy('tanggal_habis', 'desc')
-                ->first();
+            $sertifikasi = $sio->sertifikasi->sortByDesc('tanggal_habis')->first();
 
             $expired = '-';
             if ($sertifikasi) {
