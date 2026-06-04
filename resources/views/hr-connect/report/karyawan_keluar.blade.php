@@ -36,9 +36,19 @@
             <div class="col-lg-12">
                 <div class="card shadow-sm border-0">
                     <div class="card-header border-bottom p-4">
-                        <h5 class="card-title mb-0" style="font-weight: 600;">
-                            <i class="ri-file-chart-line text-danger me-2"></i> Report Karyawan Keluar (Clearance GA)
-                        </h5>
+                        <div class="d-flex align-items-center">
+                            <div class="avatar-sm me-3">
+                                <div class="avatar-title bg-soft-danger text-danger rounded-circle fs-4 shadow-sm">
+                                    <i class="ri-file-chart-line"></i>
+                                </div>
+                            </div>
+                            <div>
+                                <h5 class="card-title mb-1" style="font-weight: 600;">Report Karyawan Keluar (Clearance GA)
+                                </h5>
+                                <p class="text-muted mb-0 fs-13">Arsip data riwayat operasional karyawan keluar berdasarkan
+                                    proses cabut loker oleh tim GA.</p>
+                            </div>
+                        </div>
                     </div>
                     <div class="card-body pb-4">
 

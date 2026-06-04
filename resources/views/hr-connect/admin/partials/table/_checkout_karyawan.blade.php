@@ -1,31 +1,51 @@
 <div class="tab-pane {{ $hrd_ir ? 'active' : '' }}" id="okb" role="tabpanel">
     {{-- <div class="tab-pane" id="okb" role="tabpanel"> --}}
     <div class="card shadow-sm border-0">
-        <div class="card-header border-bottom p-4 d-flex justify-content-between align-items-center">
-            <h5 class="card-title mb-0" style="font-weight: 600;">
-                <i class="ri-user-unfollow-line text-warning me-2"></i> Data Karyawan Aktif
-            </h5>
-            {{-- @if (!$hrd_ir) --}}
-            <div class="d-flex align-items-center gap-2">
-                <a href="{{ url('/hr-connect/dept-adm/template-keluar') }}"
-                    class="btn btn-sm btn-soft-info fw-bold shadow-sm">
-                    <i class="ri-download-line align-bottom me-1"></i> Template
-                </a>
-                <button class="btn btn-sm btn-soft-secondary fw-bold shadow-sm" id="btnInfoCheckout">
-                    <i class="ri-information-line align-bottom me-1"></i> Info
-                </button>
-                <button class="btn btn-sm btn-warning fw-bold shadow-sm text-dark" id="btnUploadExcelCheckout">
-                    <i class="ri-file-excel-2-line align-bottom me-1"></i> Upload Excel
-                </button>
-                <div class="vr mx-2"></div>
-                <button type="button" class="btn btn-sm btn-dark shadow-sm fw-bold position-relative px-3"
-                    id="btnCart">
-                    <i class="ri-shopping-cart-2-line align-bottom me-1"></i> Lihat Cart
-                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
-                        id="cart-count">0</span>
-                </button>
+        <div class="card-header border-bottom p-4">
+            <div class="row align-items-center gy-3">
+                <div class="col-xl-5 col-lg-12">
+                    <div class="d-flex align-items-center">
+                        <!-- Tambahan flex-shrink-0 di sini -->
+                        <div class="avatar-sm flex-shrink-0 me-3">
+                            <div class="avatar-title bg-soft-warning text-warning rounded-circle fs-4 shadow-sm">
+                                <i class="ri-user-unfollow-line"></i>
+                            </div>
+                        </div>
+                        <div>
+                            <h5 class="card-title mb-1" style="font-weight: 600;">Data Karyawan Aktif</h5>
+                            <p class="text-muted mb-0 fs-13">Pilih dan masukkan karyawan ke dalam cart untuk memulai
+                                proses administrasi keluar</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div
+                    class="col-xl-7 col-lg-12 d-flex justify-content-xl-end justify-content-start align-items-center gap-2 flex-wrap">
+                    {{-- @if (!$hrd_ir) --}}
+                    <a href="{{ url('/hr-connect/dept-adm/template-keluar') }}"
+                        class="btn btn-sm btn-soft-info fw-bold shadow-sm">
+                        <i class="ri-download-line align-bottom me-1"></i> Template
+                    </a>
+
+                    <button class="btn btn-sm btn-soft-secondary fw-bold shadow-sm" id="btnInfoCheckout">
+                        <i class="ri-information-line align-bottom me-1"></i> Info
+                    </button>
+
+                    <button class="btn btn-sm btn-warning fw-bold shadow-sm text-dark" id="btnUploadExcelCheckout">
+                        <i class="ri-file-excel-2-line align-bottom me-1"></i> Upload Excel
+                    </button>
+
+                    <div class="vr align-middle d-none d-sm-block mx-1"></div>
+
+                    <button type="button" class="btn btn-sm btn-dark shadow-sm fw-bold position-relative px-3"
+                        id="btnCart">
+                        <i class="ri-shopping-cart-2-line align-bottom me-1"></i> Lihat Cart
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                            id="cart-count">0</span>
+                    </button>
+                    {{-- @endif --}}
+                </div>
             </div>
-            {{-- @endif --}}
         </div>
         <div class="card-body pb-4">
             <div class="table-responsive">
@@ -52,6 +72,8 @@
 
 @push('scripts')
     <script>
+        const masterReason = @json($alasanKeluar);
+
         $(document).ready(function() {
             let table2 = $("#tableAjax2").DataTable({
                 processing: true,
@@ -205,6 +227,14 @@
                 }
 
                 cart.forEach(function(c) {
+                    let opsiAlasan = `<option value="">-- Pilih --</option>`;
+
+                    masterReason.forEach(function(master) {
+                        let isSelected = (c.alasan_keluar === master.nama_reason) ? 'selected' : '';
+                        opsiAlasan +=
+                            `<option value="${master.nama_reason}" ${isSelected}>${master.nama_reason}</option>`;
+                    });
+
                     $('#cart-table tbody').append(`
                         <tr>
                             <td class="fw-bold text-primary">${c.nama}</td>
@@ -212,12 +242,7 @@
                             <td><span class="badge bg-light text-dark border">${c.dept}</span></td>
                             <td>
                                 <select class="form-select form-select-sm shadow-sm alasanKeluar" onChange="updateReason('${c.id}', this.value)">
-                                    <option value="">-- Pilih --</option>
-                                    <option value="Resign" ${c.alasan_keluar === 'Resign' ? 'selected' : ''}>Resign</option>
-                                    <option value="Habis Kontrak" ${c.alasan_keluar === 'Habis Kontrak' ? 'selected' : ''}>Habis Kontrak</option>
-                                    <option value="Kabur" ${c.alasan_keluar === 'Kabur' ? 'selected' : ''}>Kabur</option>
-                                    <option value="Cut Probation" ${c.alasan_keluar === 'Cut Probation' ? 'selected' : ''}>Cut P</option>
-                                    <option value="PHK" ${c.alasan_keluar === 'PHK' ? 'selected' : ''}>PHK</option>
+                                    ${opsiAlasan}
                                 </select>
                             </td>
                             <td><input type="date" class="form-control form-control-sm shadow-sm tglKeluar" onChange="updateTglKeluar('${c.id}', this.value)" value="${c.tanggal_keluar || ''}"></td>

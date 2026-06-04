@@ -2,7 +2,6 @@
 namespace App\Http\Controllers\HRConnect;
 
 use App\Exports\HRConnect\KaryawanAktifExport;
-use App\HrGoodieApd;
 use App\HrKaryawan;
 use App\Http\Controllers\Controller;
 use App\Models\Loker\Penghuni;
@@ -83,12 +82,16 @@ class GAShiftInController extends Controller
     public function getData(Request $req)
     {
         $query = HrKaryawan::with(['penghuni' => function ($q) {
-            $q->where('is_active', 'Y');
+            $q->where([
+                'is_active' => 'Y',
+                'kode_rak' => null,
+                'no_loker' => null,
+            ]);
         }])
             ->select('id', 'nik', 'nama', 'kode_divisi', 'kode_bagian', 'kode_admin', 'jenis_kelamin', 'staff', 'tanggal_masuk', 'in_complete', 'cardnodevice')
             ->where([
                 'is_excuse_out' => 'N',
-                'in_kode_group' => 'Y',
+                'in_kode_group' => 'N',
                 'in_complete'   => 'N',
                 'p_no'          => 'N',
                 'active'        => 'Y',
@@ -124,17 +127,16 @@ class GAShiftInController extends Controller
         DB::beginTransaction();
 
         try {
-            $tglMasuk = now()->format('Y-m-d');
-            $goodie   = HrGoodieApd::firstOrCreate(
-                ['tgl_masuk' => $tglMasuk],
-                ['jumlah_orang' => 0]
-            );
+            // $tglMasuk = now()->format('Y-m-d');
+            // $goodie   = HrGoodieApd::firstOrCreate(
+            //     ['tgl_masuk' => $tglMasuk],
+            //     ['jumlah_orang' => 0]
+            // );
 
-            // Perhitungan ulang biar ga error pas input array kosong/null
-            $jumlahOrangMasuk = is_array($data) ? count($data) : 0;
-            if ($jumlahOrangMasuk > 0) {
-                $goodie->increment('jumlah_orang', $jumlahOrangMasuk);
-            }
+            // $jumlahOrangMasuk = is_array($data) ? count($data) : 0;
+            // if ($jumlahOrangMasuk > 0) {
+            //     $goodie->increment('jumlah_orang', $jumlahOrangMasuk);
+            // }
 
             foreach ($data as $item) {
                 $nik     = $item['nik'];

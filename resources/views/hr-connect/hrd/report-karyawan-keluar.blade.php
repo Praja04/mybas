@@ -35,17 +35,17 @@
         <div class="row">
             <div class="col-lg-12">
                 <div class="card shadow-sm border-0">
-                    <div class="card-header border-bottom p-4 d-flex justify-content-between align-items-center">
+                    <div class="card-header border-bottom p-4">
                         <div class="d-flex align-items-center">
                             <div class="avatar-sm me-3">
                                 <div class="avatar-title bg-soft-info text-info rounded-circle fs-4 shadow-sm">
-                                    <i class="ri-folder-check-line"></i>
+                                    <i class="ri-safe-2-line"></i>
                                 </div>
                             </div>
                             <div>
                                 <h5 class="card-title mb-1" style="font-weight: 600;">Report Finalisasi Karyawan Keluar</h5>
                                 <p class="text-muted mb-0 fs-13">Arsip data riwayat administrasi keluar yang telah
-                                    dikonfirmasi oleh HRD IR</p>
+                                    dikonfirmasi oleh HRD IR.</p>
                             </div>
                         </div>
                     </div>
@@ -229,7 +229,7 @@
                         className: 'text-center',
                         render: function(data) {
                             return (!data || data === '0000-00-00') ? `-` :
-                                `<span class="badge bg-light text-dark border shadow-sm">${moment(data).format('DD MMMM YYYY')}</span>`;
+                                moment(data).format('DD MMMM YYYY');
                         }
                     }
                 ]

@@ -30,6 +30,13 @@ $menus = [
                 'icon' => 'mdi-database-cog-outline',
                 'submenu' => [],
             ],
+            [
+                'path' => 'hr-connect/masters/reason',
+                'label' => 'Master Alasan Keluar',
+                'permission' => 'hr_connect_master',
+                'icon' => 'mdi-account-off',
+                'submenu' => [],
+            ],
         ],
     ],
 
@@ -64,7 +71,7 @@ $menus = [
             ],
             [
                 'path' => 'hr-connect/dept-ga/perlengkapan-goodie-apd',
-                'label' => 'Persiapan Goodie Bag & APD',
+                'label' => 'Konfirmasi Persiapan Goodie Bag',
                 'permission' => 'hr_connect_ga',
                 'icon' => 'mdi-checkbox-marked',
                 'submenu' => [],

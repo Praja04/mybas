@@ -19,19 +19,22 @@ class GAGoodieApdController extends Controller
 
     public function getData()
     {
-        $goodies = HrKaryawan::select('tanggal_masuk', DB::raw('count(*) as count'))
+        $goodies = HrKaryawan::select('tanggal_masuk', DB::raw('count(id) as count'))
             ->where([
+                'in_kode_group' => 'Y',
+                'in_complete'   => 'Y',
+                'active'        => 'Y',
+                'p_in'          => 'Y',
                 'is_goobag'     => 'N',
                 'is_excuse_out' => 'N',
-                'in_kode_group' => 'Y',
                 'p_no'          => 'N',
-                'active'        => 'Y',
                 'shutdown'      => 'N',
             ])
             ->whereNotNull('tanggal_masuk')
             ->where('tanggal_masuk', '!=', '0000-00-00')
             ->groupBy('tanggal_masuk')
-            ->orderBy('tanggal_masuk', 'desc');
+            ->orderBy('tanggal_masuk', 'desc')
+            ->get();
 
         return DataTables::of($goodies)->make(true);
     }
@@ -50,9 +53,10 @@ class GAGoodieApdController extends Controller
         try {
             HrKaryawan::where('tanggal_masuk', $tgl_masuk)
                 ->where([
+                    'in_kode_group' => 'Y',
+                    'in_complete'   => 'Y',
                     'is_goobag'     => 'N',
                     'is_excuse_out' => 'N',
-                    'in_kode_group' => 'Y',
                     'p_no'          => 'N',
                     'active'        => 'Y',
                     'shutdown'      => 'N',
@@ -62,8 +66,6 @@ class GAGoodieApdController extends Controller
                     'is_goobag' => 'Y',
                 ]);
 
-            DB::commit();
-
             $email_hr = User::whereHas('group.permissions', function ($query) {
                 $query->where('codename', 'hr_connect_notified_in');
             })
@@ -71,6 +73,8 @@ class GAGoodieApdController extends Controller
                 ->pluck('email')
                 ->unique()
                 ->toArray();
+
+            DB::commit();
 
             if (! empty($email_hr)) {
                 GoodieNotify::dispatch($email_hr, $count, $tgl_masuk);
@@ -98,11 +102,13 @@ class GAGoodieApdController extends Controller
 
         try {
             HrKaryawan::where([
+                'in_kode_group' => 'Y',
+                'in_complete'   => 'Y',
                 'is_goobag'     => 'N',
                 'is_excuse_out' => 'N',
-                'in_kode_group' => 'Y',
                 'p_no'          => 'N',
                 'active'        => 'Y',
+
                 'shutdown'      => 'N',
             ])
                 ->whereNotNull('tanggal_masuk')

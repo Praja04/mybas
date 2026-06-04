@@ -94,16 +94,33 @@
         <div class="row justify-content-center">
             <div class="col-lg-10">
                 <div class="card shadow-sm border-0">
-                    <div class="card-header border-bottom p-4 d-flex justify-content-between align-items-center">
-                        <h5 class="card-title mb-0" style="font-weight: 600;">
-                            <i class="ri-calendar-event-line text-primary me-2"></i> Report Kalender Karyawan
-                        </h5>
-                        <div class="d-flex gap-2 align-items-center" style="font-size: 0.85rem;">
-                            <span class="badge bg-soft-primary text-primary"><i
-                                    class="mdi mdi-checkbox-blank-circle me-1"></i> Masuk</span>
-                            <span class="badge bg-soft-danger text-danger"><i
-                                    class="mdi mdi-checkbox-blank-circle me-1"></i> Keluar</span>
+                    <div
+                        class="card-header border-bottom p-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
+
+                        <!-- Bagian Judul & Deskripsi Kiri -->
+                        <div class="d-flex align-items-center">
+                            <div class="avatar-sm flex-shrink-0 me-3">
+                                <div class="avatar-title bg-soft-primary text-primary rounded-circle fs-4 shadow-sm">
+                                    <i class="ri-calendar-event-line"></i>
+                                </div>
+                            </div>
+                            <div>
+                                <h5 class="card-title mb-1" style="font-weight: 600;">Report Kalender Karyawan</h5>
+                                <p class="text-muted mb-0 fs-13">Pantau jadwal pergerakan masuk dan keluarnya karyawan dalam
+                                    tampilan kalender.</p>
+                            </div>
                         </div>
+
+                        <!-- Bagian Legenda Kanan -->
+                        <div class="d-flex gap-2 align-items-center flex-shrink-0" style="font-size: 0.85rem;">
+                            <span class="badge bg-soft-primary text-primary px-2 py-1 shadow-sm">
+                                <i class="mdi mdi-checkbox-blank-circle me-1"></i> Masuk
+                            </span>
+                            <span class="badge bg-soft-danger text-danger px-2 py-1 shadow-sm">
+                                <i class="mdi mdi-checkbox-blank-circle me-1"></i> Keluar
+                            </span>
+                        </div>
+
                     </div>
                     <div class="card-body p-4">
                         <div id="calendar"></div>
@@ -200,7 +217,7 @@
                         $("#modal-title").html(titleStr);
                         $("#containerModal").html(
                             '<div class="text-center p-4"><div class="spinner-border text-primary" role="status"></div></div>'
-                            );
+                        );
                         $("#showModal").modal("show");
                     },
                     success: function(res) {

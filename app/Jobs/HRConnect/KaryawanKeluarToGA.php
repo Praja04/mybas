@@ -14,17 +14,17 @@ class KaryawanKeluarToGA implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
     public $to;
-    public $link;
+    public $dataList;
 
     /**
      * Create a new job instance.
      *
      * @return void
      */
-    public function __construct($to, $link)
+    public function __construct($to, $dataList)
     {
-        $this->to   = $to;
-        $this->link = $link;
+        $this->to       = $to;
+        $this->dataList = $dataList;
     }
 
     /**
@@ -52,12 +52,12 @@ class KaryawanKeluarToGA implements ShouldQueue
         if (count($internalMails) > 0) {
             Mail::mailer(setEmail($internalMails[0]))
                 ->to($internalMails)
-                ->send(new FyiGaShiftingOutMail($this->link));
+                ->send(new FyiGaShiftingOutMail($this->dataList));
         }
 
         if (count($eksternalMails) > 0) {
             Mail::to($eksternalMails)
-                ->send(new FyiGaShiftingOutMail($this->link));
+                ->send(new FyiGaShiftingOutMail($this->dataList));
         }
     }
 }

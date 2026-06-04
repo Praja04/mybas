@@ -13,9 +13,13 @@ class CreateMasterReasonS2Table extends Migration
      */
     public function up()
     {
-        Schema::create('master_reason_s2', function(Blueprint $table) {
+        Schema::create('master_reason_s2', function (Blueprint $table) {
             $table->increments('id');
-            $table->string('reason', 255);
+            $table->string('tipe', 150);
+            $table->string('kode_reason', 50);
+            $table->string('nama_reason', 255);
+            $table->enum('is_active', ['Y', 'N'])->default('Y');
+            $table->timestamps();
         });
     }
 
@@ -26,6 +30,6 @@ class CreateMasterReasonS2Table extends Migration
      */
     public function down()
     {
-        Schema::drop('master_reason_s2');
+        Schema::dropIfExists('master_reason_s2');
     }
 }

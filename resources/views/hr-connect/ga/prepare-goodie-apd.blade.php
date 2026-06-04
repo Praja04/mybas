@@ -94,7 +94,7 @@
                         data: "count",
                         className: "text-center",
                         render: function(data) {
-                            return `<span class="badge bg-soft-info text-info fs-13 px-3 py-2 shadow-sm"><i class="ri-group-line me-1 align-bottom"></i> ${data} Set Fasilitas</span>`;
+                            return `<span class="badge bg-soft-info text-info fs-13 px-3 py-2 shadow-sm"><i class="ri-group-line me-1 align-bottom"></i> ${data} pcs Goodie Bag</span>`;
                         }
                     },
                     {
@@ -132,7 +132,7 @@
                 if (!table.data().any()) {
                     return Swal.fire('Informasi',
                         'Tidak ada jadwal persiapan fasilitas yang perlu dikonfirmasi saat ini.', 'info'
-                        );
+                    );
                 }
 
                 Swal.fire({
@@ -149,7 +149,7 @@
                     if (result.isConfirmed) {
                         btn.prop('disabled', true).html(
                             '<i class="spinner-border spinner-border-sm me-1"></i> Memproses Data...'
-                            );
+                        );
 
                         $.ajax({
                             type: "POST",
@@ -209,7 +209,7 @@
 
                         btn.prop('disabled', true).html(
                             '<i class="spinner-border spinner-border-sm me-1"></i> Memproses...'
-                            );
+                        );
 
                         $.ajax({
                             type: "POST",

@@ -38,7 +38,8 @@ class FyiGaShiftingOutMail extends Mailable
                 'link'          => $this->dataList['tautan'],
             ])
             ->attach(Excel::download(
-                new KaryawanKeluarFromAdminToGAExport($this->dataList['list_karyawan']), $tgl_now, $nama_file
+                new KaryawanKeluarFromAdminToGAExport($this->dataList['list_karyawan']),
+                $nama_file
             )->getFile(), ['as' => $nama_file]);
     }
 }

@@ -458,7 +458,7 @@
                         position: "right",
                         backgroundColor: "#0ab39c"
                     }).showToast();
-                    table.DataTable().draw(false);
+                    $('#tableAjax').DataTable().ajax.reload(null, false);
                 }).fail(function(xhr) {
                     Swal.fire("Gagal", xhr.responseJSON?.message || "Terjadi kesalahan server.",
                         "error");

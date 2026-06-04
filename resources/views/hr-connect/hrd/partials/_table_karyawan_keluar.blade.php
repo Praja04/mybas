@@ -1,14 +1,24 @@
 <div class="card shadow-sm border-0">
     <div class="card-header border-bottom p-4">
         <div class="row align-items-center gy-3">
-            <div class="col-xl-4 col-lg-12">
-                <h5 class="card-title mb-0" style="font-weight: 600;">
-                    <i class="ri-folder-user-line text-success me-2"></i> Finalisasi Offboarding HRD
-                </h5>
+            <div class="col-xl-5 col-lg-12">
+                <div class="d-flex align-items-center">
+                    <!-- Tambahan flex-shrink-0 di sini -->
+                    <div class="avatar-sm flex-shrink-0 me-3">
+                        <div class="avatar-title bg-soft-success text-success rounded-circle fs-4 shadow-sm">
+                            <i class="ri-folder-user-line"></i>
+                        </div>
+                    </div>
+                    <div>
+                        <h5 class="card-title mb-1" style="font-weight: 600;">Finalisasi Offboarding HRD</h5>
+                        <p class="text-muted mb-0 fs-13">Konfirmasi dan eksekusi data karyawan yang telah menyelesaikan
+                            proses clearance GA</p>
+                    </div>
+                </div>
             </div>
-            <div
-                class="col-xl-8 col-lg-12 d-flex justify-content-xl-end justify-content-start align-items-center gap-2 flex-wrap">
 
+            <div
+                class="col-xl-7 col-lg-12 d-flex justify-content-xl-end justify-content-start align-items-center gap-2 flex-wrap">
                 <a href="/assets/media/hr_connect/HRD IR - Karyawan Keluar.xlsx"
                     class="btn btn-sm btn-soft-info fw-bold shadow-sm">
                     <i class="ri-download-line align-bottom me-1"></i> Template
@@ -22,7 +32,7 @@
                     <i class="ri-file-excel-2-line align-bottom me-1"></i> Upload Excel
                 </button>
 
-                <div class="vr align-middle d-none d-sm-block"></div>
+                <div class="vr align-middle d-none d-sm-block mx-1"></div>
 
                 <button class="btn btn-sm btn-warning font-weight-bolder shadow-sm" id="btnToggleMassal"
                     data-bs-toggle="tooltip" title="Aktifkan mode finalisasi massal">
@@ -32,7 +42,6 @@
                 <button class="btn btn-sm btn-dark font-weight-bolder shadow-sm" id="btnSubmit" style="display: none;">
                     <i class="ri-check-double-line align-bottom me-1"></i> Eksekusi (<span id="countChecked">0</span>)
                 </button>
-
             </div>
         </div>
     </div>

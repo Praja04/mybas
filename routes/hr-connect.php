@@ -17,6 +17,16 @@ Route::middleware(['auth', 'rules'])->group(function () {
             Route::delete('/{id}', 'HRConnect\MastersAdminController@destroy');
         });
 
+        // Masters Reason
+        Route::prefix('masters/reason')->group(function () {
+            Route::get('/', 'HRConnect\MasterReasonController@index');
+            Route::get('/data', 'HRConnect\MasterReasonController@getData')->name('master-reason.getData');
+            Route::post('/store', 'HRConnect\MasterReasonController@storeOrUpdate');
+            Route::post('/status', 'HRConnect\MasterReasonController@updateStatus');
+            // Tambahan Route buat Upload Excel:
+            Route::post('/upload-excel', 'HRConnect\MasterReasonController@uploadExcel')->name('master-reason.uploadExcel');
+        });
+
         // Masters User Loker
         // Route::prefix('/masters/loker-user')->group(function () {
         //     Route::get('/', 'HRConnect\LokerMasterUserController@index');

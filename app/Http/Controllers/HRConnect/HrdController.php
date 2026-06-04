@@ -20,13 +20,13 @@ class HrdController extends Controller
     {
         $data['title'] = 'HRD IR - Karyawan Keluar';
 
-        $data['tanggalTersedia'] = HrKaryawan::where('is_excuse_out', 'Y')
-            ->where('checked_ir', 'N')
-            ->whereNotNull('tgl_shift_out')
-            ->select('tgl_shift_out')
-            ->distinct()
-            ->orderBy('tgl_shift_out', 'desc')
-            ->pluck('tgl_shift_out');
+        // $data['tanggalTersedia'] = HrKaryawan::where('is_excuse_out', 'Y')
+        //     ->where('checked_ir', 'N')
+        //     ->whereNotNull('tgl_shift_out')
+        //     ->select('tgl_shift_out')
+        //     ->distinct()
+        //     ->orderBy('tgl_shift_out', 'desc')
+        //     ->pluck('tgl_shift_out');
 
         return view('hr-connect.hrd.karyawan-keluar', $data);
     }
@@ -189,9 +189,15 @@ class HrdController extends Controller
 
             foreach ($data as $item) {
                 if (isset($item['checklistId']) && $item['checklistId'] !== 'on') {
-                    HrKaryawan::where('id', $item['checklistId'])->lockForUpdate()->update([
-                        'checked_ir' => $item['status'] == 'check' ? 'Y' : 'N',
-                    ]);
+                    HrKaryawan::where('id', $item['checklistId'])
+                        ->where([
+                            'is_excuse_out' => 'Y',
+                            'out_complete'  => 'Y',
+                        ])
+                        ->lockForUpdate()
+                        ->update([
+                            'checked_ir' => $item['status'] == 'check' ? 'Y' : 'N',
+                        ]);
 
                     $ids[] = $item['checklistId'];
                 }
@@ -252,6 +258,7 @@ class HrdController extends Controller
                     'tanggal_keluar' => null,
                     'p_no'           => 'N',
                     'checked_ir'     => 'N',
+                    'out_complete'   => 'N',
                 ]);
 
             DB::commit();

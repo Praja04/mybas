@@ -16,18 +16,12 @@
                             <div class="col-lg-4">
                                 <select id="pilihAlasanKeluar" class="form-select shadow-sm">
                                     <option value="" selected disabled>-- Pilih Alasan Keluar Massal --
+
+                                        @foreach ($alasanKeluar as $alasan)
+                                    <option value="{{ $alasan->nama_reason }}">
+                                        {{ $alasan->nama_reason }}
                                     </option>
-                                    <option value="Resign">Resign</option>
-                                    <option value="Habis Kontrak">Habis Kontrak</option>
-                                    <option value="Kabur">Kabur</option>
-                                    <option value="Cut Probation">Cut Probation</option>
-                                    <option value="PHK">PHK</option>
-                                    <option value="Cancel Join">Cancel Join</option>
-                                    <option value="Pensiun">Pensiun</option>
-                                    <option value="Pensiun Dini">Pensiun Dini</option>
-                                    <option value="Dikualifikasi Mengundurkan Diri">Dikualifikasi Mengundurkan
-                                        Diri</option>
-                                    <option value="Cut Probation Lebih Awal">Cut Probation Lebih Awal</option>
+                                    @endforeach
                                 </select>
                             </div>
                             <div class="col-lg-4">

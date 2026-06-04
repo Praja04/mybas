@@ -11,6 +11,7 @@ use App\Imports\HRConnect\AdmKaryawanMasuk;
 use App\Jobs\HRConnect\KaryawanKeluarToGA;
 use App\Jobs\HRConnect\KaryawanMasukToHR;
 use App\Jobs\HRConnect\NotifiedOut;
+use App\MasterReason;
 use App\PKWAdmin;
 use App\PKWGroup;
 use App\User;
@@ -36,6 +37,11 @@ class AdminKaryawanController extends Controller
                 $query->where('codename', 'hr_connect_ir');
             })->exists();
 
+        $data['alasanKeluar'] = MasterReason::where('tipe', 'Terminasi')
+            ->where('is_active', 'Y')
+            ->orderBy('nama_reason', 'asc')
+            ->get();
+
         return view('hr-connect.admin.index', $data);
     }
 
@@ -57,6 +63,7 @@ class AdminKaryawanController extends Controller
                 'in_kode_group' => 'N',
                 'is_excuse_out' => 'N',
                 'p_no'          => 'N',
+                'in_complete'   => 'Y',
             ])
             ->whereIn('kode_admin', $list_kode_admin)
             ->whereDate('tanggal_masuk', '>', '2024-09-30');
@@ -122,12 +129,16 @@ class AdminKaryawanController extends Controller
                     'in_kode_group' => 'Y',
                     'p_in'          => $p_in,
                     'p_no'          => $p_no,
+                    // 'in_complete'   => 'N',
+                    'is_goobag'     => 'N',
                 ];
 
                 if ($status_proses === 'IN') {
+                    $updateData['is_goobag']  = 'N';
                     $updateData['kode_group'] = $item['kodeGroup'] ?? null;
                     $updateData['kode_admin'] = $item['kodeAdmin'] ?? null;
                 } else {
+                    $updateData['is_goobag']  = 'Y';
                     $updateData['kode_group'] = null;
                     $updateData['kode_admin'] = null;
                 }
@@ -148,6 +159,10 @@ class AdminKaryawanController extends Controller
             DB::commit();
 
             if (! empty($to)) {
+                // $count_karyawan_baru = HrKaryawan::whereIn('nik', collect($data)->pluck('nik'))->count();
+                // $link                = url('hr-connect/admin/karyawan-masuk');
+
+                // KaryawanMasukToGA::dispatch($to, $count_karyawan_baru, $link);
                 KaryawanMasukToHR::dispatch($to, $data);
             }
 
@@ -172,7 +187,6 @@ class AdminKaryawanController extends Controller
 
         try {
             foreach ($data as $item) {
-                // DEFENSIVE PROGRAMMING: Amankan tanggal dan alasan kosong
                 $tglKeluar = ! empty($item['tanggal_keluar'])
                     ? Carbon::parse($item['tanggal_keluar'])->format('Y-m-d')
                     : null;
@@ -188,6 +202,8 @@ class AdminKaryawanController extends Controller
                         'is_excuse_out'  => 'Y',
                         'alasan_keluar'  => $alasanKeluar,
                         'tanggal_keluar' => $tglKeluar,
+                        'out_complete'   => 'N',
+                        'checked_ir'     => 'N',
                     ]);
             }
 

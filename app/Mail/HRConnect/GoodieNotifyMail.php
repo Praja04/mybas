@@ -1,18 +1,18 @@
 <?php
-
 namespace App\Mail\HRConnect;
 
+use App\Exports\HRConnect\KaryawanFinalOnboardExport;
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
+use Maatwebsite\Excel\Facades\Excel;
 
 class GoodieNotifyMail extends Mailable
 {
     use Queueable, SerializesModels;
     public $count;
     public $tgl_masuk;
-    public $link;
+    // public $link;
     /**
      * Create a new message instance.
      *
@@ -20,7 +20,7 @@ class GoodieNotifyMail extends Mailable
      */
     public function __construct($count, $tgl_masuk)
     {
-        $this->count = $count;
+        $this->count     = $count;
         $this->tgl_masuk = $tgl_masuk;
     }
 
@@ -31,11 +31,18 @@ class GoodieNotifyMail extends Mailable
      */
     public function build()
     {
+        $tgl_format = \Carbon\Carbon::parse($this->tgl_masuk)->format('d-m-Y');
+        $nama_file  = "Final_Onboarding_{$tgl_format}.xlsx";
+
         return $this->subject('HRConnect - Pemberitahuan Jumlah Goodie Bag dan APD')
-                    ->view('mail.hr-connect.FyiGoodieApd')
-                    ->with([
-                        'count' => $this->count,
-                        'tgl_masuk' => $this->tgl_masuk,
-                    ]);
+            ->view('mail.hr-connect.FyiGoodieApd')
+            ->with([
+                'count'     => $this->count,
+                'tgl_masuk' => $this->tgl_masuk,
+            ])
+            ->attach(Excel::download(
+                new KaryawanFinalOnboardExport($this->tgl_masuk),
+                $nama_file
+            )->getFile(), ['as' => $nama_file]);
     }
 }

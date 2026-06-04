@@ -29,7 +29,7 @@ class NotifiedOutMail extends Mailable
      */
     public function build()
     {
-        $nama_file = 'Lampiran Karyawan Keluar' . date('d-m-Y') . '.xlsx';
+        $nama_file = 'Lampiran Karyawan Keluar ' . date('d-m-Y') . '.xlsx';
 
         return $this->subject('HRConnect - File Lampiran Karyawan Keluar')
             ->view('mail.hr-connect.attachExcelToHrOUT')

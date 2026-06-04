@@ -17,15 +17,16 @@
             <div class="col-lg-12">
                 <div class="card shadow-sm border-0">
                     <div class="card-header border-bottom p-4">
-                        <div class="row align-items-center">
-                            <div class="col-lg-12">
-                                <h5 class="card-title mb-0" style="font-weight: 600;">
-                                    <i class="ri-history-line text-info me-2"></i> Pemulihan Data Karyawan (Restore)
-                                </h5>
-                                <p class="text-muted mb-0 mt-2" style="font-size: 0.85rem;">
-                                    Daftar karyawan yang batal masuk (NO-IN) atau dalam proses Offboarding. Lakukan
-                                    pemulihan jika terjadi kesalahan data.
-                                </p>
+                        <div class="d-flex align-items-center">
+                            <div class="avatar-sm me-3">
+                                <div class="avatar-title bg-soft-info text-info rounded-circle fs-4 shadow-sm">
+                                    <i class="ri-history-line"></i>
+                                </div>
+                            </div>
+                            <div>
+                                <h5 class="card-title mb-1" style="font-weight: 600;">Pemulihan Data Karyawan (Restore)</h5>
+                                <p class="text-muted mb-0 fs-13">Daftar karyawan yang batal masuk (NO-IN) atau dalam proses
+                                    Offboarding. Lakukan pemulihan jika terjadi kesalahan data.</p>
                             </div>
                         </div>
                     </div>
@@ -153,7 +154,8 @@
                                 }).showToast();
 
                                 table.ajax.reload(null,
-                                false); // Reload datatables tanpa mereset pagination
+                                    false
+                                    ); // Reload datatables tanpa mereset pagination
                             },
                             error: function(xhr) {
                                 Swal.fire(

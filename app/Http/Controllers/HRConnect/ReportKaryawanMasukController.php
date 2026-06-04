@@ -42,7 +42,12 @@ class ReportKaryawanMasukController extends Controller
             )
                 ->where('in_kode_group', 'Y')
                 ->where(function ($query) {
-                    $query->where('in_complete', 'Y')
+                    $query->where(function ($q) {
+                        $q->where([
+                            'in_complete' => 'Y',
+                            'is_goobag'   => 'Y',
+                        ]);
+                    })
                         ->orWhere('p_no', 'Y');
                 })
                 ->whereNotNull('tanggal_masuk')
@@ -95,12 +100,17 @@ class ReportKaryawanMasukController extends Controller
         )
             ->where('in_kode_group', 'Y')
             ->where(function ($query) {
-                $query->where('in_complete', 'Y')
+                $query->where(function ($q) {
+                    $q->where([
+                        'in_complete' => 'Y',
+                        'is_goobag'   => 'Y',
+                    ]);
+                })
                     ->orWhere('p_no', 'Y');
             })
             ->whereNotNull('tanggal_masuk')
             ->where('tanggal_masuk', '!=', '0000-00-00');
-        // ->orderBy('tanggal_masuk', 'desc');
+// ->orderBy('tanggal_masuk', 'desc');
 
         if (! empty($req->tanggal)) {
             $parts = explode('-', $req->tanggal);

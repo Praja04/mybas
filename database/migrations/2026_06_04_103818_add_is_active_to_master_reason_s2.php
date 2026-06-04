@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class AddKodeReasonToMasterReasonS2Table extends Migration
+class AddIsActiveToMasterReasonS2 extends Migration
 {
     /**
      * Run the migrations.
@@ -14,7 +14,7 @@ class AddKodeReasonToMasterReasonS2Table extends Migration
     public function up()
     {
         Schema::table('master_reason_s2', function (Blueprint $table) {
-            $table->string('kode_reason', 50);
+            $table->enum('is_active', ['Y', 'N'])->default('Y');
         });
     }
 
@@ -26,7 +26,7 @@ class AddKodeReasonToMasterReasonS2Table extends Migration
     public function down()
     {
         Schema::table('master_reason_s2', function (Blueprint $table) {
-            $table->dropColumn('kode_reason');
+            $table->dropColumn('is_active');
         });
     }
 }

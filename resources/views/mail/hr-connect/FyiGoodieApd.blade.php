@@ -94,8 +94,10 @@
                 <span class="highlight-text">Jumlah Karyawan Terkonfirmasi: {{ $count }} Orang</span>
             </div>
 
-            <p>Tim HR sudah dapat melanjutkan ke tahap berikutnya (Pembagian fasilitas pada saat orientasi karyawan).
-            </p>
+            <p>Bersama email ini, kami telah <strong>melampirkan file Excel</strong> yang berisi daftar nama dan NIK
+                karyawan terkait.</p>
+            <p>Tim HR (Payroll / BPJS / Absensi) sudah dapat menggunakan data terlampir untuk melakukan registrasi
+                karena seluruh tahapan Onboarding karyawan tersebut telah 100% selesai.</p>
 
             <!-- <div style="text-align: center;">
                 <a href="{{ $link }}" class="btn">Lihat Laporan Detail</a>

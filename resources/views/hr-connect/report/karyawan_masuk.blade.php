@@ -36,9 +36,18 @@
             <div class="col-lg-12">
                 <div class="card shadow-sm border-0">
                     <div class="card-header border-bottom p-4">
-                        <h5 class="card-title mb-0" style="font-weight: 600;">
-                            <i class="ri-file-chart-line text-primary me-2"></i> Report Karyawan Masuk
-                        </h5>
+                        <div class="d-flex align-items-center">
+                            <div class="avatar-sm me-3">
+                                <div class="avatar-title bg-soft-primary text-primary rounded-circle fs-4 shadow-sm">
+                                    <i class="ri-file-chart-line"></i>
+                                </div>
+                            </div>
+                            <div>
+                                <h5 class="card-title mb-1" style="font-weight: 600;">Report Karyawan Masuk</h5>
+                                <p class="text-muted mb-0 fs-13">Rekapitulasi data riwayat karyawan yang telah berhasil
+                                    menyelesaikan proses onboarding.</p>
+                            </div>
+                        </div>
                     </div>
                     <div class="card-body pb-4">
 
