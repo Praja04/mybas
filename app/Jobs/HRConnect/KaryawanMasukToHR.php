@@ -1,14 +1,14 @@
 <?php
-
 namespace App\Jobs\HRConnect;
 
-use Illuminate\Bus\Queueable;
-use Illuminate\Support\Facades\Mail;
-use Illuminate\Queue\SerializesModels;
-use Illuminate\Queue\InteractsWithQueue;
 use App\Mail\HRConnect\AttachExcelToHRMail;
+use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 
 class KaryawanMasukToHR implements ShouldQueue
 {
@@ -23,7 +23,7 @@ class KaryawanMasukToHR implements ShouldQueue
      */
     public function __construct($to, $data)
     {
-        $this->to = $to;
+        $this->to   = $to;
         $this->data = $data;
     }
 
@@ -34,28 +34,28 @@ class KaryawanMasukToHR implements ShouldQueue
      */
     public function handle()
     {
-        $internalMails = [];
+        $internalMails  = [];
         $eksternalMails = [];
 
         foreach ($this->to as $email) {
-            if (strpos($email, '@myemail.pas') == true || strpos($email, '@prakarsaalamsegar.com') == true) {
+            if (Str::endsWith($email, ["@myemail.pas", "@prakarsaalamsegar.com"])) {
                 $internalMails[] = $email;
             } else {
                 $eksternalMails[] = $email;
             }
         }
-            
+
         // Email Internal
-        if(count($internalMails) > 0) {
+        if (count($internalMails) > 0) {
             Mail::mailer(setEmail($internalMails[0]))
-            ->to($internalMails)
-            ->send(new AttachExcelToHRMail($this->data));
+                ->to($internalMails)
+                ->send(new AttachExcelToHRMail($this->data));
         }
-        
+
         // Email Eksternal
-        if(count($eksternalMails) > 0) {
+        if (count($eksternalMails) > 0) {
             Mail::to($eksternalMails)
-            ->send(new AttachExcelToHRMail($this->data));
+                ->send(new AttachExcelToHRMail($this->data));
         }
     }
 }

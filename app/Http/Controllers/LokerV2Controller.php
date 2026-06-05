@@ -581,7 +581,6 @@ class LokerV2Controller extends Controller
                     ]);
             }
 
-            // KEMBALI KE ENUM: 'KELUAR'
             DB::table('loker_transaksi')->insert([
                 'nik'            => $p->nik ?? '-',
                 'nama'           => ucwords(strtolower($p->nama)),

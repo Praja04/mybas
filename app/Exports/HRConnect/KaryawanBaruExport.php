@@ -2,6 +2,7 @@
 namespace App\Exports\HRConnect;
 
 use App\HrKaryawan;
+use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithColumnFormatting;
@@ -13,60 +14,58 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 class KaryawanBaruExport implements FromCollection, WithHeadings, WithMapping, ShouldAutoSize, WithStyles, WithColumnFormatting
 {
-    protected $tanggal;
-    protected $showAll;
+    protected $data;
 
-    public function __construct($tanggal, $showAll)
+    public function __construct($data)
     {
-        $this->tanggal = $tanggal;
-        $this->showAll = $showAll;
+        $this->data = $data;
     }
 
     public function collection()
     {
-        // $query = HrKaryawan::where('tanggal_masuk', '>', '2025-01-01')
-        //     ->orderBy('tanggal_masuk', 'asc');
-        $query = HrKaryawan::with(['penghuni' => function($q) {
-            $q->where('is_active', 'Y');
-        }])->where('tanggal_masuk', '>', '2025-01-01')
-        ->orderBy('tanggal_masuk','desc');
+        $ids = collect($this->data)->pluck("idCheckwish")->filter()->toArray();
 
-        if ($this->showAll == 0 && ! empty($this->tanggal)) {
-            $query->where('tanggal_masuk', $this->tanggal);
+        if (empty($ids)) {
+            return new Collection();
         }
 
-        return $query->get();
+        return HrKaryawan::whereIn('id', $ids)->get();
     }
 
     public function headings(): array
     {
         return [
+            'Nama',
             'NIK',
-            'Nama Lengkap',
-            'Jenis Kelamin',
-            'Kategori',
-            'Divisi',
-            'Bagian',
-            'Tanggal Masuk',
-            'Fasilitas Loker',
+            'Dept',
+            'Kode Bagian',
+            'Proses',
+            'Kode Admin',
+            'Kode Group',
+            'Tgl Masuk',
         ];
     }
 
     public function map($karyawan): array
     {
-        $statusLoker = $karyawan->penghuni
-        ? ($karyawan->penghuni->kode_rak . ' - ' . $karyawan->penghuni->no_loker)
-        : 'Belum / Tidak memiliki Loker';
+        $proses = '-';
+        if ($karyawan->p_in == 'Y') {
+            $proses = 'IN';
+        } elseif ($karyawan->p_no == 'Y') {
+            $proses = 'NO-IN';
+        }
 
         return [
-            ' ' . $karyawan->nik,
             $karyawan->nama,
-            $karyawan->jenis_kelamin == 'L' ? 'Laki-Laki' : ($karyawan->jenis_kelamin == 'P' ? 'Perempuan' : '-'),
-            $karyawan->staff == 'Y' ? 'Staff' : ($karyawan->staff == 'N' ? 'Non Staff' : '-'),
+            ' ' . $karyawan->nik,
             $karyawan->kode_divisi,
             $karyawan->kode_bagian,
-            $karyawan->tanggal_masuk ? \Carbon\Carbon::parse($karyawan->tanggal_masuk)->format('d-m-Y') : '-',
-            $statusLoker,
+            $proses,
+            $karyawan->kode_admin,
+            $karyawan->kode_group,
+            $karyawan->tanggal_masuk && $karyawan->tanggal_masuk !== '0000-00-00'
+                ? \Carbon\Carbon::parse($karyawan->tanggal_masuk)->format('d-m-Y')
+                : '-',
         ];
     }
 
@@ -86,7 +85,7 @@ class KaryawanBaruExport implements FromCollection, WithHeadings, WithMapping, S
     public function columnFormats(): array
     {
         return [
-            'A' => NumberFormat::FORMAT_TEXT,
+            'B' => NumberFormat::FORMAT_TEXT,
         ];
     }
 }

@@ -2,13 +2,14 @@
 
 namespace App\Jobs\HRConnect;
 
-use Illuminate\Bus\Queueable;
-use Illuminate\Support\Facades\Mail;
-use Illuminate\Queue\SerializesModels;
 use App\Mail\HRConnect\GoodieNotifyMail;
-use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 
 class GoodieNotify implements ShouldQueue
 {
@@ -16,6 +17,7 @@ class GoodieNotify implements ShouldQueue
     public $to;
     public $count;
     public $tgl_masuk;
+    public $link;
     /**
      * Create a new job instance.
      *
@@ -43,19 +45,19 @@ class GoodieNotify implements ShouldQueue
         $eksternalMails = [];
 
         foreach ($this->to as $email) {
-            if (strpos($email, '@myemail.pas') == true || strpos($email, '@prakarsaalamsegar.com') == true) {
+            if (Str::endsWith($email, ['@myemail.pas', '@prakarsaalamsegar.com'])) {
                 $internalMails[] = $email;
             } else {
                 $eksternalMails[] = $email;
             }
         }
-            
+
         if(count($internalMails) > 0) {
             Mail::mailer(setEmail($internalMails[0]))
             ->to($internalMails)
             ->send(new GoodieNotifyMail($this->count, $this->tgl_masuk));
         }
-        
+
         if(count($eksternalMails) > 0) {
             Mail::to($eksternalMails)
             ->send(new GoodieNotifyMail($this->count, $this->tgl_masuk));

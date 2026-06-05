@@ -3,10 +3,10 @@
 use Illuminate\Support\Facades\DB;
 
 $nik = auth()->user()->username;
-
 $isAdminAllowed = DB::table('admin_departments')->where('nik_admin', $nik)->exists();
 
 $menus = [
+    // --- DASHBOARD ---
     [
         'label' => '',
         'menu' => [
@@ -20,27 +20,46 @@ $menus = [
     ],
 
     [
-        'label' => 'Master Data',
+        'label' => 'Master',
         'permission' => ['hr_connect_master'],
         'menu' => [
             [
                 'path' => 'hr-connect/masters/admin',
-                'label' => 'Admin Department',
+                'label' => 'Master Admin Dept',
                 'permission' => 'hr_connect_master',
-                'icon' => 'mdi-account-cog',
+                'icon' => 'mdi-database-cog-outline',
                 'submenu' => [],
             ],
             [
-                'path' => 'hr-connect/masters/loker-user',
-                'label' => 'Loker User',
+                'path' => 'hr-connect/masters/reason',
+                'label' => 'Master Alasan Keluar',
                 'permission' => 'hr_connect_master',
-                'icon' => 'mdi-account-cog',
+                'icon' => 'mdi-account-off',
                 'submenu' => [],
             ],
         ],
     ],
+
+    // --- ADMIN DEPARTMENT ---
+    $isAdminAllowed
+        ? [
+            'label' => 'Admin Dept',
+            'permission' => ['hr_connect_admin'],
+            'menu' => [
+                [
+                    'path' => 'hr-connect/dept-adm/data-karyawan',
+                    'label' => 'Proses Data Karyawan', // Dibuat lebih jelas karena ini tempat checkout & plot
+                    'permission' => 'hr_connect_admin',
+                    'icon' => 'mdi-account-details',
+                    'submenu' => [],
+                ],
+            ],
+        ]
+        : [],
+
+    // --- DEPT GA ---
     [
-        'label' => 'Dept.GA',
+        'label' => 'Dept. GA',
         'permission' => ['hr_connect_ga'],
         'menu' => [
             [
@@ -50,62 +69,42 @@ $menus = [
                 'icon' => 'mdi-account-check',
                 'submenu' => [],
             ],
-        ],
-    ],
-    [
-        'label' => '',
-        'menu' => [
             [
                 'path' => 'hr-connect/dept-ga/perlengkapan-goodie-apd',
-                'label' => 'Persiapan Perlengkapan Goodie Bag & APD',
+                'label' => 'Konfirmasi Persiapan Goodie Bag',
                 'permission' => 'hr_connect_ga',
                 'icon' => 'mdi-checkbox-marked',
                 'submenu' => [],
             ],
-        ],
-    ],
-    [
-        'label' => '',
-        'menu' => [
             [
                 'path' => 'hr-connect/dept-ga/karyawan-keluar',
-                'label' => 'Karyawan Keluar',
+                'label' => 'Clearance Keluar', // Diganti biar berasa fungsinya (Clearance Fasilitas)
                 'permission' => 'hr_connect_ga',
                 'icon' => 'mdi-account-remove',
                 'submenu' => [],
             ],
         ],
     ],
+
+    // --- HRD IR ---
     [
         'label' => 'HRD IR',
         'permission' => ['hr_connect_ir'],
         'menu' => [
             [
                 'path' => 'hr-connect/dept-hrd/shift-out-karyawan',
-                'label' => 'Shift Out Karyawan',
+                'label' => 'Master Karyawan Aktif', // SOLUSI: Ganti nama agar HRD paham ini cuma untuk lihat (Read-Only)
                 'permission' => 'hr_connect_ir',
-                'icon' => 'mdi-arrow-right',
+                'icon' => 'mdi-account-group', // Icon grup karyawan
                 'submenu' => [],
             ],
-        ],
-    ],
-    [
-        'label' => '',
-        'permission' => ['hr_connect_ir'],
-        'menu' => [
             [
                 'path' => 'hr-connect/dept-hrd/karyawan-keluar',
-                'label' => 'Karyawan Keluar',
+                'label' => 'Finalisasi Offboarding', // SOLUSI: Menggunakan istilah profesional
                 'permission' => 'hr_connect_ir',
-                'icon' => 'mdi-account-off',
+                'icon' => 'mdi-shield-check', // Icon divalidasi/shield
                 'submenu' => [],
             ],
-        ],
-    ],
-    [
-        'label' => '',
-        'permission' => ['hr_connect_ir'],
-        'menu' => [
             [
                 'path' => 'hr-connect/dept-hrd/pemulihan-data',
                 'label' => 'Pemulihan Data',
@@ -115,49 +114,34 @@ $menus = [
             ],
         ],
     ],
+
+    // --- REPORT & ANALYTICS ---
     [
-        'label' => '',
-        'permission' => ['hr_connect_ir'],
-        'menu' => [
-            [
-                'path' => 'hr-connect/dept-hrd/report-karyawan-keluar',
-                'label' => 'Report Karyawan Keluar',
-                'permission' => 'hr_connect_ir',
-                'icon' => 'mdi-file-document',
-                'submenu' => [],
-            ],
-        ],
-    ],
-    [
-        'label' => 'Report',
-        'permission' => ['hr_connect_report'],
+        'label' => 'Report & Master',
+        'permission' => ['hr_connect_report', 'hr_connect_master'],
         'menu' => [
             [
                 'path' => 'hr-connect/report/karyawan-masuk',
-                'label' => 'Karyawan Masuk',
+                'label' => 'Report Karyawan Masuk',
                 'permission' => 'hr_connect_report',
-                'icon' => 'mdi-file-document',
+                'icon' => 'mdi-file-document-outline',
                 'submenu' => [],
             ],
-        ],
-    ],
-    [
-        'label' => '',
-        'permission' => ['hr_connect_report'],
-        'menu' => [
             [
                 'path' => 'hr-connect/report/karyawan-keluar',
-                'label' => 'Karyawan Keluar',
+                'label' => 'Report Karyawan Keluar',
                 'permission' => 'hr_connect_report',
-                'icon' => 'mdi-file-document',
+                'icon' => 'mdi-file-document-outline',
                 'submenu' => [],
             ],
-        ],
-    ],
-    [
-        'label' => '',
-        'permission' => ['hr_connect_report'],
-        'menu' => [
+            // Memindahkan report HRD ke dalam grup ini biar nyatu
+            [
+                'path' => 'hr-connect/dept-hrd/report-karyawan-keluar',
+                'label' => 'Report HRD (Finalisasi)',
+                'permission' => 'hr_connect_ir',
+                'icon' => 'mdi-folder-account',
+                'submenu' => [],
+            ],
             [
                 'path' => 'hr-connect/report/kalender-karyawan',
                 'label' => 'Kalender Karyawan',
@@ -167,27 +151,14 @@ $menus = [
             ],
         ],
     ],
-    $isAdminAllowed
-        ? [
-            'label' => 'Admin',
-            'permission' => ['hr_connect_admin'],
-            'menu' => [
-                [
-                    'path' => 'hr-connect/dept-adm/data-karyawan',
-                    'label' => 'Data Karyawan',
-                    'permission' => 'hr_connect_admin',
-                    'icon' => 'mdi-account-details',
-                    'submenu' => [],
-                ],
-            ],
-        ]
-        : [],
 ];
 
-?>
-<x-templates.velzon-hs.base :nameIcon="'user'" :menus="json_encode(array_filter($menus))">
-    <x-slot name="title">HRConnect</x-slot>
+// array_filter memastikan kalau ada elemen array kosong (seperti Admin Dept jika user bukan admin) tidak ikut terender
+$menus = array_values(array_filter($menus));
 
+?>
+<x-templates.velzon-hs.base :nameIcon="'user'" :menus="json_encode($menus)">
+    <x-slot name="title">HRConnect</x-slot>
 
     {{-- Ini kontennya --}}
     @yield('content')

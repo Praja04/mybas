@@ -17,17 +17,27 @@ Route::middleware(['auth', 'rules'])->group(function () {
             Route::delete('/{id}', 'HRConnect\MastersAdminController@destroy');
         });
 
-        // Masters User Loker
-        Route::prefix('/masters/loker-user')->group(function () {
-            Route::get('/', 'HRConnect\LokerMasterUserController@index');
-            Route::get('/getData', 'HRConnect\LokerMasterUserController@getData');
-            Route::post('/store', 'HRConnect\LokerMasterUserController@store');
-            Route::get('/show/{id}', 'HRConnect\LokerMasterUserController@show');
-            Route::get('/get-by-nik/{nik}', 'HRConnect\LokerMasterUserController@getByNik');
-            Route::post('/{id}', 'HRConnect\LokerMasterUserController@update');
-            Route::delete('/{id}', 'HRConnect\LokerMasterUserController@destroy');
-            Route::delete('/delete-by-nik/{nik}', 'HRConnect\LokerMasterUserController@destroyByNik');
+        // Masters Reason
+        Route::prefix('masters/reason')->group(function () {
+            Route::get('/', 'HRConnect\MasterReasonController@index');
+            Route::get('/data', 'HRConnect\MasterReasonController@getData')->name('master-reason.getData');
+            Route::post('/store', 'HRConnect\MasterReasonController@storeOrUpdate');
+            Route::post('/status', 'HRConnect\MasterReasonController@updateStatus');
+            // Tambahan Route buat Upload Excel:
+            Route::post('/upload-excel', 'HRConnect\MasterReasonController@uploadExcel')->name('master-reason.uploadExcel');
         });
+
+        // Masters User Loker
+        // Route::prefix('/masters/loker-user')->group(function () {
+        //     Route::get('/', 'HRConnect\LokerMasterUserController@index');
+        //     Route::get('/getData', 'HRConnect\LokerMasterUserController@getData');
+        //     Route::post('/store', 'HRConnect\LokerMasterUserController@store');
+        //     Route::get('/show/{id}', 'HRConnect\LokerMasterUserController@show');
+        //     Route::get('/get-by-nik/{nik}', 'HRConnect\LokerMasterUserController@getByNik');
+        //     Route::post('/{id}', 'HRConnect\LokerMasterUserController@update');
+        //     Route::delete('/{id}', 'HRConnect\LokerMasterUserController@destroy');
+        //     Route::delete('/delete-by-nik/{nik}', 'HRConnect\LokerMasterUserController@destroyByNik');
+        // });
 
         // Dep. Admin
         // [x] Bebenah route Admin Department
@@ -38,7 +48,9 @@ Route::middleware(['auth', 'rules'])->group(function () {
             Route::get('/getDataCart', 'HRConnect\AdminKaryawanController@getDataCart');
             Route::post('/checkout', 'HRConnect\AdminKaryawanController@checkout');
             Route::post('/setGroupCode', 'HRConnect\AdminKaryawanController@setGroupCode');
+            Route::get('/template-plot-karyawan', 'HRConnect\AdminKaryawanController@templatePlotKaryawan')->name('hr-connect.admin.template-masuk');
             Route::post('/uploadExcelKaryawanMasuk', 'HRConnect\AdminKaryawanController@uploadExcelKaryawanMasuk');
+            Route::get('/template-keluar', 'HRConnect\AdminKaryawanController@templateCheckoutKaryawan')->name('hr-connect.admin.template-keluar');
             Route::post('/uploadExcelKaryawanKeluar', 'HRConnect\AdminKaryawanController@uploadExcelKaryawanKeluar');
         });
         // Dep. HRD IR
@@ -52,6 +64,7 @@ Route::middleware(['auth', 'rules'])->group(function () {
             Route::post('/karyawan-keluar/update', 'HRConnect\HrdController@update');
             Route::post('/karyawan-keluar/uploadExcel', 'HRConnect\HrdController@uploadExcel');
             Route::get('/report-karyawan-keluar', 'HRConnect\HrdController@report');
+            Route::get('/report-karyawan-keluar/getFilterBulanTahunFinalisasi', 'HRConnect\HrdController@getFilterBulanTahunFinalisasi')->name('hr-connect.hrd.getFilterBulanTahunFinalisasi');
             Route::get('/report-karyawan-keluar/getDataReport', 'HRConnect\HrdController@getDataReport');
         });
         // Dep. GA
@@ -73,12 +86,12 @@ Route::middleware(['auth', 'rules'])->group(function () {
                 Route::post('/updateData', 'HRConnect\GAGoodieApdController@updateData');
                 Route::post('/confirmAll', 'HRConnect\GAGoodieApdController@confirmAll');
                 Route::post('/updateDataDitolak', 'HRConnect\GAGoodieApdController@updateDataDitolak');
-                Route::get('/', 'HRConnect\GAGoodieApdController@index');
+                Route::get('/', 'HRConnect\GAGoodieApdController@index')->name('ga.perlengkapan-goodie-apd');
             });
 
             // Karyawan Keluar
             Route::prefix('/karyawan-keluar')->group(function () {
-                Route::get('/', 'HRConnect\GAShiftOutController@index');
+                Route::get('/', 'HRConnect\GAShiftOutController@index')->name('ga.karyawan-keluar');
                 Route::get('/getData', 'HRConnect\GAShiftOutController@getData');
                 Route::post('/update', 'HRConnect\GAShiftOutController@update');
                 Route::post('/export', 'HRConnect\GAShiftOutController@exportExcel');
@@ -89,6 +102,8 @@ Route::middleware(['auth', 'rules'])->group(function () {
         Route::prefix('/report')->group(function () {
             Route::get('/getDataKaryawanMasuk', 'HRConnect\ReportKaryawanMasukController@getData');
             Route::get('/getDataKaryawanKeluar', 'HRConnect\ReportKaryawanKeluarController@getData');
+            Route::get('/getFilterBulanTahunIn', 'HRConnect\ReportKaryawanMasukController@getFilterBulanTahun')->name('hr-connect.reportKaryawanMasuk.getFilterBulanTahunIn');
+            Route::get('/getFilterBulanTahunOut', 'HRConnect\ReportKaryawanKeluarController@getFilterBulanTahun')->name('hr-connect.reportKaryawanKeluar.getFilterBulanTahunOut');
             Route::get('/karyawan-masuk', 'HRConnect\ReportKaryawanMasukController@index');
             Route::get('/karyawan-keluar', 'HRConnect\ReportKaryawanKeluarController@index');
             Route::get('/kalender-karyawan', 'HRConnect\ReportKalenderKaryawanController@index');

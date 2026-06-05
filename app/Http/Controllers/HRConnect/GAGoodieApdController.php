@@ -1,99 +1,138 @@
 <?php
 namespace App\Http\Controllers\HRConnect;
 
-use App\HrGoodieApd;
 use App\HrKaryawan;
 use App\Http\Controllers\Controller;
 use App\Jobs\HRConnect\GoodieNotify;
 use App\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Yajra\DataTables\DataTables;
 
 class GAGoodieApdController extends Controller
 {
-    public function getData()
-    {
-        $goodies = HrKaryawan::where('is_goobag', 'N')
-            ->whereDate('tanggal_masuk', '>', '2024-10-01')
-            ->select('tanggal_masuk', DB::raw('count(*) as count'))
-            ->groupBy('tanggal_masuk');
-
-        return DataTables::of($goodies)->make(true);
-    }
-
     public function index()
     {
         return view('hr-connect.ga.prepare-goodie-apd');
     }
 
+    public function getData()
+    {
+        $goodies = HrKaryawan::select('tanggal_masuk', DB::raw('count(id) as count'))
+            ->where([
+                'in_kode_group' => 'Y',
+                'in_complete'   => 'Y',
+                'active'        => 'Y',
+                'p_in'          => 'Y',
+                'is_goobag'     => 'N',
+                'is_excuse_out' => 'N',
+                'p_no'          => 'N',
+                'shutdown'      => 'N',
+            ])
+            ->whereNotNull('tanggal_masuk')
+            ->where('tanggal_masuk', '!=', '0000-00-00')
+            ->groupBy('tanggal_masuk')
+            ->orderBy('tanggal_masuk', 'desc')
+            ->get();
+
+        return DataTables::of($goodies)->make(true);
+    }
+
     public function updateData(Request $req)
     {
-        $id        = $req->id;
-        $confirm   = $req->confirm;
         $tgl_masuk = $req->tgl_masuk;
+        $count     = $req->jumlah;
 
-        HrKaryawan::where('tanggal_masuk', $tgl_masuk)
-            ->update([
-                'is_goobag' => 'Y',
+        if (empty($tgl_masuk)) {
+            return response()->json(['success' => false, 'message' => 'Tanggal masuk tidak valid.'], 400);
+        }
+
+        DB::beginTransaction();
+
+        try {
+            HrKaryawan::where('tanggal_masuk', $tgl_masuk)
+                ->where([
+                    'in_kode_group' => 'Y',
+                    'in_complete'   => 'Y',
+                    'is_goobag'     => 'N',
+                    'is_excuse_out' => 'N',
+                    'p_no'          => 'N',
+                    'active'        => 'Y',
+                    'shutdown'      => 'N',
+                ])
+                ->lockForUpdate()
+                ->update([
+                    'is_goobag' => 'Y',
+                ]);
+
+            $email_hr = User::whereHas('group.permissions', function ($query) {
+                $query->where('codename', 'hr_connect_notified_in');
+            })
+                ->whereNotNull('email')
+                ->pluck('email')
+                ->unique()
+                ->toArray();
+
+            DB::commit();
+
+            if (! empty($email_hr)) {
+                GoodieNotify::dispatch($email_hr, $count, $tgl_masuk);
+            }
+
+            return response()->json([
+                'success' => true,
+                'msg'     => 'Proses konfirmasi berhasil dan email notifikasi sedang dikirim!',
             ]);
 
-        $count = $req->jumlah;
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            Log::error('GA Goodie Update Error: ' . $e->getMessage());
 
-        $email_hr_karyawan = User::whereHas('group.permissions', function ($query) {
-            $query->where('codename', 'hr_connect_notified_in');
-        })->select('email')
-            ->whereNotNull('email')
-            ->groupBy('email')
-            ->get();
-        $email = $email_hr_karyawan->first();
-        $to    = $email_hr_karyawan->pluck('email')->toArray();
-        GoodieNotify::dispatch($to, $count, $tgl_masuk);
-
-        return response()->json(['msg' => 'Data berhasil diperbarui!']);
+            return response()->json([
+                'success' => false,
+                'msg'     => 'Gagal memproses data. Terjadi kesalahan pada server.',
+            ], 500);
+        }
     }
 
     public function confirmAll(Request $req)
     {
-        try {
+        DB::beginTransaction();
 
-            HrKaryawan::where('is_goobag', 'N')
+        try {
+            HrKaryawan::where([
+                'in_kode_group' => 'Y',
+                'in_complete'   => 'Y',
+                'is_goobag'     => 'N',
+                'is_excuse_out' => 'N',
+                'p_no'          => 'N',
+                'active'        => 'Y',
+
+                'shutdown'      => 'N',
+            ])
+                ->whereNotNull('tanggal_masuk')
+                ->where('tanggal_masuk', '!=', '0000-00-00')
+                ->lockForUpdate()
                 ->update([
                     'is_goobag' => 'Y',
                 ]);
+
+            DB::commit();
 
             return response()->json([
                 'success' => true,
                 'message' => 'Seluruh persiapan Goodie Bag berhasil dikonfirmasi!',
             ]);
-        } catch (\Exception $e) {
+
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            Log::error('GA Goodie Confirm All Error: ' . $e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal melakukan konfirmasi data: ' . $e->getMessage(),
+                'message' => 'Gagal melakukan konfirmasi data massal.',
             ], 500);
         }
     }
-
-    // public function updateDataDitolak(Request $req)
-    // {
-    //     $id      = $req->id;
-    //     $confirm = $req->confirm;
-
-    //     HrGoodieApd::where('id', $id)
-    //         ->update([
-    //             'confirmed' => $confirm,
-    //         ]);
-
-    //     return response()->json(['msg' => 'Data berhasil diperbarui!']);
-    // }
-
-    // public function remain(Request $req)
-    // {
-    //     $remain = HrGoodieApd::where([
-    //         'tgl_masuk' => $req->tgl_masuk,
-    //         'confirmed' => 'Y',
-    //     ])->sum('jumlah_orang');
-
-    //     return $remain;
-    // }
 }
