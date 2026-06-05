@@ -1,9 +1,9 @@
 <?php
 
+use App\Http\Controllers\BarrierGate\ParkingTapController;
+use App\Http\Controllers\TestController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Sigra\SioPollingController;
-use App\Http\Controllers\TestController;
 
 /*
 |--------------------------------------------------------------------------
@@ -22,3 +22,6 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
 
 // Route::get('/polling/sigra-sio', [SioPollingController::class, 'checkSio']);
 Route::get('/send-email', [TestController::class, 'sendEmail']);
+
+Route::post('/store-card', [ParkingTapController::class, 'storeCard']);
+Route::post('/parking-histories', [ParkingTapController::class, 'parkingHistory']);

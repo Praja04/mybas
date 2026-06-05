@@ -15,7 +15,7 @@ class CreateRfidCardsTable extends Migration
     {
         Schema::create('rfid_cards', function (Blueprint $table) {
             $table->id();
-            $table->string('sn_card')->unique();
+            $table->string('sn_card')->index();
             $table->timestamps();
         });
     }
