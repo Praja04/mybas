@@ -229,12 +229,18 @@ class LokerV2Controller extends Controller
                     ->orWhere('nama', 'LIKE', "%$search%");
             })->first();
 
+        $hris = Karyawan::where(function ($q) use ($search) {
+            $q->whereRaw("CAST(nik AS UNSIGNED) = CAST(? AS UNSIGNED)", [$search])
+                ->orWhere('nama', 'LIKE', "%$search%")
+                ->orWhere('cardnodevice', $search);
+        })->first();
+
         $dataPusat = null;
         try {
             $dataPusat = DB::connection('192.168.178.44-admin')
                 ->table('MSIDCARD')
                 ->select('NIK', 'EMPNM', 'DEPTID', 'CARDNODEVICE', 'RFID', 'FOTOBLOB', 'STATUS')
-                ->where(function ($q) use ($search, $lokerAktif) {
+                ->where(function ($q) use ($search, $lokerAktif, $hris) {
                     $q->whereRaw("CAST(NIK AS UNSIGNED) = CAST(? AS UNSIGNED)", [$search])
                         ->orWhere('EMPNM', 'LIKE', "%$search%")
                         ->orWhere('CARDNODEVICE', $search)
@@ -243,6 +249,10 @@ class LokerV2Controller extends Controller
                     if ($lokerAktif) {
                         $q->orWhereRaw("CAST(NIK AS UNSIGNED) = CAST(? AS UNSIGNED)", [$lokerAktif->nik]);
                     }
+
+                    if ($hris) {
+                        $q->orWhereRaw("CAST(NIK AS UNSIGNED) = CAST(? AS UNSIGNED)", [$hris->nik]);
+                    }
                 })
                 ->where('STATUS', 'X')
                 ->first();
@@ -250,28 +260,41 @@ class LokerV2Controller extends Controller
             Log::error("Koneksi DB Pusat Gagal: " . $e->getMessage());
         }
 
-        if (! $lokerAktif && ! $dataPusat) {
-            return response()->json(['success' => false, 'message' => 'Verifikasi gagal: Data karyawan tidak ditemukan. Pastikan kartu terdaftar atau NIK valid.']);
+        if (! $hris && $dataPusat && $dataPusat->NIK) {
+            $hris = Karyawan::whereRaw("CAST(nik AS UNSIGNED) = CAST(? AS UNSIGNED)", [$dataPusat->NIK])->first();
         }
 
-        $finalNIK = $dataPusat ? $dataPusat->NIK : ($lokerAktif->nik ?? $search);
-        $nama     = $dataPusat->EMPNM ?? ($lokerAktif->nama ?? 'Tidak dikenali');
-        $divisi   = $dataPusat->DEPTID ?? ($lokerAktif->divisi ?? '-');
-        $kategori = $lokerAktif ? $lokerAktif->kategori_karyawan : $this->getKategoriKaryawan($dataPusat);
+        if (! $lokerAktif && ! $hris && ! $dataPusat) {
+            return response()->json(['success' => false, 'message' => 'Verifikasi gagal: Data karyawan tidak ditemukan di sistem HRIS maupun Kartu. Pastikan NIK atau kartu terdaftar.']);
+        }
 
-        $gender          = null;
-        $isGenderEmpty   = true;
-        $isCategoryEmpty = true;
+        $finalNIK = $hris->nik ?? ($dataPusat->NIK ?? ($lokerAktif->nik ?? $search));
 
-        if ($lokerAktif) {
+        $nama = $hris->nama ?? ($dataPusat->EMPNM ?? ($lokerAktif->nama ?? 'Tidak dikenali'));
+
+        $divisi = $lokerAktif ? $lokerAktif->divisi : ($hris->kode_divisi ?? ($dataPusat->DEPTID ?? '-'));
+
+        $kategori = $lokerAktif ? $lokerAktif->kategori_karyawan : ($hris ? $this->getKategoriKaryawan($hris) : $this->getKategoriKaryawan($dataPusat));
+
+        $gender        = null;
+        $isGenderEmpty = true;
+
+        if ($hris && ! empty($hris->jenis_kelamin)) {
+            $jk = strtoupper(trim($hris->jenis_kelamin));
+            if ($jk === 'L' || $jk === 'P') {
+                $gender = $jk;
+            }
+        }
+
+        if (! $gender && $lokerAktif) {
             $gender = ($lokerAktif->kode_rak == 'LP') ? 'L' : (($lokerAktif->kode_rak == 'LW') ? 'P' : null);
-            if ($gender) {
-                $isGenderEmpty = false;
-            }
-            if ($kategori) {
-                $isCategoryEmpty = false;
-            }
         }
+
+        if ($gender) {
+            $isGenderEmpty = false;
+        }
+
+        $isCategoryEmpty = $kategori ? false : true;
 
         return response()->json([
             'success' => true,
@@ -352,512 +375,597 @@ class LokerV2Controller extends Controller
         return response()->json(['success' => false, 'message' => 'Data alokasi loker tidak ditemukan.']);
     }
 
+    public function getDivisiList($kategori)
+    {
+        // $divisi = DB::table('loker_penghuni')
+        //     ->whereNotNull('divisi')
+        //     ->where('divisi', '!=', '')
+        //     ->where('divisi', '!=', '-')
+        //     // ->where('is_active', 'Y')
+        //     ->select('divisi')
+        //     ->distinct()
+        //     ->orderBy('divisi', 'ASC')
+        //     ->pluck('divisi');
+        if ($kategori === 'non_staff') {
+            $data = [
+                ['value' => 'PRD BAS', 'label' => 'PRD (Produksi)'],
+                ['value' => 'QCB BAS', 'label' => 'QC (Quality Control)'],
+            ];
+        } elseif ($kategori === 'mitra_kerja') {
+            $data = [
+                ['value' => 'HELPER PRD - FO', 'label' => 'PRD - FORTUNA (FO)'],
+                ['value' => 'HELPER PRD - KMJ', 'label' => 'PRD - KMJ'],
+                ['value' => 'HELPER QC - KMJ', 'label' => 'QC - KMJ'],
+            ];
+        } else {
+            $data = [];
+        }
+
+        return response()->json($data);
+    }
+
     public function apiSuggestLoker(Request $request)
     {
-        $prefix = $this->getPrefix($request->gender);
+        $prefix   = $this->getPrefix($request->gender);
+        $kategori = trim(strtolower($request->kategori ?? ''));
+        $divisi   = trim(strtoupper($request->divisi ?? ''));
+        $nik      = trim((string) $request->nik ?? '');
 
-        $kategori = $request->kategori;
-
-        $suggest = Rak::where('kode_rak', $prefix)
-            ->where('is_active', 'Y')
-            ->where(function ($q) {
-                $q->whereNull('keterangan_kondisi')
-                    ->orWhere('keterangan_kondisi', 'NOT LIKE', '%Pemeliharaan%')
-                    ->orWhere('keterangan_kondisi', 'NOT LIKE', '%Rusak%');
-            })
-            ->where(function ($q) use ($kategori, $prefix) {
-                if ($kategori === 'staff') {
-                    $q->whereNotExists(function ($sq) use ($prefix) {
-                        $sq->select(DB::raw(1))
-                            ->from('loker_penghuni')
-                            ->whereRaw('loker_penghuni.no_loker = loker_rak.no_loker')
-                            ->where('loker_penghuni.kode_rak', $prefix)
-                            ->where('loker_penghuni.is_active', 'Y');
-                    });
-                } else {
-                    $q->whereRaw("(SELECT COUNT(*) FROM loker_penghuni
-                              WHERE no_loker = loker_rak.no_loker
-                              AND kode_rak = ?
-                              AND is_active = 'Y') < 2", [$prefix])
-                        ->whereNotExists(function ($sq) use ($prefix) {
-                            $sq->select(DB::raw(1))
-                                ->from('loker_penghuni')
-                                ->whereRaw('loker_penghuni.no_loker = loker_rak.no_loker')
-                                ->where('loker_penghuni.kode_rak', $prefix)
-                                ->where('loker_penghuni.is_active', 'Y')
-                                ->where('loker_penghuni.kategori_karyawan', 'staff');
-                        });
-                }
-            })
-            ->orderByRaw('CAST(no_loker AS UNSIGNED) ASC')
-            ->first();
-
-        return response()->json([
-            'status'            => 'success',
-            'rekomendasi_loker' => $suggest ? $suggest->no_loker : 'penuh',
-        ]);
-    }
-
-    public function getAvailableLockers($gender, $kategori = 'non_staff')
-    {
-        $prefix = $this->getPrefix($gender);
-
-        $available = DB::table('loker_rak')
-            ->where('kode_rak', $prefix)
-            ->where('is_active', 'Y')
-            ->where(function ($q) use ($prefix, $kategori) {
-                $subCount = "SELECT COUNT(*) FROM loker_penghuni
-                         WHERE loker_penghuni.no_loker = loker_rak.no_loker
-                         AND loker_penghuni.kode_rak = '$prefix'
-                         AND loker_penghuni.is_active = 'Y'";
-
-                $hasStaff = "SELECT COUNT(*) FROM loker_penghuni
-                WHERE loker_penghuni.no_loker = loker_rak.no_loker
-                AND loker_penghuni.kode_rak = '$prefix'
-                AND loker_penghuni.is_active = 'Y'
-                AND loker_penghuni.kategori_karyawan = 'staff'";
-
-                if ($kategori == 'staff') {
-                    $q->whereRaw("($subCount) = 0");
-                } else {
-                    $q->whereRaw("($subCount) < 2")
-                        ->whereRaw("($hasStaff) = 0");
-                }
-            })
-            ->orderByRaw('CAST(no_loker AS UNSIGNED) ASC')
-            ->get(['no_loker']);
-
-        return response()->json($available);
-    }
-
-    public function getDetailLoker($gender, $no_loker)
-    {
-        $prefix = $this->getPrefix($gender);
-
-        $unit = DB::table('loker_rak')
-            ->where('kode_rak', $prefix)
-            ->where('no_loker', $no_loker)
-            ->first();
-
-        $statusUnit = 'aktif';
-
-        if ($unit && $unit->is_active === 'N') {
-            $statusUnit = 'rusak';
+        $currentLoker = null;
+        if ($nik) {
+            $currentLoker = DB::table('loker_penghuni')
+                ->where('nik', $nik)
+                ->where('is_active', 'Y')
+                ->value('no_loker');
         }
 
-        $penghuni = DB::table('loker_penghuni')
-            ->where('kode_rak', $prefix)
-            ->where('no_loker', $no_loker)
-            ->whereNull('tgl_keluar')
+        $query = DB::table('loker_rak')
+            ->select('loker_rak.no_loker')
+            ->where('loker_rak.kode_rak', $prefix)
+            ->where('loker_rak.is_active', 'Y')
+        ->where(function ($q) {
+            $q->whereNull('loker_rak.keterangan_kondisi')
+                ->orWhere('loker_rak.keterangan_kondisi', '')
+                ->orWhere(function ($q2) {
+                    $q2->where('loker_rak.keterangan_kondisi', 'NOT LIKE', '%Pemeliharaan%')
+                        ->where('loker_rak.keterangan_kondisi', 'NOT LIKE', '%Rusak%');
+                });
+        });
+
+    if ($currentLoker) {
+        $query->where('loker_rak.no_loker', '!=', $currentLoker);
+    }
+
+    $maxCap = ($kategori === 'staff') ? 1 : 2;
+
+    $query->whereRaw("
+        (SELECT COUNT(id) FROM loker_penghuni
+         WHERE loker_penghuni.no_loker = loker_rak.no_loker
+         AND loker_penghuni.kode_rak = loker_rak.kode_rak
+         AND loker_penghuni.is_active = 'Y'
+         " . ($nik ? "AND nik != '$nik'" : "") . "
+        ) < $maxCap
+    ");
+
+    $query->whereRaw("
+        (SELECT COUNT(id) FROM loker_penghuni
+         WHERE loker_penghuni.no_loker = loker_rak.no_loker
+         AND loker_penghuni.kode_rak = loker_rak.kode_rak
+         AND loker_penghuni.is_active = 'Y'
+         " . ($nik ? "AND nik != '$nik'" : "") . "
+         AND (
+             TRIM(LOWER(kategori_karyawan)) != '$kategori'
+             OR TRIM(UPPER(divisi)) != '$divisi'
+         )
+        ) = 0
+    ");
+
+    // Sapu Bersih dari nomor terkecil
+    $suggest = $query->orderByRaw('CAST(no_loker AS UNSIGNED) ASC')->first();
+
+    return response()->json([
+        'status'            => 'success',
+        'rekomendasi_loker' => $suggest ? $suggest->no_loker : 'penuh',
+    ]);
+}
+
+public function getAvailableLockers(Request $request, $gender, $kategori = 'non_staff')
+    {
+    $prefix   = $this->getPrefix($gender);
+    $kategori = trim(strtolower($kategori));
+    $divisi   = trim(strtoupper($request->query('divisi') ?? ''));
+    $nik      = trim((string) $request->query('nik') ?? '');
+
+    $currentLoker = null;
+    if ($nik) {
+        $currentLoker = DB::table('loker_penghuni')
+            ->where('nik', $nik)
             ->where('is_active', 'Y')
-            ->orderBy('id', 'asc')
-            ->select('id', 'nik', 'nama', 'divisi', 'kategori_karyawan', 'tgl_masuk')
-            ->get()
-            ->map(function ($item) {
-                if (empty($item->divisi) || $item->divisi == '-') {
-                    $hris = Karyawan::where('nik', $item->nik)->first();
+            ->value('no_loker');
+    }
 
-                    if ($hris && ! empty($hris->kode_divisi)) {
-                        $item->divisi = $hris->kode_divisi;
-                    } else {
-                        try {
-                            $pusat = DB::connection('192.168.178.44-admin')
-                                ->table('MSIDCARD')
-                                ->where('NIK', $item->nik)
-                                ->select('DEPTID')
-                                ->first();
+    $query = DB::table('loker_rak')
+        ->select('no_loker')
+        ->where('kode_rak', $prefix)
+        ->where('is_active', 'Y')
+        ->where(function ($q) {
+            $q->whereNull('keterangan_kondisi')
+                ->orWhere('keterangan_kondisi', '')
+                ->orWhere(function ($q2) {
+                    $q2->where('keterangan_kondisi', 'NOT LIKE', '%Pemeliharaan%')
+                        ->where('keterangan_kondisi', 'NOT LIKE', '%Rusak%');
+                });
+        });
 
-                            $item->divisi = $pusat->DEPTID ?? '-';
-                        } catch (\Exception $e) {
-                            $item->divisi = '-';
-                        }
+    if ($currentLoker) {
+        $query->where('no_loker', '!=', $currentLoker);
+    }
+
+    // Filter Kapasitas & Kriteria (Sama persis dengan apiSuggestLoker)
+    $maxCap = ($kategori === 'staff') ? 1 : 2;
+    $query->whereRaw("(SELECT COUNT(id) FROM loker_penghuni WHERE no_loker = loker_rak.no_loker AND kode_rak = loker_rak.kode_rak AND is_active = 'Y' " . ($nik ? "AND nik != '$nik'" : "") . ") < $maxCap");
+
+    $query->whereRaw("(SELECT COUNT(id) FROM loker_penghuni WHERE no_loker = loker_rak.no_loker AND kode_rak = loker_rak.kode_rak AND is_active = 'Y' " . ($nik ? "AND nik != '$nik'" : "") . " AND (TRIM(LOWER(kategori_karyawan)) != '$kategori' OR TRIM(UPPER(divisi)) != '$divisi')) = 0");
+
+    $available = $query->orderByRaw('CAST(no_loker AS UNSIGNED) ASC')->get();
+
+    return response()->json($available);
+}
+
+public function getDetailLoker($gender, $no_loker)
+    {
+    $prefix = $this->getPrefix($gender);
+
+    $unit = DB::table('loker_rak')
+        ->where('kode_rak', $prefix)
+        ->where('no_loker', $no_loker)
+        ->first();
+
+    $statusUnit = 'aktif';
+
+    if ($unit && $unit->is_active === 'N') {
+        $statusUnit = 'rusak';
+    }
+
+    $penghuni = DB::table('loker_penghuni')
+        ->where('kode_rak', $prefix)
+        ->where('no_loker', $no_loker)
+        ->whereNull('tgl_keluar')
+        ->where('is_active', 'Y')
+        ->orderBy('id', 'asc')
+        ->select('id', 'nik', 'nama', 'divisi', 'kategori_karyawan', 'tgl_masuk')
+        ->get()
+        ->map(function ($item) {
+            if (empty($item->divisi) || $item->divisi == '-') {
+                $hris = Karyawan::where('nik', $item->nik)->first();
+
+                if ($hris && ! empty($hris->kode_divisi)) {
+                    $item->divisi = $hris->kode_divisi;
+                } else {
+                    try {
+                        $pusat = DB::connection('192.168.178.44-admin')
+                            ->table('MSIDCARD')
+                            ->where('NIK', $item->nik)
+                            ->select('DEPTID')
+                            ->first();
+
+                        $item->divisi = $pusat->DEPTID ?? '-';
+                    } catch (\Exception $e) {
+                        $item->divisi = '-';
                     }
                 }
-
-                $item->nik       = $item->nik ?? '-';
-                $item->nama      = $item->nama ?? '-';
-                $item->kategori  = $item->kategori_karyawan ? str_replace('_', ' ', strtoupper($item->kategori_karyawan)) : '-';
-                $item->tgl_masuk = $item->tgl_masuk ? date('d-m-Y', strtotime($item->tgl_masuk)) : '-';
-
-                return $item;
-            });
-
-        return response()->json([
-            'status_unit' => $statusUnit,
-            'data'        => $penghuni,
-        ]);
-    }
-
-    public function updateStatus(Request $request)
-    {
-        $request->validate([
-            'no_loker' => 'required',
-            'status'   => 'required|in:aktif,rusak',
-            'gender'   => 'required|in:L,P',
-            'alasan'   => 'required_if:status,rusak|nullable|string|max:255',
-        ]);
-
-        $prefix  = $this->getPrefix($request->gender);
-        $status  = $request->status;
-        $noLoker = trim($request->no_loker);
-        $tanggal = date('d-m-Y H:i');
-
-        if ($status == 'rusak') {
-            $keterangan = "DALAM PEMELIHARAAN";
-
-            $alasanRaw = ucwords(strtolower($request->alasan));
-            $catatan   = "Pemeliharaan ($alasanRaw - Dilaporkan: $tanggal)";
-
-            DB::table('loker_rak')
-                ->where('kode_rak', $prefix)
-                ->where('no_loker', $noLoker)
-                ->update([
-                    'is_active'          => 'N',
-                    'keterangan_kondisi' => $keterangan,
-                    'catatan_admin'      => $catatan,
-                    'updated_at'         => now(),
-                ]);
-        } else {
-            DB::table('loker_rak')
-                ->where('kode_rak', $prefix)
-                ->where('no_loker', $noLoker)
-                ->update([
-                    'is_active'  => 'Y',
-                    'updated_at' => now(),
-                ]);
-
-            $this->updateKeteranganRak($prefix, $noLoker);
-        }
-
-        return response()->json(['status' => 'success', 'message' => $status == 'rusak' ? 'Loker berhasil ditandai dalam status pemeliharaan.' : 'Loker telah diaktifkan dan siap dialokasikan.']);
-    }
-
-    public function tarikKunci(Request $request)
-    {
-        $request->validate([
-            'id'     => 'required',
-            'alasan' => 'required|string|max:255',
-        ]);
-
-        return DB::transaction(function () use ($request) {
-            $p = DB::table('loker_penghuni')->where('id', $request->id)->first();
-            if (! $p) {
-                return response()->json(['status' => 'error', 'message' => 'Data alokasi tidak ditemukan.'], 422);
             }
 
-            DB::table('loker_penghuni')
-                ->where('id', $request->id)
-                ->update([
-                    'is_active'  => 'N',
-                    'tgl_keluar' => now(),
-                    'updated_at' => now(),
-                ]);
+            $item->nik       = $item->nik ?? '-';
+            $item->nama      = $item->nama ?? '-';
+            $item->kategori  = $item->kategori_karyawan ? str_replace('_', ' ', strtoupper($item->kategori_karyawan)) : '-';
+            $item->tgl_masuk = $item->tgl_masuk ? date('d-m-Y', strtotime($item->tgl_masuk)) : '-';
 
-            $sisaPenghuni = DB::table('loker_penghuni')
-                ->where('no_loker', $p->no_loker)
-                ->where('kode_rak', $p->kode_rak)
-                ->where('is_active', 'Y')
-                ->exists();
-
-            $alasan  = ucwords($request->alasan);
-            $tanggal = date('d-m-Y');
-
-            if (! $sisaPenghuni) {
-                DB::table('loker_rak')
-                    ->where('kode_rak', $p->kode_rak)
-                    ->where('no_loker', $p->no_loker)
-                    ->update([
-                        'keterangan_kondisi' => 'Pengosongan Loker: ' . $alasan,
-                        'catatan_admin'      => "Fasilitas dicabut pada: $tanggal",
-                        'updated_at'         => now(),
-                    ]);
-            } else {
-                DB::table('loker_rak')
-                    ->where('kode_rak', $p->kode_rak)
-                    ->where('no_loker', $p->no_loker)
-                    ->update([
-                        'catatan_admin' => "Pencabutan sebagian fasilitas ($alasan) - $tanggal",
-                        'updated_at'    => now(),
-                    ]);
-            }
-
-            DB::table('loker_transaksi')->insert([
-                'nik'            => $p->nik ?? '-',
-                'nama'           => ucwords(strtolower($p->nama)),
-                'kode_rak'       => $p->kode_rak,
-                'no_loker'       => $p->no_loker,
-                'tipe_transaksi' => 'KELUAR',
-                'operator'       => auth()->user()->name ?? 'Sistem',
-                'keterangan'     => "Pencabutan Fasilitas: " . $alasan, // Penjelasan masuk sini
-                'created_at'     => now(),
-            ]);
-
-            return response()->json(['status' => 'success']);
+            return $item;
         });
-    }
 
-    private function updateKeteranganRak($prefix, $noLoker)
+    return response()->json([
+        'status_unit' => $statusUnit,
+        'data'        => $penghuni,
+    ]);
+}
+
+public function updateStatus(Request $request)
     {
-        $allPenghuni = DB::table('loker_penghuni')
-            ->where('kode_rak', $prefix)
-            ->where('no_loker', $noLoker)
-            ->where('is_active', 'Y')
-            ->orderBy('id', 'asc')
-            ->get();
+    $request->validate([
+        'no_loker' => 'required',
+        'status'   => 'required|in:aktif,rusak',
+        'gender'   => 'required|in:L,P',
+        'alasan'   => 'required_if:status,rusak|nullable|string|max:255',
+    ]);
 
-        if ($allPenghuni->isEmpty()) {
-            $keterangan = "Tersedia";
-            $catatan    = null;
-        } else {
-            $keterangan = "Telah Dialokasikan";
-            $catatan    = null;
-        }
+    $prefix  = $this->getPrefix($request->gender);
+    $status  = $request->status;
+    $noLoker = trim($request->no_loker);
+    $tanggal = date('d-m-Y H:i');
+
+    if ($status == 'rusak') {
+        $keterangan = "DALAM PEMELIHARAAN";
+
+        $alasanRaw = ucwords(strtolower($request->alasan));
+        $catatan   = "Pemeliharaan ($alasanRaw - Dilaporkan: $tanggal)";
 
         DB::table('loker_rak')
             ->where('kode_rak', $prefix)
             ->where('no_loker', $noLoker)
             ->update([
+                'is_active'          => 'N',
                 'keterangan_kondisi' => $keterangan,
                 'catatan_admin'      => $catatan,
                 'updated_at'         => now(),
             ]);
-    }
-
-    public function store(Request $request)
-    {
-        $this->permission('loker_operator');
-
-        $request->validate([
-            'nik'      => 'required',
-            'no_loker' => 'required',
-            'gender'   => 'required',
-        ]);
-
-        $nikInput = trim((string) $request->nik);
-        $prefix   = $this->getPrefix($request->gender);
-        $operator = auth()->user()->name ?? 'Sistem';
-
-        $dataExternal = null;
-        try {
-            $dataExternal = DB::connection('192.168.178.44-admin')
-                ->table('MSIDCARD')
-                ->select('NIK', 'EMPNM', 'DEPTID', 'TYPECARD')
-                ->whereRaw("CAST(NIK AS UNSIGNED) = CAST(? AS UNSIGNED)", [$nikInput])
-                ->where('STATUS', 'X')
-                ->first();
-        } catch (\Exception $e) {
-            Log::error("Koneksi DB Pusat Gagal: " . $e->getMessage());
-        }
-
-        if ($dataExternal) {
-            $nikFix       = $dataExternal->NIK;
-            $namaKaryawan = $dataExternal->EMPNM;
-            $divisi       = $dataExternal->DEPTID;
-            $kategori     = $request->kategori_karyawan ?? (($dataExternal->TYPECARD == 1) ? 'mitra_kerja' : 'non_staff');
-        } elseif ($request->nama) {
-            $nikFix       = $nikInput;
-            $namaKaryawan = $request->nama;
-            $divisi       = $request->dept;
-            $kategori     = $request->kategori_karyawan ?? 'non_staff';
-        } else {
-            return response()->json(['status' => 'error', 'message' => "Verifikasi gagal: Data karyawan tidak ditemukan."], 422);
-        }
-
-        return DB::transaction(function () use ($request, $nikFix, $namaKaryawan, $divisi, $kategori, $prefix, $operator) {
-
-            $kondisiRak = DB::table('loker_rak')
-                ->where(['kode_rak' => $prefix, 'no_loker' => $request->no_loker])
-                ->first();
-
-            if ($kondisiRak && $kondisiRak->is_active === 'N') {
-                return response()->json(['status' => 'error', 'message' => "Penempatan gagal! Loker nomor {$request->no_loker} berstatus: " . ($kondisiRak->keterangan_kondisi ?? 'DALAM PEMELIHARAAN')], 422);
-            }
-
-            if ($kategori === 'staff') {
-                $isOccupied = DB::table('loker_penghuni')
-                    ->where(['kode_rak' => $prefix, 'no_loker' => $request->no_loker, 'is_active' => 'Y'])
-                    ->where('nik', '!=', $nikFix)
-                    ->exists();
-
-                if ($isOccupied) {
-                    return response()->json(['status' => 'error', 'message' => 'Kapasitas loker khusus Staff telah terpenuhi!'], 422);
-                }
-            }
-
-            $lokerLama = DB::table('loker_penghuni')
-                ->where('is_active', 'Y')
-                ->whereRaw("CAST(nik AS UNSIGNED) = CAST(? AS UNSIGNED)", [$nikFix])
-                ->first();
-
-            if ($lokerLama) {
-                DB::table('loker_penghuni')->where('id', $lokerLama->id)->update([
-                    'is_active'  => 'N',
-                    'tgl_keluar' => now(),
-                    'updated_at' => now(),
-                ]);
-
-                // KEMBALI KE ENUM: 'PINDAH'
-                DB::table('loker_transaksi')->insert([
-                    'nik'            => $lokerLama->nik,
-                    'nama'           => $namaKaryawan,
-                    'kode_rak'       => $lokerLama->kode_rak,
-                    'no_loker'       => $lokerLama->no_loker,
-                    'tipe_transaksi' => 'PINDAH',
-                    'operator'       => $operator,
-                    'keterangan'     => "Relokasi ke area {$prefix}-{$request->no_loker}", // Penjelasan masuk sini
-                    'created_at' => now(),
-                ]);
-
-                $this->updateKeteranganRak($lokerLama->kode_rak, $lokerLama->no_loker);
-            }
-
-            DB::table('loker_penghuni')->insert([
-                'nik'               => $nikFix,
-                'nama'              => strtoupper($namaKaryawan),
-                'divisi'            => strtoupper($divisi),
-                'kode_rak'          => $prefix,
-                'no_loker'          => $request->no_loker,
-                'kategori_karyawan' => $kategori,
-                'tgl_masuk'         => now(),
-                'is_active'         => 'Y',
-                'created_at'        => now(),
-                'updated_at'        => now(),
+    } else {
+        DB::table('loker_rak')
+            ->where('kode_rak', $prefix)
+            ->where('no_loker', $noLoker)
+            ->update([
+                'is_active'  => 'Y',
+                'updated_at' => now(),
             ]);
 
-            $this->updateKeteranganRak($prefix, $request->no_loker);
-
-            // KEMBALI KE ENUM: 'MASUK'
-            DB::table('loker_transaksi')->insert([
-                'nik'            => $nikFix,
-                'nama'           => $namaKaryawan,
-                'kode_rak'       => $prefix,
-                'no_loker'       => $request->no_loker,
-                'tipe_transaksi' => 'MASUK',
-                'operator'       => $operator,
-                'keterangan'     => 'Alokasi Penempatan Baru', // Penjelasan tambahan
-                'created_at'     => now(),
-            ]);
-
-            return response()->json(['status' => 'success', 'message' => 'Alokasi penempatan berhasil disimpan.']);
-        });
+        $this->updateKeteranganRak($prefix, $noLoker);
     }
 
-    public function import(Request $request)
+    return response()->json(['status' => 'success', 'message' => $status == 'rusak' ? 'Loker berhasil ditandai dalam status pemeliharaan.' : 'Loker telah diaktifkan dan siap dialokasikan.']);
+}
+
+public function tarikKunci(Request $request)
     {
-        $request->validate([
-            'file'   => 'required|mimes:xlsx,xls',
-            'gender' => 'required|in:L,P',
-        ]);
+    $request->validate([
+        'id'     => 'required',
+        'alasan' => 'required|string|max:255',
+    ]);
 
-        try {
-            $gender = $request->gender;
-            $prefix = ($gender == 'L') ? 'LP' : 'LW';
-
-            $filePath = $request->file('file')->path();
-
-            $spreadsheet = IOFactory::load($filePath);
-
-            $sheetNames = $spreadsheet->getSheetNames();
-
-            $sheetIndex = 0;
-
-            if (count($sheetNames) > 1 && $gender == 'P') {
-                $sheetIndex = 1;
-            }
-
-            DB::transaction(function () use ($request, $gender, $prefix, $sheetIndex) {
-                DB::table('loker_penghuni')->where('kode_rak', $prefix)->delete();
-
-                $importInstance = new LokerImport($gender);
-                $selector       = new LokerSheetSelectorImport($sheetIndex, $importInstance);
-
-                Excel::import($selector, $request->file('file'));
-
-                $allLockers = DB::table('loker_rak')
-                    ->where('kode_rak', $prefix)
-                    ->pluck('no_loker');
-
-                foreach ($allLockers as $noLoker) {
-                    $this->updateKeteranganRak($prefix, $noLoker);
-                }
-            });
-
-            return response()->json([
-                'status'  => 'success',
-                'message' => 'Proses unggah berhasil! Data alokasi loker telah disinkronisasi.',
-            ]);
-        } catch (\Exception $e) {
-            return response()->json(['status' => 'error', 'message' => 'Terjadi kesalahan sistem: ' . $e->getMessage()], 500);
-        }
-    }
-
-    public function export($gender)
-    {
-        $namaFile = 'Loker_' . ($gender == 'L' ? 'Pria' : 'Wanita') . '_' . date('Ymd') . '.xlsx';
-        return Excel::download(new LokerExport($gender), $namaFile);
-    }
-
-    public function getFoto($nik)
-    {
-        $imageData = Cache::remember("foto_karyawan_{$nik}", 3600, function () use ($nik) {
-            try {
-                $user = DB::connection('192.168.178.44-admin')->table('MSIDCARD')
-                    ->select('FOTOBLOB')->whereRaw('CAST(BARCODE AS SIGNED) = ?', [trim($nik)])->first();
-                return ($user && $user->FOTOBLOB) ? 'data:image/jpeg;base64,' . base64_encode($user->FOTOBLOB) : null;
-            } catch (\Throwable $e) {
-                return 'error';
-            }
-        });
-        return response()->json(['success' => ($imageData && $imageData !== 'error'), 'image' => $imageData]);
-    }
-
-    public function destroy(Request $request, $id)
-    {
-        $loker = DB::table('loker_rak')->where('id', $id)->first();
-
-        if (! $loker) {
-            return response()->json([
-                'status'  => 'error',
-                'message' => 'Data master loker tidak ditemukan.',
-            ], 404);
+    return DB::transaction(function () use ($request) {
+        $p = DB::table('loker_penghuni')->where('id', $request->id)->first();
+        if (! $p) {
+            return response()->json(['status' => 'error', 'message' => 'Data alokasi tidak ditemukan.'], 422);
         }
 
-        $isOccupied = DB::table('loker_penghuni')
-            ->where('no_loker', $loker->no_loker)
-            ->where('kode_rak', $loker->kode_rak)
+        DB::table('loker_penghuni')
+            ->where('id', $request->id)
+            ->update([
+                'is_active'  => 'N',
+                'tgl_keluar' => now(),
+                'updated_at' => now(),
+            ]);
+
+        $sisaPenghuni = DB::table('loker_penghuni')
+            ->where('no_loker', $p->no_loker)
+            ->where('kode_rak', $p->kode_rak)
+            ->where('is_active', 'Y')
             ->exists();
 
-        if ($isOccupied) {
-            return response()->json([
-                'status'  => 'error',
-                'message' => "Loker {$loker->no_loker} gagal dihapus karena masih memiliki data alokasi karyawan aktif.",
-            ], 422);
+        $alasan  = ucwords($request->alasan);
+        $tanggal = date('d-m-Y');
+
+        if (! $sisaPenghuni) {
+            DB::table('loker_rak')
+                ->where('kode_rak', $p->kode_rak)
+                ->where('no_loker', $p->no_loker)
+                ->update([
+                    'keterangan_kondisi' => 'Pengosongan Loker: ' . $alasan,
+                    'catatan_admin'      => "Fasilitas dicabut pada: $tanggal",
+                    'updated_at'         => now(),
+                ]);
+        } else {
+            DB::table('loker_rak')
+                ->where('kode_rak', $p->kode_rak)
+                ->where('no_loker', $p->no_loker)
+                ->update([
+                    'catatan_admin' => "Pencabutan sebagian fasilitas ($alasan) - $tanggal",
+                    'updated_at'    => now(),
+                ]);
         }
 
-        $gender = $loker->gender;
+        DB::table('loker_transaksi')->insert([
+            'nik'            => $p->nik ?? '-',
+            'nama'           => ucwords(strtolower($p->nama)),
+            'kode_rak'       => $p->kode_rak,
+            'no_loker'       => $p->no_loker,
+            'tipe_transaksi' => 'KELUAR',
+            'operator'       => auth()->user()->name ?? 'Sistem',
+            'keterangan'     => "Pencabutan Fasilitas: " . $alasan, // Penjelasan masuk sini
+            'created_at'     => now(),
+        ]);
 
-        DB::table('loker_rak')->where('id', $id)->delete();
+        return response()->json(['status' => 'success']);
+    });
+}
 
-        $data = DB::table('loker_rak')
-            ->where('gender', $gender)
-            ->whereNotExists(function ($query) {
-                $query->select(DB::raw(1))
-                    ->from('loker_penghuni')
-                    ->whereRaw('loker_penghuni.no_loker = loker_rak.no_loker')
-                    ->whereRaw('loker_penghuni.kode_rak = loker_rak.kode_rak');
-            })->paginate(10);
+private function updateKeteranganRak($prefix, $noLoker)
+    {
+    $allPenghuni = DB::table('loker_penghuni')
+        ->where('kode_rak', $prefix)
+        ->where('no_loker', $noLoker)
+        ->where('is_active', 'Y')
+        ->orderBy('id', 'asc')
+        ->get();
 
-        $html = view('loker.management.partials.table_management', [
-            'data'   => $data,
-            'gender' => $gender,
-        ])->render();
+    if ($allPenghuni->isEmpty()) {
+        $keterangan = "Tersedia";
+        $catatan    = null;
+    } else {
+        $keterangan = "Telah Dialokasikan";
+        $catatan    = null;
+    }
+
+    DB::table('loker_rak')
+        ->where('kode_rak', $prefix)
+        ->where('no_loker', $noLoker)
+        ->update([
+            'keterangan_kondisi' => $keterangan,
+            'catatan_admin'      => $catatan,
+            'updated_at'         => now(),
+        ]);
+}
+
+public function store(Request $request)
+    {
+    $this->permission('loker_operator');
+
+    $request->validate([
+        'nik'      => 'required',
+        'no_loker' => 'required',
+        'gender'   => 'required',
+    ]);
+
+    $nikInput = trim((string) $request->nik);
+    $prefix   = $this->getPrefix($request->gender);
+    $operator = auth()->user()->name ?? 'Sistem';
+
+    $dataExternal = null;
+    try {
+        $dataExternal = DB::connection('192.168.178.44-admin')
+            ->table('MSIDCARD')
+            ->select('NIK', 'EMPNM', 'DEPTID', 'TYPECARD')
+            ->whereRaw("CAST(NIK AS UNSIGNED) = CAST(? AS UNSIGNED)", [$nikInput])
+            ->where('STATUS', 'X')
+            ->first();
+    } catch (\Exception $e) {
+        Log::error("Koneksi DB Pusat Gagal: " . $e->getMessage());
+    }
+
+    if ($dataExternal) {
+        $nikFix       = $dataExternal->NIK;
+        $namaKaryawan = $dataExternal->EMPNM;
+        $divisi       = $dataExternal->DEPTID;
+        $kategori     = $request->kategori_karyawan ?? (($dataExternal->TYPECARD == 1) ? 'mitra_kerja' : 'non_staff');
+    } elseif ($request->nama) {
+        $nikFix       = $nikInput;
+        $namaKaryawan = $request->nama;
+        $divisi       = $request->dept;
+        $kategori     = $request->kategori_karyawan ?? 'non_staff';
+    } else {
+        return response()->json(['status' => 'error', 'message' => "Verifikasi gagal: Data karyawan tidak ditemukan."], 422);
+    }
+
+    $divisi = empty($divisi) ? '-' : strtoupper(trim($divisi));
+
+    return DB::transaction(function () use ($request, $nikFix, $namaKaryawan, $divisi, $kategori, $prefix, $operator) {
+
+        // Cek loker lama (jika ada, ini adalah proses relokasi)
+        $lokerLama = DB::table('loker_penghuni')
+            ->where('is_active', 'Y')
+            ->whereRaw("CAST(nik AS UNSIGNED) = CAST(? AS UNSIGNED)", [$nikFix])
+            ->first();
+
+        // Gunakan divisi dan kategori spesifik dari loker lama jika relokasi
+        if ($lokerLama) {
+            $divisi = strtoupper($lokerLama->divisi);
+            $kategori = $lokerLama->kategori_karyawan;
+        }
+
+        $kondisiRak = DB::table('loker_rak')
+            ->where(['kode_rak' => $prefix, 'no_loker' => $request->no_loker])
+            ->first();
+
+        if ($kondisiRak && $kondisiRak->is_active === 'N') {
+            return response()->json(['status' => 'error', 'message' => "Penempatan gagal! Loker nomor {$request->no_loker} berstatus: " . ($kondisiRak->keterangan_kondisi ?? 'DALAM PEMELIHARAAN')], 422);
+        }
+
+        $existingOccupants = DB::table('loker_penghuni')
+            ->where(['kode_rak' => $prefix, 'no_loker' => $request->no_loker, 'is_active' => 'Y'])
+            ->where('nik', '!=', $nikFix)
+            ->get();
+
+        if ($kategori === 'staff') {
+            if ($existingOccupants->count() > 0) {
+                return response()->json([
+                    'status'  => 'error',
+                    'message' => 'Kapasitas loker khusus Staff telah terpenuhi (maksimal 1 penghuni).',
+                ], 422);
+            }
+        } else {
+            if ($existingOccupants->count() >= 2) {
+                return response()->json(['status' => 'error', 'message' => 'Kapasitas loker telah penuh (maksimal 2 penghuni)!'], 422);
+            }
+
+            if ($existingOccupants->count() == 1) {
+                $occupant = $existingOccupants->first();
+
+                if (strtoupper($occupant->kategori_karyawan) !== strtoupper($kategori) || strtoupper($occupant->divisi) != $divisi) {
+                    return response()->json([
+                        'status'  => 'error',
+                        'message' => "Gagal! Loker ini telah diisi oleh karyawan dari kategori/departemen lain ({$occupant->kategori_karyawan} - {$occupant->divisi}). Harap pilih loker rekan 1 departemen!",
+                    ], 422);
+                }
+            }
+        }
+
+        if ($lokerLama) {
+            DB::table('loker_penghuni')->where('id', $lokerLama->id)->update([
+                'is_active'  => 'N',
+                'tgl_keluar' => now(),
+                'updated_at' => now(),
+            ]);
+
+            // KEMBALI KE ENUM: 'PINDAH'
+            DB::table('loker_transaksi')->insert([
+                'nik'            => $lokerLama->nik,
+                'nama'           => $namaKaryawan,
+                'kode_rak'       => $lokerLama->kode_rak,
+                'no_loker'       => $lokerLama->no_loker,
+                'tipe_transaksi' => 'PINDAH',
+                'operator'       => $operator,
+                'keterangan'     => "Relokasi ke area {$prefix}-{$request->no_loker}", // Penjelasan masuk sini
+                'created_at' => now(),
+            ]);
+
+            $this->updateKeteranganRak($lokerLama->kode_rak, $lokerLama->no_loker);
+        }
+
+        DB::table('loker_penghuni')->insert([
+            'nik'               => $nikFix,
+            'nama'              => strtoupper($namaKaryawan),
+            'divisi'            => strtoupper($divisi),
+            'kode_rak'          => $prefix,
+            'no_loker'          => $request->no_loker,
+            'kategori_karyawan' => $kategori,
+            'tgl_masuk'         => now(),
+            'is_active'         => 'Y',
+            'created_at'        => now(),
+            'updated_at'        => now(),
+        ]);
+
+        $this->updateKeteranganRak($prefix, $request->no_loker);
+
+        DB::table('loker_transaksi')->insert([
+            'nik'            => $nikFix,
+            'nama'           => $namaKaryawan,
+            'kode_rak'       => $prefix,
+            'no_loker'       => $request->no_loker,
+            'tipe_transaksi' => 'MASUK',
+            'operator'       => $operator,
+            'keterangan'     => 'Alokasi Penempatan Baru',
+            'created_at'     => now(),
+        ]);
+
+        return response()->json(['status' => 'success', 'message' => 'Alokasi penempatan berhasil disimpan.']);
+    });
+}
+
+public function import(Request $request)
+    {
+    $request->validate([
+        'file'   => 'required|mimes:xlsx,xls',
+        'gender' => 'required|in:L,P',
+    ]);
+
+    try {
+        $gender = $request->gender;
+        $prefix = ($gender == 'L') ? 'LP' : 'LW';
+
+        $filePath = $request->file('file')->path();
+
+        $spreadsheet = IOFactory::load($filePath);
+
+        $sheetNames = $spreadsheet->getSheetNames();
+
+        $sheetIndex = 0;
+
+        if (count($sheetNames) > 1 && $gender == 'P') {
+            $sheetIndex = 1;
+        }
+
+        DB::transaction(function () use ($request, $gender, $prefix, $sheetIndex) {
+            DB::table('loker_penghuni')->where('kode_rak', $prefix)->delete();
+
+            $importInstance = new LokerImport($gender);
+            $selector       = new LokerSheetSelectorImport($sheetIndex, $importInstance);
+
+            Excel::import($selector, $request->file('file'));
+
+            $allLockers = DB::table('loker_rak')
+                ->where('kode_rak', $prefix)
+                ->pluck('no_loker');
+
+            foreach ($allLockers as $noLoker) {
+                $this->updateKeteranganRak($prefix, $noLoker);
+            }
+        });
 
         return response()->json([
             'status'  => 'success',
-            'message' => "Data loker {$loker->no_loker} berhasil dihapus dari sistem.",
-            'newTotal' => $data->total(),
-            'html'     => $html,
-            'gender'   => $gender,
+            'message' => 'Proses unggah berhasil! Data alokasi loker telah disinkronisasi.',
         ]);
+    } catch (\Exception $e) {
+        return response()->json(['status' => 'error', 'message' => 'Terjadi kesalahan sistem: ' . $e->getMessage()], 500);
     }
+}
+
+public function export($gender)
+    {
+    $namaFile = 'Loker_' . ($gender == 'L' ? 'Pria' : 'Wanita') . '_' . date('Ymd') . '.xlsx';
+    return Excel::download(new LokerExport($gender), $namaFile);
+}
+
+public function getFoto($nik)
+    {
+    $imageData = Cache::remember("foto_karyawan_{$nik}", 3600, function () use ($nik) {
+        try {
+            $user = DB::connection('192.168.178.44-admin')->table('MSIDCARD')
+                ->select('FOTOBLOB')->whereRaw('CAST(BARCODE AS SIGNED) = ?', [trim($nik)])->first();
+            return ($user && $user->FOTOBLOB) ? 'data:image/jpeg;base64,' . base64_encode($user->FOTOBLOB) : null;
+        } catch (\Throwable $e) {
+            return 'error';
+        }
+    });
+    return response()->json(['success' => ($imageData && $imageData !== 'error'), 'image' => $imageData]);
+}
+
+public function destroy(Request $request, $id)
+    {
+    $loker = DB::table('loker_rak')->where('id', $id)->first();
+
+    if (! $loker) {
+        return response()->json([
+            'status'  => 'error',
+            'message' => 'Data master loker tidak ditemukan.',
+        ], 404);
+    }
+
+    $isOccupied = DB::table('loker_penghuni')
+        ->where('no_loker', $loker->no_loker)
+        ->where('kode_rak', $loker->kode_rak)
+        ->exists();
+
+    if ($isOccupied) {
+        return response()->json([
+            'status'  => 'error',
+            'message' => "Loker {$loker->no_loker} gagal dihapus karena masih memiliki data alokasi karyawan aktif.",
+        ], 422);
+    }
+
+    $gender = $loker->gender;
+
+    DB::table('loker_rak')->where('id', $id)->delete();
+
+    $data = DB::table('loker_rak')
+        ->where('gender', $gender)
+        ->whereNotExists(function ($query) {
+            $query->select(DB::raw(1))
+                ->from('loker_penghuni')
+                ->whereRaw('loker_penghuni.no_loker = loker_rak.no_loker')
+                ->whereRaw('loker_penghuni.kode_rak = loker_rak.kode_rak');
+        })->paginate(10);
+
+    $html = view('loker.management.partials.table_management', [
+        'data'   => $data,
+        'gender' => $gender,
+    ])->render();
+
+    return response()->json([
+        'status'  => 'success',
+        'message' => "Data loker {$loker->no_loker} berhasil dihapus dari sistem.",
+        'newTotal' => $data->total(),
+        'html'     => $html,
+        'gender'   => $gender,
+    ]);
+}
 }
