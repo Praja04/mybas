@@ -67,103 +67,151 @@
 </div>
 
 @push('scripts')
-<style>
-    /* ==== MODAL BAS STYLE ==== */
+    <style>
+        .bas-modal {
+            border-radius: var(--bas-radius-lg);
+            border: 1.5px solid var(--bas-border);
+            overflow: hidden;
+        }
 
-    .bas-modal {
-        border-radius: var(--bas-radius-lg);
-        border: 1.5px solid var(--bas-border);
-        overflow: hidden;
-    }
+        .bas-modal-header {
+            background: linear-gradient(135deg, #1F2937 0%, #111827 100%);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 20px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
 
-    /* HEADER */
-    .bas-modal-header {
-        background: linear-gradient(135deg, #1F2937 0%, #111827 100%);
-        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-        padding: 20px 24px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
+        .bas-modal-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #fff;
+            margin: 0;
+        }
 
-    .bas-modal-title {
-        font-size: 16px;
-        font-weight: 700;
-        color: #fff;
-        margin: 0;
-    }
+        .bas-modal-sub {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.5);
+            margin-top: 2px;
+        }
 
-    .bas-modal-sub {
-        font-size: 12px;
-        color: rgba(255, 255, 255, 0.5);
-        margin-top: 2px;
-    }
+        .bas-modal-close {
+            background: rgba(255, 255, 255, 0.08);
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
 
-    .bas-modal-close {
-        background: rgba(255, 255, 255, 0.08);
-        border: none;
-        width: 36px;
-        height: 36px;
-        border-radius: 8px;
-        color: #fff;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-    }
+        .bas-modal-close:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
 
-    .bas-modal-close:hover {
-        background: rgba(255, 255, 255, 0.15);
-    }
+        .bas-modal-body {
+            padding: 20px 24px;
+        }
 
-    /* BODY */
-    .bas-modal-body {
-        padding: 20px 24px;
-    }
+        .bas-table-wrap {
+            border: 1.5px solid var(--bas-border);
+            border-radius: var(--bas-radius-md);
+            overflow: hidden;
+        }
 
-    /* TABLE */
-    .bas-table-wrap {
-        border: 1.5px solid var(--bas-border);
-        border-radius: var(--bas-radius-md);
-        overflow: hidden;
-    }
+        .bas-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
 
-    .bas-table {
-        width: 100%;
-        border-collapse: collapse;
-    }
+        .bas-table thead {
+            background: var(--bas-neutral-light);
+        }
 
-    .bas-table thead {
-        background: var(--bas-neutral-light);
-    }
+        .bas-table th {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--bas-neutral);
+            padding: 12px;
+            text-align: left;
+        }
 
-    .bas-table th {
-        font-size: 11px;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        color: var(--bas-neutral);
-        padding: 12px;
-        text-align: left;
-    }
+        .bas-table td {
+            padding: 14px 12px;
+            border-top: 1px solid var(--bas-border);
+            font-size: 13px;
+            color: var(--bas-dark);
+        }
 
-    .bas-table td {
-        padding: 14px 12px;
-        border-top: 1px solid var(--bas-border);
-        font-size: 13px;
-        color: var(--bas-dark);
-    }
+        .bas-table tbody tr:hover {
+            background: #FAFAFA;
+        }
 
-    .bas-table tbody tr:hover {
-        background: #FAFAFA;
-    }
+        .bas-modal-footer {
+            padding: 16px 24px;
+            border-top: 1.5px solid var(--bas-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+    </style>
 
-    /* FOOTER */
-    .bas-modal-footer {
-        padding: 16px 24px;
-        border-top: 1.5px solid var(--bas-border);
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-</style>
+    <script>
+        $(document).ready(function() {
+            $('body').on('change', '#customFile', function(e) {
+                let fileName = e.target.files[0] ? e.target.files[0].name : 'Pilih file...';
+                $(this).next('.custom-file-label').addClass("selected").html(fileName);
+            });
+
+            $('#formImport').on('submit', function(e) {
+                e.preventDefault();
+                let formData = new FormData(this);
+
+                KTApp.block('#modalImport .modal-content', {
+                    message: 'Sedang memproses dokumen & Sinkronisasi...'
+                });
+
+                $.ajax({
+                    url: "{{ route('loker.import') }}",
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function(res) {
+                        KTApp.unblock('#modalImport .modal-content');
+                        if (res.status === 'success') {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Proses Berhasil!',
+                                text: res.message,
+                                timer: 1500,
+                                showConfirmButton: false
+                            }).then(() => location.reload());
+                        } else {
+                            Swal.fire('Proses Gagal', res.message, 'error');
+                        }
+                    },
+                    error: function(err) {
+                        KTApp.unblock('#modalImport .modal-content');
+                        let msg = err.responseJSON ? err.responseJSON.message :
+                            'Terjadi kesalahan sistem saat pemrosesan data.';
+                        Swal.fire('Error', msg, 'error');
+                    }
+                });
+            });
+        });
+
+        function openModalImport(gender) {
+            $('#formImport')[0].reset();
+            $('#customFile').next('.custom-file-label').html('Pilih dokumen Excel...');
+            $('#importGenderLabel, #importGenderLabelSub').text(gender === 'L' ? 'Pria' : 'Wanita');
+            $('#importGenderVal').val(gender);
+            $('#modalImport').modal('show');
+        }
+    </script>
 @endpush

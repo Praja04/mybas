@@ -229,12 +229,18 @@ class LokerV2Controller extends Controller
                     ->orWhere('nama', 'LIKE', "%$search%");
             })->first();
 
+        $hris = Karyawan::where(function ($q) use ($search) {
+            $q->whereRaw("CAST(nik AS UNSIGNED) = CAST(? AS UNSIGNED)", [$search])
+                ->orWhere('nama', 'LIKE', "%$search%")
+                ->orWhere('cardnodevice', $search);
+        })->first();
+
         $dataPusat = null;
         try {
             $dataPusat = DB::connection('192.168.178.44-admin')
                 ->table('MSIDCARD')
                 ->select('NIK', 'EMPNM', 'DEPTID', 'CARDNODEVICE', 'RFID', 'FOTOBLOB', 'STATUS')
-                ->where(function ($q) use ($search, $lokerAktif) {
+                ->where(function ($q) use ($search, $lokerAktif, $hris) {
                     $q->whereRaw("CAST(NIK AS UNSIGNED) = CAST(? AS UNSIGNED)", [$search])
                         ->orWhere('EMPNM', 'LIKE', "%$search%")
                         ->orWhere('CARDNODEVICE', $search)
@@ -243,6 +249,10 @@ class LokerV2Controller extends Controller
                     if ($lokerAktif) {
                         $q->orWhereRaw("CAST(NIK AS UNSIGNED) = CAST(? AS UNSIGNED)", [$lokerAktif->nik]);
                     }
+
+                    if ($hris) {
+                        $q->orWhereRaw("CAST(NIK AS UNSIGNED) = CAST(? AS UNSIGNED)", [$hris->nik]);
+                    }
                 })
                 ->where('STATUS', 'X')
                 ->first();
@@ -250,28 +260,41 @@ class LokerV2Controller extends Controller
             Log::error("Koneksi DB Pusat Gagal: " . $e->getMessage());
         }
 
-        if (! $lokerAktif && ! $dataPusat) {
-            return response()->json(['success' => false, 'message' => 'Verifikasi gagal: Data karyawan tidak ditemukan. Pastikan kartu terdaftar atau NIK valid.']);
+        if (! $hris && $dataPusat && $dataPusat->NIK) {
+            $hris = Karyawan::whereRaw("CAST(nik AS UNSIGNED) = CAST(? AS UNSIGNED)", [$dataPusat->NIK])->first();
         }
 
-        $finalNIK = $dataPusat ? $dataPusat->NIK : ($lokerAktif->nik ?? $search);
-        $nama     = $dataPusat->EMPNM ?? ($lokerAktif->nama ?? 'Tidak dikenali');
-        $divisi   = $dataPusat->DEPTID ?? ($lokerAktif->divisi ?? '-');
-        $kategori = $lokerAktif ? $lokerAktif->kategori_karyawan : $this->getKategoriKaryawan($dataPusat);
+        if (! $lokerAktif && ! $hris && ! $dataPusat) {
+            return response()->json(['success' => false, 'message' => 'Verifikasi gagal: Data karyawan tidak ditemukan di sistem HRIS maupun Kartu. Pastikan NIK atau kartu terdaftar.']);
+        }
 
-        $gender          = null;
-        $isGenderEmpty   = true;
-        $isCategoryEmpty = true;
+        $finalNIK = $hris->nik ?? ($dataPusat->NIK ?? ($lokerAktif->nik ?? $search));
 
-        if ($lokerAktif) {
+        $nama = $hris->nama ?? ($dataPusat->EMPNM ?? ($lokerAktif->nama ?? 'Tidak dikenali'));
+
+        $divisi = $hris->kode_divisi ?? ($dataPusat->DEPTID ?? ($lokerAktif->divisi ?? '-'));
+
+        $kategori = $lokerAktif ? $lokerAktif->kategori_karyawan : ($hris ? $this->getKategoriKaryawan($hris) : $this->getKategoriKaryawan($dataPusat));
+
+        $gender        = null;
+        $isGenderEmpty = true;
+
+        if ($hris && ! empty($hris->jenis_kelamin)) {
+            $jk = strtoupper(trim($hris->jenis_kelamin));
+            if ($jk === 'L' || $jk === 'P') {
+                $gender = $jk;
+            }
+        }
+
+        if (! $gender && $lokerAktif) {
             $gender = ($lokerAktif->kode_rak == 'LP') ? 'L' : (($lokerAktif->kode_rak == 'LW') ? 'P' : null);
-            if ($gender) {
-                $isGenderEmpty = false;
-            }
-            if ($kategori) {
-                $isCategoryEmpty = false;
-            }
         }
+
+        if ($gender) {
+            $isGenderEmpty = false;
+        }
+
+        $isCategoryEmpty = $kategori ? false : true;
 
         return response()->json([
             'success' => true,
@@ -352,11 +375,40 @@ class LokerV2Controller extends Controller
         return response()->json(['success' => false, 'message' => 'Data alokasi loker tidak ditemukan.']);
     }
 
+    public function getDivisiList($kategori)
+    {
+        // $divisi = DB::table('loker_penghuni')
+        //     ->whereNotNull('divisi')
+        //     ->where('divisi', '!=', '')
+        //     ->where('divisi', '!=', '-')
+        //     // ->where('is_active', 'Y')
+        //     ->select('divisi')
+        //     ->distinct()
+        //     ->orderBy('divisi', 'ASC')
+        //     ->pluck('divisi');
+        if ($kategori === 'non_staff') {
+            $data = [
+                ['value' => 'PRD BAS', 'label' => 'PRD (Produksi)'],
+                ['value' => 'QCB BAS', 'label' => 'QC (Quality Control)'],
+            ];
+        } elseif ($kategori === 'mitra_kerja') {
+            $data = [
+                ['value' => 'HELPER PRD - FO', 'label' => 'PRD - FORTUNA (FO)'],
+                ['value' => 'HELPER PRD - KMJ', 'label' => 'PRD - KMJ'],
+                ['value' => 'HELPER QC - KMJ', 'label' => 'QC - KMJ'],
+            ];
+        } else {
+            $data = [];
+        }
+
+        return response()->json($data);
+    }
+
     public function apiSuggestLoker(Request $request)
     {
-        $prefix = $this->getPrefix($request->gender);
-
+        $prefix   = $this->getPrefix($request->gender);
         $kategori = $request->kategori;
+        $divisi   = strtoupper(trim($request->divisi ?? ''));
 
         $suggest = Rak::where('kode_rak', $prefix)
             ->where('is_active', 'Y')
@@ -365,27 +417,34 @@ class LokerV2Controller extends Controller
                     ->orWhere('keterangan_kondisi', 'NOT LIKE', '%Pemeliharaan%')
                     ->orWhere('keterangan_kondisi', 'NOT LIKE', '%Rusak%');
             })
-            ->where(function ($q) use ($kategori, $prefix) {
+            ->where(function ($q) use ($kategori, $prefix, $divisi) {
                 if ($kategori === 'staff') {
-                    $q->whereNotExists(function ($sq) use ($prefix) {
-                        $sq->select(DB::raw(1))
-                            ->from('loker_penghuni')
-                            ->whereRaw('loker_penghuni.no_loker = loker_rak.no_loker')
-                            ->where('loker_penghuni.kode_rak', $prefix)
-                            ->where('loker_penghuni.is_active', 'Y');
-                    });
+                    // $q->whereNotExists(function ($sq) use ($prefix) {
+                    //     $sq->select(DB::raw(1))
+                    //         ->from('loker_penghuni')
+                    //         ->whereRaw('loker_penghuni.no_loker = loker_rak.no_loker')
+                    //         ->where('loker_penghuni.kode_rak', $prefix)
+                    //         ->where('loker_penghuni.is_active', 'Y');
+                    // });
+                    $q->whereRaw("(SELECT COUNT(*) FROM loker_penghuni
+                                  WHERE no_loker = loker_rak.no_loker
+                                  AND kode_rak = ?
+                                  AND is_active = 'Y') = 0", [$prefix]);
                 } else {
                     $q->whereRaw("(SELECT COUNT(*) FROM loker_penghuni
                               WHERE no_loker = loker_rak.no_loker
                               AND kode_rak = ?
                               AND is_active = 'Y') < 2", [$prefix])
-                        ->whereNotExists(function ($sq) use ($prefix) {
+                        ->whereNotExists(function ($sq) use ($prefix, $kategori, $divisi) {
                             $sq->select(DB::raw(1))
                                 ->from('loker_penghuni')
                                 ->whereRaw('loker_penghuni.no_loker = loker_rak.no_loker')
                                 ->where('loker_penghuni.kode_rak', $prefix)
                                 ->where('loker_penghuni.is_active', 'Y')
-                                ->where('loker_penghuni.kategori_karyawan', 'staff');
+                                ->where(function ($q2) use ($kategori, $divisi) {
+                                    $q2->where('loker_penghuni.kategori_karyawan', '!=', $kategori)
+                                        ->orWhere('loker_penghuni.divisi', '!=', $divisi);
+                                });
                         });
                 }
             })
@@ -398,30 +457,42 @@ class LokerV2Controller extends Controller
         ]);
     }
 
-    public function getAvailableLockers($gender, $kategori = 'non_staff')
+    public function getAvailableLockers(Request $request, $gender, $kategori = 'non_staff')
     {
         $prefix = $this->getPrefix($gender);
+        $divisi = strtoupper(trim($request->query('divisi') ?? ''));
 
         $available = DB::table('loker_rak')
             ->where('kode_rak', $prefix)
             ->where('is_active', 'Y')
-            ->where(function ($q) use ($prefix, $kategori) {
+            ->where(function ($q) use ($prefix, $kategori, $divisi) {
                 $subCount = "SELECT COUNT(*) FROM loker_penghuni
                          WHERE loker_penghuni.no_loker = loker_rak.no_loker
                          AND loker_penghuni.kode_rak = '$prefix'
                          AND loker_penghuni.is_active = 'Y'";
 
-                $hasStaff = "SELECT COUNT(*) FROM loker_penghuni
-                WHERE loker_penghuni.no_loker = loker_rak.no_loker
-                AND loker_penghuni.kode_rak = '$prefix'
-                AND loker_penghuni.is_active = 'Y'
-                AND loker_penghuni.kategori_karyawan = 'staff'";
+                // $hasStaff = "SELECT COUNT(*) FROM loker_penghuni
+                // WHERE loker_penghuni.no_loker = loker_rak.no_loker
+                // AND loker_penghuni.kode_rak = '$prefix'
+                // AND loker_penghuni.is_active = 'Y'
+                // AND loker_penghuni.kategori_karyawan = 'staff'";
 
                 if ($kategori == 'staff') {
                     $q->whereRaw("($subCount) = 0");
                 } else {
                     $q->whereRaw("($subCount) < 2")
-                        ->whereRaw("($hasStaff) = 0");
+                    // ->whereRaw("($hasStaff) = 0");
+                        ->whereNotExists(function ($q2) use ($prefix, $kategori, $divisi) {
+                            $q2->select(DB::raw(1))
+                                ->from('loker_penghuni')
+                                ->whereRaw('loker_penghuni.no_loker = loker_rak.no_loker')
+                                ->where('loker_penghuni.kode_rak', $prefix)
+                                ->where('loker_penghuni.is_active', 'Y')
+                                ->where(function ($q3) use ($kategori, $divisi) {
+                                    $q3->where('loker_penghuni.kategori_karyawan', '!=', $kategori)
+                                        ->orWhere('loker_penghuni.divisi', '!=', $divisi);
+                                });
+                        });
                 }
             })
             ->orderByRaw('CAST(no_loker AS UNSIGNED) ASC')
@@ -663,6 +734,8 @@ class LokerV2Controller extends Controller
             return response()->json(['status' => 'error', 'message' => "Verifikasi gagal: Data karyawan tidak ditemukan."], 422);
         }
 
+        $divisi = empty($divisi) ? '-' : strtoupper(trim($divisi));
+
         return DB::transaction(function () use ($request, $nikFix, $namaKaryawan, $divisi, $kategori, $prefix, $operator) {
 
             $kondisiRak = DB::table('loker_rak')
@@ -673,16 +746,45 @@ class LokerV2Controller extends Controller
                 return response()->json(['status' => 'error', 'message' => "Penempatan gagal! Loker nomor {$request->no_loker} berstatus: " . ($kondisiRak->keterangan_kondisi ?? 'DALAM PEMELIHARAAN')], 422);
             }
 
-            if ($kategori === 'staff') {
-                $isOccupied = DB::table('loker_penghuni')
-                    ->where(['kode_rak' => $prefix, 'no_loker' => $request->no_loker, 'is_active' => 'Y'])
-                    ->where('nik', '!=', $nikFix)
-                    ->exists();
+            $existingOccupants = DB::table('loker_penghuni')
+                ->where(['kode_rak' => $prefix, 'no_loker' => $request->no_loker, 'is_active' => 'Y'])
+                ->where('nik', '!=', $nikFix)
+                ->get();
 
-                if ($isOccupied) {
-                    return response()->json(['status' => 'error', 'message' => 'Kapasitas loker khusus Staff telah terpenuhi!'], 422);
+            if ($kategori === 'staff') {
+                if ($existingOccupants->count() > 0) {
+                    return response()->json([
+                        'status'  => 'error',
+                        'message' => 'Kapasitas loker khusus Staff telah terpenuhi (maksimal 1 penghuni).',
+                    ], 422);
+                } else {
+                    if ($existingOccupants->count() >= 2) {
+                        return response()->json(['status' => 'error', 'message' => 'Kapasitas loker telah penuh (maksimal 2 penghuni)!'], 422);
+                    }
+
+                    if ($existingOccupants->count() == 1) {
+                        $occupant = $existingOccupants->first();
+
+                        if (strtoupper($occupant->kategori_karyawan) !== strtoupper($kategori) || strtoupper($occupant->divisi) != $divisi) {
+                            return response()->json([
+                                'status'  => 'error',
+                                'message' => "Gagal! Loker ini telah diisi oleh karyawan dari kategori/departemen lain ({$occupant->kategori_karyawan} - {$occupant->divisi}). Harap pilih loker rekan 1 departemen!",
+                            ], 422);
+                        }
+                    }
                 }
             }
+
+            // if ($kategori === 'staff') {
+            //     $isOccupied = DB::table('loker_penghuni')
+            //         ->where(['kode_rak' => $prefix, 'no_loker' => $request->no_loker, 'is_active' => 'Y'])
+            //         ->where('nik', '!=', $nikFix)
+            //         ->exists();
+
+            //     if ($isOccupied) {
+            //         return response()->json(['status' => 'error', 'message' => 'Kapasitas loker khusus Staff telah terpenuhi!'], 422);
+            //     }
+            // }
 
             $lokerLama = DB::table('loker_penghuni')
                 ->where('is_active', 'Y')
@@ -726,7 +828,6 @@ class LokerV2Controller extends Controller
 
             $this->updateKeteranganRak($prefix, $request->no_loker);
 
-            // KEMBALI KE ENUM: 'MASUK'
             DB::table('loker_transaksi')->insert([
                 'nik'            => $nikFix,
                 'nama'           => $namaKaryawan,
@@ -734,7 +835,7 @@ class LokerV2Controller extends Controller
                 'no_loker'       => $request->no_loker,
                 'tipe_transaksi' => 'MASUK',
                 'operator'       => $operator,
-                'keterangan'     => 'Alokasi Penempatan Baru', // Penjelasan tambahan
+                'keterangan'     => 'Alokasi Penempatan Baru',
                 'created_at'     => now(),
             ]);
 

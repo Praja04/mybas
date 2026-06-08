@@ -1,8 +1,7 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\HR\Ecafesedaap\DataScanmakanController;
-
+use Illuminate\Support\Facades\Route;
 
 Route::get('/data-scan', [DataScanmakanController::class, 'index'])->name('scanmakan.index');
 
@@ -628,7 +627,6 @@ Route::group(['middleware' => ['auth', 'rules', 'access_log']], function () {
     Route::post('/ecafesedaap-scan/do-scan', 'EcafeSeedapController@doScan');
 });
 
-
 Route::group(['middleware' => ['auth', 'rules', 'access_log']], function () {
     Route::get('/ecafesedaap/upload-overtime', 'EcafeSeedapController@uploadOvertime');
     Route::post('/ecafesedaap/upload-overtime', 'EcafeSeedapController@doUploadOvertime');
@@ -688,6 +686,7 @@ Route::group(['middleware' => ['auth', 'rules', 'access_log']], function () {
         // --- INTERAKSI AJAX ---
         Route::get('/search-karyawan/{nik}', 'LokerV2Controller@searchKaryawan')->name('loker.search-karyawan');
         Route::get('/search-global', 'LokerV2Controller@searchGlobal')->name('loker.search-global');
+        Route::get('/divisi-list/{kategori}', 'LokerV2Controller@getDivisiList')->name('loker.divisi-list');
         Route::get('/api-suggest-loker', 'LokerV2Controller@apiSuggestLoker')->name('loker.api-suggest-loker');
         Route::get('/detail/{gender}/{no_loker}', 'LokerV2Controller@getDetailLoker')->name('loker.detail');
         Route::get('/available/{gender}/{kategori}', 'LokerV2Controller@getAvailableLockers')->name('loker.available');
