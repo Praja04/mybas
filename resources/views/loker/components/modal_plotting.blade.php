@@ -466,12 +466,19 @@
                 let dropdown = $('#select_no_loker');
                 dropdown.empty().append('<option value="" selected disabled>⏳ Menyiapkan daftar loker...</option>');
 
+                let nik = $('#plot_nik').val() || '';
+
                 let url = `{{ url('loker/available') }}/${gender}/${kategori || 'non_staff'}`;
+
+                let queryParams = {
+                    nik: nik
+                };
+
                 if (kategori !== 'staff' && divisi) {
-                    url += `?divisi=${encodeURIComponent(divisi)}`;
+                    queryParams.divisi = divisi;
                 }
 
-                $.get(url)
+                $.get(url, queryParams)
                     .done(function(data) {
                         dropdown.empty().append('<option value="">-- Pilih Loker --</option>');
                         if (data.length > 0) {
