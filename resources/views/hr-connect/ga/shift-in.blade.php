@@ -37,27 +37,27 @@
 @section('content')
     <div class="container-fluid">
         {{-- <div class="row mb-3 align-items-end">
-            <div class="col-lg-3">
-                <label class="form-label font-weight-bold text-muted">Filter Jadwal Masuk</label>
-                <select class="form-select form-control shadow-sm" id="tanggalFilter">
-                    <option value="" disabled selected>Pilih Tanggal</option>
-                    @if ($tanggalTersedia->isEmpty())
-                        <option value="" disabled>Belum ada jadwal karyawan masuk</option>
-                    @else
-                        @foreach ($tanggalTersedia as $date)
-                            <option value="{{ $date }}">
-                                {{ \Carbon\Carbon::parse($date)->translatedFormat('d F Y') }}
-                            </option>
-                        @endforeach
-                    @endif
-                </select>
-            </div>
-            <div class="col-lg-2">
-                <button class="btn btn-soft-secondary w-100 shadow-sm" id="btnResetFilter">
-                    <i class="ri-refresh-line align-bottom me-1"></i> Reset Filter
-                </button>
-            </div>
-        </div> --}}
+        <div class="col-lg-3">
+            <label class="form-label font-weight-bold text-muted">Filter Jadwal Masuk</label>
+            <select class="form-select form-control shadow-sm" id="tanggalFilter">
+                <option value="" disabled selected>Pilih Tanggal</option>
+                @if ($tanggalTersedia->isEmpty())
+                <option value="" disabled>Belum ada jadwal karyawan masuk</option>
+                @else
+                @foreach ($tanggalTersedia as $date)
+                <option value="{{ $date }}">
+                    {{ \Carbon\Carbon::parse($date)->translatedFormat('d F Y') }}
+                </option>
+                @endforeach
+                @endif
+            </select>
+        </div>
+        <div class="col-lg-2">
+            <button class="btn btn-soft-secondary w-100 shadow-sm" id="btnResetFilter">
+                <i class="ri-refresh-line align-bottom me-1"></i> Reset Filter
+            </button>
+        </div>
+    </div> --}}
 
         <div class="row">
             <div class="col-lg-12">
@@ -114,9 +114,6 @@
 
     <script>
         $(document).ready(function() {
-            // ==========================================
-            // 1. GLOBAL VARIABLES & STATE
-            // ==========================================
             const lokerPria = {!! json_encode($lokerPria) !!};
             const lokerWanita = {!! json_encode($lokerWanita) !!};
             let state = {
@@ -124,9 +121,7 @@
                 defaultTanggal: ""
             };
 
-            // ==========================================
-            // 2. HELPER FUNCTIONS
-            // ==========================================
+
             function copyToClipboard(text) {
                 let tempInput = $("<input>");
                 $("body").append(tempInput);
@@ -143,38 +138,102 @@
                 }).showToast();
             }
 
-            function generateLokerOptions(row) {
-                let kategori = row.checkStaff === 'Y' ? 'staff' : 'non_staff';
-                let listLoker = row.jenis_kelamin === 'L' ? lokerPria : lokerWanita;
-                let rekomendasiLokerId = null;
-                let opsiLoker = `<option value="" disabled selected>Pilih Loker</option>`;
+            function renderLokerDropdown(selectLokerElement, rowData, chosenDivisi) {
+                let kategori = rowData.checkStaff === 'Y' ? 'staff' : 'non_staff';
+                let listLoker = rowData.jenis_kelamin === 'L' ? lokerPria : lokerWanita;
+                let opsiLoker = "";
+                let firstSelected = true;
 
                 listLoker.forEach(function(loker) {
                     let bolehMasuk = false;
+
                     if (kategori === 'staff' && loker.total_penghuni == 0) {
                         bolehMasuk = true;
                     } else if (kategori === 'non_staff' && loker.total_penghuni < loker.kapasitas && loker
                         .kategori_tersedia !== 'staff') {
-                        bolehMasuk = true;
+                        if (loker.total_penghuni == 0) {
+                            bolehMasuk = true;
+                        } else {
+                            let lokerDivisi = loker.divisi_tersedia ? loker.divisi_tersedia.trim() : '';
+
+                            if (chosenDivisi && chosenDivisi === lokerDivisi) {
+                                bolehMasuk = true;
+                            }
+                        }
                     }
 
                     if (bolehMasuk) {
-                        if (rekomendasiLokerId === null) rekomendasiLokerId = loker.id;
-                        let terpilih = (loker.id === rekomendasiLokerId) ? 'selected' : '';
                         let opsiRak = (loker.kode_rak === 'LP') ? 'P' : ((loker.kode_rak === 'LW') ? 'W' :
                             loker.kode_rak);
 
-                        opsiLoker += `<option value="${loker.id}" ${terpilih} data-nik="${row.nik}" data-nama="${row.nama}" data-kode-rak="${loker.kode_rak}" data-no-loker="${loker.no_loker}">
-                                        ${opsiRak} - ${loker.no_loker} (Isi: ${loker.total_penghuni}/${loker.kapasitas})
-                                      </option>`;
+                        let selectedAttr = firstSelected ? 'selected' : '';
+                        firstSelected = false;
+
+                        opsiLoker +=
+                            `<option value="${loker.id}" data-nik="${rowData.nik}" data-nama="${rowData.nama}" data-kode-rak="${loker.kode_rak}" data-no-loker="${loker.no_loker}" ${selectedAttr}>${opsiRak} - ${loker.no_loker} (Isi: ${loker.total_penghuni} / ${loker.kapasitas})</option>`;
                     }
                 });
-                return opsiLoker;
+
+                if (opsiLoker === "") {
+                    opsiLoker = `<option value="" disabled selected>Tidak ada loker tersedia</option>`;
+                }
+
+                selectLokerElement.html(opsiLoker)
+                selectLokerElement.prop('disabled', false)
+                selectLokerElement.select2({
+                    width: "100%"
+                });
+
+                selectLokerElement.trigger('change');
             }
 
-            // ==========================================
-            // 3. DATATABLES INITIALIZATION
-            // ==========================================
+            // function generateLokerOptions(row) {
+            //     let kategori = row.checkStaff === 'Y' ? 'staff' : 'non_staff';
+            //     let listLoker = row.jenis_kelamin === 'L' ? lokerPria : lokerWanita;
+            //     let rekomendasiLokerId = null;
+            //     let opsiLoker = `<option value="" disabled selected>Pilih Loker</option>`;
+
+            //     let karyawanDivisi = row.kode_divisi ? row.kode_divisi.trim() : '';
+
+            //     if (karyawanDivisi.startsWith('PRD')) {
+            //         karyawanDivisi = 'PRD BAS';
+            //     } else if (karyawanDivisi.startsWith('QC')) {
+            //         karyawanDivisi = 'QCB BAS';
+            //     }
+
+            //     listLoker.forEach(function(loker) {
+            //         let bolehMasuk = false;
+
+            //         if (kategori === 'staff' && loker.total_penghuni == 0) {
+            //             bolehMasuk = true;
+            //         } else if (kategori === 'non_staff' && loker.total_penghuni < loker.kapasitas && loker
+            //             .kategori_tersedia !== 'staff') {
+
+            //             if (loker.total_penghuni == 0) {
+            //                 bolehMasuk = true;
+            //             } else {
+            //                 let lokerDivisi = loker.divisi_tersedia ? loker.divisi_tersedia.trim() : '';
+
+            //                 if (karyawanDivisi === lokerDivisi) {
+            //                     bolehMasuk = true;
+            //                 }
+            //             }
+            //         }
+
+            //         if (bolehMasuk) {
+            //             if (rekomendasiLokerId === null) rekomendasiLokerId = loker.id;
+            //             let terpilih = (loker.id === rekomendasiLokerId) ? 'selected' : '';
+            //             let opsiRak = (loker.kode_rak === 'LP') ? 'P' : ((loker.kode_rak === 'LW') ? 'W' :
+            //                 loker.kode_rak);
+
+            //             opsiLoker += `<option value="${loker.id}" ${terpilih} data-nik="${row.nik}" data-nama="${row.nama}" data-kode-rak="${loker.kode_rak}" data-no-loker="${loker.no_loker}">
+        //                             ${opsiRak} - ${loker.no_loker} (Isi: ${loker.total_penghuni}/${loker.kapasitas})
+        //                           </option>`;
+            //         }
+            //     });
+            //     return opsiLoker;
+            // }
+
             let table = $("#tableAjax").DataTable({
                 processing: true,
                 serverSide: true,
@@ -192,98 +251,119 @@
                     }
                 },
                 columns: [{
-                        data: 'nama',
-                        render: data => `<span class="fw-bold">${data}</span>`
-                    },
-                    {
-                        data: 'nik',
-                        render: data =>
-                            `<span class="copy-nik fw-bold text-dark" data-nik="${data}" data-bs-toggle="tooltip" title="Salin NIK">${data}</span>`
-                    },
-                    {
-                        data: 'checkStaff',
-                        render: data => data === 'Y' ? '<span class="badge bg-secondary">Staff</span>' :
-                            '<span class="badge bg-warning">Non Staff</span>'
-                    },
-                    {
-                        data: null,
-                        render: function(data, type, row) {
-                            if (row.penghuni) {
-                                let rak = (row.penghuni.kode_rak === 'LP') ? 'P' : ((row.penghuni
-                                    .kode_rak === 'LW') ? 'W' : row.penghuni.kode_rak);
-                                return `<select class="form-select form-select-sm bg-light" disabled><option>${rak} - ${row.penghuni.no_loker}</option></select>`;
-                            }
+                    data: 'nama',
+                    render: data => `<span class="fw-bold">${data}</span>`
+                }, {
+                    data: 'nik',
+                    render: data =>
+                        `<span class="copy-nik fw-bold text-dark" data-nik="${data}" data-bs-toggle="tooltip" title="Salin NIK">${data}</span>`
+                }, {
+                    data: 'checkStaff',
+                    render: data => data === 'Y' ? '<span class="badge bg-secondary">Staff</span>' :
+                        '<span class="badge bg-warning">Non Staff</span>'
+                }, {
+                    data: null,
+                    render: function(data, type, row) {
+                        if (row.penghuni) {
+                            let rak = (row.penghuni.kode_rak === 'LP') ? 'P' : ((row.penghuni
+                                .kode_rak === 'LW') ? 'W' : row.penghuni.kode_rak);
+                            return `<select class="form-select form-select-sm bg-light" disabled><option>${rak} - ${row.penghuni.no_loker}</option></select>`;
+                        }
 
-                            let opsiLoker = generateLokerOptions(row);
+                        let karyawanDivisi = row.kode_divisi ? row.kode_divisi.trim() : '';
+                        if (karyawanDivisi.startsWith('PRD') || karyawanDivisi.startsWith(
+                                'PRO')) {
+                            karyawanDivisi = 'PRD BAS';
+                        } else if (karyawanDivisi.startsWith('QC') || karyawanDivisi.startsWith(
+                                'QCB')) {
+                            karyawanDivisi = 'QCB BAS';
+                        } else {
+                            karyawanDivisi = '';
+                        }
 
-                            if (row.in_complete === 'Y') {
-                                return `
+                        let divisiList = ['PRD BAS', 'QCB BAS'];
+                        // if (karyawanDivisi && !divisiList.includes(karyawanDivisi)) {
+                        //     divisiList.push(karyawanDivisi);
+                        // }
+
+                        let opsiDivisi =
+                            `<option value=""></option>`;
+                        divisiList.forEach(div => {
+                            let sel = (div === karyawanDivisi) ? 'selected' : '';
+                            opsiDivisi +=
+                                `<option value="${div}" ${sel}>${div}</option>`;
+                        });
+
+                        let uiLoker = `
+                                <div class="wrapper-select-loker d-none mb-1">
+                                    <div class="mb-1">
+                                        <select class="form-select form-select-sm divisiLoker" style="width: 100%;">
+                                            ${opsiDivisi}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <select class="form-select form-select-sm lokerNo" style="width: 100%;" disabled>
+                                            <option value="" disabled selected>Pilih Divisi Bagian Dulu</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <input type="hidden" class="status-tanpa-loker" value="0">
+                            `;
+
+                        if (row.in_complete === 'Y') {
+                            return `
                                     <div class="d-flex flex-column align-items-center gap-1 mb-1 wrapper-tombol-awal">
                                         <span class="badge bg-soft-danger text-danger border border-danger w-100 py-1 mb-1"><i class="ri-close-circle-line align-bottom"></i> Tanpa Loker</span>
                                         <button type="button" class="btn btn-sm btn-outline-primary btn-butuh-loker w-100" title="Tambahkan loker susulan">
                                             <i class="ri-add-circle-fill me-1"></i> Susulkan Loker
                                         </button>
                                     </div>
-                                    <div class="wrapper-select-loker d-none mb-1">
-                                        <select class="form-select form-select-sm lokerNo js-example-basic-single">${opsiLoker}</select>
-                                    </div>
-                                    <input type="hidden" class="status-tanpa-loker" value="0">
+                                    ${uiLoker}
                                 `;
-                            } else {
-                                return `
+                        } else {
+                            return `
                                     <div class="d-flex gap-1 mb-1 wrapper-tombol-awal">
                                         <button type="button" class="btn btn-sm btn-outline-secondary btn-butuh-loker w-50" title="Beri Loker"><i class="ri-add-circle-fill me-1"></i> Butuh</button>
                                         <button type="button" class="btn btn-sm btn-outline-danger btn-tanpa-loker w-50" title="Tanpa Loker"><i class="ri-close-circle-fill me-1"></i> Tanpa</button>
                                     </div>
-                                    <div class="wrapper-select-loker d-none mb-1">
-                                        <select class="form-select form-select-sm lokerNo js-example-basic-single">${opsiLoker}</select>
-                                    </div>
+                                    ${uiLoker}
                                     <div class="wrapper-teks-tanpa-loker d-none mb-1 text-center">
                                         <span class="badge bg-soft-danger text-danger border border-danger w-100 py-2"><i class="ri-close-circle-line align-bottom me-1"></i> Tidak Butuh Loker</span>
                                     </div>
-                                    <input type="hidden" class="status-tanpa-loker" value="0">
                                 `;
-                            }
                         }
-                    },
-                    {
-                        data: 'kode_divisi',
-                        render: data => data ? data : '-'
-                    },
-                    {
-                        data: 'tanggal_masuk',
-                        render: data => data ? moment(data).format('DD MMM YYYY') : '-'
-                    },
-                    {
-                        data: null,
-                        render: function(data, type, row) {
-                            if (row.penghuni) {
-                                return `<center><span class="badge bg-success px-3 py-2 shadow-sm"><i class="ri-check-double-line align-bottom me-1"></i> Tervalidasi</span></center>`;
-                            } else if (row.in_complete === 'Y') {
-                                return `
+                    }
+                }, {
+                    data: 'kode_divisi',
+                    render: data => data ? data : '-'
+                }, {
+                    data: 'tanggal_masuk',
+                    render: data => data ? moment(data).format('DD MMM YYYY') : '-'
+                }, {
+                    data: null,
+                    render: function(data, type, row) {
+                        if (row.penghuni) {
+                            return `<center><span class="badge bg-success px-3 py-2 shadow-sm"><i class="ri-check-double-line align-bottom me-1"></i> Tervalidasi</span></center>`;
+                        } else if (row.in_complete === 'Y') {
+                            return `
                                     <center>
                                         <span class="badge bg-danger px-3 py-2 shadow-sm mb-2 d-block badge-status-verif"><i class="ri-check-double-line align-bottom me-1"></i> Tervalidasi (Tanpa Loker)</span>
                                         <button type="button" class="btn btn-sm btn-dark fw-bold btn-verifikasi shadow-sm d-none" data-idcard="${row.id}" data-rfid="${row.cardnodevice}" disabled><i class="ri-barcode-box-line align-bottom me-1"></i> Verif Susulan</button>
                                     </center>`;
-                            } else {
-                                return `<center><button type="button" class="btn btn-sm btn-dark fw-bold btn-verifikasi shadow-sm" data-idcard="${row.id}" data-rfid="${row.cardnodevice}" disabled><i class="ri-barcode-box-line align-bottom me-1"></i> Verifikasi</button></center>`;
-                            }
+                        } else {
+                            return `<center><button type="button" class="btn btn-sm btn-dark fw-bold btn-verifikasi shadow-sm" data-idcard="${row.id}" data-rfid="${row.cardnodevice}" disabled><i class="ri-barcode-box-line align-bottom me-1"></i> Verifikasi</button></center>`;
                         }
-                    },
-                ]
+                    }
+                }, ]
             });
 
-            table.on('draw.dt', function() {
-                $('.js-example-basic-single').select2({
-                    minimumResultsForSearch: 10
-                });
-                $('.lokerNo').trigger('change');
-                $('[data-bs-toggle="tooltip"]').tooltip();
-            });
-
-            // ==========================================
-            // 4. EVENT LISTENERS
-            // ==========================================
+            // table.on('draw.dt', function() {
+            //     $('.js-example-basic-single').select2({
+            //         minimumResultsForSearch: 10
+            //     });
+            //     $('.lokerNo').trigger('change');
+            //     $('[data-bs-toggle="tooltip"]').tooltip();
+            // });
 
             // Filter Events
             $("#tanggalFilter").on("change", function() {
@@ -311,7 +391,16 @@
                 $(this).closest('.wrapper-tombol-awal').addClass('d-none');
 
                 let wrapperLoker = tr.find('.wrapper-select-loker').removeClass('d-none');
-                wrapperLoker.find('.js-example-basic-single').select2().trigger('change');
+                // wrapperLoker.find('.js-example-basic-single').select2().trigger('change');
+                let divisiSelect = wrapperLoker.find('.divisiLoker');
+                divisiSelect.select2(({
+                    tags: true,
+                    placeholder: "--Pilih Divisi Bagian--",
+                    allowClear: true,
+                    width: '100%'
+                }));
+
+                divisiSelect.trigger('change');
 
                 tr.find('.badge-status-verif').addClass('d-none');
                 tr.find('.btn-verifikasi').removeClass('d-none');
@@ -330,16 +419,48 @@
                     .html('<i class="ri-barcode-box-line"></i> Verifikasi (Tanpa Loker)');
             });
 
-            $(document).on('change', '.wrapper-select-loker select', function() {
+            $(document).on('change', '.divisiLoker', function() {
+                let tr = $(this).closest('tr');
+                let rowData = $('#tableAjax').DataTable().row(tr).data();
+                let chosenDivisi = $(this).val();
+                let selectLoker = tr.find('.lokerNo');
+                let btnVerif = tr.find('.btn-verifikasi');
+
+                if (chosenDivisi) {
+                    renderLokerDropdown(selectLoker, rowData, chosenDivisi);
+                } else {
+                    selectLoker.html(
+                        '<option value="" disabled selected>Pilih Divisi Bagian Dulu</option>');
+                    selectLoker.prop('disabled', true).select2({
+                        width: '100%'
+                    });
+
+                    btnVerif.prop('disabled', true).removeClass('btn-outline-success').addClass('btn-dark');
+                }
+            });
+
+            $(document).on('change', '.lokerNo', function() {
                 let tr = $(this).closest('tr');
                 let btnVerif = tr.find('.btn-verifikasi');
-                if ($(this).val() && !$(this).closest('.wrapper-select-loker').hasClass('d-none')) {
+
+                if ($(this).val()) {
                     btnVerif.prop('disabled', false).removeClass('btn-dark').addClass(
                         'btn-outline-success');
                 } else {
                     btnVerif.prop('disabled', true).removeClass('btn-outline-success').addClass('btn-dark');
                 }
-            });
+            })
+
+            // $(document).on('change', '.wrapper-select-loker select', function() {
+            //     let tr = $(this).closest('tr');
+            //     let btnVerif = tr.find('.btn-verifikasi');
+            //     if ($(this).val() && !$(this).closest('.wrapper-select-loker').hasClass('d-none')) {
+            //         btnVerif.prop('disabled', false).removeClass('btn-dark').addClass(
+            //             'btn-outline-success');
+            //     } else {
+            //         btnVerif.prop('disabled', true).removeClass('btn-outline-success').addClass('btn-dark');
+            //     }
+            // });
 
             // Modal Verification Events
             $(document).on('click', '.btn-verifikasi', function() {
@@ -370,7 +491,9 @@
                 $('#verif_nama').val(rowData.nama);
                 $('#verif_kategori').val(rowData.staff === 'Y' ? 'Staff' : 'Non Staff');
                 $('#verif_hidden_idcard').val(btn.data('idcard'));
-                $('#verif_hidden_divisi').val(rowData.kode_divisi);
+                // $('#verif_hidden_divisi').val(rowData.kode_divisi);
+                let chosenDivisi = tr.find('.divisiLoker').val();
+                $('#verif_hidden_divisi').val(chosenDivisi || rowData.kode_divisi);
                 $('#verif_hidden_jk').val(rowData.jenis_kelamin);
 
                 $('#verif_detail_container, #verif_footer').hide();
