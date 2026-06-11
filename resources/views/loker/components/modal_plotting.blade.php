@@ -245,28 +245,50 @@
                 let katVal = $('#plot_kategori_select_container').is(':visible') ? $(
                     '#plot_kategori_val_manual').val() : $('#plot_kategori_val').val();
 
-                if (isRelokasi) {
+                const listDivisiValid = ['PRD BAS', 'QCB BAS', 'HELPER PRD - FO', 'HELPER PRD - KMJ',
+                    'HELPER QC - KMJ'
+                ];
+                let isDivisiValid = tempDivisi && listDivisiValid.includes(tempDivisi.toUpperCase().trim());
+
+                if (katVal === 'staff') {
                     $('#plot_divisi_wrapper').hide();
-                    if (katVal === 'staff') {
-                        $('#plot_divisi_val').val('-');
-                    } else {
-                        $('#plot_divisi_val').val(tempDivisi);
-                    }
+                    $('#plot_divisi_val').val('-');
                     checkAndLoadLockers();
                 } else {
-                    if (genderVal && katVal) {
-                        if (katVal === 'staff') {
-                            $('#plot_divisi_wrapper').hide();
-                            $('#plot_divisi_val').val('-');
-                            checkAndLoadLockers();
-                        } else {
-                            $('#plot_divisi_wrapper').show();
-                            loadDivisiList();
-                        }
-                    } else {
+                    if (isRelokasi && isDivisiValid) {
                         $('#plot_divisi_wrapper').hide();
+                        $('#plot_divisi_val').val(tempDivisi);
+                        checkAndLoadLockers();
+                    } else {
+                        $('#plot_divisi_wrapper').show();
+                        $('#plot_divisi_label_container').hide();
+                        $('#plot_divisi_select_container').show();
+                        loadDivisiList();
                     }
                 }
+
+                // if (isRelokasi) {
+                //     $('#plot_divisi_wrapper').hide();
+                //     if (katVal === 'staff') {
+                //         $('#plot_divisi_val').val('-');
+                //     } else {
+                //         $('#plot_divisi_val').val(tempDivisi);
+                //     }
+                //     checkAndLoadLockers();
+                // } else {
+                //     if (genderVal && katVal) {
+                //         if (katVal === 'staff') {
+                //             $('#plot_divisi_wrapper').hide();
+                //             $('#plot_divisi_val').val('-');
+                //             checkAndLoadLockers();
+                //         } else {
+                //             $('#plot_divisi_wrapper').show();
+                //             loadDivisiList();
+                //         }
+                //     } else {
+                //         $('#plot_divisi_wrapper').hide();
+                //     }
+                // }
             });
 
             $('#plot_divisi_val_manual').on('change', function() {
@@ -379,7 +401,12 @@
                                 'mitra_kerja' ? 'MITRA KERJA' : 'NON-STAFF'));
                         }
 
-                        if (isRelokasi) {
+                        const listDivisiValid = ['PRD BAS', 'QCB BAS', 'HELPER PRD - FO', 'HELPER PRD - KMJ',
+                            'HELPER QCB - KMJ'
+                        ];
+                        let isDivisiValid = tempDivisi && listDivisiValid.includes(tempDivisi.toUpperCase().trim());
+
+                        if (isRelokasi && !d.is_category_empty && isDivisiValid) {
                             $('#plot_divisi_wrapper').hide();
                             $('#plot_divisi_val').val(d.divisi);
                         } else {
@@ -399,12 +426,45 @@
                                 if (katVal === 'staff') {
                                     $('#plot_divisi_wrapper').hide();
                                     $('#plot_divisi_val').val('-');
+                                    if (!d.is_gender_empty) {
+                                        readyToLoad = true;
+                                    }
                                 } else {
                                     $('#plot_divisi_wrapper').show();
                                     loadDivisiList();
+                                    readyToLoad = false;
                                 }
+                            } else {
+                                readyToLoad = false;
                             }
                         }
+
+                        // if (isRelokasi) {
+                        //     $('#plot_divisi_wrapper').hide();
+                        //     $('#plot_divisi_val').val(d.divisi);
+                        // } else {
+                        //     $('#plot_divisi_val').val('');
+                        //     $('#plot_divisi_label_container').hide();
+                        //     $('#plot_divisi_select_container').show();
+                        //     $('#plot_divisi_val_manual').empty().append(
+                        //         '<option value="" selected disabled>Pilih Divisi Penempatan</option>');
+                        //     $('#plot_divisi_wrapper').hide();
+
+                        //     let genderVal = $('#plot_gender_select_container').is(':visible') ? $(
+                        //         '#plot_gender_val_manual').val() : d.gender;
+                        //     let katVal = $('#plot_kategori_select_container').is(':visible') ? $(
+                        //         '#plot_kategori_val_manual').val() : d.kategori;
+
+                        //     if (genderVal && katVal) {
+                        //         if (katVal === 'staff') {
+                        //             $('#plot_divisi_wrapper').hide();
+                        //             $('#plot_divisi_val').val('-');
+                        //         } else {
+                        //             $('#plot_divisi_wrapper').show();
+                        //             loadDivisiList();
+                        //         }
+                        //     }
+                        // }
 
                         if (readyToLoad && isRelokasi) {
                             checkAndLoadLockers();
