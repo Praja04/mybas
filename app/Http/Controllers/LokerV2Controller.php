@@ -2,6 +2,7 @@
 namespace App\Http\Controllers;
 
 use App\Exports\LokerExport;
+use App\HrKaryawan;
 use App\Http\Controllers\Controller;
 use App\Imports\LokerImport;
 use App\Imports\LokerSheetSelectorImport;
@@ -229,7 +230,7 @@ class LokerV2Controller extends Controller
                     ->orWhere('nama', 'LIKE', "%$search%");
             })->first();
 
-        $hris = Karyawan::where(function ($q) use ($search) {
+        $hris = HrKaryawan::where(function ($q) use ($search) {
             $q->whereRaw("CAST(nik AS UNSIGNED) = CAST(? AS UNSIGNED)", [$search])
                 ->orWhere('nama', 'LIKE', "%$search%")
                 ->orWhere('cardnodevice', $search);
@@ -261,7 +262,7 @@ class LokerV2Controller extends Controller
         }
 
         if (! $hris && $dataPusat && $dataPusat->NIK) {
-            $hris = Karyawan::whereRaw("CAST(nik AS UNSIGNED) = CAST(? AS UNSIGNED)", [$dataPusat->NIK])->first();
+            $hris = HrKaryawan::whereRaw("CAST(nik AS UNSIGNED) = CAST(? AS UNSIGNED)", [$dataPusat->NIK])->first();
         }
 
         if (! $lokerAktif && ! $hris && ! $dataPusat) {
@@ -511,9 +512,15 @@ class LokerV2Controller extends Controller
 
         // Filter Kapasitas & Kriteria (Sama persis dengan apiSuggestLoker)
         $maxCap = ($kategori === 'staff') ? 1 : 2;
+<<<<<<< Updated upstream
         $query->whereRaw("(SELECT COUNT(id) FROM loker_penghuni WHERE no_loker = loker_rak.no_loker AND kode_rak = loker_rak.kode_rak AND is_active = 'Y' " . ($nik ? "AND CAST(nik AS UNSIGNED) != CAST('$nik' AS UNSIGNED)" : "") . ") < $maxCap");
 
         $query->whereRaw("(SELECT COUNT(id) FROM loker_penghuni WHERE no_loker = loker_rak.no_loker AND kode_rak = loker_rak.kode_rak AND is_active = 'Y' " . ($nik ? "AND CAST(nik AS UNSIGNED) != CAST('$nik' AS UNSIGNED)" : "") . " AND (TRIM(LOWER(kategori_karyawan)) != '$kategori' OR TRIM(UPPER(divisi)) != '$divisi')) = 0");
+=======
+        $query->whereRaw("(SELECT COUNT(id) FROM loker_penghuni WHERE no_loker = loker_rak.no_loker AND kode_rak = loker_rak.kode_rak AND is_active = 'Y' " . ($nik ? "AND nik != '$nik'" : "") . ") < $maxCap");
+
+        $query->whereRaw("(SELECT COUNT(id) FROM loker_penghuni WHERE no_loker = loker_rak.no_loker AND kode_rak = loker_rak.kode_rak AND is_active = 'Y' " . ($nik ? "AND nik != '$nik'" : "") . " AND (TRIM(LOWER(kategori_karyawan)) != '$kategori' OR TRIM(UPPER(divisi)) != '$divisi')) = 0");
+>>>>>>> Stashed changes
 
         $available = $query->orderByRaw('CAST(no_loker AS UNSIGNED) ASC')->get();
 
@@ -545,7 +552,11 @@ class LokerV2Controller extends Controller
             ->get()
             ->map(function ($item) {
                 if (empty($item->divisi) || $item->divisi == '-') {
+<<<<<<< Updated upstream
                     $hris = Karyawan::where('nik', $item->nik)->first();
+=======
+                    $hris = HrKaryawan::where('nik', $item->nik)->first();
+>>>>>>> Stashed changes
 
                     if ($hris && ! empty($hris->kode_divisi)) {
                         $item->divisi = $hris->kode_divisi;
