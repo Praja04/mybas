@@ -35,12 +35,9 @@ class SendSioEmailJob implements ShouldQueue
      * @return void
      */
     public function handle()
-<<<<<<< Updated upstream
     {
         // Log::info('SendSioEmailJob STARTED - DISABLED TEMPORARILY');
         return; // Matikan sementara
-=======
->>>>>>> Stashed changes
         Log::info('SendSioEmailJob STARTED');
 
         $certificates = [];
