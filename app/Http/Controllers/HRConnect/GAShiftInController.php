@@ -92,7 +92,7 @@ class GAShiftInController extends Controller
         $query = HrKaryawan::with('penghuni')->whereNotExists(function ($q) {
             $q->select(DB::raw(1))
                 ->from('loker_penghuni')
-                ->whereRaw('loker_penghuni.nik COLLATE utf8mb4_unicode_ci = hr_karyawan.nik')
+                ->whereRaw('loker_penghuni.nik = CONVERT(hr_karyawan.nik USING utf8mb4)')
                 ->where('is_active', 'Y');
         })
             ->select('id', 'nik', 'nama', 'kode_divisi', 'kode_bagian', 'kode_admin', 'jenis_kelamin', 'staff', 'tanggal_masuk', 'in_complete', 'cardnodevice')

@@ -108,13 +108,7 @@
 
                                 <div class="col-6">
                                     <label class="text-muted font-size-sm mb-1">Kategori</label>
-
-                                    <div id="plot_kategori_label_container">
-                                        <input type="text" id="plot_kategori_label"
-                                            class="form-control form-control-solid border-0" readonly placeholder="-">
-                                    </div>
-
-                                    <div id="plot_kategori_select_container" style="display: none;">
+                                    <div id="plot_kategori_select_container">
                                         <select id="plot_kategori_val_manual"
                                             class="form-control font-weight-bolder border-primary">
                                             <option value="" selected disabled>Pilih Kategori</option>
@@ -123,20 +117,13 @@
                                             <option value="mitra_kerja">MITRA KERJA</option>
                                         </select>
                                     </div>
-
                                     <input type="hidden" name="kategori_karyawan" id="plot_kategori_val">
                                 </div>
 
                                 <div class="col-12 mt-4" id="plot_divisi_wrapper" style="display: none;">
                                     <label class="text-muted font-size-sm mb-1">Divisi (Khusus Pengelompokan
                                         Loker)</label>
-
-                                    <div id="plot_divisi_label_container" style="display: none;">
-                                        <input type="text" id="plot_divisi_label"
-                                            class="form-control form-control-solid border-0" readonly placeholder="-">
-                                    </div>
-
-                                    <div id="plot_divisi_select_container" style="display: none;">
+                                    <div id="plot_divisi_select_container">
                                         <select id="plot_divisi_val_manual"
                                             class="form-control font-weight-bolder border-primary">
                                             <option value="" selected disabled>Pilih Divisi Penempatan</option>
@@ -221,6 +208,36 @@
             }
         }
 
+        function getMappedDivisi(kategori, rawDivisi) {
+            if (!rawDivisi || rawDivisi === '-') return '';
+            let divisi = rawDivisi.toUpperCase().trim();
+
+            if (kategori === 'non_staff') {
+                if (divisi.includes('PRD') || divisi.includes('PRO') || divisi.includes('PRODUKSI')) {
+                    return 'PRD BAS';
+                }
+                if (divisi.includes('QC') || divisi.includes('QCB') || divisi.includes('QUALITY')) {
+                    return 'QCB BAS';
+                }
+            } else if (kategori === 'mitra_kerja') {
+                if (divisi.includes('QC') || divisi.includes('QCB') || divisi.includes('QUALITY')) {
+                    return 'HELPER QC - KMJ';
+                }
+                if (divisi.includes('PRD') || divisi.includes('PRO') || divisi.includes('PRODUKSI')) {
+                    if (divisi.includes('FORTUNA') || divisi.includes('FO')) {
+                        return 'HELPER PRD - FO';
+                    }
+                    return 'HELPER PRD - KMJ';
+                }
+            }
+
+            const divisiValid = ['PRD BAS', 'QCB BAS', 'HELPER PRD - FO', 'HELPER PRD - KMJ', 'HELPER QC - KMJ'];
+            if (divisiValid.includes(divisi)) {
+                return divisi;
+            }
+            return '';
+        }
+
         $(document).ready(function() {
             $('#plot_nik').on('keypress', function(e) {
                 if (e.which == 13) {
@@ -239,57 +256,84 @@
                 }
             });
 
-            $('#plot_gender_val_manual, #plot_kategori_val_manual').on('change', function() {
-                let genderVal = $('#plot_gender_select_container').is(':visible') ? $(
-                    '#plot_gender_val_manual').val() : $('#plot_gender_val').val();
-                let katVal = $('#plot_kategori_select_container').is(':visible') ? $(
-                    '#plot_kategori_val_manual').val() : $('#plot_kategori_val').val();
+            $('#plot_gender_val_manual').on('change', function() {
+                let genderVal = $(this).val();
+                $('#plot_gender_val').val(genderVal);
+                $(this).removeClass('is-invalid');
+                checkAndLoadLockers();
+            });
 
-                const listDivisiValid = ['PRD BAS', 'QCB BAS', 'HELPER PRD - FO', 'HELPER PRD - KMJ',
-                    'HELPER QC - KMJ'
-                ];
-                let isDivisiValid = tempDivisi && listDivisiValid.includes(tempDivisi.toUpperCase().trim());
+            $('#plot_kategori_val_manual').on('change', function() {
+                let katVal = $(this).val();
+                $('#plot_kategori_val').val(katVal);
+                $(this).removeClass('is-invalid');
 
                 if (katVal === 'staff') {
                     $('#plot_divisi_wrapper').hide();
                     $('#plot_divisi_val').val('-');
                     checkAndLoadLockers();
+                } else if (katVal === 'non_staff' || katVal === 'mitra_kerja') {
+                    $('#plot_divisi_wrapper').show();
+                    loadDivisiList();
                 } else {
-                    if (isRelokasi && isDivisiValid) {
-                        $('#plot_divisi_wrapper').hide();
-                        $('#plot_divisi_val').val(tempDivisi);
-                        checkAndLoadLockers();
-                    } else {
-                        $('#plot_divisi_wrapper').show();
-                        $('#plot_divisi_label_container').hide();
-                        $('#plot_divisi_select_container').show();
-                        loadDivisiList();
-                    }
+                    $('#plot_divisi_wrapper').hide();
+                    $('#plot_divisi_val').val();
+                    $('#select_no_loker').empty().append(
+                        `<option value="" selected disabled>Pilih Loker</option>`)
                 }
-
-                // if (isRelokasi) {
-                //     $('#plot_divisi_wrapper').hide();
-                //     if (katVal === 'staff') {
-                //         $('#plot_divisi_val').val('-');
-                //     } else {
-                //         $('#plot_divisi_val').val(tempDivisi);
-                //     }
-                //     checkAndLoadLockers();
-                // } else {
-                //     if (genderVal && katVal) {
-                //         if (katVal === 'staff') {
-                //             $('#plot_divisi_wrapper').hide();
-                //             $('#plot_divisi_val').val('-');
-                //             checkAndLoadLockers();
-                //         } else {
-                //             $('#plot_divisi_wrapper').show();
-                //             loadDivisiList();
-                //         }
-                //     } else {
-                //         $('#plot_divisi_wrapper').hide();
-                //     }
-                // }
             });
+
+            // $('#plot_gender_val_manual, #plot_kategori_val_manual').on('change', function() {
+            //     let genderVal = $('#plot_gender_select_container').is(':visible') ? $(
+            //         '#plot_gender_val_manual').val() : $('#plot_gender_val').val();
+            //     let katVal = $('#plot_kategori_select_container').is(':visible') ? $(
+            //         '#plot_kategori_val_manual').val() : $('#plot_kategori_val').val();
+
+            //     const listDivisiValid = ['PRD BAS', 'QCB BAS', 'HELPER PRD - FO', 'HELPER PRD - KMJ',
+            //         'HELPER QC - KMJ'
+            //     ];
+            //     let isDivisiValid = tempDivisi && listDivisiValid.includes(tempDivisi.toUpperCase().trim());
+
+            //     if (katVal === 'staff') {
+            //         $('#plot_divisi_wrapper').hide();
+            //         $('#plot_divisi_val').val('-');
+            //         checkAndLoadLockers();
+            //     } else {
+            //         if (isRelokasi && isDivisiValid) {
+            //             $('#plot_divisi_wrapper').hide();
+            //             $('#plot_divisi_val').val(tempDivisi);
+            //             checkAndLoadLockers();
+            //         } else {
+            //             $('#plot_divisi_wrapper').show();
+            //             $('#plot_divisi_label_container').hide();
+            //             $('#plot_divisi_select_container').show();
+            //             loadDivisiList();
+            //         }
+            //     }
+
+            //     // if (isRelokasi) {
+            //     //     $('#plot_divisi_wrapper').hide();
+            //     //     if (katVal === 'staff') {
+            //     //         $('#plot_divisi_val').val('-');
+            //     //     } else {
+            //     //         $('#plot_divisi_val').val(tempDivisi);
+            //     //     }
+            //     //     checkAndLoadLockers();
+            //     // } else {
+            //     //     if (genderVal && katVal) {
+            //     //         if (katVal === 'staff') {
+            //     //             $('#plot_divisi_wrapper').hide();
+            //     //             $('#plot_divisi_val').val('-');
+            //     //             checkAndLoadLockers();
+            //     //         } else {
+            //     //             $('#plot_divisi_wrapper').show();
+            //     //             loadDivisiList();
+            //     //         }
+            //     //     } else {
+            //     //         $('#plot_divisi_wrapper').hide();
+            //     //     }
+            //     // }
+            // });
 
             $('#plot_divisi_val_manual').on('change', function() {
                 $('#plot_divisi_val').val($(this).val());
@@ -317,8 +361,7 @@
 
         function loadDivisiList() {
             let dropdown = $('#plot_divisi_val_manual');
-            let kategori = $('#plot_kategori_select_container').is(':visible') ? $('#plot_kategori_val_manual').val() : $(
-                '#plot_kategori_val').val();
+            let kategori = $('#plot_kategori_val_manual').val();
 
             if (!kategori || kategori === 'staff') return;
 
@@ -328,14 +371,21 @@
                 .done(function(data) {
                     dropdown.empty().append('<option value="" selected disabled>Pilih Divisi Penempatan</option>');
                     if (data.length > 0) {
+                        let mappedDivisi = getMappedDivisi(kategori, tempDivisi);
+
                         data.forEach(item => {
-                            let selected = (tempDivisi && tempDivisi.toUpperCase() === item.value
+                            let selected = (mappedDivisi && mappedDivisi.toUpperCase() === item.value
                                 .toUpperCase()) ? 'selected' : '';
                             dropdown.append(`<option value="${item.value}" ${selected}>${item.label}</option>`);
                         });
 
-                        if (tempDivisi && dropdown.find(`option[value='${tempDivisi}']`).length > 0) {
-                            dropdown.val(tempDivisi).trigger('change');
+                        if (mappedDivisi) {
+                            dropdown.val(mappedDivisi).trigger('change');
+                        } else {
+                            dropdown.val('');
+                            $('#plot_divisi_val').val('');
+                            $('#select_no_loker').empty().append(
+                                `<option value="" selected disabled>Pilih Loker</option>`)
                         }
                     } else {
                         dropdown.append('<option value="" disabled>❌ Data Divisi Kosong</option>');
@@ -372,14 +422,14 @@
 
                         $('#plot_foto_img').attr('src', d.foto ? d.foto : state.defaultFoto);
 
-                        let readyToLoad = true;
+                        // let readyToLoad = true;
 
                         if (d.is_gender_empty) {
                             $('#plot_gender_val').val('');
                             $('#plot_gender_label_container').hide();
                             $('#plot_gender_select_container').show();
                             $('#plot_gender_val_manual').val('').addClass('is-invalid');
-                            readyToLoad = false;
+                            // readyToLoad = false;
                         } else {
                             $('#plot_gender_val').val(d.gender);
                             $('#plot_gender_select_container').hide();
@@ -388,56 +438,57 @@
                         }
 
                         if (d.is_category_empty) {
-                            $('#plot_kategori_val').val('');
-                            $('#plot_kategori_label_container').hide();
-                            $('#plot_kategori_select_container').show();
-                            $('#plot_kategori_val_manual').val('').addClass('is-invalid');
-                            readyToLoad = false;
+                            // $('#plot_kategori_val').val('');
+                            // $('#plot_kategori_label_container').hide();
+                            // $('#plot_kategori_select_container').show();
+                            $('#plot_kategori_val_manual').val('').addClass('is-invalid').trigger('change');
+                            // readyToLoad = false;
                         } else {
-                            $('#plot_kategori_val').val(d.kategori);
-                            $('#plot_kategori_select_container').hide();
-                            $('#plot_kategori_label_container').show();
-                            $('#plot_kategori_label').val(d.kategori === 'staff' ? 'STAFF' : (d.kategori ===
-                                'mitra_kerja' ? 'MITRA KERJA' : 'NON-STAFF'));
+                            // $('#plot_kategori_val').val(d.kategori);
+                            $('#plot_kategori_val_manual').val(d.kategori).removeClass('is-invalid').trigger('change');
+                            // $('#plot_kategori_select_container').hide();
+                            // $('#plot_kategori_label_container').show();
+                            // $('#plot_kategori_label').val(d.kategori === 'staff' ? 'STAFF' : (d.kategori ===
+                            //     'mitra_kerja' ? 'MITRA KERJA' : 'NON-STAFF'));
                         }
 
-                        const listDivisiValid = ['PRD BAS', 'QCB BAS', 'HELPER PRD - FO', 'HELPER PRD - KMJ',
-                            'HELPER QCB - KMJ'
-                        ];
-                        let isDivisiValid = tempDivisi && listDivisiValid.includes(tempDivisi.toUpperCase().trim());
+                        // const listDivisiValid = ['PRD BAS', 'QCB BAS', 'HELPER PRD - FO', 'HELPER PRD - KMJ',
+                        //     'HELPER QCB - KMJ'
+                        // ];
+                        // let isDivisiValid = tempDivisi && listDivisiValid.includes(tempDivisi.toUpperCase().trim());
 
-                        if (isRelokasi && !d.is_category_empty && isDivisiValid) {
-                            $('#plot_divisi_wrapper').hide();
-                            $('#plot_divisi_val').val(d.divisi);
-                        } else {
-                            $('#plot_divisi_val').val('');
-                            $('#plot_divisi_label_container').hide();
-                            $('#plot_divisi_select_container').show();
-                            $('#plot_divisi_val_manual').empty().append(
-                                '<option value="" selected disabled>Pilih Divisi Penempatan</option>');
-                            $('#plot_divisi_wrapper').hide();
+                        // if (isRelokasi && !d.is_category_empty && isDivisiValid) {
+                        //     $('#plot_divisi_wrapper').hide();
+                        //     $('#plot_divisi_val').val(d.divisi);
+                        // } else {
+                        //     $('#plot_divisi_val').val('');
+                        //     $('#plot_divisi_label_container').hide();
+                        //     $('#plot_divisi_select_container').show();
+                        //     $('#plot_divisi_val_manual').empty().append(
+                        //         '<option value="" selected disabled>Pilih Divisi Penempatan</option>');
+                        //     $('#plot_divisi_wrapper').hide();
 
-                            let genderVal = $('#plot_gender_select_container').is(':visible') ? $(
-                                '#plot_gender_val_manual').val() : d.gender;
-                            let katVal = $('#plot_kategori_select_container').is(':visible') ? $(
-                                '#plot_kategori_val_manual').val() : d.kategori;
+                        //     let genderVal = $('#plot_gender_select_container').is(':visible') ? $(
+                        //         '#plot_gender_val_manual').val() : d.gender;
+                        //     let katVal = $('#plot_kategori_select_container').is(':visible') ? $(
+                        //         '#plot_kategori_val_manual').val() : d.kategori;
 
-                            if (genderVal && katVal) {
-                                if (katVal === 'staff') {
-                                    $('#plot_divisi_wrapper').hide();
-                                    $('#plot_divisi_val').val('-');
-                                    if (!d.is_gender_empty) {
-                                        readyToLoad = true;
-                                    }
-                                } else {
-                                    $('#plot_divisi_wrapper').show();
-                                    loadDivisiList();
-                                    readyToLoad = false;
-                                }
-                            } else {
-                                readyToLoad = false;
-                            }
-                        }
+                        //     if (genderVal && katVal) {
+                        //         if (katVal === 'staff') {
+                        //             $('#plot_divisi_wrapper').hide();
+                        //             $('#plot_divisi_val').val('-');
+                        //             if (!d.is_gender_empty) {
+                        //                 readyToLoad = true;
+                        //             }
+                        //         } else {
+                        //             $('#plot_divisi_wrapper').show();
+                        //             loadDivisiList();
+                        //             readyToLoad = false;
+                        //         }
+                        //     } else {
+                        //         readyToLoad = false;
+                        //     }
+                        // }
 
                         // if (isRelokasi) {
                         //     $('#plot_divisi_wrapper').hide();
@@ -466,9 +517,9 @@
                         //     }
                         // }
 
-                        if (readyToLoad && isRelokasi) {
-                            checkAndLoadLockers();
-                        }
+                        // if (readyToLoad && isRelokasi) {
+                        //     checkAndLoadLockers();
+                        // }
 
                         if (d.no_loker) {
                             $('#plot_loker_lama').val("LOKER " + d.no_loker);
