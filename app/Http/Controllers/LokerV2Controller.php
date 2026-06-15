@@ -32,21 +32,62 @@ class LokerV2Controller extends Controller
     private function getKategoriKaryawan($karyawan)
     {
         if (! $karyawan) {
+            return null;
+        }
+
+        if (isset($karyawan->staff)) {
+            if (strtoupper($karyawan->staff) === 'Y') {
+                return 'staff';
+            }
             return 'non_staff';
         }
 
-        if (strtoupper($karyawan->staff ?? 'N') === 'Y') {
-            return 'staff';
+        if (isset($karyawan->TYPECARD)) {
+            if ($karyawan->TYPECARD == 1) {
+                return 'mitra_kerja';
+            }
+            return null;
         }
 
-        $divisi = strtoupper($karyawan->kode_divisi ?? '');
-        $bagian = strtoupper($karyawan->kode_bagian ?? '');
+        // $divisi = strtoupper($karyawan->kode_divisi ?? '');
+        // $bagian = strtoupper($karyawan->kode_bagian ?? '');
 
-        if (str_contains($divisi, 'MITRA') || str_contains($bagian, 'MITRA')) {
-            return 'mitra_kerja';
+        // if (str_contains($divisi, 'MITRA') || str_contains($bagian, 'MITRA')) {
+        //     return 'mitra_kerja';
+        // }
+
+        return null;
+    }
+
+    private function mapDivisi($kategori, $rawDivisi)
+    {
+        if (empty($rawDivisi) || $rawDivisi == '-') {
+            return '-';
         }
 
-        return 'non_staff';
+        $div = strtoupper(trim($rawDivisi));
+
+        // Jika kategori non-staff atau staff, kita selaraskan divisi kasarnya
+        if ($kategori === 'non_staff' || $kategori === 'staff') {
+            if (str_contains($div, 'PRD') || str_contains($div, 'PRO')) {
+                return 'PRD BAS';
+            }
+            if (str_contains($div, 'QC') || str_contains($div, 'QCB')) {
+                return 'QCB BAS';
+            }
+        } elseif ($kategori === 'mitra_kerja') {
+            if (str_contains($div, 'QC') || str_contains($div, 'QCB')) {
+                return 'HELPER QC - KMJ';
+            }
+            if (str_contains($div, 'PRD') || str_contains($div, 'PRO')) {
+                if (str_contains($div, 'FORTUNA') || str_contains($div, 'FO')) {
+                    return 'HELPER PRD - FO';
+                }
+                return 'HELPER PRD - KMJ';
+            }
+        }
+
+        return $div;
     }
 
     public function index()
@@ -240,7 +281,7 @@ class LokerV2Controller extends Controller
         try {
             $dataPusat = DB::connection('192.168.178.44-admin')
                 ->table('MSIDCARD')
-                ->select('NIK', 'EMPNM', 'DEPTID', 'CARDNODEVICE', 'RFID', 'FOTOBLOB', 'STATUS')
+                ->select('NIK', 'EMPNM', 'DEPTID', 'CARDNODEVICE', 'RFID', 'FOTOBLOB', 'STATUS', 'TYPECARD')
                 ->where(function ($q) use ($search, $lokerAktif, $hris) {
                     $q->whereRaw("CAST(NIK AS UNSIGNED) = CAST(? AS UNSIGNED)", [$search])
                         ->orWhere('EMPNM', 'LIKE', "%$search%")
@@ -280,7 +321,13 @@ class LokerV2Controller extends Controller
         if (in_array($kategoriClean, $validKategori)) {
             $kategori = $kategoriClean;
         } else {
-            $kategori = $hris ? $this->getKategoriKaryawan($hris) : $this->getKategoriKaryawan($dataPusat);
+            $kategoriDb = $hris ? $this->getKategoriKaryawan($hris) : $this->getKategoriKaryawan($dataPusat);
+
+            if (in_array(strtolower(trim($kategoriDb)), $validKategori)) {
+                $kategori = strtolower(trim($kategoriDb));
+            } else {
+                $kategori = null;
+            }
         }
 
         // $kategori = $lokerAktif ? $lokerAktif->kategori_karyawan : ($hris ? $this->getKategoriKaryawan($hris) : $this->getKategoriKaryawan($dataPusat));
@@ -545,7 +592,9 @@ class LokerV2Controller extends Controller
             ->select('id', 'nik', 'nama', 'divisi', 'kategori_karyawan', 'tgl_masuk')
             ->get()
             ->map(function ($item) {
-                if (empty($item->divisi) || $item->divisi == '-') {
+                if (strtolower(trim($item->kategori_karyawan)) === 'staff') {
+                    $item->divisi = '-';
+                } elseif (empty($item->divisi) || $item->divisi == '-') {
                     $hris = HrKaryawan::where('nik', $item->nik)->first();
 
                     if ($hris && ! empty($hris->kode_divisi)) {
@@ -744,19 +793,44 @@ class LokerV2Controller extends Controller
             $nikFix       = $dataExternal->NIK;
             $namaKaryawan = $dataExternal->EMPNM;
             $divisi       = $dataExternal->DEPTID;
-            $kategori     = $request->kategori_karyawan ?? (($dataExternal->TYPECARD == 1) ? 'mitra_kerja' : 'non_staff');
+            // $kategori     = $request->kategori_karyawan ?? (($dataExternal->TYPECARD == 1) ? 'mitra_kerja' : 'non_staff');
         } elseif ($request->nama) {
             $nikFix       = $nikInput;
             $namaKaryawan = $request->nama;
             $divisi       = $request->dept;
-            $kategori     = $request->kategori_karyawan ?? 'non_staff';
+            // $kategori     = $request->kategori_karyawan ?? 'non_staff';
         } else {
             return response()->json(['status' => 'error', 'message' => "Verifikasi gagal: Data karyawan tidak ditemukan."], 422);
         }
 
-        $divisi = empty($divisi) ? '-' : strtoupper(trim($divisi));
+        $kategori = $request->kategori_karyawan;
 
-        return DB::transaction(function () use ($request, $nikFix, $namaKaryawan, $divisi, $kategori, $prefix, $operator) {
+        if (! in_array($kategori, ['staff', 'non_staff', 'mitra_kerja'])) {
+            if ($dataExternal) {
+                $kategori = ($dataExternal->TYPECARD == 1) ? 'mitra_kerja' : 'non_staff';
+            } else {
+                $kategori = 'non_staff';
+            }
+        }
+
+        if ($kategori === 'staff') {
+            $divisi = '-';
+        } else {
+            $requestDept = $request->dept;
+            if (! empty($requestDept)) {
+                $divisi = $requestDept;
+            }
+            $divisi = empty($divisi) ? '-' : strtoupper(trim($divisi));
+        }
+
+        // $divisi = empty($divisi) ? '-' : strtoupper(trim($divisi));
+        $divisiValid = ['PRD BAS', 'QCB BAS', 'HELPER PRD - FO', 'HELPER PRD - KMJ', 'HELPER QC - KMJ'];
+
+        if ($kategori !== 'staff' && ! in_array($divisi, $divisiValid) && ($request->dept)) {
+            $divisi = strtoupper(trim($request->dept));
+        }
+
+        return DB::transaction(function () use ($request, $nikFix, $namaKaryawan, $divisi, $kategori, $prefix, $operator, $dataExternal) {
 
             // Cek loker lama (jika ada, ini adalah proses relokasi)
             $lokerLama = DB::table('loker_penghuni')
@@ -764,11 +838,43 @@ class LokerV2Controller extends Controller
                 ->whereRaw("CAST(nik AS UNSIGNED) = CAST(? AS UNSIGNED)", [$nikFix])
                 ->first();
 
-            // Gunakan divisi dan kategori spesifik dari loker lama jika relokasi
-            if ($lokerLama) {
-                $divisi   = strtoupper($lokerLama->divisi);
-                $kategori = $lokerLama->kategori_karyawan;
+            if ($kategori === 'staff') {
+                if ($lokerLama && ! empty($lokerLama->divisi) && $lokerLama->divisi !== '-') {
+                    $divisi = $lokerLama->divisi;
+                } else {
+                    $divisi = $dataExternal ? $dataExternal->DEPTID : ($request->dept ?: '-');
+                }
+            } else {
+                $requestDept = $request->dept;
+                if (! empty($requestDept)) {
+                    $divisi = $requestDept;
+                } elseif ($lokerLama && ! empty($lokerLama->divisi) && $lokerLama->divisi !== '-') {
+                    $divisi = $lokerLama->divisi;
+                }
             }
+
+            $divisi = $this->mapDivisi($kategori, $divisi);
+
+            // Gunakan divisi dan kategori spesifik dari loker lama jika relokasi
+            // if ($lokerLama) {
+            //     $divisiLama = $lokerLama->divisi ? trim($lokerLama->divisi) : "";
+            //     // $kategori = $lokerLama->kategori_karyawan;
+            //     $divisiValid = ['PRD BAS', 'QCB BAS', 'HELPER PRD - FO', 'HELPER PRD - KMJ', 'HELPER QC - KMJ'];
+
+            //     if ($divisiLama && in_array($divisiLama, $divisiValid)) {
+            //         $divisi = $divisiLama;
+            //     } else {
+            //         $divisi = strtoupper(trim($request->dept));
+            //     }
+
+            //     $lokerLamaKategori = $lokerLama->kategori_karyawan ? strtolower(trim($lokerLama->kategori_karyawan)) : '';
+
+            //     if (in_array($lokerLamaKategori, ['staff', 'non_staff', 'mitra_kerja'])) {
+            //         $kategori = $lokerLamaKategori;
+            //     } else {
+            //         $kategori = $request->kategori_karyawan;
+            //     }
+            // }
 
             $kondisiRak = DB::table('loker_rak')
                 ->where(['kode_rak' => $prefix, 'no_loker' => $request->no_loker])
