@@ -170,7 +170,7 @@
                 pageLength: 10,
                 dom: "<'row mb-3'<'col-sm-12 col-md-6 d-flex align-items-center'l><'col-sm-12 col-md-6 d-flex justify-content-end'f>>" +
                     "<'row'<'col-sm-12'tr>>" +
-                    "<'row mt-3'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7 dataTables_pager'lp>>",
+                    "<'row mt-3'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7 dataTables_pager'p>>",
                 ajax: {
                     type: "GET",
                     url: "{{ route('master-reason.getData') }}"
@@ -189,6 +189,7 @@
                     },
                     {
                         data: "is_active",
+                        searchable: false,
                         // Status tetep pakai badge biar enak dilihat mata
                         render: data => data === 'Y' ?
                             `<center><span class="badge bg-success-subtle text-success border">Aktif</span></center>` :
@@ -196,6 +197,8 @@
                     },
                     {
                         data: 'id',
+                        searchable: false,
+                        orderable: false,
                         render: function(data, type, row) {
                             let statusBtn = row.is_active === 'Y' ?
                                 `<button class="btn btn-sm btn-soft-danger btnStatus" data-id="${row.id}" data-status="N" data-bs-toggle="tooltip" title="Nonaktifkan"><i class="ri-close-circle-line"></i></button>` :

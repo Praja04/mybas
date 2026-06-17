@@ -178,28 +178,35 @@
                 columns: [{
                         data: 'nama',
                         name: 'nama',
+                        searchable: true,
                         render: data => `<span class="fw-bold">${data}</span>`
                     },
                     {
                         data: 'nik',
-                        name: 'nik'
+                        name: 'nik',
+                        searchable: true,
                     },
                     {
                         data: 'kode_divisi',
-                        name: 'kode_divisi'
+                        name: 'kode_divisi',
+                        searchable: true,
                     },
                     {
                         data: 'kode_bagian',
-                        name: 'kode_bagian'
+                        name: 'kode_bagian',
+                        searchable: true,
                     },
                     {
                         data: 'kode_group',
-                        name: 'kode_group'
+                        name: 'kode_group',
+                        searchable: true,
                     },
                     {
                         data: 'status_in',
                         name: 'status_in',
                         className: 'text-center',
+                        searchable: false,
+                        orderable: false,
                         render: function(data) {
                             if (data === 'NO-IN') {
                                 return `<span class="badge bg-danger shadow-sm px-2 py-1">NO-IN</span>`;
@@ -212,6 +219,8 @@
                     {
                         data: 'alasan_ga',
                         name: 'alasan_ga',
+                        searchable: false,
+                        orderable: false,
                         render: function(data) {
                             return data ? data :
                                 `<span class="text-muted fst-italic">Tidak ada catatan</span>`;
@@ -221,6 +230,8 @@
                         data: 'tgl_shift_out',
                         name: 'tgl_shift_out',
                         className: 'text-center',
+                        searchable: false,
+                        orderable: false,
                         render: function(data) {
                             if (!data || data === '0000-00-00') {
                                 return `<span class="text-muted fst-italic">Belum diset</span>`;

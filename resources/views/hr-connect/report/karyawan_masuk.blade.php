@@ -177,25 +177,30 @@
                 columns: [{
                         data: 'nama',
                         name: 'hr_karyawan.nama',
+                        searchable: true,
                         render: data => `<span class="fw-bold">${data}</span>`
                     },
                     {
                         data: 'nik',
-                        name: 'hr_karyawan.nik'
+                        name: 'hr_karyawan.nik',
+                        searchable: true,
                     },
                     {
                         data: 'kode_divisi',
                         name: 'hr_karyawan.kode_divisi',
+                        searchable: true,
                         render: data => data ? data : '-'
                     },
                     {
                         data: 'kode_bagian',
                         name: 'hr_karyawan.kode_bagian',
+                        searchable: true,
                         render: data => data ? data : '-'
                     },
                     {
                         data: 'kode_group',
                         name: 'hr_karyawan.kode_group',
+                        searchable: true,
                         render: data => data ? data : '-'
                     },
                     // {
@@ -219,6 +224,8 @@
                     {
                         data: 'status_in',
                         name: 'status_in',
+                        searchable: false,
+                        orderable: false,
                         className: 'text-center',
                         render: function(data, type, row) {
                             if (row.status_in === 'NO-IN' || row.in_complete === 'N') {
@@ -232,6 +239,8 @@
                     {
                         data: 'tanggal_masuk',
                         name: 'hr_karyawan.tanggal_masuk',
+                        searchable: false,
+                        orderable: false,
                         render: function(data) {
                             return (!data || data === '0000-00-00') ?
                                 `<span class="text-muted fst-italic">Belum diset</span>` : moment(

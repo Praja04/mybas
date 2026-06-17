@@ -115,6 +115,18 @@ class ReportKaryawanKeluarController extends Controller
         $report->orderBy('tgl_shift_out', 'desc');
 
         return Datatables::of($report)
+            ->filter(function ($search) use ($req) {
+                if ($req->has('search') && ! empty($req->input('search')['value'])) {
+                    $searchValue = $req->input('search')['value'];
+                    $search->where(function ($query) use ($searchValue) {
+                        $query->where('nama', 'like', "%$searchValue%")
+                            ->orWhere('nik', 'like', "%$searchValue%")
+                            ->orWhere('kode_divisi', 'like', "%$searchValue%")
+                            ->orWhere('kode_bagian', 'like', "%$searchValue%")
+                            ->orWhere('kode_group', 'like', "%$searchValue%");
+                    });
+                }
+            })
             ->addColumn('status_in', function ($row) {
                 if ($row->p_no == 'Y') {
                     return 'NO-IN';

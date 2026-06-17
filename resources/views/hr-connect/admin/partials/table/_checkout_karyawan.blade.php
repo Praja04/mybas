@@ -88,6 +88,8 @@
                 },
                 columns: [{
                         className: "text-center",
+                        searchable: false,
+                        orderable: false,
                         render: function(data, type, row) {
                             let cart = window.getCart();
                             if (cart.find(c => c.id == row.id)) {
@@ -98,22 +100,27 @@
                     },
                     {
                         data: 'nama',
+                        searchable: true,
                         render: data => `<span class="fw-bold">${data}</span>`
                     },
                     {
                         data: 'nik',
+                        searchable: true,
                         render: data => `<span class="fw-bold text-secondary">${data}</span>`
                     },
                     {
                         data: 'kode_divisi',
+                        searchable: true,
                         render: data => data ? data : '-'
                     },
                     {
                         data: 'kode_bagian',
+                        searchable: true,
                         render: data => data ? data : '-'
                     },
                     {
-                        data: 'text_admin',
+                        data: 'kode_admin',
+                        searchable: true,
                         render: function(data, type, row) {
                             let adm = row.kode_admin ? row.kode_admin : '-';
                             return `<span class="badge bg-light text-dark border border-secondary">${adm}</span>`;
@@ -121,6 +128,7 @@
                     },
                     {
                         data: 'kode_group',
+                        searchable: true,
                         render: data => data ? data : '-'
                     },
                 ]

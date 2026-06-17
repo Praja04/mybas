@@ -123,22 +123,28 @@
                     }
                 },
                 columns: [{
-                        data: 'nama'
+                        data: 'nama',
+                        searchable: true,
                     },
                     {
                         data: 'nik',
+                        searchable: true,
                         render: function(data) {
                             return `<span class="fw-bold">${data}</span>`;
                         }
                     },
                     {
-                        data: 'kode_bagian'
+                        data: 'kode_bagian',
+                        searchable: true,
                     },
                     {
-                        data: 'kode_group'
+                        data: 'kode_group',
+                        searchable: true,
                     },
                     {
                         data: 'tanggal_keluar',
+                        searchable: false,
+                        orderable: false,
                         render: function(data) {
                             if (data && data !== '0000-00-00') {
                                 return moment(data).format('DD MMM YYYY');
@@ -148,6 +154,8 @@
                     },
                     {
                         data: 'alasan_keluar',
+                        searchable: false,
+                        orderable: false,
                         render: function(data) {
                             let text = data ? data : 'Tidak ada keterangan';
                             let badgeClass = data ? 'bg-light text-dark border' :
@@ -156,11 +164,13 @@
                         }
                     },
                     {
+                        searchable: false,
+                        orderable: false,
                         render: function(data, type, row) {
                             return `
                                 <div class="d-flex justify-content-center align-items-center gap-2">
                                     <input type="checkbox" class="form-check-input checklist d-none" value="${row.id}" data-nik="${row.nik}">
-                                    
+
                                     <button type="button" class="btn btn-sm btn-outline-success fw-bold btn-validasiSatuan"
                                         data-id="${row.id}" data-nama="${row.nama}" data-nik="${row.nik}"
                                         data-bs-toggle="tooltip" title="Selesaikan dokumen NIK ${row.nik}">

@@ -76,6 +76,7 @@
                 serverSide: false, // Karena data udah di-groupBy dari controller
                 ordering: false, // Ordering sudah di-handle controller (desc)
                 paging: true,
+                searching: false,
                 dom: "<'row mb-3'<'col-sm-12 col-md-6'l><'col-sm-12 col-md-6 text-end'f>>" +
                     "<'row'<'col-sm-12'tr>>" +
                     "<'row mt-3'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>",

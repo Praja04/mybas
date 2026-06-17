@@ -150,12 +150,16 @@
                     },
                     {
                         data: 'checkStaff',
+                        searchable: false,
+                        orderable: false,
                         className: 'text-center',
                         render: data => data === 'Y' ? '<span class="badge bg-secondary">Staff</span>' :
                             '<span class="badge bg-warning">Non Staff</span>'
                     },
                     {
                         data: null,
+                        searchable: false,
+                        orderable: false,
                         className: 'text-center',
                         render: function(data, type, row) {
                             if (row.penghuni) {
@@ -175,6 +179,8 @@
                     },
                     {
                         data: null,
+                        searchable: false,
+                        orderable: false,
                         className: 'text-center',
                         render: function(data, type, row) {
                             return `
@@ -198,7 +204,7 @@
                 if (state.isBulkMode) {
                     $('#headerTindakan').html(
                         `<input type="checkbox" id="selectAll" class="form-check-input shadow-sm" style="cursor: pointer;" title="Pilih Semua di Halaman Ini">`
-                        );
+                    );
                     $('.btn-hapusSatuan').addClass('d-none');
                     $('.checklist').removeClass('d-none');
                 } else {
