@@ -166,6 +166,8 @@
                     },
                     {
                         data: 'kode_admin',
+                        searchable: false,
+                        orderable: false,
                         render: function(data, type, row) {
                             return `
                                 <center>

@@ -44,6 +44,18 @@ class GAShiftOutController extends Controller
         }
 
         return Datatables::of($query)
+            ->filter(function ($query) use ($req) {
+                if ($req->has('search') && ! empty($req->input('search')['value'])) {
+                    $keyword = $req->input('search')['value'];
+
+                    $query->where(function ($q) use ($keyword) {
+                        $q->where('nama', 'like', '%' . $keyword . '%')
+                            ->orWhere('nik', 'like', '%' . $keyword . '%')
+                            ->orWhere('kode_divisi', 'like', '%' . $keyword . '%')
+                            ->orWhere('kode_bagian', 'like', '%' . $keyword . '%');
+                    });
+                }
+            })
             ->addColumn('checkStaff', function ($row) {
                 if ($row->penghuni) {
                     return strtolower($row->penghuni->kategori_karyawan) == 'staff' ? 'Y' : 'N';
@@ -119,7 +131,7 @@ class GAShiftOutController extends Controller
             }
 
             $email_hr = User::whereHas('group.permissions', function ($query) {
-                $query->where('codename', 'hr_connect_notified_out');
+                $query->where('codename', 'hr_connect_ir');
             })
                 ->whereNotNull('email')
                 ->pluck('email')

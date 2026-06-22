@@ -119,7 +119,19 @@ class HrdController extends Controller
 
         $hr->orderBy('tgl_shift_out', 'desc');
 
-        return Datatables::of($hr)->make(true);
+        return Datatables::of($hr)
+            ->filter(function ($query) use ($req) {
+                if ($req->has('search') && ! empty($req->input('search')['value'])) {
+                    $searchValue = $req->input('search')['value'];
+                    $query->where(function ($query) use ($searchValue) {
+                        $query->where('nama', 'like', "%$searchValue%")
+                            ->orWhere('nik', 'like', "%$searchValue%")
+                            ->orWhere('kode_bagian', 'like', "%$searchValue%")
+                            ->orWhere('kode_group', 'like', "%$searchValue%");
+                    });
+                }
+            })
+            ->make(true);
     }
 
     public function getDataReport(Request $req)
@@ -150,6 +162,18 @@ class HrdController extends Controller
         $hr->orderBy('tanggal_keluar', 'desc');
 
         return Datatables::of($hr)
+            ->filter(function ($search) use ($req) {
+                if ($req->has('search') && ! empty($req->input('search')['value'])) {
+                    $searchValue = $req->input('search')['value'];
+                    $search->where(function ($query) use ($searchValue) {
+                        $query->where('nama', 'like', "%$searchValue%")
+                            ->orWhere('nik', 'like', "%$searchValue%")
+                            ->orWhere('kode_divisi', 'like', "%$searchValue%")
+                            ->orWhere('kode_bagian', 'like', "%$searchValue%")
+                            ->orWhere('kode_group', 'like', "%$searchValue%");
+                    });
+                }
+            })
             ->addColumn('status_in', function ($row) {
                 if ($row->p_no == 'Y') {
                     return 'NO-IN';

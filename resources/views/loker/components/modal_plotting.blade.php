@@ -652,7 +652,7 @@
 
             $('#plot_gender_val').val(genderFinal);
             $('#plot_kategori_val').val(kategoriFinal);
-            $('#plot_divisi_val').val(kategoriFinal === 'staff' ? '-' : divisiFinal);
+            $('#plot_divisi_val').val(kategoriFinal === 'staff' ? tempDivisi : divisiFinal);
 
             let formData = $('#formPlotting').serialize();
 

@@ -1,11 +1,14 @@
 <?php
 namespace App\Http\Controllers\HRConnect;
 
+use App\AdminDepartment;
 use App\Exports\HRConnect\KaryawanAktifExport;
 use App\HrKaryawan;
 use App\Http\Controllers\Controller;
+use App\Jobs\HRConnect\KaryawanMasukToAdmin;
 use App\Models\Loker\Penghuni;
 use App\Models\Loker\Rak;
+use App\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -114,6 +117,17 @@ class GAShiftInController extends Controller
         $query->orderBy('tanggal_masuk', 'desc');
 
         return Datatables::of($query)
+            ->filter(function ($query) use ($req) {
+                if ($req->has('search') && ! empty($req->input('search')['value'])) {
+                    $keyword = $req->input('search')['value'];
+
+                    $query->where(function ($q) use ($keyword) {
+                        $q->where('nama', 'like', '%' . $keyword . '%')
+                            ->orWhere('nik', 'like', '%' . $keyword . '%')
+                            ->orWhere('kode_divisi', 'like', '%' . $keyword . '%');
+                    });
+                }
+            })
             ->addColumn('checkStaff', function ($row) {
                 if ($row->penghuni) {
                     return strtolower($row->penghuni->kategori_karyawan) == 'staff' ? 'Y' : 'N';
@@ -245,6 +259,22 @@ class GAShiftInController extends Controller
             Cache::forget('list_bulan_karyawan_masuk_ga');
 
             DB::commit();
+
+            $idCards = collect($data)->pluck('idCard')->toArray();
+
+            $kodeBagian = HrKaryawan::whereIn('id', $idCards)->pluck('kode_bagian')->unique()->toArray();
+
+            $nikAdmin = AdminDepartment::whereIn('kode_bagian', $kodeBagian)->pluck('nik_admin')->unique()->toArray();
+
+            $adminEmails = User::whereIn('username', $nikAdmin)->whereNotNull('email')->pluck('email')->unique()->toArray();
+
+            if (! empty($adminEmails)) {
+                $hitungKaryawan = count($idCards);
+                $link           = url('hr-connect/dept-adm/data-karyawan');
+
+                KaryawanMasukToAdmin::dispatch($adminEmails, $hitungKaryawan, $link);
+            }
+
             return response()->json([
                 'success' => true,
                 'message' => 'Validasi loker & Goodie Bag berhasil disimpan.',

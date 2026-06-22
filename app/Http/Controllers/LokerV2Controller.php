@@ -592,9 +592,7 @@ class LokerV2Controller extends Controller
             ->select('id', 'nik', 'nama', 'divisi', 'kategori_karyawan', 'tgl_masuk')
             ->get()
             ->map(function ($item) {
-                if (strtolower(trim($item->kategori_karyawan)) === 'staff') {
-                    $item->divisi = '-';
-                } elseif (empty($item->divisi) || $item->divisi == '-') {
+                if (empty($item->divisi) || $item->divisi == '-') {
                     $hris = HrKaryawan::where('nik', $item->nik)->first();
 
                     if ($hris && ! empty($hris->kode_divisi)) {
@@ -813,15 +811,11 @@ class LokerV2Controller extends Controller
             }
         }
 
-        if ($kategori === 'staff') {
-            $divisi = '-';
-        } else {
-            $requestDept = $request->dept;
-            if (! empty($requestDept)) {
-                $divisi = $requestDept;
-            }
-            $divisi = empty($divisi) ? '-' : strtoupper(trim($divisi));
+        $requestDept = $request->dept;
+        if (! empty($requestDept)) {
+            $divisi = $requestDept;
         }
+        $divisi = empty($divisi) ? '-' : strtoupper(trim($divisi));
 
         // $divisi = empty($divisi) ? '-' : strtoupper(trim($divisi));
         $divisiValid = ['PRD BAS', 'QCB BAS', 'HELPER PRD - FO', 'HELPER PRD - KMJ', 'HELPER QC - KMJ'];

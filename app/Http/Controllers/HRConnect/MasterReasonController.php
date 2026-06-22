@@ -26,11 +26,21 @@ class MasterReasonController extends Controller
         return view('hr-connect.masters.reason', $data);
     }
 
-    public function getData()
+    public function getData(Request $req)
     {
         $reason = MasterReason::orderBy('tipe', 'asc')->orderBy('kode_reason', 'asc');
 
         return DataTables::of($reason)
+            ->filter(function ($query) use ($req) {
+                if ($req->has('search') && !empty($req->input('search')['value'])) {
+                    $searchValue = $req->input('search')['value'];
+                    $query->where(function($q) use ($searchValue) {
+                        $q->where('tipe', 'like', "%{$searchValue}%")
+                          ->orWhere('kode_reason', 'like', "%{$searchValue}%")
+                          ->orWhere('nama_reason', 'like', "%{$searchValue}%");
+                    });
+                }
+            })
             ->addColumn('action', function ($row) {
                 $btnEdit = '<button class="btn btn-sm btn-outline-primary" onclick="editData(' . $row->id . ', \'' . $row->tipe . '\', \'' . $row->kode_reason . '\', \'' . $row->nama_reason . '\')"><i class="ri-pencil-line"></i> Edit</button>';
 

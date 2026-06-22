@@ -259,10 +259,14 @@
                         `<span class="copy-nik fw-bold text-dark" data-nik="${data}" data-bs-toggle="tooltip" title="Salin NIK">${data}</span>`
                 }, {
                     data: 'checkStaff',
+                    searchable: false,
+                    orderable: false,
                     render: data => data === 'Y' ? '<span class="badge bg-secondary">Staff</span>' :
                         '<span class="badge bg-warning">Non Staff</span>'
                 }, {
                     data: null,
+                    searchable: false,
+                    orderable: false,
                     render: function(data, type, row) {
                         if (row.penghuni) {
                             let rak = (row.penghuni.kode_rak === 'LP') ? 'P' : ((row.penghuni
@@ -341,6 +345,8 @@
                     render: data => data ? moment(data).format('DD MMM YYYY') : '-'
                 }, {
                     data: null,
+                    searchable: false,
+                    orderable: false,
                     render: function(data, type, row) {
                         if (row.penghuni) {
                             return `<center><span class="badge bg-success px-3 py-2 shadow-sm"><i class="ri-check-double-line align-bottom me-1"></i> Tervalidasi</span></center>`;

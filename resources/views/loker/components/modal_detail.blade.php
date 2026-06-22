@@ -146,6 +146,7 @@
 
                     if (res.data && res.data.length > 0) {
                         res.data.forEach(p => {
+                            console.log(p);
                             let rowContent = `
                             <td class="font-weight-bold text-primary">${p.nik}</td>
                             <td style="min-width: 150px;">

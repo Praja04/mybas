@@ -179,32 +179,39 @@
                 columns: [{
                         data: 'nama',
                         name: 'nama',
+                        searchable: true,
                         render: data => `<span class="fw-bold">${data}</span>`
                     },
                     {
                         data: 'nik',
                         name: 'nik',
+                        searchable: true,
                         className: 'text-center',
                         render: data => `<span class="fw-bold text-secondary">${data}</span>`
                     },
                     {
                         data: 'kode_divisi',
                         name: 'kode_divisi',
+                        searchable: true,
                         className: 'text-center'
                     },
                     {
                         data: 'kode_bagian',
                         name: 'kode_bagian',
+                        searchable: true,
                         className: 'text-center'
                     },
                     {
                         data: 'kode_group',
                         name: 'kode_group',
+                        searchable: true,
                         className: 'text-center'
                     },
                     {
                         data: 'alasan_keluar',
                         name: 'alasan_keluar',
+                        searchable: false,
+                        orderable: false,
                         render: function(data) {
                             return data ? data :
                                 `<span class="text-muted fst-italic">Tidak ada alasan</span>`;
@@ -213,6 +220,8 @@
                     {
                         data: 'status_in',
                         name: 'status_in',
+                        searchable: false,
+                        orderable: false,
                         className: 'text-center',
                         render: function(data) {
                             if (data === 'NO-IN') {
@@ -226,6 +235,8 @@
                     {
                         data: 'tanggal_keluar',
                         name: 'tanggal_keluar',
+                        searchable: false,
+                        orderable: false,
                         className: 'text-center',
                         render: function(data) {
                             return (!data || data === '0000-00-00') ? `-` :

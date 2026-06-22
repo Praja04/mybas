@@ -9,6 +9,7 @@ use App\Http\Controllers\Controller;
 use App\Imports\HRConnect\AdmKaryawanKeluar;
 use App\Imports\HRConnect\AdmKaryawanMasuk;
 use App\Jobs\HRConnect\KaryawanKeluarToGA;
+use App\Jobs\HRConnect\KaryawanMasukToGA;
 use App\Jobs\HRConnect\KaryawanMasukToHR;
 use App\Jobs\HRConnect\NotifiedOut;
 use App\MasterReason;
@@ -75,7 +76,7 @@ class AdminKaryawanController extends Controller
             ->make(true);
     }
 
-    public function getDataOkb()
+    public function getDataOkb(Request $req)
     {
         $username = auth()->user()->username;
 
@@ -106,7 +107,21 @@ class AdminKaryawanController extends Controller
             $hr->whereIn('kode_bagian', $list_kode_bagian);
         }
 
-        return Datatables::of($hr)->make(true);
+        return Datatables::of($hr)
+            ->filter(function ($query) use ($req) {
+                if ($req->has('search') && ! empty($req->input('search')['value'])) {
+                    $searchValue = $req->input('search')['value'];
+                    $query->where(function ($query) use ($searchValue) {
+                        $query->where('nama', 'like', "%$searchValue%")
+                            ->orWhere('nik', 'like', "%$searchValue%")
+                            ->orWhere('kode_divisi', 'like', "%$searchValue%")
+                            ->orWhere('kode_bagian', 'like', "%$searchValue%")
+                            ->orWhere('kode_admin', 'like', "%$searchValue%")
+                            ->orWhere('kode_group', 'like', "%$searchValue%");
+                    });
+                }
+            })
+            ->make(true);
     }
 
     public function setGroupCode(Request $req)
@@ -156,6 +171,14 @@ class AdminKaryawanController extends Controller
                 ->unique()
                 ->toArray();
 
+            $email_ga = User::whereHas('group.permissions', function ($query) {
+                $query->where('codename', 'hr_connect_ga');
+            })
+                ->whereNotNull('email')
+                ->pluck('email')
+                ->unique()
+                ->toArray();
+
             DB::commit();
 
             if (! empty($to)) {
@@ -164,6 +187,13 @@ class AdminKaryawanController extends Controller
 
                 // KaryawanMasukToGA::dispatch($to, $count_karyawan_baru, $link);
                 KaryawanMasukToHR::dispatch($to, $data);
+            }
+
+            if (! empty($email_ga)) {
+                $count_karyawan_baru = HrKaryawan::whereIn('nik', collect($data)->pluck('nik'))->count();
+                $link                = url('hr-connect/dept-ga/perlengkapan-goodie-apd');
+
+                KaryawanMasukToGA::dispatch($email_ga, $count_karyawan_baru, $link);
             }
 
             return response()->json(['success' => true, 'msg' => 'Berhasil memproses data!']);
