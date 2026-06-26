@@ -5,7 +5,10 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/data-scan', [DataScanmakanController::class, 'index'])->name('scanmakan.index');
 
+
 Route::group(['middleware' => ['auth', 'rules', 'access_log']], function () {
+    Route::get('/izin-keluar', 'IzinKeluar\PermitController@index')->name('izin-keluar.index');
+    Route::post('/izin-keluar/check-karyawan', 'IzinKeluar\PermitController@checkKaryawan')->name('izin-keluar.check-karyawan');
 
     Route::get('/', 'HomeController@index')->name('home');
     Route::get('/home', 'HomeController@index')->name('home');
