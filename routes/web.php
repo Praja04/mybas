@@ -5,11 +5,13 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/data-scan', [DataScanmakanController::class, 'index'])->name('scanmakan.index');
 
-
 Route::group(['middleware' => ['auth', 'rules', 'access_log']], function () {
     Route::get('/izin-keluar', 'IzinKeluar\PermitController@index')->name('izin-keluar.index');
     Route::get('/izin-keluar/report', 'IzinKeluar\PermitController@reportPage')->name('izin-keluar.report');
+    Route::get('/izin-keluar/report/get-filter-bulan', 'IzinKeluar\PermitController@getFilterBulanTahun')->name('izin-keluar.report.getFilterBulan');
     Route::get('/izin-keluar/report/get-data', 'IzinKeluar\PermitController@getData')->name('izin-keluar.report.getData');
+    Route::get('/izin-keluar/report/export', 'IzinKeluar\PermitController@exportExcel')->name('izin-keluar.report.exportExcel');
+    Route::post('/izin-keluar/report/send-email', 'IzinKeluar\PermitController@sendEmail')->name('izin-keluar.report.sendEmail');
     Route::post('/izin-keluar/check-karyawan', 'IzinKeluar\PermitController@checkKaryawan')->name('izin-keluar.check-karyawan');
 
     Route::get('/', 'HomeController@index')->name('home');

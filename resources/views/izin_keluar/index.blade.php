@@ -47,8 +47,9 @@
                 <div class="card card-custom card-stretch gutter-b live-console-card">
                     <div class="card-header border-0 py-5">
                         <h3 class="card-title align-items-start flex-column">
-                            <span class="card-label font-weight-bolder text-dark">Live Scanner Izin Keluar</span>
-                            <span class="text-muted mt-2 font-weight-bold font-size-sm">Tap kartu RFID atau input NIK</span>
+                            <span class="card-label font-weight-bolder text-dark">Live Scanner Istirahat Karyawan</span>
+                            <span class="text-muted mt-2 font-weight-bold font-size-sm">Silakan tempelkan kartu RFID atau
+                                masukkan NIK Anda</span>
                         </h3>
                     </div>
 
@@ -57,9 +58,9 @@
                         <form id="form-scan" autocomplete="off" class="mb-5">
                             <div class="form-group position-relative">
                                 <input type="text" id="scanner" class="form-control scanner-input text-center"
-                                    placeholder="TAP ID CARD ATAU KETIK NIK DI SINI..." autofocus>
+                                    placeholder="SILAKAN TAP ID CARD ATAU MASUKKAN NIK DI SINI..." autofocus>
                                 <span class="form-text text-muted text-center mt-2">
-                                    <i class="fas fa-keyboard mr-1"></i> Input otomatis terfokus setelah scan
+                                    <i class="fas fa-keyboard mr-1"></i> Sensor otomatis mendeteksi input kartu
                                 </span>
                             </div>
                         </form>
@@ -160,18 +161,18 @@
                             if (response.action === 'keluar') {
                                 Swal.fire({
                                     icon: 'success',
-                                    title: 'SELAMAT ISTIRAHAT',
-                                    text: 'Terima kasih, selamat beristirahat.',
-                                    timer: 2500,
+                                    title: 'ABSEN KELUAR BERHASIL',
+                                    text: 'Absen keluar pada jam istirahat.',
+                                    timer: 3500,
                                     showConfirmButton: false
                                 });
                             } else {
                                 if (d.status === 'Tepat Waktu') {
                                     Swal.fire({
                                         icon: 'success',
-                                        title: 'TEPAT WAKTU',
-                                        text: 'Terima kasih sudah kembali tepat waktu.',
-                                        timer: 2500,
+                                        title: 'ABSEN MASUK BERHASIL',
+                                        text: 'Kembali tepat waktu.',
+                                        timer: 3500,
                                         showConfirmButton: false
                                     });
                                 } else {
@@ -180,7 +181,7 @@
                                         title: 'TERLAMBAT MASUK',
                                         text: 'Terlambat ' + d.menit_terlambat +
                                             ' menit.',
-                                        timer: 2500,
+                                        timer: 4000,
                                         showConfirmButton: false
                                     });
                                 }
@@ -213,9 +214,9 @@
 
                         Swal.fire({
                             icon: 'error',
-                            title: 'Gagal Mengabsen',
+                            title: 'ABSENSI GAGAL',
                             text: errorMsg,
-                            timer: 2500,
+                            timer: 4500,
                             showConfirmButton: false
                         });
                     }

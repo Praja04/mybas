@@ -100,9 +100,9 @@
                                 </div>
                             </div>
                             <div>
-                                <h3 class="font-weight-bolder text-dark mb-1">Report Izin Keluar</h3>
-                                <span class="text-muted font-weight-bold font-size-sm">Monitoring riwayat keluar masuk
-                                    karyawan</span>
+                                <h3 class="font-weight-bolder text-dark mb-1">Monitoring Istirahat Karyawan</h3>
+                                <span class="text-muted font-weight-bold font-size-sm">Rekapitulasi riwayat keluar-masuk jam
+                                    istirahat karyawan & tracking keterlambatan</span>
                             </div>
                         </div>
                     </div>
@@ -111,10 +111,11 @@
                     <div class="card-body p-5">
                         <div class="bg-light p-4 rounded shadow-sm border">
                             <h6 class="text-muted font-weight-bold mb-4"><i class="flaticon2-magnifier-tool mr-2"></i>
-                                Filter Data Report</h6>
+                                Parameter Penyaringan Data</h6>
                             <div class="row align-items-center">
                                 <div class="col-lg-3 mb-3 mb-lg-0">
-                                    <select id="filterDivisi" class="form-control filter-select shadow-sm" style="height: 42px;">
+                                    <select id="filterDivisi" class="form-control filter-select shadow-sm"
+                                        style="height: 42px;">
                                         <option value="">-- Semua Divisi --</option>
                                         @foreach ($divisi as $div)
                                             <option value="{{ $div }}">{{ $div }}</option>
@@ -122,7 +123,8 @@
                                     </select>
                                 </div>
                                 <div class="col-lg-3 mb-3 mb-lg-0">
-                                    <select id="filterStatus" class="form-control filter-select shadow-sm" style="height: 42px;">
+                                    <select id="filterStatus" class="form-control filter-select shadow-sm"
+                                        style="height: 42px;">
                                         <option value="">-- Semua Status --</option>
                                         @foreach ($status as $stat)
                                             <option value="{{ $stat }}">{{ $stat }}</option>
@@ -130,7 +132,10 @@
                                     </select>
                                 </div>
                                 <div class="col-lg-3 mb-3 mb-lg-0">
-                                    <input type="date" id="filterTanggal" class="form-control shadow-sm" style="height: 42px;" data-bs-toggle="tooltip" title="Filter Berdasarkan Tanggal">
+                                    <select id="filterTanggal" class="form-control filter-select shadow-sm"
+                                        style="height: 42px;" data-bs-toggle="tooltip" title="Filter Berdasarkan Bulan">
+                                        <option value="">-- Semua Bulan --</option>
+                                    </select>
                                 </div>
                                 <div class="col-lg-2 mt-auto">
                                     <button id="btnTerapkan" class="btn btn-primary font-weight-bold w-100 shadow-sm"
@@ -141,7 +146,7 @@
                                 <div class="col-lg-1 mt-auto">
                                     <!-- Jika btn-soft-danger tidak jalan di Metronic, ini styling backupnya -->
                                     <button class="btn btn-light-danger w-100 shadow-sm" id="btnResetFilter"
-                                        data-bs-toggle="tooltip" title="Reset Semua Filter" style="height: 42px;">
+                                        data-bs-toggle="tooltip" title="Bersihkan Parameter Saringan" style="height: 42px;">
                                         <i class="flaticon2-refresh"></i>
                                     </button>
                                 </div>
@@ -154,16 +159,26 @@
                 <div class="folder-tabs">
                     <!-- Beri class active untuk tab yang sedang dibuka -->
                     <div class="folder-tab active" id="tab-today" data-tab="today">
-                        <i class="flaticon2-calendar-1 mr-2"></i> Hari Ini
+                        <i class="flaticon2-calendar-1 mr-2"></i> Pemantauan Hari Ini
                     </div>
                     <div class="folder-tab" id="tab-all" data-tab="all">
-                        <i class="flaticon2-layers-1 mr-2"></i> Semua Riwayat
+                        <i class="flaticon2-layers-1 mr-2"></i> Rekapitulasi Riwayat Lengkap
                     </div>
                 </div>
 
                 <!-- Bagian Tabel -->
                 <div class="card card-custom shadow-sm border-0 live-console-card" style="border-top-left-radius: 0;">
                     <div class="card-body">
+                        <div class="d-flex justify-content-end mb-4">
+                            <button id="btnExport" class="btn text-white font-weight-bold shadow-sm mr-2"
+                                style="height: 42px; background-color: #3699FF;">
+                                <i class="la la-file-excel icon-lg text-white"></i> Unduh Laporan (Excel)
+                            </button>
+                            <button id="btnSendEmail" class="btn btn-primary font-weight-bold shadow-sm"
+                                style="height: 42px; background-color: #1BC5BD; border: none;">
+                                <i class="la la-envelope icon-lg text-white"></i> Kirim Laporan (Email)
+                            </button>
+                        </div>
                         <div class="table-responsive">
                             <table id="tableIzinKeluar"
                                 class="table table-bordered table-hover align-middle table-custom-header"
@@ -175,9 +190,9 @@
                                         <th style="width: 20%;">Nama Lengkap</th>
                                         <th style="width: 10%;">NIK</th>
                                         <th style="width: 10%;">Divisi</th>
-                                        <th style="width: 10%;">Jam Keluar</th>
-                                        <th style="width: 10%;">Jam Masuk</th>
-                                        <th style="width: 10%;">Telat (Menit)</th>
+                                        <th style="width: 10%;">Waktu Keluar</th>
+                                        <th style="width: 10%;">Waktu Kembali</th>
+                                        <th style="width: 10%;">Keterlambatan</th>
                                         <th style="width: 10%;">Status</th>
                                     </tr>
                                 </thead>
@@ -200,10 +215,34 @@
         $(document).ready(function() {
             let activeTab = 'today';
 
+            $('#filterTanggal').select2({
+                width: '100%',
+                allowClear: true,
+                placeholder: '-- Semua Bulan --',
+                ajax: {
+                    url: "{{ route('izin-keluar.report.getFilterBulan') }}",
+                    dataType: 'json',
+                    delay: 250,
+                    data: function(params) {
+                        return {
+                            q: params.term
+                        };
+                    },
+                    processResults: function(data) {
+                        return {
+                            results: data
+                        };
+                    },
+                    cache: true
+                },
+                minimumInputLength: 0,
+            });
+
             let table = $("#tableIzinKeluar").DataTable({
                 processing: true,
                 serverSide: true,
                 ordering: false,
+                searching: false,
                 ajax: {
                     url: "{{ route('izin-keluar.report.getData') }}",
                     type: "GET",
@@ -257,7 +296,10 @@
                         data: 'menit_terlambat',
                         name: 'menit_terlambat',
                         render: function(data) {
-                            return data !== null ? data + ' Menit' : '-';
+                            if (data === null || data == 0) {
+                                return '-';
+                            }
+                            return data + ' Menit';
                         }
                     },
                     {
@@ -280,6 +322,11 @@
                 $('.folder-tab').removeClass('active');
                 $(this).addClass('active');
                 activeTab = $(this).data('tab');
+
+                $('#filterDivisi').val('');
+                $('#filterStatus').val('');
+                $('#filterTanggal').val(null).trigger('change');
+
                 table.ajax.reload();
             });
 
@@ -293,8 +340,82 @@
                 e.preventDefault();
                 $('#filterDivisi').val('');
                 $('#filterStatus').val('');
-                $('#filterTanggal').val('');
+                $('#filterTanggal').val(null).trigger('change');
                 table.ajax.reload();
+                $(this).blur();
+            });
+
+            $('#btnExport').on('click', function(e) {
+                e.preventDefault();
+                let url = "{{ route('izin-keluar.report.exportExcel') }}";
+                let params = $.param({
+                    tab: activeTab,
+                    divisi: $('#filterDivisi').val(),
+                    status: $('#filterStatus').val(),
+                    tanggal: $('#filterTanggal').val()
+                });
+                window.location.href = url + '?' + params;
+                $(this).blur();
+            });
+
+            $('#btnSendEmail').on('click', function(e) {
+                e.preventDefault();
+
+                Swal.fire({
+                    title: 'Kirim Laporan Ke Email',
+                    text: 'Masukkan alamat email penerima laporan:',
+                    input: 'email',
+                    inputPlaceholder: 'nama@email.com',
+                    showCancelButton: true,
+                    confirmButtonText: 'Kirim',
+                    cancelButtonText: 'Batal',
+                    confirmButtonColor: '#1BC5BD',
+                    cancelButtonColor: '#F64E60',
+                    showLoaderOnConfirm: true,
+                    preConfirm: (email) => {
+                        if (!email) {
+                            Swal.showValidationMessage('Alamat email wajib diisi!');
+                            return false;
+                        }
+
+                        return $.ajax({
+                                url: "{{ route('izin-keluar.report.sendEmail') }}",
+                                type: "POST",
+                                data: {
+                                    email: email,
+                                    tab: activeTab,
+                                    divisi: $('#filterDivisi').val(),
+                                    status: $('#filterStatus').val(),
+                                    tanggal: $('#filterTanggal').val(),
+                                    _token: "{{ csrf_token() }}"
+                                }
+                            })
+                            .then(response => {
+                                if (!response.success) {
+                                    throw new Error(response.message ||
+                                        'Gagal mengirim email.');
+                                }
+                                return response;
+                            })
+                            .catch(error => {
+                                let msg = error.responseJSON ? error.responseJSON.message :
+                                    error.message;
+                                Swal.showValidationMessage(`Pengiriman Gagal: ${msg}`);
+                            });
+                    },
+                    allowOutsideClick: () => !Swal.isLoading()
+                }).then((result) => {
+                    if (result.isConfirmed && result.value) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Email Terkirim',
+                            text: result.value.message,
+                            timer: 3500,
+                            showConfirmButton: false
+                        });
+                    }
+                });
+
                 $(this).blur();
             });
         });

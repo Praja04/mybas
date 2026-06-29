@@ -1,13 +1,19 @@
 <?php
 namespace App\Http\Controllers\IzinKeluar;
 
+use App\Exports\IzinKeluarExport;
 use App\HrKaryawan;
 use App\Http\Controllers\Controller;
 use App\LunchBreak;
+use App\Mail\IzinKeluarReportMail;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
+use Maatwebsite\Excel\Facades\Excel;
 use Yajra\DataTables\Facades\DataTables;
 
 class PermitController extends Controller
@@ -24,6 +30,36 @@ class PermitController extends Controller
             ->get();
 
         return view('izin_keluar.index', compact('today', 'all'));
+    }
+
+    public function getFilterBulanTahun(Request $req)
+    {
+        $search = $req->input('q');
+
+        $allMonths = Cache::remember('list_bulan_istirahat_keluar', now()->addHours(24), function () {
+            return LunchBreak::select(
+                DB::raw("DATE_FORMAT(jam_keluar, '%Y-%m') as id_bulan"),
+                DB::raw("DATE_FORMAT(jam_keluar, '%M %Y') as text")
+            )
+                ->whereNotNull('jam_keluar')
+                ->distinct()
+                ->orderBy('id_bulan', 'desc')
+                ->get()
+                ->map(function ($item) {
+                    return [
+                        'id'   => $item->id_bulan,
+                        'text' => $item->text,
+                    ];
+                });
+        });
+
+        if ($search) {
+            $allMonths = collect($allMonths)->filter(function ($item) use ($search) {
+                return stripos($item['text'], $search) !== false;
+            });
+        }
+
+        return response()->json(collect($allMonths)->values()->all());
     }
 
     public function checkKaryawan(Request $req)
@@ -68,7 +104,7 @@ class PermitController extends Controller
         if (! $hris && ! $dataPusat) {
             return response()->json([
                 'success' => false,
-                'message' => 'Karyawan tidak terdaftar.',
+                'message' => 'Identitas karyawan tidak terdaftar di sistem.',
             ], 404);
         }
 
@@ -108,7 +144,7 @@ class PermitController extends Controller
                 if ($lastCheckInTime->diffInMinutes($now) < 1) {
                     return response()->json([
                         'success' => false,
-                        'message' => "Anda baru saja tap MASUK. Harap tunggu minimal 1 menit untuk tap KELUAR.",
+                        'message' => "Tap masuk terdeteksi kurang dari 1 menit yang lalu. Harap tunggu minimal 1 menit untuk melakukan tap keluar.",
                     ], 400);
                 }
             }
@@ -138,7 +174,7 @@ class PermitController extends Controller
             return response()->json([
                 'success' => true,
                 'action'  => 'keluar',
-                'message' => 'Selamat istirahat',
+                'message' => 'Absen keluar jam istirahat berhasil tercatat. Selamat beristirahat.',
                 'data'    => [
                     'nik'        => $nik,
                     'nama'       => $nama,
@@ -154,7 +190,7 @@ class PermitController extends Controller
             if ($checkOutTime->diffInMinutes($now) < 1) {
                 return response()->json([
                     'success' => false,
-                    'message' => "Anda baru saja tap KELUAR. Harap tunggu minimal 1 menit untuk tap MASUK.",
+                    'message' => "Tap keluar terdeteksi kurang dari 1 menit yang lalu. Harap tunggu minimal 1 menit untuk melakukan tap masuk kembali.",
                 ], 400);
             }
 
@@ -177,7 +213,7 @@ class PermitController extends Controller
                 'status'          => $status,
             ]);
 
-            $responseMessage = ($status === 'Terlambat') ? "Terima kasih sudah kembali, total keterlambatan Anda adalah {$minutesLate} menit." : "Selamat bekerja kembali.";
+            $responseMessage = ($status === 'Terlambat') ? "Absen masuk jam istirahat berhasil dicatat. Keterlambatan: {$minutesLate} menit. Silakan bekerja kembali." : "Absen masuk jam istirahat berhasil tepat waktu. Selamat bekerja kembali.";
 
             return response()->json([
                 'success' => true,
@@ -213,7 +249,7 @@ class PermitController extends Controller
         }
 
         if ($req->filled('tanggal')) {
-            $query->whereDate('jam_keluar', $req->tanggal);
+            $query->where('jam_keluar', 'like', $req->tanggal . '%');
         }
 
         return DataTables::of($query)
@@ -230,5 +266,88 @@ class PermitController extends Controller
         $data['status'] = LunchBreak::whereNotNull('status')->where('status', '!=', '')->distinct()->pluck('status')->toArray();
 
         return view('izin_keluar.report', $data);
+    }
+
+    public function exportExcel(Request $req)
+    {
+        $filters = [
+            'tab'     => $req->input('tab', 'today'),
+            'divisi'  => $req->input('divisi'),
+            'status'  => $req->input('status'),
+            'tanggal' => $req->input('tanggal'),
+        ];
+
+        $timePart = 'Semua Riwayat';
+        if ($filters['tanggal']) {
+            $timePart = 'Tanggal ' . Carbon::parse($filters['tanggal'])->format('Y-m-d');
+        } elseif ($filters['tab'] === 'today') {
+            $timePart = 'Hari Ini';
+        }
+
+        $divisiPart = '';
+        if ($filters['divisi']) {
+            $divisiPart = ' - Divisi ' . ucfirst($filters['divisi']);
+        }
+
+        $statusPart = '';
+        if ($filters['status']) {
+            $statusPart = ' - ' . ucfirst($filters['status']);
+        }
+
+        $fileName = 'Laporan Riwayat Istirahat Karyawan ' . $timePart . $divisiPart . $statusPart . ' - ' . date('Y-m-d') . '.xlsx';
+
+        return Excel::download(new IzinKeluarExport($filters), $fileName);
+    }
+
+    public function sendEmail(Request $req)
+    {
+        $req->validate([
+            'email' => 'required|email',
+        ]);
+
+        $filters = [
+            'tab'     => $req->input('tab', 'today'),
+            'divisi'  => $req->input('divisi'),
+            'status'  => $req->input('status'),
+            'tanggal' => $req->input('tanggal'),
+        ];
+
+        $timePart = 'Semua Riwayat';
+        if ($filters['tanggal']) {
+            $timePart = 'Tanggal ' . Carbon::parse($filters['tanggal'])->format('Y-m-d');
+        } elseif ($filters['tab'] === 'today') {
+            $timePart = 'Hari Ini';
+        }
+
+        $divisiPart = $filters['divisi'] ? ' - Divisi ' . ucfirst($filters['divisi']) : '';
+        $statusPart = $filters['status'] ? ' - ' . ucfirst($filters['status']) : '';
+
+        $fileName = 'Laporan Riwayat Istirahat Karyawan ' . $timePart . $divisiPart . $statusPart . ' - ' . date('Y-m-d') . '.xlsx';
+
+        $tempPath = 'temp/' . uniqid() . '-' . $fileName;
+
+        try {
+            Excel::store(new IzinKeluarExport($filters), $tempPath, 'public');
+
+            $realPath = storage_path('app/public/' . $tempPath);
+
+            Mail::to($req->email)->send(new IzinKeluarReportMail($realPath, $fileName));
+
+            Storage::disk('public')->delete($tempPath);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Laporan berhasil dikirim ke email: ' . $req->email,
+            ]);
+        } catch (\Exception $e) {
+            if (Storage::disk('public')->exists($tempPath)) {
+                Storage::disk('public')->delete($tempPath);
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengirim email: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 }
