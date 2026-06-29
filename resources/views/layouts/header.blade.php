@@ -969,6 +969,22 @@
                                                     <span class="menu-text">POS Security</span>
                                                 </a>
                                             </li>
+                                            <li class="menu-item" aria-haspopup="true">
+                                                <a href="{{ url('/izin-keluar') }}" class="menu-link">
+                                                    <i class="menu-bullet menu-bullet-line">
+                                                        <span></span>
+                                                    </i>
+                                                    <span class="menu-text">Absen Izin Keluar</span>
+                                                </a>
+                                            </li>
+                                            <li class="menu-item" aria-haspopup="true">
+                                                <a href="{{ url('/izin-keluar/report') }}" class="menu-link">
+                                                    <i class="menu-bullet menu-bullet-line">
+                                                        <span></span>
+                                                    </i>
+                                                    <span class="menu-text">Report Izin Keluar</span>
+                                                </a>
+                                            </li>
                                         @endif
                                     </ul>
                                 </div>
