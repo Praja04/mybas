@@ -25,7 +25,8 @@ class IzinKeluarExport implements FromQuery, WithHeadings, WithMapping, ShouldAu
         $query = LunchBreak::query();
 
         if ($this->filters['tab'] == 'today') {
-            $query->whereDate('jam_keluar', today());
+            $logicalToday = now()->subHours(6)->format('Y-m-d');
+            $query->whereRaw("DATE(DATE_SUB(jam_keluar, INTERVAL 6 HOUR)) = ?", [$logicalToday]);
         } elseif ($this->filters['tab'] == 'all') {
             $query->whereNotNull('jam_keluar');
         }
@@ -41,10 +42,10 @@ class IzinKeluarExport implements FromQuery, WithHeadings, WithMapping, ShouldAu
         if ($this->filters['tanggal']) {
             $dates = explode(' - ', $this->filters['tanggal']);
             if (count($dates) == 2) {
-                $query->whereDate('jam_keluar', '>=', $dates[0])
-                      ->whereDate('jam_keluar', '<=', $dates[1]);
+                $query->whereRaw("DATE(DATE_SUB(jam_keluar, INTERVAL 6 HOUR)) >= ?", [$dates[0]])
+                      ->whereRaw("DATE(DATE_SUB(jam_keluar, INTERVAL 6 HOUR)) <= ?", [$dates[1]]);
             } else {
-                $query->where('jam_keluar', 'like', $this->filters['tanggal'] . '%');
+                $query->whereRaw("DATE(DATE_SUB(jam_keluar, INTERVAL 6 HOUR)) = ?", [substr($this->filters['tanggal'], 0, 10)]);
             }
         }
 
@@ -70,7 +71,7 @@ class IzinKeluarExport implements FromQuery, WithHeadings, WithMapping, ShouldAu
     public function map($row): array
     {
         return [
-            Carbon::parse($row->jam_keluar)->format('d-m-Y'),
+            Carbon::parse($row->jam_keluar)->subHours(6)->format('d-m-Y'),
             $row->nik,
             ucfirst($row->nama),
             ucfirst($row->divisi),

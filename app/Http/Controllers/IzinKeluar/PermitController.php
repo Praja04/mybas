@@ -21,8 +21,10 @@ class PermitController extends Controller
 
     public function index()
     {
+        $logicalToday = now()->subHours(6)->format('Y-m-d');
+
         $today = LunchBreak::whereNotNull('jam_keluar')
-            ->whereDate('jam_keluar', today())
+            ->where(DB::raw("DATE(DATE_SUB(jam_keluar, INTERVAL 6 HOUR))"), $logicalToday)
             ->latest()
             ->paginate(10);
         $all = LunchBreak::whereNotNull('jam_keluar')
@@ -38,8 +40,8 @@ class PermitController extends Controller
 
         $allMonths = Cache::remember('list_bulan_istirahat_keluar', now()->addHours(24), function () {
             return LunchBreak::select(
-                DB::raw("DATE_FORMAT(jam_keluar, '%Y-%m') as id_bulan"),
-                DB::raw("DATE_FORMAT(jam_keluar, '%M %Y') as text")
+                DB::raw("DATE_FORMAT(DATE_SUB(jam_keluar, INTERVAL 6 HOUR), '%Y-%m') as id_bulan"),
+                DB::raw("DATE_FORMAT(DATE_SUB(jam_keluar, INTERVAL 6 HOUR), '%M %Y') as text")
             )
                 ->whereNotNull('jam_keluar')
                 ->distinct()
@@ -121,9 +123,11 @@ class PermitController extends Controller
             }
         }
 
+        $logicalToday = now()->subHours(6)->format('Y-m-d');
+
         $activeOuting = LunchBreak::where('nik', $nik)
             ->whereNull('jam_masuk')
-            ->whereDate('jam_keluar', today())
+            ->where(DB::raw("DATE(DATE_SUB(jam_keluar, INTERVAL 6 HOUR))"), $logicalToday)
             ->first();
 
         $now = Carbon::now();
@@ -131,7 +135,7 @@ class PermitController extends Controller
         if (! $activeOuting) {
             $lastIn = LunchBreak::where('nik', $nik)
                 ->whereNotNull('jam_masuk')
-                ->whereDate('jam_keluar', today())
+                ->where(DB::raw("DATE(DATE_SUB(jam_keluar, INTERVAL 6 HOUR))"), $logicalToday)
                 ->latest('jam_masuk')
                 ->first();
 
@@ -264,7 +268,8 @@ class PermitController extends Controller
         $query = LunchBreak::query();
 
         if ($req->tab === 'today') {
-            $query->whereDate('jam_keluar', today());
+            $logicalToday = now()->subHours(6)->format('Y-m-d');
+            $query->where(DB::raw("DATE(DATE_SUB(jam_keluar, INTERVAL 6 HOUR))"), $logicalToday);
         }
 
         if ($req->filled('divisi')) {
@@ -278,10 +283,10 @@ class PermitController extends Controller
         if ($req->filled('tanggal')) {
             $dates = explode(' - ', $req->tanggal);
             if (count($dates) == 2) {
-                $query->whereDate('jam_keluar', '>=', $dates[0])
-                    ->whereDate('jam_keluar', '<=', $dates[1]);
+                $query->whereRaw("DATE(DATE_SUB(jam_keluar, INTERVAL 6 HOUR)) >= ?", [$dates[0]])
+                    ->whereRaw("DATE(DATE_SUB(jam_keluar, INTERVAL 6 HOUR)) <= ?", [$dates[1]]);
             } else {
-                $query->where('jam_keluar', 'like', $req->tanggal . '%');
+                $query->whereRaw("DATE(DATE_SUB(jam_keluar, INTERVAL 6 HOUR)) = ?", [substr($req->tanggal, 0, 10)]);
             }
         }
 
@@ -290,7 +295,7 @@ class PermitController extends Controller
         return DataTables::of($query)
             ->addIndexColumn()
             ->addColumn('tanggal', function ($row) {
-                return Carbon::parse($row->jam_keluar)->format('Y-m-d');
+                return Carbon::parse($row->jam_keluar)->subHours(6)->format('Y-m-d');
             })
             ->make(true);
     }
