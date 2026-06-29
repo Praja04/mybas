@@ -132,10 +132,9 @@
                                     </select>
                                 </div>
                                 <div class="col-lg-3 mb-3 mb-lg-0">
-                                    <select id="filterTanggal" class="form-control filter-select shadow-sm"
-                                        style="height: 42px;" data-bs-toggle="tooltip" title="Filter Berdasarkan Bulan">
-                                        <option value="">-- Semua Bulan --</option>
-                                    </select>
+                                    <input type="text" id="filterTanggal" class="form-control filter-select shadow-sm"
+                                        style="height: 42px;" placeholder="Rentang Tanggal" autocomplete="off" readonly
+                                        data-bs-toggle="tooltip" title="Filter Berdasarkan Rentang Tanggal">
                                 </div>
                                 <div class="col-lg-2 mt-auto">
                                     <button id="btnTerapkan" class="btn btn-primary font-weight-bold w-100 shadow-sm"
@@ -215,27 +214,20 @@
         $(document).ready(function() {
             let activeTab = 'today';
 
-            $('#filterTanggal').select2({
-                width: '100%',
-                allowClear: true,
-                placeholder: '-- Semua Bulan --',
-                ajax: {
-                    url: "{{ route('izin-keluar.report.getFilterBulan') }}",
-                    dataType: 'json',
-                    delay: 250,
-                    data: function(params) {
-                        return {
-                            q: params.term
-                        };
-                    },
-                    processResults: function(data) {
-                        return {
-                            results: data
-                        };
-                    },
-                    cache: true
-                },
-                minimumInputLength: 0,
+            $('#filterTanggal').daterangepicker({
+                autoUpdateInput: false,
+                locale: {
+                    cancelLabel: 'Clear',
+                    format: 'YYYY-MM-DD'
+                }
+            });
+
+            $('#filterTanggal').on('apply.daterangepicker', function(ev, picker) {
+                $(this).val(picker.startDate.format('YYYY-MM-DD') + ' - ' + picker.endDate.format('YYYY-MM-DD'));
+            });
+
+            $('#filterTanggal').on('cancel.daterangepicker', function(ev, picker) {
+                $(this).val('');
             });
 
             let table = $("#tableIzinKeluar").DataTable({

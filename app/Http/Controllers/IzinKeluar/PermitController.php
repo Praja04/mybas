@@ -149,19 +149,29 @@ class PermitController extends Controller
                 }
             }
 
-            // if ($now->isBefore($lunchStart)) {
-            //     return response()->json([
-            //         'success' => false,
-            //         'message' => "Belum jam istirahat. Silakan absen kembali mulai pukul " . $lunchStart->format('H:i') . ".",
-            //     ], 400);
-            // }
+            $timeNow = $now->format('H:i');
+            $hourNow = $now->hour;
 
-            // if ($now->isAfter($lunchEnd)) {
-            //     return response()->json([
-            //         'success' => false,
-            //         'message' => 'Jam istirahat makan siang sudah selesai.',
-            //     ], 400);
-            // }
+            $isValidShift = (
+                ($timeNow >= '11:30' && $timeNow <= '13:00') ||
+                ($timeNow >= '17:30' && $timeNow <= '19:00') ||
+                ($timeNow >= '01:30' && $timeNow <= '03:00')
+            );
+
+            if (! $isValidShift) {
+                if ($hourNow >= 6 && $hourNow < 14) {
+                    $shiftMsg = "Shift 1 (11:30 - 13:00)";
+                } elseif ($hourNow >= 14 && $hourNow < 22) {
+                    $shiftMsg = "Shift 2 (17:30 - 19:00)";
+                } else {
+                    $shiftMsg = "Shift 3 (01:30 - 03:00)";
+                }
+
+                return response()->json([
+                    'success' => false,
+                    'message' => "Saat ini bukan waktu istirahat. Waktu yang diizinkan untuk " . $shiftMsg . ".",
+                ], 400);
+            }
 
             LunchBreak::create([
                 'nik'        => $nik,
@@ -194,10 +204,27 @@ class PermitController extends Controller
                 ], 400);
             }
 
+            $outHour = $checkOutTime->hour;
+            if ($outHour >= 17 && $outHour <= 19) {
+                // Shift 2 (17:30 - 19:00), batas jam 19:00
+                $lastReturnTime = Carbon::today()->setTime(19, 0, 0);
+            } elseif ($outHour >= 1 && $outHour <= 3) {
+                // Shift 3 (01:30 - 03:00), batas jam 03:00
+                $lastReturnTime = Carbon::today()->setTime(3, 0, 0);
+                
+                // Jika checkOutTime jam 22 ke atas (misal overnite shift), kita pastikan hari sama
+                if ($now->hour >= 1 && $now->hour <= 3 && $checkOutTime->hour >= 20) {
+                     $lastReturnTime = $checkOutTime->copy()->addDay()->setTime(3, 0, 0);
+                }
+            } else {
+                // Shift 1, batas jam 13:00
+                $lastReturnTime = Carbon::today()->setTime(13, 0, 0);
+            }
+
             $limitTimeHours = $checkOutTime->copy()->addMinutes(60)->startOfMinute();
-            $lastReturnTime = Carbon::today()->setTime(13, 0, 0);
-            $nowMinute      = $now->copy()->startOfMinute();
-            $strictLimit    = $limitTimeHours->min($lastReturnTime);
+
+            $nowMinute   = $now->copy()->startOfMinute();
+            $strictLimit = $limitTimeHours->min($lastReturnTime);
 
             $minutesLate = 0;
             $status      = 'Tepat Waktu';
@@ -249,8 +276,16 @@ class PermitController extends Controller
         }
 
         if ($req->filled('tanggal')) {
-            $query->where('jam_keluar', 'like', $req->tanggal . '%');
+            $dates = explode(' - ', $req->tanggal);
+            if (count($dates) == 2) {
+                $query->whereDate('jam_keluar', '>=', $dates[0])
+                    ->whereDate('jam_keluar', '<=', $dates[1]);
+            } else {
+                $query->where('jam_keluar', 'like', $req->tanggal . '%');
+            }
         }
+
+        $query->orderBy('jam_keluar', 'asc');
 
         return DataTables::of($query)
             ->addIndexColumn()
@@ -279,7 +314,12 @@ class PermitController extends Controller
 
         $timePart = 'Semua Riwayat';
         if ($filters['tanggal']) {
-            $timePart = 'Tanggal ' . Carbon::parse($filters['tanggal'])->format('Y-m-d');
+            $dates = explode(' - ', $filters['tanggal']);
+            if (count($dates) == 2) {
+                $timePart = 'Periode ' . Carbon::parse($dates[0])->format('Y-m-d') . ' sd ' . Carbon::parse($dates[1])->format('Y-m-d');
+            } else {
+                $timePart = 'Tanggal ' . Carbon::parse($filters['tanggal'])->format('Y-m-d');
+            }
         } elseif ($filters['tab'] === 'today') {
             $timePart = 'Hari Ini';
         }
@@ -314,7 +354,12 @@ class PermitController extends Controller
 
         $timePart = 'Semua Riwayat';
         if ($filters['tanggal']) {
-            $timePart = 'Tanggal ' . Carbon::parse($filters['tanggal'])->format('Y-m-d');
+            $dates = explode(' - ', $filters['tanggal']);
+            if (count($dates) == 2) {
+                $timePart = 'Periode ' . Carbon::parse($dates[0])->format('Y-m-d') . ' sd ' . Carbon::parse($dates[1])->format('Y-m-d');
+            } else {
+                $timePart = 'Tanggal ' . Carbon::parse($filters['tanggal'])->format('Y-m-d');
+            }
         } elseif ($filters['tab'] === 'today') {
             $timePart = 'Hari Ini';
         }

@@ -39,8 +39,16 @@ class IzinKeluarExport implements FromQuery, WithHeadings, WithMapping, ShouldAu
         }
 
         if ($this->filters['tanggal']) {
-            $query->where('jam_keluar', 'like', $this->filters['tanggal'] . '%');
+            $dates = explode(' - ', $this->filters['tanggal']);
+            if (count($dates) == 2) {
+                $query->whereDate('jam_keluar', '>=', $dates[0])
+                      ->whereDate('jam_keluar', '<=', $dates[1]);
+            } else {
+                $query->where('jam_keluar', 'like', $this->filters['tanggal'] . '%');
+            }
         }
+
+        $query->orderBy('jam_keluar', 'asc');
 
         return $query;
     }

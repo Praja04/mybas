@@ -9,11 +9,34 @@ use Faker\Generator as Faker;
 $factory->define(LunchBreak::class, function (Faker $faker) {
     $karyawan = HrKaryawan::inRandomOrder()->first();
     
-    // Tentukan tanggal acak dari 30 hari ke belakang sampai hari ini
-    $randomDate = $faker->dateTimeBetween('-30 days', 'today');
+    // 30% kemungkinan di hari ini, 70% acak dari 30 hari ke belakang sampai kemarin
+    if ($faker->boolean(30)) {
+        $randomDate = new \DateTime('today');
+    } else {
+        $randomDate = $faker->dateTimeBetween('-30 days', '-1 days');
+    }
     
-    // Tentukan jam keluar antara 10:00 s.d 13:59 di tanggal acak tersebut
-    $jamKeluar = (clone $randomDate)->setTime($faker->numberBetween(10, 13), $faker->numberBetween(0, 59), 0);
+    // Pilih shift secara acak
+    $shift = $faker->randomElement([1, 2, 3]);
+
+    if ($shift == 1) {
+        // 11:30 s/d 12:59
+        $hour = $faker->randomElement([11, 12]);
+        $minute = $hour == 11 ? $faker->numberBetween(30, 59) : $faker->numberBetween(0, 59);
+        $batasJam = 13;
+    } elseif ($shift == 2) {
+        // 17:30 s/d 18:59
+        $hour = $faker->randomElement([17, 18]);
+        $minute = $hour == 17 ? $faker->numberBetween(30, 59) : $faker->numberBetween(0, 59);
+        $batasJam = 19;
+    } else {
+        // 01:30 s/d 02:59
+        $hour = $faker->randomElement([1, 2]);
+        $minute = $hour == 1 ? $faker->numberBetween(30, 59) : $faker->numberBetween(0, 59);
+        $batasJam = 3;
+    }
+    
+    $jamKeluar = (clone $randomDate)->setTime($hour, $minute, 0);
     
     // 80% kemungkinan dia sudah kembali, 20% masih di luar / lupa tap masuk
     $isReturned = $faker->boolean(80);
@@ -26,8 +49,8 @@ $factory->define(LunchBreak::class, function (Faker $faker) {
         $jamMasuk = (clone $jamKeluar)->modify('+' . $faker->numberBetween(30, 90) . ' minutes');
         
         $limitTime = (clone $jamKeluar)->modify('+60 minutes');
-        // lastReturnTime harus ngikutin tanggal dari jamKeluar, jangan pakai today()
-        $lastReturnTime = (clone $jamKeluar)->setTime(13, 0, 0);
+        // lastReturnTime ngikutin tanggal dari jamKeluar, sesuai $batasJam shift
+        $lastReturnTime = (clone $jamKeluar)->setTime($batasJam, 0, 0);
         
         $strictLimit = $limitTime < $lastReturnTime ? $limitTime : $lastReturnTime;
         
