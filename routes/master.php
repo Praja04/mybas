@@ -10,6 +10,8 @@ Route::prefix('master/user')->group(function () {
         Route::put('/nonaktifkan/{id}', 'Master\UserController@update')->name('master.user.nonaktifkan');
         Route::put('/ubah/{id}', 'Master\UserController@ubah')->name('master.user.ubah');
         Route::put('/prosesUbah/{id}', 'Master\UserController@prosesUbah')->name('master.user.proses');
+        Route::post('/change-user-permissions', 'Master\UserController@changeUserPermissions')->name('master.user.change-permissions');
+        Route::post('/{id}/show-permissions-modal', 'Master\UserController@showUserPermissionsModal')->name('master.user.show-permissions-modal');
     });
 });
 

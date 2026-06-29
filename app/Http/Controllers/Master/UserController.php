@@ -2,11 +2,13 @@
 namespace App\Http\Controllers\Master;
 
 use App\AuthGroup;
+use App\AuthPermission;
 use App\Department;
 use App\Http\Controllers\Controller;
 use App\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class UserController extends Controller
 {
@@ -23,6 +25,9 @@ class UserController extends Controller
     {
         $data = User::select('*')
             ->with(['group', 'department']);
+        if (\Schema::hasTable('auth_user_permission')) {
+            $data->withCount('directPermissions');
+        }
         return datatables()->of($data)
             ->make(true);
     }
@@ -209,5 +214,72 @@ class UserController extends Controller
                 'message' => 'Profil gagal diperbarui',
             ]);
         }
+    }
+
+    /**
+     * Return HTML partial untuk modal permission user (group read-only + tambahan editable).
+     */
+    public function showUserPermissionsModal(Request $request, $id = null)
+    {
+        try {
+            $userId = $request->input('id') ?? $id ?? $request->route('id');
+            if (!$userId || !is_numeric($userId)) {
+                return response()->json(['success' => 0, 'message' => 'ID user tidak valid'], 400);
+            }
+            $user = User::with(['group', 'directPermissions'])->find((int) $userId);
+            if (!$user) {
+                return response()->json(['success' => 0, 'message' => 'User tidak ditemukan'], 404);
+            }
+
+            $groupPermissionIds = [];
+            if ($user->auth_group_id && $user->group) {
+                $groupPermissionIds = $user->group->permissions()->pluck('auth_permission.id')->toArray();
+            }
+            $directPermissionIds = $user->directPermissions()->pluck('auth_permission.id')->toArray();
+            $allPermissions = AuthPermission::orderBy('codename', 'asc')->get();
+
+            return view('master.user.partials.user-permissions-modal', [
+                'user' => $user,
+                'all_permissions' => $allPermissions,
+                'group_permission_ids' => $groupPermissionIds,
+                'direct_permission_ids' => $directPermissionIds,
+            ])->render();
+        } catch (\Throwable $e) {
+            \Log::error('showUserPermissionsModal error', [
+                'user_id' => $request->input('id') ?? $id ?? null,
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            $msg = config('app.debug') ? $e->getMessage() : 'Server Error';
+            return response()->json(['success' => 0, 'message' => $msg], 500);
+        }
+    }
+
+    /**
+     * Simpan permission tambahan user (auth_user_permission).
+     */
+    public function changeUserPermissions(Request $request)
+    {
+        $request->validate([
+            'user_id' => 'required|exists:users,id',
+            'user_permissions' => 'array',
+            'user_permissions.*' => 'exists:auth_permission,id',
+        ]);
+
+        $userId = $request->user_id;
+        $permissionIds = $request->user_permissions ?? [];
+
+        DB::table('auth_user_permission')->where('user_id', $userId)->delete();
+
+        foreach ($permissionIds as $permId) {
+            DB::table('auth_user_permission')->insert([
+                'user_id' => $userId,
+                'permission_id' => $permId,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
+
+        return response()->json(['success' => 1, 'message' => 'Permission berhasil disimpan']);
     }
 }

@@ -7,6 +7,7 @@
                     <th>NAMA</th>
                     <th>EMAIL</th>
                     <th>GROUP PERMISSION</th>
+                    <th>PERMISSION TAMBAHAN</th>
                     <th>DEPARTMENT</th>
                     <th>STATUS</th>
                     <th style="width: 5%">AKSI</th>

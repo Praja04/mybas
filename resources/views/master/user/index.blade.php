@@ -260,6 +260,39 @@
     @include('master.user.partials._modal_edit')
 
     @include('master.user.partials._modal_ubah')
+
+    <!-- Modal Permission Tambahan per User -->
+    <div class="modal fade" id="modal-user-permission" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <form id="change-user-permission-form" method="POST">
+                    @csrf
+                    <input type="hidden" name="user_id" id="user_permission_user_id" value="">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <i class="fas fa-key text-warning mr-2"></i>
+                            Permission Tambahan - <span id="modal-user-permission-name" class="text-primary"></span>
+                        </h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body" id="modal-user-permission-body">
+                        <div class="text-center py-10">
+                            <span class="spinner spinner-primary mb-2"></span>
+                            <div class="text-muted font-weight-bold">Memuat permission...</div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
+                        <button type="submit" class="btn btn-primary font-weight-bolder">
+                            <i class="fas fa-save mr-1"></i> Simpan Permission
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 @endsection
 
 @push('scripts')
@@ -328,6 +361,19 @@
         </a>`;
                     }
                 }, {
+                    data: 'direct_permissions_count',
+                    name: 'direct_permissions_count',
+                    orderable: false,
+                    searchable: false,
+                    render: function(data, type, row) {
+                        var count = parseInt(data) || 0;
+                        if (count > 0) {
+                            var safeName = (row.name || '').replace(/"/g, '&quot;');
+                            return `<a href="javascript:;" class="user-permission-badge label label-lg label-light-danger label-inline font-weight-bolder cursor-pointer" data-user-id="${row.id}" data-user-name="${safeName}" title="Kelola permission tambahan"><i class="fas fa-plus-circle icon-sm text-danger mr-1"></i> ${count}</a>`;
+                        }
+                        return '<span class="text-muted font-weight-bold">-</span>';
+                    }
+                }, {
                     data: 'department.name',
                     name: 'department.name',
                     render: function(data, type, row) {
@@ -375,6 +421,12 @@
                                 <a href="#" class="navi-link edit-user" data-id="${row.id}">
                                     <span class="navi-icon"><i class="fas fa-pen text-warning"></i></span>
                                     <span class="navi-text font-weight-bold">Edit User</span>
+                                </a>
+                            </li>
+                            <li class="navi-item">
+                                <a href="#" class="navi-link kelola-permission-user" data-id="${row.id}" data-name="${(row.name || '').replace(/"/g, '&quot;')}">
+                                    <span class="navi-icon"><i class="fas fa-key text-info"></i></span>
+                                    <span class="navi-text font-weight-bold">Kelola Permission</span>
                                 </a>
                             </li>
                             <li class="navi-item">
@@ -553,6 +605,104 @@
                 passwordIcon.classList.add("fa-eye");
             }
         }
+
+        // ============================================
+        // PERMISSION TAMBAHAN PER USER
+        // ============================================
+
+        // Buka modal & load data
+        function userPermissions(userId, userName) {
+            userName = userName || 'User';
+            $("#user_permission_user_id").val(userId);
+            $("#modal-user-permission-name").text(userName);
+
+            // Reset modal body ke loading state
+            $("#modal-user-permission-body").html(`
+                <div class="text-center py-10">
+                    <span class="spinner spinner-primary mb-2"></span>
+                    <div class="text-muted font-weight-bold">Memuat permission...</div>
+                </div>
+            `);
+            $("#modal-user-permission").modal("show");
+
+            $.ajax({
+                url: "{{ url('/master/user') }}/" + userId + "/show-permissions-modal",
+                type: 'POST',
+                data: {
+                    _token: '{{ csrf_token() }}',
+                    id: userId
+                },
+                success: function(response) {
+                    if (typeof response === 'object' && response.success === 0) {
+                        toastr.error(response.message || 'User tidak ditemukan', 'Error');
+                        $("#modal-user-permission").modal("hide");
+                        return;
+                    }
+                    $("#modal-user-permission-body").html(response);
+                },
+                error: function(xhr) {
+                    var msg = 'Terjadi kesalahan saat memuat data permissions';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        msg = xhr.responseJSON.message;
+                    }
+                    toastr.error(msg, 'Error');
+                    $("#modal-user-permission").modal("hide");
+                }
+            });
+        }
+
+        // Trigger buka modal: dari badge di kolom atau dari menu dropdown
+        $(document).on('click', '.kelola-permission-user, .user-permission-badge', function(e) {
+            e.preventDefault();
+            var userId = $(this).data('user-id') || $(this).data('id');
+            var userName = $(this).data('user-name') || $(this).data('name') || 'User';
+            if (!userId) return;
+            userPermissions(userId, userName);
+        });
+
+        // Search filter pada modal permission
+        $(document).on('input', '#searchUserPermission', function() {
+            var q = $(this).val().toLowerCase();
+            $('.user-auth-permissions .permission-row').each(function() {
+                var text = $(this).text().toLowerCase();
+                $(this).toggle(text.indexOf(q) !== -1);
+            });
+        });
+
+        // Submit form permission tambahan
+        $(document).on('submit', '#change-user-permission-form', function(e) {
+            e.preventDefault();
+            var data = $(this).serialize();
+            var submitBtn = $(this).find('button[type="submit"]');
+            submitBtn.prop('disabled', true).html('<span class="spinner spinner-sm spinner-white mr-1"></span> Menyimpan...');
+
+            $.ajax({
+                url: "{{ url('/master/user/change-user-permissions') }}",
+                type: 'POST',
+                data: data,
+                success: function(response) {
+                    submitBtn.prop('disabled', false).html('<i class="fas fa-save mr-1"></i> Simpan Permission');
+                    if (response.success == 1) {
+                        toastr.success(response.message || 'Permission berhasil disimpan', 'Berhasil');
+                        $("#modal-user-permission").modal("hide");
+                        table.ajax.reload(null, false);
+                    } else {
+                        toastr.error('Tidak bisa menyimpan data, periksa inputan Anda', 'Error');
+                    }
+                },
+                error: function(xhr) {
+                    submitBtn.prop('disabled', false).html('<i class="fas fa-save mr-1"></i> Simpan Permission');
+                    if (xhr.status == 422 && xhr.responseJSON && xhr.responseJSON.errors) {
+                        $.each(xhr.responseJSON.errors, function(idx, msg) {
+                            toastr.error(msg, 'Validasi Gagal');
+                        });
+                    } else {
+                        var msg = (xhr.responseJSON && xhr.responseJSON.message) || 'Terjadi kesalahan saat menyimpan';
+                        toastr.error(msg, 'Error');
+                    }
+                }
+            });
+        });
 
         // toggle buat edit
         function toggleEditPasswordVisibility() {
