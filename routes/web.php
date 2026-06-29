@@ -8,6 +8,8 @@ Route::get('/data-scan', [DataScanmakanController::class, 'index'])->name('scanm
 
 Route::group(['middleware' => ['auth', 'rules', 'access_log']], function () {
     Route::get('/izin-keluar', 'IzinKeluar\PermitController@index')->name('izin-keluar.index');
+    Route::get('/izin-keluar/report', 'IzinKeluar\PermitController@reportPage')->name('izin-keluar.report');
+    Route::get('/izin-keluar/report/get-data', 'IzinKeluar\PermitController@getData')->name('izin-keluar.report.getData');
     Route::post('/izin-keluar/check-karyawan', 'IzinKeluar\PermitController@checkKaryawan')->name('izin-keluar.check-karyawan');
 
     Route::get('/', 'HomeController@index')->name('home');

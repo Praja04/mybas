@@ -8,21 +8,10 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Yajra\DataTables\Facades\DataTables;
 
 class PermitController extends Controller
 {
-    // private function formatData($riwayat)
-    // {
-    //     return [
-    //         'nik'             => $riwayat->nik,
-    //         'nama'            => $riwayat->nama,
-    //         'divisi'          => $riwayat->divisi,
-    //         'jam_keluar'      => $riwayat->jam_keluar ? $riwayat->jam_keluar->format('Y-m-d H:i:s') : null,
-    //         'jam_masuk'       => $riwayat->jam_masuk ? $riwayat->jam_masuk->format('Y-m-d H:i:s') : null,
-    //         'menit_terlambat' => $riwayat->menit_terlambat,
-    //         'status'          => $riwayat->status,
-    //     ];
-    // }
 
     public function index()
     {
@@ -72,6 +61,10 @@ class PermitController extends Controller
             Log::error("Koneksi DB Pusat Gagal: ", [$e->getMessage()]);
         }
 
+        if (! $hris && $dataPusat) {
+            $hris = HrKaryawan::whereRaw("CAST(nik AS UNSIGNED) = CAST(? AS UNSIGNED)", [$dataPusat->NIK])->first();
+        }
+
         if (! $hris && ! $dataPusat) {
             return response()->json([
                 'success' => false,
@@ -100,22 +93,39 @@ class PermitController extends Controller
         $now = Carbon::now();
 
         if (! $activeOuting) {
-            $lunchStart = Carbon::today()->setTime(12, 0, 0);
-            $lunchEnd   = Carbon::today()->setTime(13, 0, 0);
+            $lastIn = LunchBreak::where('nik', $nik)
+                ->whereNotNull('jam_masuk')
+                ->whereDate('jam_keluar', today())
+                ->latest('jam_masuk')
+                ->first();
 
-            if ($now->isBefore($lunchStart)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Belum jam istirahat. Silakan absen kembali mulai pukul 12.00.',
-                ], 400);
+            // $lunchStart = Carbon::today()->setTime(12, 0, 0);
+            // $lunchEnd   = Carbon::today()->setTime(13, 0, 0);
+
+            if ($lastIn) {
+                $lastCheckInTime = Carbon::parse($lastIn->jam_masuk);
+
+                if ($lastCheckInTime->diffInMinutes($now) < 1) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => "Anda baru saja tap MASUK. Harap tunggu minimal 1 menit untuk tap KELUAR.",
+                    ], 400);
+                }
             }
 
-            if ($now->isAfter($lunchEnd)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Jam istirahat makan siang sudah selesai.',
-                ], 400);
-            }
+            // if ($now->isBefore($lunchStart)) {
+            //     return response()->json([
+            //         'success' => false,
+            //         'message' => "Belum jam istirahat. Silakan absen kembali mulai pukul " . $lunchStart->format('H:i') . ".",
+            //     ], 400);
+            // }
+
+            // if ($now->isAfter($lunchEnd)) {
+            //     return response()->json([
+            //         'success' => false,
+            //         'message' => 'Jam istirahat makan siang sudah selesai.',
+            //     ], 400);
+            // }
 
             LunchBreak::create([
                 'nik'        => $nik,
@@ -138,13 +148,26 @@ class PermitController extends Controller
                 ],
             ]);
         } else {
-            $limitTime = Carbon::today()->setTime(13, 0, 0);
+            // $limitTime = Carbon::today()->setTime(13, 0, 0);
+            $checkOutTime = Carbon::parse($activeOuting->jam_keluar);
+
+            if ($checkOutTime->diffInMinutes($now) < 1) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Anda baru saja tap KELUAR. Harap tunggu minimal 1 menit untuk tap MASUK.",
+                ], 400);
+            }
+
+            $limitTimeHours = $checkOutTime->copy()->addMinutes(60)->startOfMinute();
+            $lastReturnTime = Carbon::today()->setTime(13, 0, 0);
+            $nowMinute      = $now->copy()->startOfMinute();
+            $strictLimit    = $limitTimeHours->min($lastReturnTime);
 
             $minutesLate = 0;
             $status      = 'Tepat Waktu';
 
-            if ($now->gt($limitTime)) {
-                $minutesLate = $now->diffInMinutes($limitTime);
+            if ($nowMinute->gt($strictLimit)) {
+                $minutesLate = $nowMinute->diffInMinutes($strictLimit);
                 $status      = 'Terlambat';
             }
 
@@ -171,5 +194,41 @@ class PermitController extends Controller
                 ],
             ]);
         }
+    }
+
+    public function getData(Request $req)
+    {
+        $query = LunchBreak::query();
+
+        if ($req->tab === 'today') {
+            $query->whereDate('jam_keluar', today());
+        }
+
+        if ($req->filled('divisi')) {
+            $query->where('divisi', $req->divisi);
+        }
+
+        if ($req->filled('status')) {
+            $query->where('status', $req->status);
+        }
+
+        if ($req->filled('tanggal')) {
+            $query->whereDate('jam_keluar', $req->tanggal);
+        }
+
+        return DataTables::of($query)
+            ->addIndexColumn()
+            ->addColumn('tanggal', function ($row) {
+                return Carbon::parse($row->jam_keluar)->format('Y-m-d');
+            })
+            ->make(true);
+    }
+
+    public function reportPage()
+    {
+        $data['divisi'] = LunchBreak::whereNotNull('divisi')->where('divisi', '!=', '')->distinct()->pluck('divisi')->toArray();
+        $data['status'] = LunchBreak::whereNotNull('status')->where('status', '!=', '')->distinct()->pluck('status')->toArray();
+
+        return view('izin_keluar.report', $data);
     }
 }
