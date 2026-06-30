@@ -24,4 +24,5 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
 Route::get('/send-email', [TestController::class, 'sendEmail']);
 
 Route::post('/store-card', [ParkingTapController::class, 'storeCard']);
+Route::get('/parking-histories', [ParkingTapController::class, 'getData']);
 Route::post('/parking-histories', [ParkingTapController::class, 'parkingHistory']);
