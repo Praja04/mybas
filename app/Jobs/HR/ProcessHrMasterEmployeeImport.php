@@ -162,19 +162,30 @@ class ProcessHrMasterEmployeeImport implements ShouldQueue
                 continue;
             }
 
-            [$normalizedDept, $normalizedSubDept] = HrEmployeeNormalizer::normalizeDepartmenAndSubDepartmen($data[8] ?? null, $data[9] ?? null, $data[10] ?? null);
+            // Template CSV (baris 2 header):
+            // 0:Company, 1:NIK, 2:Nama, 3:Tempat Lahir, 4:Tgl Lahir, 5:Tgl Masuk,
+            // 6:Divisi, 7:Bus Area, 8:Sales Office, 9:Departmen, 10:Section,
+            // 11:Tipe Karyawan, 12:Jabatan, 13:Group, 14:Sub Group, 15:Level,
+            // 16:Payroll Type, 17:Jenis Kelamin, 18:Alamat KTP, 19:Jumlah Anak,
+            // 20:Work Status, 21:Status Nikah, 22:Aktif, 23:Valid From, 24:Valid To, 25:View
+            // Departmen dipakai langsung apa adanya (TANPA submapping PAS — beda PT)
+            // Sub Departmen di-resolve dari Section via HrEmployeeNormalizer::resolveSubDeptBySection()
+            $departmenRaw = $this->str($data, 9);
+            $departmen    = $departmenRaw !== null ? HrEmployeeNormalizer::removePasPrefix($departmenRaw) : null;
+            $section      = $this->str($data, 10);
+            $subDepartmen = HrEmployeeNormalizer::resolveSubDeptBySection($section);
 
             $rows[] = [
                 'NIK'             => $nik,
                 'Nama'            => $this->str($data, 2),
-                'Tgl Lahir'       => HrEmployeeNormalizer::normalizeDate($data[3] ?? null),
-                'Tgl Masuk'       => HrEmployeeNormalizer::normalizeDate($data[4] ?? null),
-                'Departmen'       => $normalizedDept,
-                'Sub Departmen'   => $normalizedSubDept,
-                'Section'         => $this->str($data, 10),
+                'Tgl Lahir'       => HrEmployeeNormalizer::normalizeDate($data[4] ?? null),
+                'Tgl Masuk'       => HrEmployeeNormalizer::normalizeDate($data[5] ?? null),
+                'Departmen'       => $departmen,
+                'Sub Departmen'   => $subDepartmen,
+                'Section'         => $section,
                 'Tipe Karyawan'   => $this->str($data, 11),
                 'Jabatan'         => $this->str($data, 12),
-                'Jenis Kelamin'   => $this->str($data, 18),
+                'Jenis Kelamin'   => $this->str($data, 17),
                 'Work Status'     => $this->str($data, 20),
                 'Status Nikah'    => $this->str($data, 21),
                 'Aktif'           => $this->str($data, 22),

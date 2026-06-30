@@ -54,8 +54,9 @@
         </div>
         <div class="mt-3 p-2" style="background:#f5f5f5; font-size:.8rem;">
             <strong>Kolom CSV (baris 2):</strong>
-            Legal Entity, NIK, Nama, Tgl Lahir, Tgl Masuk, Divisi, Profit Center, Location, Departmen, Sub Departmen, Section,
-            Tipe Karyawan, Jabatan, Group, Sub Group, Level, PWS, Payroll Type, Jenis Kelamin, Email, Work Status, Status Nikah, Aktif, Valid From, Valid To, View
+            Company, NIK, Nama, Tempat Lahir, Tgl Lahir, Tgl Masuk, Divisi, Bus Area, Sales Office, Departmen, Section,
+            Tipe Karyawan, Jabatan, Group, Sub Group, Level, Payroll Type, Jenis Kelamin, Alamat KTP, Jumlah Anak, Work Status, Status Nikah, Aktif, Valid From, Valid To, View
+            <br><span class="text-muted"><strong>Catatan:</strong> Kolom <em>Sub Departmen</em> tidak ada di template, tapi akan di-resolve otomatis dari <em>Section</em> via mapping di <code>HrEmployeeNormalizer::SECTION_TO_SUB_DEPT</code>. Departmen dipakai langsung dari CSV tanpa normalisasi PT.</span>
         </div>
         <div class="mt-3 p-2" style="background:#f5f5f5; font-size:.8rem;">
             <strong>Kolom CSV (baris 3):</strong>

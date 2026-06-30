@@ -165,4 +165,79 @@ class HrEmployeeNormalizer
             $s === '' ? null : self::removePasPrefix($s),
         ];
     }
+
+    /**
+     * Mapping Section -> Sub Departmen.
+     * Lookup otomatis saat import: jika Section row match key,
+     * Sub Departmen di-isi dengan value. Jika tidak match, Sub Departmen = null.
+     */
+    private const SECTION_TO_SUB_DEPT = [
+        'Direksi'                                      => 'Direksi',
+        'Engineering Automation'                       => 'Engineering Otomotif & Utility',
+        'Engineering Electrical & Kalibrasi'           => 'Engineering Project & Electrical',
+        'Engineering Maintenance & Improvement'        => 'Engineering Otomotif & Utility',
+        'Engineering'                                  => 'Engineering',
+        'Engineering Project & Drawing'                => 'Engineering Project & Electrical',
+        'Engineering Produksi Retail'                  => 'Engineering Produksi',
+        'Engineering Produksi Proses'                  => 'Engineering Produksi',
+        'Engineering Utility & Boiler'                 => 'Engineering Otomotif & Utility',
+        'Engineering Project & Electrical'             => 'Engineering Project & Electrical',
+        'ITE'                                          => 'ITE',
+        'Engineering WWTP'                             => 'Engineering Otomotif & Utility',
+        'Accounting'                                   => 'Finance & Accounting',
+        'Finance & Accounting'                         => 'Finance & Accounting',
+        'Finance Kasir'                                => 'Finance & Accounting',
+        'Accounting Payable'                           => 'Finance & Accounting',
+        'Finance Cost'                                 => 'Finance & Accounting',
+        'Finance Tax'                                  => 'Finance & Accounting',
+        'Factory'                                      => 'Factory',
+        'Health Safety Environment'                    => 'Factory',
+        'Integrated Management System'                 => 'Factory',
+        'IT Support'                                   => 'Factory',
+        'Research & Development'                       => 'Factory',
+        'General Affair'                               => 'General Affair',
+        'HRD'                                          => 'HRD',
+        'HRD & GA'                                     => 'HRD & GA',
+        'Industrial Relation & External Relationship'  => 'Industrial Relation & External Relationship',
+        'Production Planning Control'                  => 'Production Planning Control',
+        'Engineering Produksi'                         => 'Engineering Produksi',
+        'Produksi Filling Retail'                      => 'Produksi Proses',
+        'Produksi Material Balance & Project'          => 'Produksi Material Balance & Project',
+        'Produksi'                                     => 'Produksi',
+        'Produksi Proses'                              => 'Produksi Proses',
+        'Purchasing Raw Material'                      => 'Purchasing Raw Material',
+        'Purchasing Sparepart'                         => 'Purchasing Sparepart',
+        'Dokumen Control'                              => 'Integrated Management System',
+        'Quality Control Filling'                      => 'Quality Control Produksi',
+        'Quality Control Kimia'                        => 'Quality Control Produksi',
+        'Quality Control Mikrobiologi'                 => 'Quality Control Produksi',
+        'Quality Control'                              => 'Quality Control',
+        'Quality Control Proses'                       => 'Quality Control Produksi',
+        'Quality Control Premix'                       => 'Quality Control Premix',
+        'Quality Control Raw & Packaging Material'     => 'Quality Control Raw & Packaging Material',
+        'Warehouse Co Product'                         => 'Warehouse',
+        'Warehouse Finish Good'                        => 'Warehouse',
+        'Warehouse Premix Material'                    => 'Warehouse',
+        'Warehouse'                                    => 'Warehouse',
+        'Warehouse Raw Material'                       => 'Warehouse',
+        'Warehouse Sparepart'                          => 'Warehouse',
+        'Expedisi'                                     => 'Expedisi',
+        'Timbangan'                                    => 'Expedisi',
+    ];
+
+    /**
+     * Resolve Sub Departmen berdasarkan Section dari CSV.
+     * Case-insensitive exact match. Return null jika Section tidak ada di mapping.
+     */
+    public static function resolveSubDeptBySection($section)
+    {
+        if ($section === null) {
+            return null;
+        }
+        $section = trim((string) $section);
+        if ($section === '') {
+            return null;
+        }
+        return self::SECTION_TO_SUB_DEPT[$section] ?? null;
+    }
 }
