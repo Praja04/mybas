@@ -26,6 +26,11 @@ class ProcessHrMasterEmployeeImport implements ShouldQueue
     protected $chunkSize = 500;
     protected $startRow = 3;
 
+    protected const NIK_APOSTROPHE_WHEN_INACTIVE = [
+        '17000069',
+        '17000129',
+    ];
+
     public function __construct($batchId, $filePath, $username)
     {
         $this->batchId = $batchId;
@@ -160,6 +165,26 @@ class ProcessHrMasterEmployeeImport implements ShouldQueue
             $nik = isset($data[1]) ? trim((string) $data[1]) : '';
             if ($nik === '') {
                 continue;
+            }
+
+            // Hanya Payroll Type = Bulanan yang masuk ke staging / master.
+            $payrollType = $this->str($data, 16);
+            if ($payrollType === null || strcasecmp($payrollType, 'Bulanan') !== 0) {
+                continue;
+            }
+
+            $aktif         = $this->str($data, 22);
+            $tipeKaryawan  = $this->str($data, 11);
+
+            // Untuk NIK tertentu dengan status Aktif = N dan Tipe Karyawan = Non Staff,
+            // tambahkan tanda kutip (') di akhir NIK agar menjadi unik
+            // ketika ada record dengan NIK sama berstatus Aktif = Y / Staff.
+            $isListedNik = in_array($nik, self::NIK_APOSTROPHE_WHEN_INACTIVE, true);
+            $isInactive  = $aktif === 'N';
+            $isNonStaff  = $tipeKaryawan !== null && strcasecmp($tipeKaryawan, 'Non Staff') === 0;
+
+            if ($isListedNik && $isInactive && $isNonStaff) {
+                $nik = $nik . "'";
             }
 
             // Template CSV (baris 2 header):
