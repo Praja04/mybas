@@ -22,6 +22,19 @@ class Rules
         foreach ($_permissions as $permission) {
             $permissions[] = $permission->codename;
         }
+
+        // Tambahkan direct permission (auth_user_permission) supaya permission
+        // yang di-attach langsung ke user (di luar group) tetap berlaku
+        // untuk guard menu di header. Tanpa ini, permission yang hanya
+        // tersimpan sebagai direct permission tidak akan pernah match
+        // di `in_array('xxx', $permissions)`.
+        if (method_exists(Auth::user(), 'getAllPermissionCodenames')) {
+            $permissions = array_values(array_unique(array_merge(
+                $permissions,
+                Auth::user()->getAllPermissionCodenames()
+            )));
+        }
+
         \View::share('permissions', $permissions);
         return $next($request);
     }

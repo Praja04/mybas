@@ -1372,6 +1372,53 @@
                                 </div>
                             </li>
                         @endif
+                        {{-- HR Dashboard --}}
+                        @if (in_array('hr_dashboard_navbar', $permissions)
+                            || in_array('hr_upload_file_mp', $permissions)
+                            || in_array('hr_upload_working_time_and_overtime', $permissions))
+                            <li class="menu-item menu-item-submenu menu-item-rel" data-menu-toggle="click"
+                                aria-haspopup="true">
+                                <a href="javascript:" class="menu-link menu-toggle">
+                                    <span class="menu-text">HR Dashboard <i
+                                            class="ml-1 ki ki-bold-triangle-bottom icon-xs text-dark-50"></i></span>
+                                </a>
+                                <div class="menu-submenu menu-submenu-classic menu-submenu-left">
+                                    <ul class="menu-subnav">
+                                        @if (in_array('hr_dashboard_navbar', $permissions))
+                                            <li class="menu-item" aria-haspopup="true">
+                                                <a href="{{ url('/hr/hrdashboard') }}" class="menu-link">
+                                                    <i class="menu-bullet menu-bullet-line">
+                                                        <span></span>
+                                                    </i>
+                                                    <span class="menu-text">HR Dashboard</span>
+                                                </a>
+                                            </li>
+                                        @endif
+                                        @if (in_array('hr_upload_file_mp', $permissions))
+                                            <li class="menu-item" aria-haspopup="true">
+                                                <a href="{{ url('/hr/upload-file-mp') }}" class="menu-link">
+                                                    <i class="menu-bullet menu-bullet-line">
+                                                        <span></span>
+                                                    </i>
+                                                    <span class="menu-text">Upload File MP</span>
+                                                </a>
+                                            </li>
+                                        @endif
+                                        @if (in_array('hr_upload_working_time_and_overtime', $permissions))
+                                            <li class="menu-item" aria-haspopup="true">
+                                                <a href="{{ url('/hr/upload-working-time-and-overtime') }}"
+                                                    class="menu-link">
+                                                    <i class="menu-bullet menu-bullet-line">
+                                                        <span></span>
+                                                    </i>
+                                                    <span class="menu-text">Upload Working Time &amp; Overtime</span>
+                                                </a>
+                                            </li>
+                                        @endif
+                                    </ul>
+                                </div>
+                            </li>
+                        @endif
                         @if (!in_array('eksternal', $permissions))
                             <li class="menu-item menu-item-submenu menu-item-rel" data-menu-toggle="click"
                                 aria-haspopup="true">
