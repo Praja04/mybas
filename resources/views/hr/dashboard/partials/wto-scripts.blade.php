@@ -32,7 +32,8 @@
         if (!raw) return { from: '', to: '' };
         const parts = raw.split(/\s+to\s+|\s+-\s+/);
         if (parts.length === 2) return { from: parts[0].trim(), to: parts[1].trim() };
-        return { from: '', to: parts[0].trim() };
+        const single = parts[0].trim();
+        return { from: single, to: single };
     }
 
     function getWtoFilterParams(page) {

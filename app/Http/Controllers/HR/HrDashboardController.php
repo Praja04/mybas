@@ -843,6 +843,13 @@ class HrDashboardController extends Controller
         $tglFrom = $request->get('wto_tgl_in_from');
         $tglTo   = $request->get('wto_tgl_in_to');
 
+        if (!empty($tglFrom) && empty($tglTo)) {
+            $tglTo = $tglFrom;
+        } elseif (!empty($tglTo) && empty($tglFrom)) {
+            $tglFrom = $tglTo;
+        }
+
+
         $base = DB::table('hr_workingtimeandovertime as wto')
             ->leftJoin('hr_master_employee as hme', 'hme.NIK', '=', 'wto.nik');
 
@@ -943,6 +950,13 @@ class HrDashboardController extends Controller
         $nama    = $this->getArrayFilter($request, 'wto_nama');
         $tglFrom = $request->get('wto_tgl_in_from');
         $tglTo   = $request->get('wto_tgl_in_to');
+
+        if (!empty($tglFrom) && empty($tglTo)) {
+            $tglTo = $tglFrom;
+        } elseif (!empty($tglTo) && empty($tglFrom)) {
+            $tglFrom = $tglTo;
+        }
+
 
         $base = DB::table('hr_workingtimeandovertime as wto')
             ->leftJoin('hr_master_employee as hme', 'hme.NIK', '=', 'wto.nik');
@@ -1047,6 +1061,13 @@ class HrDashboardController extends Controller
         $nama    = $this->getArrayFilter($request, 'wto_nama');
         $tglFrom = $request->get('wto_tgl_in_from');
         $tglTo   = $request->get('wto_tgl_in_to');
+
+        if (!empty($tglFrom) && empty($tglTo)) {
+            $tglTo = $tglFrom;
+        } elseif (!empty($tglTo) && empty($tglFrom)) {
+            $tglFrom = $tglTo;
+        }
+
 
         $base = DB::table('hr_workingtimeandovertime as wto')
             ->leftJoin('hr_master_employee as hme', 'hme.NIK', '=', 'wto.nik');
@@ -1153,6 +1174,13 @@ class HrDashboardController extends Controller
         $nama    = $this->getArrayFilter($request, 'wto_nama');
         $tglFrom = $request->get('wto_tgl_in_from');
         $tglTo   = $request->get('wto_tgl_in_to');
+
+        if (!empty($tglFrom) && empty($tglTo)) {
+            $tglTo = $tglFrom;
+        } elseif (!empty($tglTo) && empty($tglFrom)) {
+            $tglFrom = $tglTo;
+        }
+
 
         $base = DB::table('hr_workingtimeandovertime as wto')
             ->leftJoin('hr_master_employee as hme', 'hme.NIK', '=', 'wto.nik');
