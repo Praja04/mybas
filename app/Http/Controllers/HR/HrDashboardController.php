@@ -34,6 +34,28 @@ class HrDashboardController extends Controller
     private const ALL_OTORISASI_CODENAME = 'hrdashboard_all_otorisasi';
 
     /**
+     * Mapping query param `?type_karyawan=...` ke daftar Tipe Karyawan yang
+     * diizinkan untuk mode tersebut. Berlaku untuk semua user (AUTHORIZED_NIKS
+     * maupun restricted) — hanya me-restrict filter Tipe Karyawan saja.
+     *
+     *   - mitra_kerja → KMJ & Fortuna (data mitra kerja)
+     *   - BAS         → Staff & Non Staff (data internal)
+     *   - (lainnya)   → tidak ada restriction, tampilkan semua
+     */
+    private const TIPE_KARYAWAN_MODES = [
+        'mitra_kerja' => ['KMJ', 'Fortuna'],
+        'BAS'         => ['Staff', 'Non Staff'],
+    ];
+
+    private function getTipeKaryawanMode(?string $mode): ?array
+    {
+        if ($mode === null || $mode === '') {
+            return null;
+        }
+        return self::TIPE_KARYAWAN_MODES[$mode] ?? null;
+    }
+
+    /**
      * Cek apakah user mendapat full access (bypass filter dept/sub-dept):
      *  1) Hardcoded NIK di AUTHORIZED_NIKS (backward compat)
      *  2) User punya permission codename 'hrdashboard_all_otorisasi'
@@ -173,7 +195,7 @@ class HrDashboardController extends Controller
         );
     }
 
-    public function index()
+    public function index(Request $request)
     {
         if (!$this->hasDashboardAccess()) {
             abort(403, 'Anda tidak memiliki akses ke HR Dashboard.');
@@ -210,12 +232,20 @@ class HrDashboardController extends Controller
             $departments = $deptList;
         }
 
-        $types = $this->getCachedDistinct('Tipe Karyawan');
+        $allTypes         = $this->getCachedDistinct('Tipe Karyawan');
+        $typeKaryawanMode = $request->get('type_karyawan');
+        $modeAllowed      = $this->getTipeKaryawanMode($typeKaryawanMode);
+        if ($modeAllowed !== null) {
+            $types = array_values(array_intersect($allTypes, $modeAllowed));
+        } else {
+            $types = $allTypes;
+        }
 
         return view('hr.dashboard.index', [
             'departments'         => $departments,
             'subDepartments'      => $subDepartments,
             'types'               => $types,
+            'typeKaryawanMode'    => $typeKaryawanMode,
             'canFilterDepartmen'  => true,
             'canViewTopLembur'    => $this->hasTopLemburAccess(),
         ]);
@@ -257,6 +287,32 @@ class HrDashboardController extends Controller
         $karyawanNonStaff = (clone $baseQuery);
         $this->applyAktifRentangFilter($karyawanNonStaff, $request);
         $karyawanNonStaff = $karyawanNonStaff->where('Tipe Karyawan', 'Non Staff')->count();
+
+        // === Tipe Karyawan Distribution (untuk chart Employee Type) ===
+        // Axis mengikuti ?type_karyawan= mode:
+        //   - mitra_kerja → ['KMJ', 'Fortuna']
+        //   - BAS         → ['Staff', 'Non Staff']
+        //   - (lainnya)   → ['Staff', 'Non Staff']  (default)
+        // Dihitung AS OF Rentang Data dengan 1 query aggregate.
+        $tipeAxis = $this->getTipeKaryawanMode($request->get('type_karyawan'))
+            ?? ['Staff', 'Non Staff'];
+
+        $tipeCountQuery = (clone $baseQuery);
+        $this->applyAktifRentangFilter($tipeCountQuery, $request);
+        $tipeCountRows = $tipeCountQuery
+            ->select('Tipe Karyawan', DB::raw('count(*) as total'))
+            ->whereIn('Tipe Karyawan', $tipeAxis)
+            ->groupBy('Tipe Karyawan')
+            ->pluck('total', 'Tipe Karyawan')
+            ->toArray();
+
+        $tipeDistribution = [
+            'labels' => $tipeAxis,
+            'data'   => array_map(
+                fn ($t) => (int) ($tipeCountRows[$t] ?? 0),
+                $tipeAxis
+            ),
+        ];
 
         // Gender breakdown AS OF Rentang Data
         $genderLaki = (clone $baseQuery);
@@ -306,9 +362,13 @@ class HrDashboardController extends Controller
 
         // Employee In: group by year(Tgl Masuk) & Tipe Karyawan
         // Filter by Tgl Masuk range (BUKAN Valid From) + departemen/sub/tipe
+        // Pivot key per tipe mengikuti $tipeAxis (KMJ/Fortuna utk mitra_kerja,
+        // Staff/Non Staff utk BAS / default). Filter tipe sudah diaplikasikan
+        // oleh applyTipeKaryawanMode() di sanitizeFilterRequest().
         $empInQuery = $this->buildEmployeeInQuery($request);
         $empInRaw = $empInQuery
             ->whereNotNull('Tgl Masuk')
+            ->whereIn('Tipe Karyawan', $tipeAxis)
             ->select(
                 DB::raw("YEAR(`Tgl Masuk`) as year"),
                 'Tipe Karyawan',
@@ -318,22 +378,23 @@ class HrDashboardController extends Controller
             ->orderBy('year')
             ->get();
 
-        // Pivot ke [year => ['Staff' => n, 'Non Staff' => n]]
         $years = $empInRaw->pluck('year')->unique()->sort()->values();
         $empIn = [
-            'years'  => $years->map(fn($y) => (int) $y)->toArray(),
-            'staff'  => [],
-            'non_staff' => [],
+            'years' => $years->map(fn ($y) => (int) $y)->toArray(),
         ];
-        foreach ($years as $y) {
-            $empIn['staff'][]     = (int) $empInRaw->where('year', $y)->where('Tipe Karyawan', 'Staff')->sum('total');
-            $empIn['non_staff'][] = (int) $empInRaw->where('year', $y)->where('Tipe Karyawan', 'Non Staff')->sum('total');
+        foreach ($tipeAxis as $t) {
+            $empIn[$t] = [];
+            foreach ($years as $y) {
+                $empIn[$t][] = (int) $empInRaw->where('year', $y)
+                    ->where('Tipe Karyawan', $t)->sum('total');
+            }
         }
 
         // Employee Out: group by year(Valid From) & Tipe Karyawan
         // Filter: Aktif = N, Tgl Masuk range, departemen/sub/tipe (BUKAN Valid From range)
         $empOutRaw = $this->buildEmployeeOutQuery($request)
             ->whereNotNull('Valid From')
+            ->whereIn('Tipe Karyawan', $tipeAxis)
             ->select(
                 DB::raw("YEAR(`Valid From`) as year"),
                 'Tipe Karyawan',
@@ -345,13 +406,14 @@ class HrDashboardController extends Controller
 
         $outYears = $empOutRaw->pluck('year')->unique()->sort()->values();
         $empOut = [
-            'years'  => $outYears->map(fn($y) => (int) $y)->toArray(),
-            'staff'  => [],
-            'non_staff' => [],
+            'years' => $outYears->map(fn ($y) => (int) $y)->toArray(),
         ];
-        foreach ($outYears as $y) {
-            $empOut['staff'][]     = (int) $empOutRaw->where('year', $y)->where('Tipe Karyawan', 'Staff')->sum('total');
-            $empOut['non_staff'][] = (int) $empOutRaw->where('year', $y)->where('Tipe Karyawan', 'Non Staff')->sum('total');
+        foreach ($tipeAxis as $t) {
+            $empOut[$t] = [];
+            foreach ($outYears as $y) {
+                $empOut[$t][] = (int) $empOutRaw->where('year', $y)
+                    ->where('Tipe Karyawan', $t)->sum('total');
+            }
         }
 
         // Distribusi Usia: count karyawan by age category AS OF Rentang Data.
@@ -384,6 +446,7 @@ class HrDashboardController extends Controller
             'karyawan_kontrak' => $karyawanKontrak,
             'karyawan_staff'   => $karyawanStaff,
             'karyawan_non_staff' => $karyawanNonStaff,
+            'tipe_distribution' => $tipeDistribution,
             'gender_laki'      => $genderLaki,
             'gender_perempuan' => $genderPerempuan,
             'gender_total'     => $genderTotal,
@@ -466,11 +529,17 @@ class HrDashboardController extends Controller
      * - User dengan permission "hrdashboard_*": filter ke sub-departemen yg
      *   diizinkan (expanded dari dept-level permission bila ada)
      * - User tanpa akses: strip semua filter departemen
+     * Plus: apply ?type_karyawan= mode restriction (jika ada) ke filter
+     *       Tipe Karyawan. Berlaku untuk semua user, SEBELUM early-return
+     *       AUTHORIZED_NIKS.
      * Return Request yg sudah aman dipakai oleh build*Query().
      */
     private function sanitizeFilterRequest(Request $request): Request
     {
-        // Full-access users: return as-is
+        // Apply ?type_karyawan= mode restriction (untuk semua user)
+        $request = $this->applyTipeKaryawanMode($request);
+
+        // Full-access users: return as-is (mode sudah diaplikasikan di atas)
         if ($this->isAuthorizedNiks()) {
             return $request;
         }
@@ -534,6 +603,33 @@ class HrDashboardController extends Controller
             $request->merge(['departmen' => $allowedDeptsFinal]);
         }
 
+        return $request;
+    }
+
+    /**
+     * Apply restriction `?type_karyawan=mitra_kerja|BAS` ke filter
+     * `tipe_karyawan[]` di request. Jika user di mode tertentu:
+     *   - hasil intersect dengan allowed values; jika kosong → default
+     *     ke SEMUA allowed values, agar user tetap melihat data untuk
+     *     mode-nya meskipun checkbox dikosongkan.
+     * Jika tidak ada mode / mode tidak dikenal → return as-is.
+     */
+    private function applyTipeKaryawanMode(Request $request): Request
+    {
+        $mode    = $request->get('type_karyawan');
+        $allowed = $this->getTipeKaryawanMode($mode);
+        if ($allowed === null) {
+            return $request;
+        }
+
+        $types       = $this->getArrayFilter($request, 'tipe_karyawan');
+        $intersected = array_values(array_intersect($types, $allowed));
+
+        if (empty($intersected)) {
+            $intersected = $allowed;
+        }
+
+        $request->merge(['tipe_karyawan' => $intersected]);
         return $request;
     }
 

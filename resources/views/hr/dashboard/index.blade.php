@@ -159,6 +159,21 @@
 
 <div class="container-fluid">
     <h1 class="hd-title">HR Dashboard</h1>
+{{-- 
+    @if(!empty($typeKaryawanMode) && in_array($typeKaryawanMode, ['mitra_kerja', 'BAS'], true))
+        @php
+            $modeLabel = $typeKaryawanMode === 'mitra_kerja'
+                ? 'Mode Mitra Kerja — hanya menampilkan Tipe Karyawan KMJ & Fortuna'
+                : 'Mode BAS — hanya menampilkan Tipe Karyawan Staff & Non Staff';
+        @endphp
+        <div class="alert alert-warning d-flex align-items-center" role="alert" style="font-size:.85rem; padding:.5rem .75rem;">
+            <i class="la la-filter mr-2"></i>
+            <div>
+                <strong>{{ $modeLabel }}.</strong>
+                Pilihan di dropdown filter Tipe Karyawan sudah dikunci sesuai mode ini.
+            </div>
+        </div>
+    @endif --}}
 
     {{-- FILTER --}}
     <div class="hd-card" id="filterDataCard">
@@ -553,6 +568,20 @@
         updateMsLabel($(this));
     });
 
+    // === Mode Tipe Karyawan (?type_karyawan=mitra_kerja | BAS) ===
+    // Auto-select semua checkbox Tipe Karyawan yang tersedia di dropdown
+    // (karena controller sudah memfilter list ke allowed values saja).
+    @if(!empty($typeKaryawanMode) && in_array($typeKaryawanMode, ['mitra_kerja', 'BAS'], true))
+        function applyTipeKaryawanModePreselect() {
+            $('input[name="tipe_karyawan[]"]').prop('checked', true);
+            $('input[name="wto_tipe_karyawan[]"]').prop('checked', true);
+            $('.hd-multi-select').each(function () {
+                updateMsLabel($(this));
+            });
+        }
+        applyTipeKaryawanModePreselect();
+    @endif
+
     // Ambil nilai checkbox untuk filter
     function getMultiSelectValues(target) {
         return $('input[name="' + target + '[]"]:checked').map(function () {
@@ -631,6 +660,9 @@
             departmen: getMultiSelectValues('departmen'),
             sub_departmen: getMultiSelectValues('sub_departmen'),
             tipe_karyawan: getMultiSelectValues('tipe_karyawan'),
+            @if(!empty($typeKaryawanMode) && in_array($typeKaryawanMode, ['mitra_kerja', 'BAS'], true))
+            type_karyawan: @json($typeKaryawanMode),
+            @endif
         };
 
         // Bersihkan array kosong
@@ -721,8 +753,17 @@
 
     let employeeTypeChart = null;
     function renderEmployeeTypeChart(res) {
-        let staff     = res.karyawan_staff || 0;
-        let nonStaff  = res.karyawan_non_staff || 0;
+        // Pakai tipe_distribution dari server (sudah disesuaikan dgn mode).
+        // Fallback ke karyawan_staff / karyawan_non_staff utk backward compat.
+        let labels, data;
+        if (res.tipe_distribution && Array.isArray(res.tipe_distribution.labels)) {
+            labels = res.tipe_distribution.labels;
+            data   = res.tipe_distribution.data || [];
+        } else {
+            labels = ['Staff', 'Non Staff'];
+            data   = [res.karyawan_staff || 0, res.karyawan_non_staff || 0];
+        }
+        const colors = ['#4a148c', '#e65100', '#1e88e5', '#43a047', '#e53935', '#8e24aa'];
         let options = {
             chart: {
                 type: 'bar',
@@ -731,15 +772,15 @@
             },
             series: [{
                 name: 'Jumlah',
-                data: [staff, nonStaff]
+                data: data
             }],
             xaxis: {
-                categories: ['Staff', 'Non Staff']
+                categories: labels
             },
             yaxis: {
                 title: { text: 'Jumlah Karyawan' }
             },
-            colors: ['#4a148c', '#e65100'],
+            colors: colors.slice(0, labels.length),
             plotOptions: {
                 bar: {
                     horizontal: false,
@@ -759,8 +800,9 @@
 
         if (employeeTypeChart) {
             employeeTypeChart.updateOptions({
-                series: [{ name: 'Jumlah', data: [staff, nonStaff] }],
-                xaxis: { categories: ['Staff', 'Non Staff'] }
+                series: [{ name: 'Jumlah', data: data }],
+                xaxis: { categories: labels },
+                colors: colors.slice(0, labels.length)
             });
         } else {
             employeeTypeChart = new ApexCharts(document.querySelector('#employeeTypeChart'), options);
@@ -770,10 +812,17 @@
 
     let employeeInChart = null;
     function renderEmployeeInChart(res) {
-        let empIn   = res.emp_in || { years: [], staff: [], non_staff: [] };
+        // emp_in dari server: { years: [...], 'KMJ': [...], 'Fortuna': [...] }
+        // atau { years: [...], staff: [...], non_staff: [...] } — dinamis sesuai mode.
+        let empIn   = res.emp_in || { years: [] };
         let years   = empIn.years || [];
-        let staff   = empIn.staff || [];
-        let nonStaff = empIn.non_staff || [];
+        let tipeKeys = Object.keys(empIn).filter(k => k !== 'years');
+        const colors = ['#1e88e5', '#fb8c00', '#43a047', '#e53935', '#8e24aa', '#00acc1'];
+
+        let series = tipeKeys.map((k) => ({
+            name: k,
+            data: empIn[k] || [],
+        }));
 
         let options = {
             chart: {
@@ -781,17 +830,14 @@
                 height: 320,
                 toolbar: { show: false }
             },
-            series: [
-                { name: 'Non Staff', data: nonStaff },
-                { name: 'Staff',     data: staff }
-            ],
+            series: series,
             xaxis: {
                 categories: years
             },
             yaxis: {
                 title: { text: 'Jumlah Karyawan Masuk' }
             },
-            colors: ['#1e88e5', '#fb8c00'],
+            colors: colors.slice(0, tipeKeys.length),
             stroke: {
                 width: 3,
                 curve: 'straight'
@@ -819,11 +865,9 @@
 
         if (employeeInChart) {
             employeeInChart.updateOptions({
-                series: [
-                    { name: 'Non Staff', data: nonStaff },
-                    { name: 'Staff',     data: staff }
-                ],
-                xaxis: { categories: years }
+                series: series,
+                xaxis: { categories: years },
+                colors: colors.slice(0, tipeKeys.length)
             });
         } else {
             employeeInChart = new ApexCharts(document.querySelector('#employeeInChart'), options);
@@ -833,10 +877,17 @@
 
     let employeeOutChart = null;
     function renderEmployeeOutChart(res) {
-        let empOut   = res.emp_out || { years: [], staff: [], non_staff: [] };
+        // emp_out dari server: { years: [...], 'KMJ': [...], 'Fortuna': [...] }
+        // atau { years: [...], staff: [...], non_staff: [...] } — dinamis sesuai mode.
+        let empOut   = res.emp_out || { years: [] };
         let years    = empOut.years || [];
-        let staff    = empOut.staff || [];
-        let nonStaff = empOut.non_staff || [];
+        let tipeKeys = Object.keys(empOut).filter(k => k !== 'years');
+        const colors = ['#e53935', '#fb8c00', '#43a047', '#1e88e5', '#8e24aa', '#00acc1'];
+
+        let series = tipeKeys.map((k) => ({
+            name: k,
+            data: empOut[k] || [],
+        }));
 
         let options = {
             chart: {
@@ -844,17 +895,14 @@
                 height: 320,
                 toolbar: { show: false }
             },
-            series: [
-                { name: 'Non Staff', data: nonStaff },
-                { name: 'Staff',     data: staff }
-            ],
+            series: series,
             xaxis: {
                 categories: years
             },
             yaxis: {
                 title: { text: 'Jumlah Karyawan Keluar' }
             },
-            colors: ['#e53935', '#fb8c00'],
+            colors: colors.slice(0, tipeKeys.length),
             stroke: {
                 width: 3,
                 curve: 'straight'
@@ -882,11 +930,9 @@
 
         if (employeeOutChart) {
             employeeOutChart.updateOptions({
-                series: [
-                    { name: 'Non Staff', data: nonStaff },
-                    { name: 'Staff',     data: staff }
-                ],
-                xaxis: { categories: years }
+                series: series,
+                xaxis: { categories: years },
+                colors: colors.slice(0, tipeKeys.length)
             });
         } else {
             employeeOutChart = new ApexCharts(document.querySelector('#employeeOutChart'), options);
@@ -1102,6 +1148,10 @@
             $(this).find('input[type=checkbox]').prop('checked', false);
             updateMsLabel($(this));
         });
+        @if(!empty($typeKaryawanMode) && in_array($typeKaryawanMode, ['mitra_kerja', 'BAS'], true))
+            // Mode terkunci: re-apply auto-select setelah reset
+            applyTipeKaryawanModePreselect();
+        @endif
         currentPage = 1;
     });
 

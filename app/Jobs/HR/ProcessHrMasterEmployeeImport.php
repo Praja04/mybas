@@ -23,6 +23,7 @@ class ProcessHrMasterEmployeeImport implements ShouldQueue
     protected $batchId;
     protected $filePath;
     protected $username;
+    protected $mitraKerjaChoice;
     protected $chunkSize = 500;
     protected $startRow = 3;
 
@@ -31,11 +32,12 @@ class ProcessHrMasterEmployeeImport implements ShouldQueue
         '17000129',
     ];
 
-    public function __construct($batchId, $filePath, $username)
+    public function __construct($batchId, $filePath, $username, $mitraKerjaChoice = null)
     {
         $this->batchId = $batchId;
         $this->filePath = $filePath;
         $this->username = $username;
+        $this->mitraKerjaChoice = $mitraKerjaChoice;
     }
 
     public function handle()
@@ -208,7 +210,7 @@ class ProcessHrMasterEmployeeImport implements ShouldQueue
                 'Departmen'       => $departmen,
                 'Sub Departmen'   => $subDepartmen,
                 'Section'         => $section,
-                'Tipe Karyawan'   => $this->str($data, 11),
+                'Tipe Karyawan'   => $this->mitraKerjaChoice ?: $this->str($data, 11),
                 'Jabatan'         => $this->str($data, 12),
                 'Jenis Kelamin'   => $this->str($data, 17),
                 'Work Status'     => $this->str($data, 20),

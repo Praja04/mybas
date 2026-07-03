@@ -34,13 +34,34 @@
             <strong class="text-danger">Maksimum ukuran file: 128MB.</strong> Jika file lebih besar, pecah menjadi beberapa file atau hubungi admin untuk menaikkan batas upload.
         </p>
 
+        @if(!empty($isMitraKerja) && $isMitraKerja)
+            <div class="alert alert-warning" style="font-size:.85rem; padding:.5rem .75rem;">
+                <i class="fas fa-info-circle"></i>
+                <strong>Mode Mitra Kerja aktif.</strong>
+                Pilih salah satu tipe mitra kerja di bawah ini. Nilai kolom <em>Tipe Karyawan</em> pada CSV yang Anda upload akan otomatis di-<em>override</em> menjadi <strong>KMJ</strong> atau <strong>Fortuna</strong> sesuai pilihan Anda.
+            </div>
+        @endif
+
         <form id="formUpload" enctype="multipart/form-data">
             @csrf
+            @if(!empty($isMitraKerja) && $isMitraKerja)
+                <input type="hidden" name="type_karyawan" value="mitra_kerja">
+            @endif
             <div class="row align-items-end">
-                <div class="col-md-6">
+                <div class="{{ !empty($isMitraKerja) && $isMitraKerja ? 'col-md-4' : 'col-md-6' }}">
                     <label class="form-label" style="font-weight:600;">File CSV:</label>
                     <input type="file" name="file" id="fileInput" class="form-control-file" accept=".csv,.xls,.xlsx,.txt" required>
                 </div>
+                @if(!empty($isMitraKerja) && $isMitraKerja)
+                    <div class="col-md-3">
+                        <label class="form-label" style="font-weight:600;">Tipe Mitra Kerja:</label>
+                        <select name="mitra_kerja_choice" id="mitraKerjaChoice" class="form-control" required>
+                            <option value="">-- Pilih Mitra Kerja --</option>
+                            <option value="KMJ">KMJ</option>
+                            <option value="Fortuna">Fortuna</option>
+                        </select>
+                    </div>
+                @endif
                 <div class="col-md-3">
                     <button type="submit" class="btn btn-success" id="btnUpload">
                         Upload &amp; Import
@@ -204,6 +225,23 @@
     // === Upload ===
     $('#formUpload').on('submit', function (e) {
         e.preventDefault();
+
+        // Validasi front end: jika mode mitra_kerja aktif, pilihan wajib diisi
+        @if(!empty($isMitraKerja) && $isMitraKerja)
+            let mitraChoice = $('#mitraKerjaChoice').val();
+            if (!mitraChoice || (mitraChoice !== 'KMJ' && mitraChoice !== 'Fortuna')) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Tipe Mitra Kerja Belum Dipilih',
+                    text: 'Silakan pilih tipe mitra kerja (KMJ atau Fortuna) terlebih dahulu sebelum upload.',
+                    confirmButtonText: 'OK'
+                }).then(() => {
+                    $('#mitraKerjaChoice').focus();
+                });
+                return;
+            }
+        @endif
+
         let formData = new FormData(this);
         $('#btnUpload').prop('disabled', true).text('Mengupload...');
         $.ajax({

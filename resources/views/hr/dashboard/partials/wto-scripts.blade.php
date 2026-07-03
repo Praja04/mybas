@@ -46,6 +46,9 @@
             wto_nama: currentWtoNama.length > 0
                 ? currentWtoNama.slice()
                 : getMultiSelectValues('wto_nama'),
+            @if(!empty($typeKaryawanMode) && in_array($typeKaryawanMode, ['mitra_kerja', 'BAS'], true))
+            type_karyawan: @json($typeKaryawanMode),
+            @endif
         };
         if (Array.isArray(p.departmen) && p.departmen.length === 0) delete p.departmen;
         if (Array.isArray(p.sub_departmen) && p.sub_departmen.length === 0) delete p.sub_departmen;
@@ -65,6 +68,9 @@
             departmen: getMultiSelectValues('wto_departmen'),
             sub_departmen: getMultiSelectValues('wto_sub_departmen'),
             tipe_karyawan: getMultiSelectValues('wto_tipe_karyawan'),
+            @if(!empty($typeKaryawanMode) && in_array($typeKaryawanMode, ['mitra_kerja', 'BAS'], true))
+            type_karyawan: @json($typeKaryawanMode),
+            @endif
         };
         if (Array.isArray(p.departmen) && p.departmen.length === 0) delete p.departmen;
         if (Array.isArray(p.sub_departmen) && p.sub_departmen.length === 0) delete p.sub_departmen;
@@ -594,6 +600,14 @@
                 updateMsLabel($wrapper);
             }
         });
+        @if(!empty($typeKaryawanMode) && in_array($typeKaryawanMode, ['mitra_kerja', 'BAS'], true))
+            // Mode terkunci: re-apply auto-select untuk wto_tipe_karyawan
+            $('input[name="wto_tipe_karyawan[]"]').prop('checked', true);
+            const $wtoTipeWrap = $('.hd-multi-select[data-target="wto_tipe_karyawan"]');
+            if ($wtoTipeWrap.length && typeof updateMsLabel === 'function') {
+                updateMsLabel($wtoTipeWrap);
+            }
+        @endif
         currentWtoNama = [];
         wtoCurrentPage = 1;
         loadWtoData();

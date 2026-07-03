@@ -28,19 +28,32 @@ class UploadFileMpController extends Controller
         }
     }
 
-    public function index()
+    public function index(Request $request)
     {
         $this->checkPermission('hr_upload_file_mp');
-        return view('hr.upload-file-mp.upload-file-mp');
+        $typeKaryawan = $request->get('type_karyawan');
+        return view('hr.upload-file-mp.upload-file-mp', [
+            'typeKaryawan' => $typeKaryawan,
+            'isMitraKerja' => $typeKaryawan === 'mitra_kerja',
+        ]);
     }
 
     public function upload(Request $request)
     {
         $this->checkPermission('hr_upload_file_mp');
 
-        $request->validate([
-            'file'  => 'required|file|mimes:csv,txt',
-        ]);
+        $rules = [
+            'file' => 'required|file|mimes:csv,txt',
+        ];
+
+        $typeKaryawan      = $request->get('type_karyawan');
+        $mitraKerjaChoice  = null;
+        if ($typeKaryawan === 'mitra_kerja') {
+            $rules['mitra_kerja_choice'] = 'required|in:KMJ,Fortuna';
+            $mitraKerjaChoice = $request->get('mitra_kerja_choice');
+        }
+
+        $request->validate($rules);
 
         $file = $request->file('file');
         $batchId = (string) Str::uuid();
@@ -59,7 +72,12 @@ class UploadFileMpController extends Controller
             'file_path'        => $path,
         ]);
 
-        ProcessHrMasterEmployeeImport::dispatch($batchId, storage_path('app/public/' . $path), $username);
+        ProcessHrMasterEmployeeImport::dispatch(
+            $batchId,
+            storage_path('app/public/' . $path),
+            $username,
+            $mitraKerjaChoice
+        );
 
         return response()->json([
             'success'  => true,

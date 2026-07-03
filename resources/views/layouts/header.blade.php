@@ -1386,11 +1386,19 @@
                                     <ul class="menu-subnav">
                                         @if (in_array('hr_dashboard_navbar', $permissions))
                                             <li class="menu-item" aria-haspopup="true">
-                                                <a href="{{ url('/hr/hrdashboard') }}" class="menu-link">
+                                                <a href="{{ url('/hr/hrdashboard?type_karyawan=BAS') }}" class="menu-link">
                                                     <i class="menu-bullet menu-bullet-line">
                                                         <span></span>
                                                     </i>
-                                                    <span class="menu-text">HR Dashboard</span>
+                                                    <span class="menu-text">HR Dashboard BAS</span>
+                                                </a>
+                                            </li>
+                                            <li class="menu-item" aria-haspopup="true">
+                                                <a href="{{ url('/hr/hrdashboard?type_karyawan=mitra_kerja') }}" class="menu-link">
+                                                    <i class="menu-bullet menu-bullet-line">
+                                                        <span></span>
+                                                    </i>
+                                                    <span class="menu-text">HR Dashboard Mitra Kerja</span>
                                                 </a>
                                             </li>
                                         @endif
@@ -1400,7 +1408,15 @@
                                                     <i class="menu-bullet menu-bullet-line">
                                                         <span></span>
                                                     </i>
-                                                    <span class="menu-text">Upload File MP</span>
+                                                    <span class="menu-text">Upload File MP BAS</span>
+                                                </a>
+                                            </li>
+                                            <li class="menu-item" aria-haspopup="true">
+                                                <a href="{{ url('/hr/upload-file-mp?type_karyawan=mitra_kerja') }}" class="menu-link">
+                                                    <i class="menu-bullet menu-bullet-line">
+                                                        <span></span>
+                                                    </i>
+                                                    <span class="menu-text">Upload File MP Mitra Kerja</span>
                                                 </a>
                                             </li>
                                         @endif
