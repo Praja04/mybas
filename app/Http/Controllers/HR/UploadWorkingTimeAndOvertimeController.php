@@ -23,10 +23,14 @@ class UploadWorkingTimeAndOvertimeController extends Controller
         }
     }
 
-    public function index()
+    public function index(Request $request)
     {
         $this->checkPermission('hr_upload_working_time_and_overtime');
-        return view('hr.upload-working-time-and-overtime.upload-working-time-and-overtime');
+        $typeKaryawan = $request->get('type_karyawan');
+        return view('hr.upload-working-time-and-overtime.upload-working-time-and-overtime', [
+            'typeKaryawan' => $typeKaryawan,
+            'isMitraKerja' => $typeKaryawan === 'mitra_kerja',
+        ]);
     }
 
     public function upload(Request $request)
@@ -36,6 +40,8 @@ class UploadWorkingTimeAndOvertimeController extends Controller
         $request->validate([
             'file' => 'required|file|mimes:csv,txt',
         ]);
+
+        $typeKaryawan = $request->get('type_karyawan');
 
         $file = $request->file('file');
         $batchId = (string) Str::uuid();
@@ -54,7 +60,12 @@ class UploadWorkingTimeAndOvertimeController extends Controller
             'file_path'        => $path,
         ]);
 
-        ProcessHrWorkingTimeAndOvertimeImport::dispatch($batchId, storage_path('app/public/' . $path), $username);
+        ProcessHrWorkingTimeAndOvertimeImport::dispatch(
+            $batchId,
+            storage_path('app/public/' . $path),
+            $username,
+            $typeKaryawan
+        );
 
         return response()->json([
             'success'  => true,

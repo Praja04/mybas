@@ -28,6 +28,14 @@
 <div class="container-fluid">
     <h1 class="wt-page-title">Upload Working Time &amp; Overtime</h1>
 
+    @if(!empty($isMitraKerja) && $isMitraKerja)
+        <div class="alert alert-warning" style="font-size:.85rem; padding:.5rem .75rem;">
+            <i class="fas fa-info-circle"></i>
+            <strong>Mode Mitra Kerja aktif.</strong>
+            Gunakan template CSV compact dengan kolom: NIK, Nama, Company, Dept, Section, Tgl In, Jam SPKL, Jam HOVT.
+        </div>
+    @endif
+
     {{-- IMPORT SECTION --}}
     <div class="wt-card">
         <h5>Import Working Time &amp; Overtime CSV</h5>
@@ -37,6 +45,9 @@
 
         <form id="formUpload" enctype="multipart/form-data">
             @csrf
+            @if(!empty($isMitraKerja) && $isMitraKerja)
+                <input type="hidden" name="type_karyawan" value="mitra_kerja">
+            @endif
             <div class="row align-items-end">
                 <div class="col-md-6">
                     <label class="form-label" style="font-weight:600;">File CSV:</label>
@@ -50,10 +61,19 @@
             </div>
         </form>
 
-        <div class="mt-3 p-2" style="background:#f5f5f5; font-size:.8rem;">
-            <strong>Kolom CSV (baris 1):</strong>
-            NIK, Nama, Company, Dept, Section, Business Area, Tgl In, Jam In, Tgl Out, Jam Out, Target Kerja, Terlambat, Pulang Awal, Durasi Raw, Durasi Round, Durasi Dibayar, Lembur Awal Actual, Lembur Akhir Actual, Total Lembur Actual, Tipe Lembur, Jam SPKL, Jam HOVT, HOVT Actual, HOVT Dibayar, No SPKL
-        </div>
+        @if(!empty($isMitraKerja) && $isMitraKerja)
+            <div class="mt-3 p-2" style="background:#f5f5f5; font-size:.8rem;">
+                <strong>Template CSV Mitra Kerja:</strong><br>
+                <strong>Baris 1 (Judul):</strong> Judul bebas<br>
+                <strong>Baris 2 (Header):</strong> NIK, Nama, Company, Dept, Section, Tgl In, Jam SPKL, Jam HOVT<br>
+                <strong>Baris 3+ (Value):</strong> isi data sesuai header. Kolom <em>No SPKL</em> tidak ada di template ini (akan diisi <code>null</code>).
+            </div>
+        @else
+            <div class="mt-3 p-2" style="background:#f5f5f5; font-size:.8rem;">
+                <strong>Kolom CSV (baris 1):</strong>
+                NIK, Nama, Company, Dept, Section, Business Area, Tgl In, Jam In, Tgl Out, Jam Out, Target Kerja, Terlambat, Pulang Awal, Durasi Raw, Durasi Round, Durasi Dibayar, Lembur Awal Actual, Lembur Akhir Actual, Total Lembur Actual, Tipe Lembur, Jam SPKL, Jam HOVT, HOVT Actual, HOVT Dibayar, No SPKL
+            </div>
+        @endif
     </div>
 
     {{-- RIWAYAT IMPORT --}}

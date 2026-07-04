@@ -23,13 +23,17 @@ class ProcessHrWorkingTimeAndOvertimeImport implements ShouldQueue
     protected $batchId;
     protected $filePath;
     protected $username;
+    protected $typeKaryawan;
+    protected $isMitraKerja;
     protected $chunkSize = 500;
 
-    public function __construct($batchId, $filePath, $username)
+    public function __construct($batchId, $filePath, $username, $typeKaryawan = null)
     {
         $this->batchId = $batchId;
         $this->filePath = $filePath;
         $this->username = $username;
+        $this->typeKaryawan = $typeKaryawan;
+        $this->isMitraKerja = ($typeKaryawan === 'mitra_kerja');
     }
 
     public function handle()
@@ -138,13 +142,26 @@ class ProcessHrWorkingTimeAndOvertimeImport implements ShouldQueue
         $delimiter = $this->detectDelimiter($fh);
         rewind($fh);
 
+        // Mode mitra_kerja: template compact
+        //   Row 1 = Judul
+        //   Row 2 = Header: NIK | Nama | Company | Dept | Section | Tgl In | Jam SPKL | Jam HOVT
+        //   Row 3+ = value
+        // Mode default (BAS): template panjang
+        //   Row 1 = Judul (skip)
+        //   Row 2+ = value (header tidak standar, langsung baca)
+        $startRow   = $this->isMitraKerja ? 3 : 2;
+        $colTglIn   = $this->isMitraKerja ? 5 : 6;
+        $colJamSpkl = $this->isMitraKerja ? 6 : 20;
+        $colJamHovt = $this->isMitraKerja ? 7 : 21;
+        $colNoSpkl  = $this->isMitraKerja ? null : 24;
+
         $rows = [];
         $rowNumber = 0;
 
         while (($data = fgetcsv($fh, 0, $delimiter)) !== false) {
             $rowNumber++;
 
-            if ($rowNumber < 2) {
+            if ($rowNumber < $startRow) {
                 continue;
             }
 
@@ -153,8 +170,8 @@ class ProcessHrWorkingTimeAndOvertimeImport implements ShouldQueue
                 continue;
             }
 
-            $jamSpkl = $this->decimalOrNull($data, 20);
-            $jamHovt = $this->decimalOrNull($data, 21);
+            $jamSpkl = $this->decimalOrNull($data, $colJamSpkl);
+            $jamHovt = $this->decimalOrNull($data, $colJamHovt);
 
             if (($jamSpkl === null || $jamSpkl <= 0) && ($jamHovt === null || $jamHovt <= 0)) {
                 continue;
@@ -170,10 +187,10 @@ class ProcessHrWorkingTimeAndOvertimeImport implements ShouldQueue
                     $dept, null, $section
                 )[0],
                 'section'  => $section,
-                'tgl_in'   => $this->normalizeDate($data, 6),
+                'tgl_in'   => $this->normalizeDate($data, $colTglIn),
                 'jam_spkl' => $jamSpkl,
                 'jam_hovt' => $jamHovt,
-                'no_spkl'  => $this->str($data, 24),
+                'no_spkl'  => $colNoSpkl !== null ? $this->str($data, $colNoSpkl) : null,
             ];
         }
 

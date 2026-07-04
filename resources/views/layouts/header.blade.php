@@ -1427,7 +1427,16 @@
                                                     <i class="menu-bullet menu-bullet-line">
                                                         <span></span>
                                                     </i>
-                                                    <span class="menu-text">Upload Working Time &amp; Overtime</span>
+                                                    <span class="menu-text">Upload Working Time &amp; Overtime BAS</span>
+                                                </a>
+                                            </li>
+                                            <li class="menu-item" aria-haspopup="true">
+                                                <a href="{{ url('/hr/upload-working-time-and-overtime?type_karyawan=mitra_kerja') }}"
+                                                    class="menu-link">
+                                                    <i class="menu-bullet menu-bullet-line">
+                                                        <span></span>
+                                                    </i>
+                                                    <span class="menu-text">Upload Working Time &amp; Overtime Mitra Kerja</span>
                                                 </a>
                                             </li>
                                         @endif
