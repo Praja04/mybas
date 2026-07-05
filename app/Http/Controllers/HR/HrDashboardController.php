@@ -824,23 +824,20 @@ class HrDashboardController extends Controller
         // Filter "Aktif (Rentang Data) = Y" — logika snapshot
         $this->applyAktifRentangFilter($query, $request);
 
-        // Filter Tgl Masuk: hanya yang sudah masuk s/d snapshot date
-        // (Tgl Masuk <= rentang_data_to). Ini supaya:
-        //   - 2025 ke bawah: semua joiners di tahun tsb dihitung (semua Tgl Masuk
-        //     < rentang_data_to)
-        //   - 2026: hanya yang join s/d snapshot (mis. Januari 2026 jika
-        //     rentang_data_to = 2026-01-31) — yang nanti keluar setelahnya tetap
-        //     dihitung karena dianggap aktif di snapshot
-        // Fallback ke tgl_masuk_* jika rentang data kosong.
+        // Snapshot: Tgl Masuk <= rentang_data_to (karyawan sudah masuk s/d
+        // snapshot date). Bersamaan dengan ini, filter "Tanggal Masuk" range
+        // (tgl_masuk_from/to) SELALU diaplikasikan — bukan sebagai fallback.
+        // Jadi user bisa memfilter chart Employee In berdasarkan rentang
+        // tanggal masuk tertentu, meskipun rentang data juga diisi.
+        // Constraint yang lebih restriktif akan otomatis menang (AND logic).
         if ($request->filled('rentang_data_to')) {
             $query->where('Tgl Masuk', '<=', $request->get('rentang_data_to'));
-        } else {
-            if ($request->filled('tgl_masuk_from')) {
-                $query->where('Tgl Masuk', '>=', $request->get('tgl_masuk_from'));
-            }
-            if ($request->filled('tgl_masuk_to')) {
-                $query->where('Tgl Masuk', '<=', $request->get('tgl_masuk_to'));
-            }
+        }
+        if ($request->filled('tgl_masuk_from')) {
+            $query->where('Tgl Masuk', '>=', $request->get('tgl_masuk_from'));
+        }
+        if ($request->filled('tgl_masuk_to')) {
+            $query->where('Tgl Masuk', '<=', $request->get('tgl_masuk_to'));
         }
 
         $depts = $this->getArrayFilter($request, 'departmen');
@@ -870,6 +867,8 @@ class HrDashboardController extends Controller
         // Start date rentang_data diabaikan — yang penting cuma snapshot.
         $query->where('Aktif', 'N');
 
+        // Snapshot filter dari Rentang Data — SELALU diaplikasikan bersamaan
+        // dengan filter tanggal masuk & tanggal keluar (bukan else/fallback).
         if ($request->filled('rentang_data_to')) {
             $endDate = $request->get('rentang_data_to');
             $query->where('Tgl Masuk', '<=', $endDate)
@@ -877,14 +876,24 @@ class HrDashboardController extends Controller
                       $q->whereNull('Valid From')
                         ->orWhere('Valid From', '<=', $endDate);
                   });
-        } else {
-            // Fallback: pakai filter Tgl Keluar (Valid From) range manual
-            if ($request->filled('tgl_keluar_from')) {
-                $query->where('Valid From', '>=', $request->get('tgl_keluar_from'));
-            }
-            if ($request->filled('tgl_keluar_to')) {
-                $query->where('Valid From', '<=', $request->get('tgl_keluar_to'));
-            }
+        }
+
+        // Filter "Tanggal Masuk" range — SELALU diaplikasikan.
+        // Membatasi karyawan yang ditampilkan berdasarkan tgl masuk-nya,
+        // meskipun rentang data juga diisi.
+        if ($request->filled('tgl_masuk_from')) {
+            $query->where('Tgl Masuk', '>=', $request->get('tgl_masuk_from'));
+        }
+        if ($request->filled('tgl_masuk_to')) {
+            $query->where('Tgl Masuk', '<=', $request->get('tgl_masuk_to'));
+        }
+
+        // Filter "Tanggal Keluar" (Valid From) range — SELALU diaplikasikan.
+        if ($request->filled('tgl_keluar_from')) {
+            $query->where('Valid From', '>=', $request->get('tgl_keluar_from'));
+        }
+        if ($request->filled('tgl_keluar_to')) {
+            $query->where('Valid From', '<=', $request->get('tgl_keluar_to'));
         }
 
         $depts = $this->getArrayFilter($request, 'departmen');
