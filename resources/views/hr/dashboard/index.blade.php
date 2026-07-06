@@ -158,7 +158,15 @@
 </style>
 
 <div class="container-fluid">
-    <h1 class="hd-title">HR Dashboard</h1>
+    <h1 class="hd-title">
+        @if(($typeKaryawanMode ?? null) === 'mitra_kerja')
+            HR DASHBOARD Mitra Kerja
+        @elseif(($typeKaryawanMode ?? null) === 'BAS')
+            HR DASHBOARD BAS
+        @else
+            HR Dashboard
+        @endif
+    </h1>
 {{-- 
     @if(!empty($typeKaryawanMode) && in_array($typeKaryawanMode, ['mitra_kerja', 'BAS'], true))
         @php
