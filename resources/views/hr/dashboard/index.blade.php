@@ -357,7 +357,7 @@
                     <div class="col-md-3 mb-3">
                         <div class="hd-stat hd-stat-orange h-100">
                             <div class="hd-stat-value" id="statLeavers">0</div>
-                            <div class="hd-stat-label">Contract &amp; Employee</div>
+                            <div class="hd-stat-label">Contract Employee</div>
                         </div>
                     </div>
                     <div class="col-md-3 mb-3">
