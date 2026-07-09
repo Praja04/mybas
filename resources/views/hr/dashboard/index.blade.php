@@ -48,7 +48,7 @@
     #employeeInChart { min-height: 240px; }
     #distribusiUsiaChart { min-height: 240px; }
     #employeeOutChart { min-height: 240px; }
-    #headcountTrendChart { min-height: 240px; }
+    #headcountTrendChart { min-height: 220px; }
     select[multiple] { min-height: auto; }
     select[multiple] option:checked {
         background: #4a148c linear-gradient(0deg, #4a148c 0%, #4a148c 100%);
@@ -391,6 +391,18 @@
                     </div>
                 </div>
 
+                {{-- CHART: Monthly Total HeadCount - 2 Years (Row 2) --}}
+                <div class="row">
+                    <div class="col-md-12 mb-3">
+                        <div class="hd-card" id="headcountTrendCard">
+                            <h5 style="display:flex; align-items:center; gap:.4rem;">
+                                <span class="hd-chevron" style="visibility:hidden;"></span> Monthly Total HeadCount
+                            </h5>
+                            <div id="headcountTrendChart"></div>
+                        </div>
+                    </div>
+                </div>
+
                 {{-- CHART 1 + 2 --}}
                 <div class="row">
                     <div class="col-md-4 mb-3">
@@ -427,18 +439,6 @@
                                 <span class="hd-chevron" style="visibility:hidden;"></span> Employee Out
                             </h5>
                             <div id="employeeOutChart"></div>
-                        </div>
-                    </div>
-                </div>
-
-                {{-- CHART 5: Monthly Total HeadCount - 2 Years --}}
-                <div class="row">
-                    <div class="col-md-12 mb-3">
-                        <div class="hd-card" id="headcountTrendCard">
-                            <h5 style="display:flex; align-items:center; gap:.4rem;">
-                                <span class="hd-chevron" style="visibility:hidden;"></span> Monthly Total HeadCount
-                            </h5>
-                            <div id="headcountTrendChart"></div>
                         </div>
                     </div>
                 </div>
@@ -1124,7 +1124,7 @@
         let options = {
             chart: {
                 type: 'bar',
-                height: 240,
+                height: 220,
                 toolbar: { show: false }
             },
             series: [{
