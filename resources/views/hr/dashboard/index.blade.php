@@ -7,11 +7,11 @@
 
 <style>
     .hd-title { color: #4a148c; font-weight: 700; font-size: 1.6rem; margin-bottom: 1rem; }
-    .hd-card { background: #fff; border-radius: 6px; padding: 1.25rem; margin-bottom: 1.25rem; box-shadow: 0 1px 2px rgba(0,0,0,.05); }
-    .hd-card h5 { font-weight: 700; }
-    .hd-stat { text-align: center; padding: 1rem; border-radius: 6px; display: flex; flex-direction: column; justify-content: center; }
-    .hd-stat .hd-stat-value { font-size: 1.8rem; font-weight: 700; }
-    .hd-stat .hd-stat-label { font-size: 1.1rem; color: #666; display: block; width: 100%; }
+    .hd-card { background: #fff; border-radius: 6px; padding: 0.85rem 1rem; margin-bottom: 0.85rem; box-shadow: 0 1px 2px rgba(0,0,0,.05); }
+    .hd-card h5 { font-weight: 700; margin-bottom: 0.5rem; font-size: 1rem; }
+    .hd-stat { text-align: center; padding: 0.75rem; border-radius: 6px; display: flex; flex-direction: column; justify-content: center; }
+    .hd-stat .hd-stat-value { font-size: 1.6rem; font-weight: 700; }
+    .hd-stat .hd-stat-label { font-size: 0.95rem; color: #666; display: block; width: 100%; }
     .hd-stat-blue { background: #e3f2fd; color: #1565c0; }
     .hd-stat-green { background: #e8f5e9; color: #2e7d32; }
     .hd-stat-orange { background: #fff3e0; color: #e65100; }
@@ -44,10 +44,11 @@
         transition: transform .2s;
     }
     .hd-card-toggle.collapsed .hd-chevron { transform: rotate(-90deg); }
-    #employeeTypeChart { min-height: 300px; }
-    #employeeInChart { min-height: 320px; }
-    #distribusiUsiaChart { min-height: 320px; }
-    #employeeOutChart { min-height: 320px; }
+    #employeeTypeChart { min-height: 220px; }
+    #employeeInChart { min-height: 240px; }
+    #distribusiUsiaChart { min-height: 240px; }
+    #employeeOutChart { min-height: 240px; }
+    #headcountTrendChart { min-height: 240px; }
     select[multiple] { min-height: auto; }
     select[multiple] option:checked {
         background: #4a148c linear-gradient(0deg, #4a148c 0%, #4a148c 100%);
@@ -120,7 +121,8 @@
     }
     .hd-ms-item:hover { background: #f3e5f5; }
     .hd-ms-item input { margin: 0; cursor: pointer; }
-    .hd-section { position: relative; padding: 1rem; background: #fafafa; border-radius: 8px; }
+    .hd-section { position: relative; padding: 0.75rem; background: #fafafa; border-radius: 8px; }
+    .hd-section .row.mb-3 { margin-bottom: 0.5rem !important; }
     .hd-section:fullscreen { background: #fff; padding: 2rem; }
     .hd-section:fullscreen .row { display: flex; flex-wrap: wrap; }
     .hd-section:fullscreen .col-md-4 { flex: 0 0 25%; max-width: 25%; }
@@ -425,6 +427,18 @@
                                 <span class="hd-chevron" style="visibility:hidden;"></span> Employee Out
                             </h5>
                             <div id="employeeOutChart"></div>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- CHART 5: Monthly Total HeadCount - 2 Years --}}
+                <div class="row">
+                    <div class="col-md-12 mb-3">
+                        <div class="hd-card" id="headcountTrendCard">
+                            <h5 style="display:flex; align-items:center; gap:.4rem;">
+                                <span class="hd-chevron" style="visibility:hidden;"></span> Monthly Total HeadCount
+                            </h5>
+                            <div id="headcountTrendChart"></div>
                         </div>
                     </div>
                 </div>
@@ -756,6 +770,7 @@
             renderEmployeeInChart(res);
             renderEmployeeOutChart(res);
             renderDistribusiUsiaChart(res);
+            renderHeadcountTrendChart(res);
         });
     }
 
@@ -775,7 +790,7 @@
         let options = {
             chart: {
                 type: 'bar',
-                height: 300,
+                height: 220,
                 toolbar: { show: false }
             },
             series: [{
@@ -820,132 +835,284 @@
 
     let employeeInChart = null;
     function renderEmployeeInChart(res) {
-        // emp_in dari server: { years: [...], 'KMJ': [...], 'Fortuna': [...] }
-        // atau { years: [...], staff: [...], non_staff: [...] } — dinamis sesuai mode.
+        if (typeof Highcharts === 'undefined') return;
+        // emp_in dari server: { years: [...], 'Staff': [...], 'Non Staff': [...] }
+        // atau { years: [...], 'KMJ': [...], 'Fortuna': [...] } — dinamis sesuai mode.
         let empIn   = res.emp_in || { years: [] };
         let years   = empIn.years || [];
         let tipeKeys = Object.keys(empIn).filter(k => k !== 'years');
-        const colors = ['#1e88e5', '#fb8c00', '#43a047', '#e53935', '#8e24aa', '#00acc1'];
 
-        let series = tipeKeys.map((k) => ({
+        // Color mapping konsisten dengan Employee Type Distribution & mode type_karyawan
+        const colorMap = {
+            'Staff':     '#fb8c00',
+            'Non Staff': '#1e88e5',
+            'KMJ':       '#43a047',
+            'Fortuna':   '#e53935',
+        };
+        const fallbackColors = ['#8e24aa', '#00acc1', '#f4511e', '#3949ab', '#00897b'];
+        function getColor(k, idx) {
+            if (colorMap[k]) return colorMap[k];
+            return fallbackColors[(idx - Object.keys(colorMap).length) % fallbackColors.length] || '#4a148c';
+        }
+
+        // Limit ke 5 tahun terakhir HANYA kalau user tidak set Tgl Masuk filter
+        const DEFAULT_LIMIT = 5;
+        const tmRange = $('#tgl_masuk_range').val();
+        const isFiltered = tmRange && tmRange.trim() !== '';
+        if (!isFiltered && years.length > DEFAULT_LIMIT) {
+            const startIdx = years.length - DEFAULT_LIMIT;
+            years = years.slice(startIdx);
+            tipeKeys.forEach(k => { empIn[k] = (empIn[k] || []).slice(startIdx); });
+        }
+
+        // Smart anti-overlap formatter: kalau 2 series jaraknya < 18px,
+        // stack vertikal dalam 1 box. Kalau jauh, tampil single value.
+        function stackedFormatter() {
+            const chart = this.series.chart;
+            const idx = this.point.index;
+            const otherIdx = this.series.index === 0 ? 1 : 0;
+            const sOther = chart.series[otherIdx];
+            const vThis = Number(this.y) || 0;
+            const vOther = (sOther && sOther.yData) ? Number(sOther.yData[idx]) || 0 : 0;
+            const yAxis = chart.yAxis[0];
+            const distance = Math.abs(yAxis.toPixels(vOther) - yAxis.toPixels(vThis));
+
+            if (distance < 18 && sOther) {
+                const cThis  = this.series.color;
+                const cOther = sOther.color;
+                const fmt = (n) => n ? String(Math.round(n)) : '-';
+                return '<div style="text-align:center;line-height:1.25;padding:1px 3px;">'
+                    + '<div style="color:' + cOther + ';font-weight:700;">' + fmt(vOther) + '</div>'
+                    + '<div style="color:' + cThis  + ';font-weight:700;">' + fmt(vThis)  + '</div>'
+                    + '</div>';
+            }
+            const c = this.series.color;
+            return '<span style="color:' + c + ';font-weight:700;background:#fff;padding:1px 3px;border-radius:2px;">'
+                + Math.round(vThis) + '</span>';
+        }
+
+        const series = tipeKeys.map((k, idx) => ({
             name: k,
             data: empIn[k] || [],
+            color: getColor(k, idx),
         }));
 
-        let options = {
+        const options = {
             chart: {
                 type: 'line',
-                height: 320,
-                toolbar: { show: false }
+                height: 240,
+                marginTop: 15,
+                marginBottom: 60,
+                spacingTop: 5,
+                spacingBottom: 5,
+                backgroundColor: 'transparent'
             },
-            series: series,
-            xaxis: {
-                categories: years
+            title: { text: null },
+            credits: { enabled: false },
+            xAxis: {
+                categories: years,
+                labels: { style: { fontSize: '10px' } },
+                lineColor: '#e0e0e0',
+                tickColor: '#e0e0e0'
             },
-            yaxis: {
-                title: { text: 'Jumlah Karyawan Masuk' }
-            },
-            colors: colors.slice(0, tipeKeys.length),
-            stroke: {
-                width: 3,
-                curve: 'straight'
-            },
-            markers: {
-                size: 5
-            },
-            dataLabels: {
-                enabled: true,
-                style: { fontSize: '11px', colors: ['#000'] },
-                offsetY: -5
+            yAxis: {
+                title: { text: 'Jumlah Karyawan Masuk', style: { fontSize: '11px' } },
+                labels: { style: { fontSize: '10px' } },
+                min: 0
             },
             legend: {
-                position: 'top',
-                horizontalAlign: 'right'
+                enabled: true,
+                verticalAlign: 'bottom',
+                align: 'center',
+                layout: 'horizontal',
+                floating: false,
+                x: 0,
+                y: 5,
+                backgroundColor: 'rgba(255,255,255,0.9)',
+                borderColor: '#e0e0e0',
+                borderWidth: 1,
+                borderRadius: 3,
+                padding: 6,
+                itemStyle: { fontSize: '10px', fontWeight: 600 },
+                itemDistance: 16
             },
-            title: {
-                align: 'left',
-                style: { fontSize: '14px', color: '#4a148c', fontWeight: 700 }
+            tooltip: {
+                headerFormat: '<b>{point.x}</b><br/>',
+                pointFormatter: function () {
+                    return '<span style="color:' + this.series.color + '">\u25CF</span> '
+                        + this.series.name + ': <b>' + Math.round(this.y) + '</b>';
+                }
             },
-            grid: {
-                borderColor: '#e0e0e0'
-            }
+            plotOptions: {
+                line: {
+                    lineWidth: 2,
+                    marker: {
+                        enabled: true,
+                        radius: 3,
+                        lineColor: '#fff',
+                        lineWidth: 1.5
+                    }
+                },
+                series: {
+                    dataLabels: {
+                        enabled: true,
+                        useHTML: true,
+                        style: { fontSize: '9px', textOutline: 'none' },
+                        formatter: stackedFormatter,
+                        y: -8,
+                        crop: false,
+                        overflow: 'allow'
+                    }
+                }
+            },
+            series: series
         };
 
         if (employeeInChart) {
-            employeeInChart.updateOptions({
-                series: series,
-                xaxis: { categories: years },
-                colors: colors.slice(0, tipeKeys.length)
-            });
-        } else {
-            employeeInChart = new ApexCharts(document.querySelector('#employeeInChart'), options);
-            employeeInChart.render();
+            employeeInChart.destroy();
         }
+        employeeInChart = Highcharts.chart('employeeInChart', options);
     }
 
     let employeeOutChart = null;
     function renderEmployeeOutChart(res) {
-        // emp_out dari server: { years: [...], 'KMJ': [...], 'Fortuna': [...] }
-        // atau { years: [...], staff: [...], non_staff: [...] } — dinamis sesuai mode.
+        if (typeof Highcharts === 'undefined') return;
+        // emp_out dari server: { years: [...], 'Staff': [...], 'Non Staff': [...] }
+        // atau { years: [...], 'KMJ': [...], 'Fortuna': [...] } — dinamis sesuai mode.
         let empOut   = res.emp_out || { years: [] };
         let years    = empOut.years || [];
         let tipeKeys = Object.keys(empOut).filter(k => k !== 'years');
-        const colors = ['#e53935', '#fb8c00', '#43a047', '#1e88e5', '#8e24aa', '#00acc1'];
 
-        let series = tipeKeys.map((k) => ({
+        // Color mapping (Employee Out — Staff orange, Non Staff red default
+        // untuk kontras dengan Employee In; KMJ/Fortuna dari palette)
+        const colorMap = {
+            'Staff':     '#fb8c00',
+            'Non Staff': '#e53935',
+            'KMJ':       '#43a047',
+            'Fortuna':   '#8e24aa',
+        };
+        const fallbackColors = ['#1e88e5', '#00acc1', '#f4511e', '#3949ab', '#00897b'];
+        function getColor(k, idx) {
+            if (colorMap[k]) return colorMap[k];
+            return fallbackColors[(idx - Object.keys(colorMap).length) % fallbackColors.length] || '#4a148c';
+        }
+
+        // Limit ke 5 tahun terakhir HANYA kalau user tidak set Tgl Keluar filter
+        const DEFAULT_LIMIT = 5;
+        const tkRange = $('#tgl_keluar_range').val();
+        const isFiltered = tkRange && tkRange.trim() !== '';
+        if (!isFiltered && years.length > DEFAULT_LIMIT) {
+            const startIdx = years.length - DEFAULT_LIMIT;
+            years = years.slice(startIdx);
+            tipeKeys.forEach(k => { empOut[k] = (empOut[k] || []).slice(startIdx); });
+        }
+
+        // Smart anti-overlap formatter
+        function stackedFormatter() {
+            const chart = this.series.chart;
+            const idx = this.point.index;
+            const otherIdx = this.series.index === 0 ? 1 : 0;
+            const sOther = chart.series[otherIdx];
+            const vThis = Number(this.y) || 0;
+            const vOther = (sOther && sOther.yData) ? Number(sOther.yData[idx]) || 0 : 0;
+            const yAxis = chart.yAxis[0];
+            const distance = Math.abs(yAxis.toPixels(vOther) - yAxis.toPixels(vThis));
+
+            if (distance < 18 && sOther) {
+                const cThis  = this.series.color;
+                const cOther = sOther.color;
+                const fmt = (n) => n ? String(Math.round(n)) : '-';
+                return '<div style="text-align:center;line-height:1.25;padding:1px 3px;">'
+                    + '<div style="color:' + cOther + ';font-weight:700;">' + fmt(vOther) + '</div>'
+                    + '<div style="color:' + cThis  + ';font-weight:700;">' + fmt(vThis)  + '</div>'
+                    + '</div>';
+            }
+            const c = this.series.color;
+            return '<span style="color:' + c + ';font-weight:700;background:#fff;padding:1px 3px;border-radius:2px;">'
+                + Math.round(vThis) + '</span>';
+        }
+
+        const series = tipeKeys.map((k, idx) => ({
             name: k,
             data: empOut[k] || [],
+            color: getColor(k, idx),
         }));
 
-        let options = {
+        const options = {
             chart: {
                 type: 'line',
-                height: 320,
-                toolbar: { show: false }
+                height: 250,
+                marginTop: 15,
+                marginBottom: 60,
+                spacingTop: 5,
+                spacingBottom: 5,
+                backgroundColor: 'transparent'
             },
-            series: series,
-            xaxis: {
-                categories: years
+            title: { text: null },
+            credits: { enabled: false },
+            xAxis: {
+                categories: years,
+                labels: { style: { fontSize: '10px' } },
+                lineColor: '#e0e0e0',
+                tickColor: '#e0e0e0'
             },
-            yaxis: {
-                title: { text: 'Jumlah Karyawan Keluar' }
-            },
-            colors: colors.slice(0, tipeKeys.length),
-            stroke: {
-                width: 3,
-                curve: 'straight'
-            },
-            markers: {
-                size: 5
-            },
-            dataLabels: {
-                enabled: true,
-                style: { fontSize: '11px', colors: ['#000'] },
-                offsetY: -5
+            yAxis: {
+                title: { text: 'Jumlah Karyawan Keluar', style: { fontSize: '11px' } },
+                labels: { style: { fontSize: '10px' } },
+                min: 0
             },
             legend: {
-                position: 'top',
-                horizontalAlign: 'right'
+                enabled: true,
+                verticalAlign: 'bottom',
+                align: 'center',
+                layout: 'horizontal',
+                floating: false,
+                x: 0,
+                y: 5,
+                backgroundColor: 'rgba(255,255,255,0.9)',
+                borderColor: '#e0e0e0',
+                borderWidth: 1,
+                borderRadius: 3,
+                padding: 6,
+                itemStyle: { fontSize: '10px', fontWeight: 600 },
+                itemDistance: 16
             },
-            title: {
-                align: 'left',
-                style: { fontSize: '14px', color: '#4a148c', fontWeight: 700 }
+            tooltip: {
+                headerFormat: '<b>{point.x}</b><br/>',
+                pointFormatter: function () {
+                    return '<span style="color:' + this.series.color + '">\u25CF</span> '
+                        + this.series.name + ': <b>' + Math.round(this.y) + '</b>';
+                }
             },
-            grid: {
-                borderColor: '#e0e0e0'
-            }
+            plotOptions: {
+                line: {
+                    lineWidth: 2,
+                    marker: {
+                        enabled: true,
+                        radius: 3,
+                        lineColor: '#fff',
+                        lineWidth: 1.5
+                    }
+                },
+                series: {
+                    dataLabels: {
+                        enabled: true,
+                        useHTML: true,
+                        style: { fontSize: '9px', textOutline: 'none' },
+                        formatter: stackedFormatter,
+                        y: -8,
+                        crop: false,
+                        overflow: 'allow'
+                    }
+                }
+            },
+            series: series
         };
 
         if (employeeOutChart) {
-            employeeOutChart.updateOptions({
-                series: series,
-                xaxis: { categories: years },
-                colors: colors.slice(0, tipeKeys.length)
-            });
-        } else {
-            employeeOutChart = new ApexCharts(document.querySelector('#employeeOutChart'), options);
-            employeeOutChart.render();
+            employeeOutChart.destroy();
         }
+        employeeOutChart = Highcharts.chart('employeeOutChart', options);
     }
 
     let distribusiUsiaChart = null;
@@ -957,7 +1124,7 @@
         let options = {
             chart: {
                 type: 'bar',
-                height: 320,
+                height: 240,
                 toolbar: { show: false }
             },
             series: [{
@@ -997,6 +1164,171 @@
             distribusiUsiaChart = new ApexCharts(document.querySelector('#distribusiUsiaChart'), options);
             distribusiUsiaChart.render();
         }
+    }
+
+    let headcountTrendChart = null;
+    function renderHeadcountTrendChart(res) {
+        if (typeof Highcharts === 'undefined') return;
+        let trend = res.headcount_trend || { months: [], totals: [] };
+        let months = trend.months || [];
+        let totals = trend.totals || [];
+
+        // Convert months array to [timestamp, value] tuples (Highcharts datetime format)
+        const seriesData = months.map((m, i) => [
+            new Date(m + '-01').getTime(),
+            Number(totals[i]) || 0
+        ]);
+
+        // Build year boundary plotBands & plotLines
+        const yearColors = [
+            'rgba(220, 232, 255, 0.50)',
+            'rgba(255, 243, 205, 0.50)',
+            'rgba(212, 237, 218, 0.50)',
+            'rgba(248, 215, 218, 0.50)',
+        ];
+        const plotBands = [];
+        const plotLines = [];
+        if (months.length > 0) {
+            const yearSet = new Set();
+            months.forEach(m => yearSet.add(parseInt(m.substring(0, 4))));
+            const years = Array.from(yearSet).sort();
+            const midPoints = [];
+            years.forEach((year, idx) => {
+                const yearMonths = months.filter(m => m.startsWith(String(year)));
+                if (yearMonths.length === 0) return;
+                const firstMonth = yearMonths[0];
+                const lastMonth  = yearMonths[yearMonths.length - 1];
+                const fromTs = new Date(firstMonth + '-01').getTime();
+                const lastMonthTs = new Date(lastMonth + '-01').getTime();
+                const lm = parseInt(lastMonth.substring(5, 7));
+                const ly = parseInt(lastMonth.substring(0, 4));
+                let ny = ly, nm = lm + 1;
+                if (nm > 12) { nm = 1; ny++; }
+                const toTs = new Date(`${ny}-${String(nm).padStart(2, '0')}-01`).getTime();
+                let midTs = null;
+                if (idx < years.length - 1) {
+                    const nextYearMonths = months.filter(m => m.startsWith(String(years[idx + 1])));
+                    const nextTs = new Date(nextYearMonths[0] + '-01').getTime();
+                    midTs = (lastMonthTs + nextTs) / 2;
+                }
+                const bandFrom = idx === 0 ? fromTs : midPoints[idx - 1];
+                const bandTo   = (idx === years.length - 1) ? toTs : midTs;
+                if (midTs !== null) midPoints.push(midTs);
+                plotBands.push({
+                    from: bandFrom,
+                    to: bandTo,
+                    color: yearColors[idx % 4],
+                    label: {
+                        text: `<b>${year}</b>`,
+                        align: 'center',
+                        verticalAlign: 'bottom',
+                        y: 40,
+                        style: { fontSize: '11px', color: '#333', fontWeight: '700' }
+                    }
+                });
+                if (midTs !== null) {
+                    plotLines.push({
+                        value: midTs,
+                        color: '#666',
+                        width: 1.5,
+                        dashStyle: 'Solid',
+                        zIndex: 4
+                    });
+                }
+            });
+        }
+
+        // Hitung y-axis min/max dinamis dari data aktual
+        // Padding 15% di atas/bawah, minimal 50 unit. Round ke 100 biar ticks rapi.
+        let yMin = 0, yMax = 0, tickAmount = 4;
+        if (totals.length > 0) {
+            const dataMin = Math.min(...totals);
+            const dataMax = Math.max(...totals);
+            const range = dataMax - dataMin;
+            const padding = Math.max(range * 0.15, 50);
+            yMin = Math.floor((dataMin - padding) / 100) * 100;
+            yMax = Math.ceil((dataMax + padding) / 100) * 100;
+            if (yMin < 0) yMin = 0;
+            // Tentukan tickAmount berdasarkan range biar ticks tidak terlalu rapat
+            const yRange = yMax - yMin;
+            if (yRange <= 500) tickAmount = 5;
+            else if (yRange <= 2000) tickAmount = 5;
+            else if (yRange <= 5000) tickAmount = 5;
+            else tickAmount = 6;
+        }
+
+        const options = {
+            chart: {
+                type: 'line',
+                height: 200,
+                marginTop: 15,
+                marginBottom: 55,
+                spacingTop: 5,
+                spacingBottom: 5,
+                backgroundColor: 'transparent'
+            },
+            title: { text: null },
+            credits: { enabled: false },
+            xAxis: {
+                type: 'datetime',
+                tickInterval: 30 * 24 * 3600 * 1000,
+                labels: {
+                    formatter: function () {
+                        return new Date(this.value).toLocaleDateString('id-ID', { month: 'short' });
+                    },
+                    style: { fontSize: '9px' }
+                },
+                plotBands: plotBands,
+                plotLines: plotLines
+            },
+            yAxis: {
+                title: { text: 'Jumlah Karyawan', style: { fontSize: '10px' } },
+                labels: {
+                    formatter: function () { return Math.round(this.value); },
+                    style: { fontSize: '9px' }
+                },
+                min: yMin,
+                max: yMax,
+                tickAmount: tickAmount,
+                endOnTick: true
+            },
+            legend: { enabled: false },
+            tooltip: {
+                headerFormat: '<b>{point.x:%B %Y}</b><br/>',
+                pointFormatter: function () {
+                    return 'Total HeadCount: <b>' + Math.round(this.y).toLocaleString('id-ID') + '</b>';
+                }
+            },
+            plotOptions: {
+                line: {
+                    color: '#4a148c',
+                    lineWidth: 2,
+                    marker: {
+                        enabled: true,
+                        radius: 4,
+                        fillColor: '#4a148c',
+                        lineColor: '#fff',
+                        lineWidth: 1.5
+                    },
+                    dataLabels: {
+                        enabled: true,
+                        style: { fontSize: '9px', color: '#000', fontWeight: '700', textOutline: '1px contrast' },
+                        formatter: function () { return Math.round(this.y).toLocaleString('id-ID'); },
+                        y: -8
+                    }
+                }
+            },
+            series: [{
+                name: 'Total HeadCount',
+                data: seriesData,
+                color: '#4a148c'
+            }]
+        };
+
+        if (headcountTrendChart) {
+            headcountTrendChart.destroy();
+        }
+        headcountTrendChart = Highcharts.chart('headcountTrendChart', options);
     }
 
     function renderTable(res) {

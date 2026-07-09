@@ -438,6 +438,9 @@ class HrDashboardController extends Controller
             else                $distribusiUsia['<18']++;
         }
 
+        // Monthly Total HeadCount trend (24 bulan, snapshot per akhir bulan)
+        $headcountTrend = $this->buildHeadcountTrend($request);
+
         return response()->json([
             'data'             => $rows,
             'total'            => $total,
@@ -463,6 +466,7 @@ class HrDashboardController extends Controller
             'emp_in'           => $empIn,
             'emp_out'          => $empOut,
             'distribusi_usia'  => $distribusiUsia,
+            'headcount_trend'  => $headcountTrend,
         ]);
     }
 
@@ -821,23 +825,31 @@ class HrDashboardController extends Controller
     {
         $query = HrMasterEmployee::query();
 
-        // Filter "Aktif (Rentang Data) = Y" — logika snapshot
-        $this->applyAktifRentangFilter($query, $request);
-
-        // Snapshot: Tgl Masuk <= rentang_data_to (karyawan sudah masuk s/d
-        // snapshot date). Bersamaan dengan ini, filter "Tanggal Masuk" range
-        // (tgl_masuk_from/to) SELALU diaplikasikan — bukan sebagai fallback.
-        // Jadi user bisa memfilter chart Employee In berdasarkan rentang
-        // tanggal masuk tertentu, meskipun rentang data juga diisi.
-        // Constraint yang lebih restriktif akan otomatis menang (AND logic).
-        if ($request->filled('rentang_data_to')) {
-            $query->where('Tgl Masuk', '<=', $request->get('rentang_data_to'));
-        }
+        // Employee In = "kumulatif yang pernah masuk": hitung SEMUA karyawan
+        // per tahun Tgl Masuk, terlepas dari status Aktif saat ini (Aktif='Y'
+        // maupun yang sudah keluar Aktif='N'). Leavers TETAP dihitung di sini
+        // sebagai joiner di tahun dia masuk. Yang membedakan dengan chart
+        // Employee Out: di sini sumber tahun = Tgl Masuk (tanggal masuk), di
+        // Employee Out sumber tahun = Valid From (tanggal keluar).
+        //
+        // Tidak ada filter Aktif (Rentang Data) di sini.
+        //
+        // Filter range Tgl Masuk:
+        //   - Batas bawah: HANYA tgl_masuk_from eksplisit dari user (jika diisi).
+        //     rentang_data_from TIDAK dipakai sebagai batas bawah, supaya chart
+        //     tetap menampilkan joiner dari tahun terawal. Contoh: rentang data
+        //     2025-12-01 s/d 2025-12-31 → chart tetap tampil dari tahun terawal
+        //     hingga 2025, bukan cuma Desember 2025.
+        //   - Batas atas: tgl_masuk_to eksplisit, atau fallback rentang_data_to
+        //     (snapshot). Ini membatasi agar joiner setelah snapshot tidak
+        //     dihitung.
         if ($request->filled('tgl_masuk_from')) {
             $query->where('Tgl Masuk', '>=', $request->get('tgl_masuk_from'));
         }
         if ($request->filled('tgl_masuk_to')) {
             $query->where('Tgl Masuk', '<=', $request->get('tgl_masuk_to'));
+        } elseif ($request->filled('rentang_data_to')) {
+            $query->where('Tgl Masuk', '<=', $request->get('rentang_data_to'));
         }
 
         $depts = $this->getArrayFilter($request, 'departmen');
@@ -910,6 +922,64 @@ class HrDashboardController extends Controller
         }
 
         return $query;
+    }
+
+    /**
+     * Build data untuk chart "Monthly Total HeadCount - 2 Years".
+     * Mengembalikan 24 bulan terakhir (rolling) dihitung per snapshot akhir bulan,
+     * dengan logika "Aktif (Rentang Data) = Y" yang konsisten dengan Total HeadCount:
+     *   - Tgl Masuk <= akhir bulan
+     *   - DAN (Aktif = 'Y' ATAU (Aktif = 'N' AND (Valid From kosong OR Valid From > akhir bulan)))
+     * End month = rentang_data_to (fallback: today). Start month = end - 23 bulan.
+     * Filter Dept/Sub/Tipe + user access sudah di-handle oleh buildFilteredQuery.
+     *
+     * Implementasi: single SQL query dengan 24 SUM(CASE WHEN ...) aggregations.
+     * MySQL handle 24 kolom aggregate sekaligus — O(1) PHP loop, O(N) DB scan.
+     */
+    private function buildHeadcountTrend(Request $request): array
+    {
+        $endDate = $request->filled('rentang_data_to')
+            ? \Carbon\Carbon::parse($request->get('rentang_data_to'))->endOfDay()
+            : now()->endOfDay();
+        $startDate = (clone $endDate)->subMonths(23)->startOfMonth();
+
+        // Bangun 24 SUM(CASE WHEN ...) aggregations
+        $selects  = [];
+        $bindings = [];
+        $months   = [];
+        $cursor   = (clone $startDate)->startOfMonth();
+        $end      = (clone $endDate)->startOfMonth();
+        $i        = 0;
+
+        while ($cursor <= $end) {
+            $monthEnd = (clone $cursor)->endOfMonth()->format('Y-m-d');
+            $alias    = 'm' . $i;
+            $selects[] = "SUM(CASE WHEN `Tgl Masuk` <= ? "
+                . "AND (Aktif = 'Y' OR (Aktif = 'N' "
+                . "AND (`Valid From` IS NULL OR `Valid From` > ?))) "
+                . "THEN 1 ELSE 0 END) AS `{$alias}`";
+            $bindings[] = $monthEnd;
+            $bindings[] = $monthEnd;
+            $months[]  = $cursor->format('Y-m');
+            $cursor->addMonth();
+            $i++;
+        }
+
+        // Single query dengan 24 kolom aggregate
+        $row = $this->buildFilteredQuery($request)
+            ->whereNotNull('Tgl Masuk')
+            ->selectRaw(implode(', ', $selects), $bindings)
+            ->first();
+
+        $totals = [];
+        for ($j = 0; $j < $i; $j++) {
+            $totals[] = (int) ($row->{'m' . $j} ?? 0);
+        }
+
+        return [
+            'months' => $months,
+            'totals' => $totals,
+        ];
     }
 
     /**
