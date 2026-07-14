@@ -166,7 +166,7 @@
                                                     <a
                                                         class="dropzone-select btn btn-light-secondary font-weight-bold text-dark btn-sm">Attach
                                                         files</a>
-                                                    <small>Max. 2MB (.pdf)</small>
+                                                    <small>Max. 10MB (.pdf)</small>
                                                 </div>
                                                 <div class="dropzone-items">
                                                     <div class="dropzone-item" style="display:none">
@@ -488,7 +488,7 @@
         var myDropzone5 = new Dropzone(id, {
             url: "{{ url('/attachment/upload') }}",
             parallelUploads: 20,
-            maxFilesize: 2, // 2mb
+            maxFilesize: 10, // 10mb
             timeout: 180000,
             previewTemplate: previewTemplate,
             previewsContainer: id + " .dropzone-items",
