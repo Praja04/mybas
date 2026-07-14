@@ -251,7 +251,8 @@ class ProcessHrWorkingTimeAndOvertimeImport implements ShouldQueue
         if ($raw === '') {
             return null;
         }
-        $ts = strtotime(str_replace('/', '-', $raw));
+        $value = $this->isMitraKerja ? $raw : str_replace('/', '-', $raw);
+        $ts = strtotime($value);
         if ($ts === false) {
             return null;
         }
