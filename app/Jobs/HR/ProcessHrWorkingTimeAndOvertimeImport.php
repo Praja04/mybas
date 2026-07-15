@@ -144,7 +144,7 @@ class ProcessHrWorkingTimeAndOvertimeImport implements ShouldQueue
 
         // Mode mitra_kerja: template compact
         //   Row 1 = Judul
-        //   Row 2 = Header: NIK | Nama | Company | Dept | Section | Tgl In | Jam SPKL | Jam HOVT
+        //   Row 2 = Header: NIK | Nama | Company | Dept | Section | Tgl In | Jam SPKL | Jam HOVT | No SPKL
         //   Row 3+ = value
         // Mode default (BAS): template panjang
         //   Row 1 = Judul (skip)
@@ -153,7 +153,7 @@ class ProcessHrWorkingTimeAndOvertimeImport implements ShouldQueue
         $colTglIn   = $this->isMitraKerja ? 5 : 6;
         $colJamSpkl = $this->isMitraKerja ? 6 : 20;
         $colJamHovt = $this->isMitraKerja ? 7 : 21;
-        $colNoSpkl  = $this->isMitraKerja ? null : 24;
+        $colNoSpkl  = $this->isMitraKerja ? 8 : 24;
 
         $rows = [];
         $rowNumber = 0;

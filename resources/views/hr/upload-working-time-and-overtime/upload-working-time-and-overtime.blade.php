@@ -32,7 +32,7 @@
         <div class="alert alert-warning" style="font-size:.85rem; padding:.5rem .75rem;">
             <i class="fas fa-info-circle"></i>
             <strong>Mode Mitra Kerja aktif.</strong>
-            Gunakan template CSV compact dengan kolom: NIK, Nama, Company, Dept, Section, Tgl In, Jam SPKL, Jam HOVT.
+            Gunakan template CSV compact dengan kolom: NIK, Nama, Company, Dept, Section, Tgl In, Jam SPKL, Jam HOVT, No SPKL.
         </div>
     @endif
 
@@ -65,8 +65,8 @@
             <div class="mt-3 p-2" style="background:#f5f5f5; font-size:.8rem;">
                 <strong>Template CSV Mitra Kerja:</strong><br>
                 <strong>Baris 1 (Judul):</strong> Judul bebas<br>
-                <strong>Baris 2 (Header):</strong> NIK, Nama, Company, Dept, Section, Tgl In, Jam SPKL, Jam HOVT<br>
-                <strong>Baris 3+ (Value):</strong> isi data sesuai header. Kolom <em>No SPKL</em> tidak ada di template ini (akan diisi <code>null</code>).
+                <strong>Baris 2 (Header):</strong> NIK, Nama, Company, Dept, Section, Tgl In, Jam SPKL, Jam HOVT, No SPKL<br>
+                <strong>Baris 3+ (Value):</strong> isi data sesuai header. Kolom <em>No SPKL</em> boleh kosong (akan diisi <code>null</code>).
             </div>
         @else
             <div class="mt-3 p-2" style="background:#f5f5f5; font-size:.8rem;">
