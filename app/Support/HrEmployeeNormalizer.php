@@ -202,6 +202,7 @@ class HrEmployeeNormalizer
         'Production Planning Control'                  => 'Production Planning Control',
         'Engineering Produksi'                         => 'Engineering Produksi',
         'Produksi Palletizing'                         => 'Produksi Proses',
+        'produksi palletizing'                         => 'Produksi Proses',
         'Produksi Filling Retail'                      => 'Produksi Proses',
         'Produksi Material Balance & Project'          => 'Produksi Material Balance & Project',
         'Produksi'                                     => 'Produksi',
