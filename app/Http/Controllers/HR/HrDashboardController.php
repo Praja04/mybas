@@ -1269,64 +1269,99 @@ class HrDashboardController extends Controller
         $rows = (clone $base)
             ->select(
                 DB::raw("DATE_FORMAT(wto.tgl_in, '%Y-%m') as ym"),
+                DB::raw("COALESCE(hme.Departmen, 'Unknown') as dept"),
                 DB::raw("COUNT(DISTINCT CASE WHEN wto.jam_spkl > 0 THEN wto.nik END) as hari_kerja"),
                 DB::raw("COUNT(DISTINCT CASE WHEN wto.jam_hovt > 0 THEN wto.nik END) as hari_libur"),
                 DB::raw("SUM(CASE WHEN wto.jam_spkl > 0 THEN wto.jam_spkl ELSE 0 END) as jam_kerja"),
                 DB::raw("SUM(CASE WHEN wto.jam_hovt > 0 THEN wto.jam_hovt ELSE 0 END) as jam_libur")
             )
-            ->groupBy('ym')
+            ->groupBy('ym', 'hme.Departmen')
             ->orderBy('ym')
+            ->orderBy('hme.Departmen')
             ->get();
 
         if ($rows->isEmpty()) {
             return response()->json([
-                'months'      => [],
-                'hari_kerja'  => [],
-                'hari_libur'  => [],
-                'jam_kerja'   => [],
-                'jam_libur'   => [],
-                'range_start' => null,
-                'range_end'   => null,
+                'months'            => [],
+                'hari_kerja'        => [],
+                'hari_libur'        => [],
+                'jam_kerja'         => [],
+                'jam_libur'         => [],
+                'departments'       => [],
+                'department_series' => [],
+                'range_start'       => null,
+                'range_end'         => null,
             ]);
         }
 
-        // Determine range: pakai Tgl In filter jika ada, else min/max dari data
-        $dataStart = $rows->first()->ym; // format YYYY-MM
+        $departments = $rows->pluck('dept')->unique()->sort()->values()->toArray();
+
+        $dataStart = $rows->first()->ym;
         $dataEnd   = $rows->last()->ym;
         $startYm   = $tglFrom ? substr($tglFrom, 0, 7) : $dataStart;
         $endYm     = $tglTo   ? substr($tglTo,   0, 7) : $dataEnd;
 
-        // Fill missing months dengan 0
-        $filled = [];
+        $allMonths = [];
         $cursor = new \DateTime($startYm . '-01');
         $end    = new \DateTime($endYm   . '-01');
         while ($cursor <= $end) {
-            $key = $cursor->format('Y-m');
-            $filled[$key] = ['hari_kerja' => 0, 'hari_libur' => 0, 'jam_kerja' => 0, 'jam_libur' => 0];
+            $allMonths[] = $cursor->format('Y-m');
             $cursor->modify('+1 month');
         }
+
+        $aggregate = [];
+        $deptSeries = [];
+        foreach ($allMonths as $m) {
+            $aggregate[$m] = ['hari_kerja' => 0, 'hari_libur' => 0, 'jam_kerja' => 0, 'jam_libur' => 0];
+            foreach ($departments as $d) {
+                if (!isset($deptSeries[$d])) {
+                    $deptSeries[$d] = [];
+                }
+                $deptSeries[$d][$m] = ['jam_kerja' => 0, 'jam_libur' => 0];
+            }
+        }
+
         foreach ($rows as $r) {
-            $filled[$r->ym] = [
-                'hari_kerja' => (int) $r->hari_kerja,
-                'hari_libur' => (int) $r->hari_libur,
-                'jam_kerja'  => (float) $r->jam_kerja,
-                'jam_libur'  => (float) $r->jam_libur,
+            $aggregate[$r->ym]['hari_kerja'] += (int) $r->hari_kerja;
+            $aggregate[$r->ym]['hari_libur'] += (int) $r->hari_libur;
+            $aggregate[$r->ym]['jam_kerja']  += (float) $r->jam_kerja;
+            $aggregate[$r->ym]['jam_libur']  += (float) $r->jam_libur;
+
+            if (isset($deptSeries[$r->dept][$r->ym])) {
+                $deptSeries[$r->dept][$r->ym]['jam_kerja'] = (float) $r->jam_kerja;
+                $deptSeries[$r->dept][$r->ym]['jam_libur'] = (float) $r->jam_libur;
+            }
+        }
+
+        $hariKerjaArr = array_map(fn($v) => $v['hari_kerja'], array_values($aggregate));
+        $hariLiburArr = array_map(fn($v) => $v['hari_libur'], array_values($aggregate));
+        $jamKerjaArr  = array_map(fn($v) => $v['jam_kerja'],  array_values($aggregate));
+        $jamLiburArr  = array_map(fn($v) => $v['jam_libur'],  array_values($aggregate));
+
+        $deptSeriesResult = [];
+        foreach ($departments as $d) {
+            $jk = [];
+            $jl = [];
+            foreach ($allMonths as $m) {
+                $jk[] = $deptSeries[$d][$m]['jam_kerja'];
+                $jl[] = $deptSeries[$d][$m]['jam_libur'];
+            }
+            $deptSeriesResult[$d] = [
+                'jam_kerja' => $jk,
+                'jam_libur' => $jl,
             ];
         }
 
-        $hariKerjaArr = array_map(fn($v) => $v['hari_kerja'], array_values($filled));
-        $hariLiburArr = array_map(fn($v) => $v['hari_libur'], array_values($filled));
-        $jamKerjaArr  = array_map(fn($v) => $v['jam_kerja'],  array_values($filled));
-        $jamLiburArr  = array_map(fn($v) => $v['jam_libur'],  array_values($filled));
-
         return response()->json([
-            'months'      => array_keys($filled),
-            'hari_kerja'  => $hariKerjaArr,
-            'hari_libur'  => $hariLiburArr,
-            'jam_kerja'   => $jamKerjaArr,
-            'jam_libur'   => $jamLiburArr,
-            'range_start' => $startYm,
-            'range_end'   => $endYm,
+            'months'            => $allMonths,
+            'hari_kerja'        => $hariKerjaArr,
+            'hari_libur'        => $hariLiburArr,
+            'jam_kerja'         => $jamKerjaArr,
+            'jam_libur'         => $jamLiburArr,
+            'departments'       => $departments,
+            'department_series' => $deptSeriesResult,
+            'range_start'       => $startYm,
+            'range_end'         => $endYm,
         ]);
     }
 

@@ -1,5 +1,21 @@
 {{-- WT&O Data Table: di luar fullscreen wrap, hanya muncul saat tab WT&O aktif --}}
 <div id="wtoExtras" style="display:none;">
+    <div class="hd-card" id="wtoJamLemburDetailCard">
+        <h5 class="hd-card-toggle" data-target="#wtoJamLemburCollapse" style="cursor:pointer; user-select:none;">
+            <span class="hd-chevron"></span> Detail Jam Lembur per Departemen
+        </h5>
+        <div class="collapse show" id="wtoJamLemburCollapse">
+            <div class="table-responsive" style="overflow-x: auto;">
+                <table class="table table-bordered hd-table" style="white-space: nowrap;">
+                    <thead id="wtoJamLemburDetailThead"></thead>
+                    <tbody id="wtoJamLemburDetailTbody">
+                        <tr><td class="text-center text-muted">Klik "Terapkan Filter" untuk memuat data.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
     <div class="hd-card" id="wtoDataCard">
         <h5 class="hd-card-toggle" data-target="#wtoTableCollapse" style="cursor:pointer; user-select:none;">
             <span class="hd-chevron"></span> Data Karyawan Lembur

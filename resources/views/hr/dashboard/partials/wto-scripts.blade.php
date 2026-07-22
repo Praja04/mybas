@@ -365,7 +365,7 @@
         return {
             chart: {
                 type: 'line',
-                height: 210,
+                height: 410,
                 marginBottom: 60,
                 renderTo: containerId,
             },
@@ -446,7 +446,7 @@
         const optionsKaryawan = {
             chart: {
                 type: 'line',
-                height: 210,
+                height: 410,
                 marginBottom: 80,
             },
             title: { text: null },
@@ -563,20 +563,61 @@
     }
 
     function renderWtoChartJamLembur(data) {
-        const seriesKerja = data.months.map((m, i) => [
-            new Date(m + '-01').getTime(),
-            Number(data.jam_kerja[i]) || 0,
-        ]);
-        const seriesLibur = data.months.map((m, i) => [
-            new Date(m + '-01').getTime(),
-            Number(data.jam_libur[i]) || 0,
-        ]);
+        if (!data.departments || data.departments.length === 0) {
+            $('#wtoChartJamLembur').html('<p class="text-center text-muted p-4">Tidak ada data departemen untuk range ini.</p>');
+            if (wtoLineChartJamLembur) wtoLineChartJamLembur.destroy();
+            wtoLineChartJamLembur = null;
+            return;
+        }
+
         const { plotBands, plotLines } = buildYearBoundaries(data.months);
+
+        const deptColors = [
+            { spkl: '#1e88e5', hovt: '#90caf9' },
+            { spkl: '#e65100', hovt: '#ffb74d' },
+            { spkl: '#43a047', hovt: '#a5d6a7' },
+            { spkl: '#8e24aa', hovt: '#ce93d8' },
+            { spkl: '#e53935', hovt: '#ef9a9a' },
+            { spkl: '#00acc1', hovt: '#80deea' },
+            { spkl: '#6d4c41', hovt: '#bcaaa4' },
+            { spkl: '#3949ab', hovt: '#9fa8da' },
+            { spkl: '#f4511e', hovt: '#ffab91' },
+            { spkl: '#00897b', hovt: '#80cbc4' },
+        ];
+
+        const allMonths = data.months || [];
+        const depts = data.departments || [];
+        const series = [];
+
+        depts.forEach((dept, idx) => {
+            const colors = deptColors[idx % deptColors.length];
+            const deptData = data.department_series[dept] || { jam_kerja: [], jam_libur: [] };
+
+            const datapointsKerja = allMonths.map((m, i) => [
+                new Date(m + '-01').getTime(),
+                Number(deptData.jam_kerja[i]) || 0,
+            ]);
+            const datapointsLibur = allMonths.map((m, i) => [
+                new Date(m + '-01').getTime(),
+                Number(deptData.jam_libur[i]) || 0,
+            ]);
+
+            series.push({
+                name: dept + ' - Jam Kerja (SPKL)',
+                data: datapointsKerja,
+                color: colors.spkl,
+            });
+            series.push({
+                name: dept + ' - Jam Libur (HOVT)',
+                data: datapointsLibur,
+                color: colors.hovt,
+            });
+        });
 
         const options = {
             chart: {
-                type: 'line',
-                height: 210,
+                type: 'column',
+                height: 510,
                 marginBottom: 80,
             },
             title: { text: null },
@@ -588,16 +629,16 @@
                     formatter: function () {
                         return new Date(this.value).toLocaleDateString('id-ID', { month: 'short' });
                     },
-                    style: { fontSize: '16px' },
+                    style: { fontSize: '11px' },
                 },
                 plotBands: plotBands,
                 plotLines: plotLines,
             },
             yAxis: {
-                title: { text: 'Jam Lembur', style: { fontSize: '16px' } },
+                title: { text: 'Jam Lembur', style: { fontSize: '11px' } },
                 labels: {
                     formatter: function () { return Math.round(this.value); },
-                    style: { fontSize: '16px' },
+                    style: { fontSize: '11px' },
                 },
                 min: 0,
             },
@@ -605,7 +646,7 @@
                 enabled: true,
                 position: 'top',
                 align: 'right',
-                itemStyle: { fontSize: '16px', fontWeight: 600 },
+                itemStyle: { fontSize: '10px', fontWeight: 600 },
             },
             credits: { enabled: false },
             tooltip: {
@@ -616,77 +657,59 @@
                 },
             },
             plotOptions: {
-                line: {
-                    lineWidth: 3,
-                    marker: {
-                        enabled: true,
-                        radius: 4,
-                        lineColor: '#fff',
-                        lineWidth: 2,
-                    },
+                column: {
+                    grouping: true,
+                    pointPadding: 0.1,
+                    groupPadding: 0.2,
+                    borderWidth: 0,
                 },
             },
-            series: [
-                {
-                    name: 'Sum of Jam Lembur (Hari Kerja)',
-                    data: seriesKerja,
-                    color: '#1e88e5',
-                    marker: { fillColor: '#1e88e5' },
-                    dataLabels: {
-                        enabled: true,
-                        crop: false,
-                        overflow: 'allow',
-                        useHTML: true,
-                        style: { fontSize: '16px', color: '#1e88e5', fontWeight: '700' },
-                        formatter: function () {
-                            const chart = this.series.chart;
-                            const idx = this.point.index;
-                            const sLibur = chart.series[1];
-                            const vKerja = Number(this.y) || 0;
-                            const vLibur = (sLibur && sLibur.yData) ? Number(sLibur.yData[idx]) || 0 : 0;
-                            const yAxis = chart.yAxis[0];
-                            const distance = Math.abs(yAxis.toPixels(vLibur) - yAxis.toPixels(vKerja));
-                            if (distance < 20) return null;
-                            return vKerja ? String(Math.round(vKerja * 10) / 10) : null;
-                        },
-                        y: -8,
-                    },
-                },
-                {
-                    name: 'Sum of Jam Lembur (Hari Libur)',
-                    data: seriesLibur,
-                    color: '#e65100',
-                    marker: { fillColor: '#e65100' },
-                    dataLabels: {
-                        enabled: true,
-                        crop: false,
-                        overflow: 'allow',
-                        useHTML: true,
-                        style: { fontSize: '16px', color: '#e65100', fontWeight: '700' },
-                        formatter: function () {
-                            const chart = this.series.chart;
-                            const idx = this.point.index;
-                            const sKerja = chart.series[0];
-                            const vKerja = (sKerja && sKerja.yData) ? Number(sKerja.yData[idx]) || 0 : 0;
-                            const vLibur = Number(this.y) || 0;
-                            const yAxis = chart.yAxis[0];
-                            const distance = Math.abs(yAxis.toPixels(vLibur) - yAxis.toPixels(vKerja));
-                            const fmt = (n) => n ? String(Math.round(n * 10) / 10) : '-';
-                            if (distance < 20) {
-                                return '<div style="text-align:center;line-height:1.3;">'
-                                    + '<div style="color:#1e88e5;font-weight:700;">' + fmt(vKerja) + '</div>'
-                                    + '<div style="color:#e65100;font-weight:700;">' + fmt(vLibur) + '</div>'
-                                    + '</div>';
-                            }
-                            return fmt(vLibur);
-                        },
-                        y: -8,
-                    },
-                },
-            ],
+            series: series,
         };
+
         if (wtoLineChartJamLembur) wtoLineChartJamLembur.destroy();
         wtoLineChartJamLembur = Highcharts.chart('wtoChartJamLembur', options);
+
+        renderWtoJamLemburDetailTable(data);
+    }
+
+    function renderWtoJamLemburDetailTable(data) {
+        if (!data.departments || !data.months || data.departments.length === 0) {
+            $('#wtoJamLemburDetailThead').html('');
+            $('#wtoJamLemburDetailTbody').html('<tr><td class="text-center text-muted">Tidak ada data untuk range ini.</td></tr>');
+            return;
+        }
+        const months = data.months;
+        const depts = data.departments;
+        const series = data.department_series || {};
+
+        let thead = '<tr><th rowspan="2" style="min-width:120px;">Departemen</th>';
+        months.forEach(m => {
+            const label = new Date(m + '-01').toLocaleDateString('id-ID', { month: 'short', year: 'numeric' });
+            thead += '<th colspan="2" class="text-center">' + label + '</th>';
+        });
+        thead += '</tr><tr>';
+        months.forEach(() => {
+            thead += '<th class="text-right" style="min-width:55px;">SPKL</th><th class="text-right" style="min-width:55px;">HOVT</th>';
+        });
+        thead += '</tr>';
+
+        let tbody = '';
+        depts.forEach(dept => {
+            const d = series[dept] || {};
+            tbody += '<tr><td>' + escapeHtml(dept) + '</td>';
+            months.forEach((m, mi) => {
+                const spkl = Number(d.jam_kerja?.[mi]) || 0;
+                const hovt = Number(d.jam_libur?.[mi]) || 0;
+                const fmt = (v) => v.toLocaleString('id-ID', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+                tbody += '<td class="text-right">' + fmt(spkl) + '</td>';
+                tbody += '<td class="text-right">' + fmt(hovt) + '</td>';
+            });
+            tbody += '</tr>';
+        });
+
+        $('#wtoJamLemburDetailThead').html(thead);
+        $('#wtoJamLemburDetailTbody').html(tbody);
     }
 
     $('#wtoPerPage').on('change', function () {
