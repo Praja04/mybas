@@ -177,8 +177,7 @@
     });
 
     // ===== WTO LINE CHARTS =====
-    let wtoLineChartHariKerja = null;
-    let wtoLineChartHariLibur = null;
+    let wtoLineChartKaryawan = null;
     let wtoLineChartJamLembur = null;
 
     function loadWtoChart() {
@@ -340,7 +339,7 @@
                     align: 'center',
                     verticalAlign: 'bottom',
                     y: 40,
-                    style: { fontSize: '12px', color: '#333', fontWeight: '700' }
+                    style: { fontSize: '16px', color: '#333', fontWeight: '700' }
                 }
             });
             if (midTs !== null) {
@@ -379,16 +378,16 @@
                     formatter: function () {
                         return new Date(this.value).toLocaleDateString('id-ID', { month: 'short' });
                     },
-                    style: { fontSize: '11px' },
+                    style: { fontSize: '16px' },
                 },
                 plotBands: plotBands,
                 plotLines: plotLines,
             },
             yAxis: {
-                title: { text: 'Jumlah Karyawan', style: { fontSize: '11px' } },
+                title: { text: 'Jumlah Karyawan', style: { fontSize: '16px' } },
                 labels: {
                     formatter: function () { return Math.round(this.value); },
-                    style: { fontSize: '11px' },
+                    style: { fontSize: '16px' },
                 },
                 min: 0,
             },
@@ -429,22 +428,137 @@
     function renderWtoCharts(data) {
         if (!data || !data.months || data.months.length === 0) {
             $('#wtoChartKaryawan').html('<p class="text-center text-muted p-4">Tidak ada data untuk range ini.</p>');
-            $('#wtoChartKaryawanLibur').html('<p class="text-center text-muted p-4">Tidak ada data untuk range ini.</p>');
             $('#wtoChartJamLembur').html('<p class="text-center text-muted p-4">Tidak ada data untuk range ini.</p>');
             return;
         }
 
-        // Chart 1: Hari Kerja (biru)
-        const optKerja = buildWtoChartOptions(data, 'hari_kerja', 'wtoChartKaryawan', '#1e88e5');
-        if (wtoLineChartHariKerja) wtoLineChartHariKerja.destroy();
-        wtoLineChartHariKerja = Highcharts.chart('wtoChartKaryawan', optKerja);
+        // Chart 1: Gabungan Hari Kerja + Hari Libur (2 line dalam 1 chart)
+        const seriesKerja = data.months.map((m, i) => [
+            new Date(m + '-01').getTime(),
+            Number(data.hari_kerja[i]) || 0,
+        ]);
+        const seriesLibur = data.months.map((m, i) => [
+            new Date(m + '-01').getTime(),
+            Number(data.hari_libur[i]) || 0,
+        ]);
+        const { plotBands, plotLines } = buildYearBoundaries(data.months);
 
-        // Chart 2: Hari Libur (oranye/merah)
-        const optLibur = buildWtoChartOptions(data, 'hari_libur', 'wtoChartKaryawanLibur', '#e65100');
-        if (wtoLineChartHariLibur) wtoLineChartHariLibur.destroy();
-        wtoLineChartHariLibur = Highcharts.chart('wtoChartKaryawanLibur', optLibur);
+        const optionsKaryawan = {
+            chart: {
+                type: 'line',
+                height: 210,
+                marginBottom: 80,
+            },
+            title: { text: null },
+            credits: { enabled: false },
+            xAxis: {
+                type: 'datetime',
+                tickInterval: 30 * 24 * 3600 * 1000,
+                labels: {
+                    formatter: function () {
+                        return new Date(this.value).toLocaleDateString('id-ID', { month: 'short' });
+                    },
+                    style: { fontSize: '11px' },
+                },
+                plotBands: plotBands,
+                plotLines: plotLines,
+            },
+            yAxis: {
+                title: { text: 'Jumlah Karyawan', style: { fontSize: '16px' } },
+                labels: {
+                    formatter: function () { return Math.round(this.value); },
+                    style: { fontSize: '16px' },
+                },
+                min: 0,
+            },
+            legend: {
+                enabled: true,
+                position: 'top',
+                align: 'right',
+                itemStyle: { fontSize: '16px', fontWeight: 600 },
+            },
+            credits: { enabled: false },
+            tooltip: {
+                headerFormat: '<b>{point.x:%B %Y}</b><br/>',
+                pointFormatter: function () {
+                    return '<span style="color:' + this.series.color + '">\u25CF</span> '
+                        + this.series.name + ': <b>' + Math.round(this.y) + '</b>';
+                },
+            },
+            plotOptions: {
+                line: {
+                    lineWidth: 3,
+                    marker: {
+                        enabled: true,
+                        radius: 4,
+                        lineColor: '#fff',
+                        lineWidth: 2,
+                    },
+                },
+            },
+            series: [
+                {
+                    name: 'Karyawan Lembur (Hari Kerja)',
+                    data: seriesKerja,
+                    color: '#1e88e5',
+                    marker: { fillColor: '#1e88e5' },
+                    dataLabels: {
+                        enabled: true,
+                        crop: false,
+                        overflow: 'allow',
+                        useHTML: true,
+                        style: { fontSize: '16px', color: '#1e88e5', fontWeight: '700' },
+                        formatter: function () {
+                            const chart = this.series.chart;
+                            const idx = this.point.index;
+                            const sLibur = chart.series[1];
+                            const vKerja = Number(this.y) || 0;
+                            const vLibur = (sLibur && sLibur.yData) ? Number(sLibur.yData[idx]) || 0 : 0;
+                            const yAxis = chart.yAxis[0];
+                            const distance = Math.abs(yAxis.toPixels(vLibur) - yAxis.toPixels(vKerja));
+                            if (distance < 20) return null;
+                            return vKerja ? String(Math.round(vKerja)) : null;
+                        },
+                        y: -8,
+                    },
+                },
+                {
+                    name: 'Karyawan Lembur (Hari Libur)',
+                    data: seriesLibur,
+                    color: '#e65100',
+                    marker: { fillColor: '#e65100' },
+                    dataLabels: {
+                        enabled: true,
+                        crop: false,
+                        overflow: 'allow',
+                        useHTML: true,
+                        style: { fontSize: '16px', color: '#e65100', fontWeight: '700' },
+                        formatter: function () {
+                            const chart = this.series.chart;
+                            const idx = this.point.index;
+                            const sKerja = chart.series[0];
+                            const vKerja = (sKerja && sKerja.yData) ? Number(sKerja.yData[idx]) || 0 : 0;
+                            const vLibur = Number(this.y) || 0;
+                            const yAxis = chart.yAxis[0];
+                            const distance = Math.abs(yAxis.toPixels(vLibur) - yAxis.toPixels(vKerja));
+                            const fmt = (n) => n ? String(Math.round(n)) : '-';
+                            if (distance < 20) {
+                                return '<div style="text-align:center;line-height:1.3;">'
+                                    + '<div style="color:#1e88e5;font-weight:700;">' + fmt(vKerja) + '</div>'
+                                    + '<div style="color:#e65100;font-weight:700;">' + fmt(vLibur) + '</div>'
+                                    + '</div>';
+                            }
+                            return fmt(vLibur);
+                        },
+                        y: -8,
+                    },
+                },
+            ],
+        };
+        if (wtoLineChartKaryawan) wtoLineChartKaryawan.destroy();
+        wtoLineChartKaryawan = Highcharts.chart('wtoChartKaryawan', optionsKaryawan);
 
-        // Chart 3: Grafik Jam Lembur (multi-line: 2 series)
+        // Chart 2: Grafik Jam Lembur (multi-line: 2 series)
         renderWtoChartJamLembur(data);
     }
 
@@ -474,16 +588,16 @@
                     formatter: function () {
                         return new Date(this.value).toLocaleDateString('id-ID', { month: 'short' });
                     },
-                    style: { fontSize: '11px' },
+                    style: { fontSize: '16px' },
                 },
                 plotBands: plotBands,
                 plotLines: plotLines,
             },
             yAxis: {
-                title: { text: 'Jam Lembur', style: { fontSize: '11px' } },
+                title: { text: 'Jam Lembur', style: { fontSize: '16px' } },
                 labels: {
                     formatter: function () { return Math.round(this.value); },
-                    style: { fontSize: '11px' },
+                    style: { fontSize: '16px' },
                 },
                 min: 0,
             },
@@ -491,7 +605,7 @@
                 enabled: true,
                 position: 'top',
                 align: 'right',
-                itemStyle: { fontSize: '11px', fontWeight: 600 },
+                itemStyle: { fontSize: '16px', fontWeight: 600 },
             },
             credits: { enabled: false },
             tooltip: {
@@ -523,7 +637,7 @@
                         crop: false,
                         overflow: 'allow',
                         useHTML: true,
-                        style: { fontSize: '9px', color: '#1e88e5', fontWeight: '700' },
+                        style: { fontSize: '16px', color: '#1e88e5', fontWeight: '700' },
                         formatter: function () {
                             const chart = this.series.chart;
                             const idx = this.point.index;
@@ -548,7 +662,7 @@
                         crop: false,
                         overflow: 'allow',
                         useHTML: true,
-                        style: { fontSize: '9px', color: '#e65100', fontWeight: '700' },
+                        style: { fontSize: '16px', color: '#e65100', fontWeight: '700' },
                         formatter: function () {
                             const chart = this.series.chart;
                             const idx = this.point.index;

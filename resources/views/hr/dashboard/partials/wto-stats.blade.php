@@ -39,10 +39,10 @@
         <div class="row mt-2">
             <div class="col-12">
                 <div class="hd-card">
-                    <h5 style="display:flex; align-items:center; gap:.4rem;">
+                    <h4 style="display:flex; align-items:center; gap:.4rem;">
                         <span class="hd-chevron" style="visibility:hidden;"></span>
-                        Grafik Jumlah Karyawan Lembur (Hari Kerja)
-                    </h5>
+                        Grafik Jumlah Karyawan Lembur
+                    </h4>
                     <div id="wtoChartKaryawan" style="min-height: 210px;"></div>
                 </div>
             </div>
@@ -51,22 +51,10 @@
         <div class="row mt-2">
             <div class="col-12">
                 <div class="hd-card">
-                    <h5 style="display:flex; align-items:center; gap:.4rem;">
-                        <span class="hd-chevron" style="visibility:hidden;"></span>
-                        Grafik Jumlah Karyawan Lembur (Hari Libur)
-                    </h5>
-                    <div id="wtoChartKaryawanLibur" style="min-height: 210px;"></div>
-                </div>
-            </div>
-        </div>
-
-        <div class="row mt-2">
-            <div class="col-12">
-                <div class="hd-card">
-                    <h5 style="display:flex; align-items:center; gap:.4rem;">
+                    <h4 style="display:flex; align-items:center; gap:.4rem;">
                         <span class="hd-chevron" style="visibility:hidden;"></span>
                         Grafik Jam Lembur
-                    </h5>
+                    </h4>
                     <div id="wtoChartJamLembur" style="min-height: 210px;"></div>
                 </div>
             </div>

@@ -10,8 +10,8 @@
     .hd-card { background: #fff; border-radius: 6px; padding: 0.85rem 1rem; margin-bottom: 0.85rem; box-shadow: 0 1px 2px rgba(0,0,0,.05); }
     .hd-card h5 { font-weight: 700; margin-bottom: 0.5rem; font-size: 1rem; }
     .hd-stat { text-align: center; padding: 0.75rem; border-radius: 6px; display: flex; flex-direction: column; justify-content: center; }
-    .hd-stat .hd-stat-value { font-size: 1.6rem; font-weight: 700; }
-    .hd-stat .hd-stat-label { font-size: 0.95rem; color: #666; display: block; width: 100%; }
+    .hd-stat .hd-stat-value { font-size: 2.2rem; font-weight: 700; }
+    .hd-stat .hd-stat-label { font-size: 1.45rem; color: #666; display: block; width: 100%; }
     .hd-stat-blue { background: #e3f2fd; color: #1565c0; }
     .hd-stat-green { background: #e8f5e9; color: #2e7d32; }
     .hd-stat-orange { background: #fff3e0; color: #e65100; }
@@ -395,9 +395,9 @@
                 <div class="row">
                     <div class="col-md-12 mb-3">
                         <div class="hd-card" id="headcountTrendCard">
-                            <h5 style="display:flex; align-items:center; gap:.4rem;">
+                            <h4 style="display:flex; align-items:center; gap:.4rem;">
                                 <span class="hd-chevron" style="visibility:hidden;"></span> Monthly Total HeadCount
-                            </h5>
+                            </h4>
                             <div id="headcountTrendChart"></div>
                         </div>
                     </div>
@@ -407,17 +407,17 @@
                 <div class="row">
                     <div class="col-md-4 mb-3">
                         <div class="hd-card" id="chartCard">
-                            <h5 style="display:flex; align-items:center; gap:.4rem;">
+                            <h4 style="display:flex; align-items:center; gap:.4rem;">
                                 <span class="hd-chevron" style="visibility:hidden;"></span> Employee Type Distribution
-                            </h5>
+                            </h4>
                             <div id="employeeTypeChart"></div>
                         </div>
                     </div>
                     <div class="col-md-8 mb-3">
                         <div class="hd-card" id="lineChartCard">
-                            <h5 style="display:flex; align-items:center; gap:.4rem;">
+                            <h4 style="display:flex; align-items:center; gap:.4rem;">
                                 <span class="hd-chevron" style="visibility:hidden;"></span> Employee In
-                            </h5>
+                            </h4>
                             <div id="employeeInChart"></div>
                         </div>
                     </div>
@@ -427,17 +427,17 @@
                 <div class="row">
                     <div class="col-md-4 mb-3">
                         <div class="hd-card" id="ageChartCard">
-                            <h5 style="display:flex; align-items:center; gap:.4rem;">
+                            <h4 style="display:flex; align-items:center; gap:.4rem;">
                                 <span class="hd-chevron" style="visibility:hidden;"></span> Age Distribution
-                            </h5>
+                            </h4>
                             <div id="distribusiUsiaChart"></div>
                         </div>
                     </div>
                     <div class="col-md-8 mb-3">
                         <div class="hd-card" id="employeeOutChartCard">
-                            <h5 style="display:flex; align-items:center; gap:.4rem;">
+                            <h4 style="display:flex; align-items:center; gap:.4rem;">
                                 <span class="hd-chevron" style="visibility:hidden;"></span> Employee Out
-                            </h5>
+                            </h4>
                             <div id="employeeOutChart"></div>
                         </div>
                     </div>
@@ -798,10 +798,16 @@
                 data: data
             }],
             xaxis: {
-                categories: labels
+                categories: labels,
+                labels: {
+                    style: { fontSize: '16px' }
+                }
             },
             yaxis: {
-                title: { text: 'Jumlah Karyawan' }
+                title: { text: 'Jumlah Karyawan', style: { fontSize: '16px' } },
+                labels: {
+                    style: { fontSize: '16px' }
+                }
             },
             colors: colors.slice(0, labels.length),
             plotOptions: {
@@ -813,11 +819,11 @@
             },
             dataLabels: {
                 enabled: true,
-                style: { fontSize: '13px', colors: ['#000'] }
+                style: { fontSize: '16px', colors: ['#000'] }
             },
             title: {
                 align: 'left',
-                style: { fontSize: '14px', color: '#4a148c' }
+                style: { fontSize: '16px', color: '#4a148c' }
             }
         };
 
@@ -911,13 +917,13 @@
             credits: { enabled: false },
             xAxis: {
                 categories: years,
-                labels: { style: { fontSize: '10px' } },
+                labels: { style: { fontSize: '16px' } },
                 lineColor: '#e0e0e0',
                 tickColor: '#e0e0e0'
             },
             yAxis: {
-                title: { text: 'Jumlah Karyawan Masuk', style: { fontSize: '11px' } },
-                labels: { style: { fontSize: '10px' } },
+                title: { text: 'Jumlah Karyawan Masuk', style: { fontSize: '16px' } },
+                labels: { style: { fontSize: '16px' } },
                 min: 0
             },
             legend: {
@@ -933,7 +939,7 @@
                 borderWidth: 1,
                 borderRadius: 3,
                 padding: 6,
-                itemStyle: { fontSize: '10px', fontWeight: 600 },
+                itemStyle: { fontSize: '16px', fontWeight: 600 },
                 itemDistance: 16
             },
             tooltip: {
@@ -957,7 +963,7 @@
                     dataLabels: {
                         enabled: true,
                         useHTML: true,
-                        style: { fontSize: '9px', textOutline: 'none' },
+                        style: { fontSize: '16px', textOutline: 'none' },
                         formatter: stackedFormatter,
                         y: -8,
                         crop: false,
@@ -1041,7 +1047,7 @@
         const options = {
             chart: {
                 type: 'line',
-                height: 250,
+                height: 240,
                 marginTop: 15,
                 marginBottom: 60,
                 spacingTop: 5,
@@ -1052,13 +1058,13 @@
             credits: { enabled: false },
             xAxis: {
                 categories: years,
-                labels: { style: { fontSize: '10px' } },
+                labels: { style: { fontSize: '16px' } },
                 lineColor: '#e0e0e0',
                 tickColor: '#e0e0e0'
             },
             yAxis: {
-                title: { text: 'Jumlah Karyawan Keluar', style: { fontSize: '11px' } },
-                labels: { style: { fontSize: '10px' } },
+                title: { text: 'Jumlah Karyawan Keluar', style: { fontSize: '16px' } },
+                labels: { style: { fontSize: '16px' } },
                 min: 0
             },
             legend: {
@@ -1074,7 +1080,7 @@
                 borderWidth: 1,
                 borderRadius: 3,
                 padding: 6,
-                itemStyle: { fontSize: '10px', fontWeight: 600 },
+                itemStyle: { fontSize: '16px', fontWeight: 600 },
                 itemDistance: 16
             },
             tooltip: {
@@ -1098,7 +1104,7 @@
                     dataLabels: {
                         enabled: true,
                         useHTML: true,
-                        style: { fontSize: '9px', textOutline: 'none' },
+                        style: { fontSize: '16px', textOutline: 'none' },
                         formatter: stackedFormatter,
                         y: -8,
                         crop: false,
@@ -1132,10 +1138,16 @@
                 data: data
             }],
             xaxis: {
-                categories: categories
+                categories: categories,
+                labels: {
+                    style: { fontSize: '16px' }
+                }
             },
             yaxis: {
-                title: { text: 'Jumlah Karyawan' }
+                title: { text: 'Jumlah Karyawan', style: { fontSize: '16px' } },
+                labels: {
+                    style: { fontSize: '16px' }
+                }
             },
             colors: ['#4a148c'],
             plotOptions: {
@@ -1147,11 +1159,11 @@
             },
             dataLabels: {
                 enabled: true,
-                style: { fontSize: '12px', colors: ['#000'] }
+                style: { fontSize: '16px', colors: ['#000'] }
             },
             title: {
                 align: 'left',
-                style: { fontSize: '14px', color: '#4a148c', fontWeight: 700 }
+                style: { fontSize: '16px', color: '#4a148c', fontWeight: 700 }
             }
         };
 
@@ -1223,7 +1235,7 @@
                         align: 'center',
                         verticalAlign: 'bottom',
                         y: 40,
-                        style: { fontSize: '11px', color: '#333', fontWeight: '700' }
+                        style: { fontSize: '16px', color: '#333', fontWeight: '700' }
                     }
                 });
                 if (midTs !== null) {
@@ -1276,16 +1288,16 @@
                     formatter: function () {
                         return new Date(this.value).toLocaleDateString('id-ID', { month: 'short' });
                     },
-                    style: { fontSize: '9px' }
+                    style: { fontSize: '16px' }
                 },
                 plotBands: plotBands,
                 plotLines: plotLines
             },
             yAxis: {
-                title: { text: 'Jumlah Karyawan', style: { fontSize: '10px' } },
+                title: { text: 'Jumlah Karyawan', style: { fontSize: '16px' } },
                 labels: {
                     formatter: function () { return Math.round(this.value); },
-                    style: { fontSize: '9px' }
+                    style: { fontSize: '16px' }
                 },
                 min: yMin,
                 max: yMax,
@@ -1312,7 +1324,7 @@
                     },
                     dataLabels: {
                         enabled: true,
-                        style: { fontSize: '9px', color: '#000', fontWeight: '700', textOutline: '1px contrast' },
+                        style: { fontSize: '16px', color: '#000', fontWeight: '700', textOutline: '1px contrast' },
                         formatter: function () { return Math.round(this.y).toLocaleString('id-ID'); },
                         y: -8
                     }
