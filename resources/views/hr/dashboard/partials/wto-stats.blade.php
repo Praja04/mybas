@@ -55,7 +55,7 @@
                         <span class="hd-chevron" style="visibility:hidden;"></span>
                         Grafik Jam Lembur
                     </h4>
-                    <div id="wtoChartJamLembur" style="min-height: 210px;"></div>
+                    <div id="wtoChartJamLembur" style="min-height: 560px;"></div>
                 </div>
             </div>
         </div>

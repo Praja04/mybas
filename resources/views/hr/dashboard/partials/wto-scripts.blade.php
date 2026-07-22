@@ -614,11 +614,51 @@
             });
         });
 
+        const allJamKerja = (data.jam_kerja || []).map((v, i) => [
+            new Date((data.months[i] || '') + '-01').getTime(),
+            Number(v) || 0,
+        ]);
+        const allJamLibur = (data.jam_libur || []).map((v, i) => [
+            new Date((data.months[i] || '') + '-01').getTime(),
+            Number(v) || 0,
+        ]);
+
+        series.push({
+            name: 'Total Jam Kerja (SPKL)',
+            data: allJamKerja,
+            type: 'line',
+            color: '#1565c0',
+            lineWidth: 3,
+            marker: { enabled: true, radius: 5, fillColor: '#1565c0', lineColor: '#fff', lineWidth: 2 },
+            dataLabels: {
+                enabled: true,
+                style: { fontSize: '16px', color: '#1565c0', fontWeight: '700', textOutline: '1px contrast' },
+                formatter: function () { return Math.round(this.y); },
+                y: -10,
+            },
+            zIndex: 10,
+        });
+        series.push({
+            name: 'Total Jam Libur (HOVT)',
+            data: allJamLibur,
+            type: 'line',
+            color: '#bf360c',
+            lineWidth: 3,
+            marker: { enabled: true, radius: 5, fillColor: '#bf360c', lineColor: '#fff', lineWidth: 2 },
+            dataLabels: {
+                enabled: true,
+                style: { fontSize: '16px', color: '#bf360c', fontWeight: '700', textOutline: '1px contrast' },
+                formatter: function () { return Math.round(this.y); },
+                y: -10,
+            },
+            zIndex: 10,
+        });
+
         const options = {
             chart: {
                 type: 'column',
-                height: 510,
-                marginBottom: 80,
+                height: 520,
+                marginBottom: 100,
             },
             title: { text: null },
             credits: { enabled: false },
@@ -629,24 +669,26 @@
                     formatter: function () {
                         return new Date(this.value).toLocaleDateString('id-ID', { month: 'short' });
                     },
-                    style: { fontSize: '11px' },
+                    style: { fontSize: '16px' },
                 },
                 plotBands: plotBands,
                 plotLines: plotLines,
             },
             yAxis: {
-                title: { text: 'Jam Lembur', style: { fontSize: '11px' } },
+                title: { text: 'Jam Lembur', style: { fontSize: '16px' } },
                 labels: {
                     formatter: function () { return Math.round(this.value); },
-                    style: { fontSize: '11px' },
+                    style: { fontSize: '16px' },
                 },
                 min: 0,
             },
             legend: {
                 enabled: true,
-                position: 'top',
-                align: 'right',
-                itemStyle: { fontSize: '10px', fontWeight: 600 },
+                verticalAlign: 'bottom',
+                align: 'center',
+                layout: 'horizontal',
+                y: 10,
+                itemStyle: { fontSize: '16px', fontWeight: 600 },
             },
             credits: { enabled: false },
             tooltip: {
