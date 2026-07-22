@@ -90,6 +90,7 @@ class ProcessHrMasterEmployeeImport implements ShouldQueue
                         'Section'          => $row['Section'],
                         'Tipe Karyawan'    => $row['Tipe Karyawan'],
                         'Jabatan'          => $row['Jabatan'],
+                        'PWS'              => $row['PWS'],
                         'Jenis Kelamin'    => $row['Jenis Kelamin'],
                         'Work Status'      => $row['Work Status'],
                         'Status Nikah'     => $row['Status Nikah'],
@@ -169,13 +170,17 @@ class ProcessHrMasterEmployeeImport implements ShouldQueue
                 continue;
             }
 
+            // Mode mitra_kerja: CSV TANPA kolom PWS (PWS diambil dari kolom Group index 13).
+            // Mode normal:       CSV DENGAN kolom PWS di antara Level dan Payroll Type.
+            $colOffset = $this->mitraKerjaChoice ? 0 : 1;
+
             // Hanya Payroll Type = Bulanan yang masuk ke staging / master.
-            $payrollType = $this->str($data, 16);
+            $payrollType = $this->str($data, 16 + $colOffset);
             if ($payrollType === null || strcasecmp($payrollType, 'Bulanan') !== 0) {
                 continue;
             }
 
-            $aktif         = $this->str($data, 22);
+            $aktif         = $this->str($data, 22 + $colOffset);
             $tipeKaryawan  = $this->str($data, 11);
 
             // Untuk NIK tertentu dengan status Aktif = N dan Tipe Karyawan = Non Staff,
@@ -189,12 +194,14 @@ class ProcessHrMasterEmployeeImport implements ShouldQueue
                 $nik = $nik . "'";
             }
 
-            // Template CSV (baris 2 header):
+            // Template CSV (baris 2 header) — mode normal (dengan kolom PWS):
             // 0:Company, 1:NIK, 2:Nama, 3:Tempat Lahir, 4:Tgl Lahir, 5:Tgl Masuk,
             // 6:Divisi, 7:Bus Area, 8:Sales Office, 9:Departmen, 10:Section,
             // 11:Tipe Karyawan, 12:Jabatan, 13:Group, 14:Sub Group, 15:Level,
-            // 16:Payroll Type, 17:Jenis Kelamin, 18:Alamat KTP, 19:Jumlah Anak,
-            // 20:Work Status, 21:Status Nikah, 22:Aktif, 23:Valid From, 24:Valid To, 25:View
+            // 16:PWS, 17:Payroll Type, 18:Jenis Kelamin, 19:Alamat KTP, 20:Jumlah Anak,
+            // 21:Work Status, 22:Status Nikah, 23:Aktif, 24:Valid From, 25:Valid To, 26:View
+            //
+            // Mode mitra_kerja: sama tanpa kolom PWS (Level=15, Payroll Type=16, ...).
             // Departmen dipakai langsung apa adanya (TANPA submapping PAS — beda PT)
             // Sub Departmen di-resolve dari Section via HrEmployeeNormalizer::resolveSubDeptBySection()
             $departmenRaw = $this->str($data, 9);
@@ -212,11 +219,12 @@ class ProcessHrMasterEmployeeImport implements ShouldQueue
                 'Section'         => $section,
                 'Tipe Karyawan'   => $this->mitraKerjaChoice ?: $this->str($data, 11),
                 'Jabatan'         => $this->str($data, 12),
-                'Jenis Kelamin'   => $this->str($data, 17),
-                'Work Status'     => $this->str($data, 20),
-                'Status Nikah'    => $this->str($data, 21),
-                'Aktif'           => $this->str($data, 22),
-                'Valid From'      => HrEmployeeNormalizer::normalizeDate($data[23] ?? null),
+                'PWS'             => $this->mitraKerjaChoice ? $this->str($data, 13) : $this->str($data, 16),
+                'Jenis Kelamin'   => $this->str($data, 17 + $colOffset),
+                'Work Status'     => $this->str($data, 20 + $colOffset),
+                'Status Nikah'    => $this->str($data, 21 + $colOffset),
+                'Aktif'           => $this->str($data, 22 + $colOffset),
+                'Valid From'      => HrEmployeeNormalizer::normalizeDate($data[23 + $colOffset] ?? null),
             ];
         }
 
@@ -273,7 +281,7 @@ class ProcessHrMasterEmployeeImport implements ShouldQueue
 
         $update = [
             'Nama', 'Tgl Lahir', 'Tgl Masuk', 'Departmen', 'Sub Departmen',
-            'Section', 'Tipe Karyawan', 'Jabatan', 'Jenis Kelamin', 'Work Status',
+            'Section', 'Tipe Karyawan', 'Jabatan', 'PWS', 'Jenis Kelamin', 'Work Status',
             'Status Nikah', 'Aktif', 'Valid From', 'send_by_username',
             'batch_id', 'status', 'updated_at',
         ];

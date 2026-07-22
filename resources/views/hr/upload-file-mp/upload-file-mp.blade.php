@@ -76,7 +76,7 @@
         <div class="mt-3 p-2" style="background:#f5f5f5; font-size:.8rem;">
             <strong>Kolom CSV (baris 2):</strong>
             Company, NIK, Nama, Tempat Lahir, Tgl Lahir, Tgl Masuk, Divisi, Bus Area, Sales Office, Departmen, Section,
-            Tipe Karyawan, Jabatan, Group, Sub Group, Level, Payroll Type, Jenis Kelamin, Alamat KTP, Jumlah Anak, Work Status, Status Nikah, Aktif, Valid From, Valid To, View
+            Tipe Karyawan, Jabatan, Group, Sub Group, Level, @if(empty($isMitraKerja))PWS, @endif Payroll Type, Jenis Kelamin, Alamat KTP, Jumlah Anak, Work Status, Status Nikah, Aktif, Valid From, Valid To, View
             <br><span class="text-muted"><strong>Catatan:</strong> Kolom <em>Sub Departmen</em> tidak ada di template, tapi akan di-resolve otomatis dari <em>Section</em> via mapping di <code>HrEmployeeNormalizer::SECTION_TO_SUB_DEPT</code>. Departmen dipakai langsung dari CSV tanpa normalisasi PT.</span>
         </div>
         <div class="mt-3 p-2" style="background:#f5f5f5; font-size:.8rem;">
@@ -129,6 +129,7 @@
                         <th>Sub Departmen</th>
                         <th>Section</th>
                         <th>Jabatan</th>
+                        <th>PWS</th>
                         <th>Jenis Kelamin</th>
                         <th>Work Status</th>
                         <th>Status Nikah</th>
@@ -139,7 +140,7 @@
                     </tr>
                 </thead>
                 <tbody id="employeeTbody">
-                    <tr><td colspan="16" class="text-center text-muted">Belum ada data employee untuk unit ini.</td></tr>
+                    <tr><td colspan="17" class="text-center text-muted">Belum ada data employee untuk unit ini.</td></tr>
                 </tbody>
             </table>
         </div>
@@ -178,6 +179,7 @@
                                 <th>Section</th>
                                 <th>Tipe Karyawan</th>
                                 <th>Jabatan</th>
+                                <th>PWS</th>
                                 <th>Jenis Kelamin</th>
                                 <th>Work Status</th>
                                 <th>Status Nikah</th>
@@ -413,6 +415,7 @@
                             <td>${escapeHtml(r['Section'] || '')}</td>
                             <td>${escapeHtml(r['Tipe Karyawan'] || '')}</td>
                             <td>${escapeHtml(r['Jabatan'] || '')}</td>
+                            <td>${escapeHtml(r['PWS'] || '')}</td>
                             <td>${escapeHtml(r['Jenis Kelamin'] || '')}</td>
                             <td>${escapeHtml(r['Work Status'] || '')}</td>
                             <td>${escapeHtml(r['Status Nikah'] || '')}</td>
@@ -601,7 +604,7 @@
             function (res) {
                 let rows = '';
                 if (!res.data || res.data.length === 0) {
-                    rows = '<tr><td colspan="16" class="text-center text-muted">Belum ada data employee untuk unit ini.</td></tr>';
+                    rows = '<tr><td colspan="17" class="text-center text-muted">Belum ada data employee untuk unit ini.</td></tr>';
                 } else {
                     res.data.forEach(r => {
                         rows += `
@@ -615,6 +618,7 @@
                                 <td>${escapeHtml(r['Sub Departmen'])}</td>
                                 <td>${escapeHtml(r.Section)}</td>
                                 <td>${escapeHtml(r.Jabatan)}</td>
+                                <td>${escapeHtml(r.PWS || '')}</td>
                                 <td>${escapeHtml(r['Jenis Kelamin'])}</td>
                                 <td>${escapeHtml(r['Work Status'])}</td>
                                 <td>${escapeHtml(r['Status Nikah'])}</td>

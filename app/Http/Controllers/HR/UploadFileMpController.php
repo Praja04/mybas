@@ -179,7 +179,7 @@ class UploadFileMpController extends Controller
         DB::transaction(function () use ($staging, $username, &$confirmed) {
             foreach ($staging as $row) {
                 $data = $row->only([
-                    'NIK', 'Nama', 'Tgl Lahir', 'Tgl Masuk', 'Departmen', 'Sub Departmen',
+                    'NIK', 'PWS', 'Nama', 'Tgl Lahir', 'Tgl Masuk', 'Departmen', 'Sub Departmen',
                     'Section', 'Tipe Karyawan', 'Jabatan', 'Jenis Kelamin', 'Work Status',
                     'Status Nikah', 'Aktif', 'Valid From',
                 ]);

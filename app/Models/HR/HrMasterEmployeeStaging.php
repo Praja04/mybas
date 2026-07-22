@@ -13,7 +13,7 @@ class HrMasterEmployeeStaging extends Model
     public $timestamps = false;
 
     protected $fillable = [
-        'NIK', 'Nama', 'Tgl Lahir', 'Tgl Masuk', 'Departmen', 'Sub Departmen',
+        'NIK', 'PWS', 'Nama', 'Tgl Lahir', 'Tgl Masuk', 'Departmen', 'Sub Departmen',
         'Section', 'Tipe Karyawan', 'Jabatan', 'Jenis Kelamin', 'Work Status',
         'Status Nikah', 'Aktif', 'Valid From', 'send_by_username',
         'batch_id', 'status',
