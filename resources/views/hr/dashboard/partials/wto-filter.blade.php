@@ -112,6 +112,34 @@
                     </div>
                 </div>
             </div>
+
+
+            {{-- PWS / Group --}}
+            <div class="col-md-3 mb-2">
+                <label class="hd-form-label">Group</label>
+                <div class="hd-multi-select" data-target="wto_pws" data-placeholder="-- Semua Group --">
+                    <button type="button" class="hd-ms-btn">
+                        <span class="hd-ms-label">-- Semua Group --</span>
+                        <span class="hd-ms-caret">&#9662;</span>
+                    </button>
+                    <div class="hd-ms-dropdown">
+                        <input type="text" class="hd-ms-search form-control form-control-sm" placeholder="Cari group...">
+                        <div class="hd-ms-actions">
+                            <button type="button" class="hd-ms-action" data-action="all">Pilih Semua</button>
+                            <button type="button" class="hd-ms-action" data-action="none">Kosongkan</button>
+                        </div>
+                        <div class="hd-ms-list" id="wtoPwsList">
+                            @foreach ($pwsGroups as $g)
+                                <label class="hd-ms-item">
+                                    <input type="checkbox" name="wto_pws[]" value="{{ $g }}">
+                                    <span>{{ $g }}</span>
+                                </label>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="col-md-3 mb-2 d-flex align-items-end" style="gap:.5rem;">
                 <button type="button" class="btn btn-primary btn-sm" id="btnWtoApply">Terapkan Filter</button>
                 <button type="button" class="btn btn-outline-secondary btn-sm" id="btnWtoReset">Reset</button>

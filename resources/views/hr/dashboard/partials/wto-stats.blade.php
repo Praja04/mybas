@@ -43,7 +43,19 @@
                         <span class="hd-chevron" style="visibility:hidden;"></span>
                         Grafik Jumlah Karyawan Lembur
                     </h4>
-                    <div id="wtoChartKaryawan" style="min-height: 210px;"></div>
+                    <div id="wtoChartKaryawan" style="min-height: 240px;"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-2">
+            <div class="col-12">
+                <div class="hd-card">
+                    <h4 style="display:flex; align-items:center; gap:.4rem;">
+                        <span class="hd-chevron" style="visibility:hidden;"></span>
+                        Grafik Jam Lembur per Departemen
+                    </h4>
+                    <div style="overflow-x: auto;"><div id="wtoChartJamLemburPerDept" style="min-height: 250px;"></div></div>
                 </div>
             </div>
         </div>
@@ -55,7 +67,7 @@
                         <span class="hd-chevron" style="visibility:hidden;"></span>
                         Grafik Jam Lembur
                     </h4>
-                    <div id="wtoChartJamLembur" style="min-height: 560px;"></div>
+                    <div id="wtoChartJamLembur" style="min-height: 240px;"></div>
                 </div>
             </div>
         </div>

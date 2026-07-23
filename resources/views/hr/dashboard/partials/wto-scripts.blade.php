@@ -43,6 +43,7 @@
             departmen: getMultiSelectValues('wto_departmen'),
             sub_departmen: getMultiSelectValues('wto_sub_departmen'),
             tipe_karyawan: getMultiSelectValues('wto_tipe_karyawan'),
+            pws: getMultiSelectValues('wto_pws'),
             wto_nama: currentWtoNama.length > 0
                 ? currentWtoNama.slice()
                 : getMultiSelectValues('wto_nama'),
@@ -53,6 +54,7 @@
         if (Array.isArray(p.departmen) && p.departmen.length === 0) delete p.departmen;
         if (Array.isArray(p.sub_departmen) && p.sub_departmen.length === 0) delete p.sub_departmen;
         if (Array.isArray(p.tipe_karyawan) && p.tipe_karyawan.length === 0) delete p.tipe_karyawan;
+        if (Array.isArray(p.pws) && p.pws.length === 0) delete p.pws;
         if (Array.isArray(p.wto_nama) && p.wto_nama.length === 0) delete p.wto_nama;
 
         const tgl = parseTglInRange();
@@ -68,6 +70,7 @@
             departmen: getMultiSelectValues('wto_departmen'),
             sub_departmen: getMultiSelectValues('wto_sub_departmen'),
             tipe_karyawan: getMultiSelectValues('wto_tipe_karyawan'),
+            pws: getMultiSelectValues('wto_pws'),
             @if(!empty($typeKaryawanMode) && in_array($typeKaryawanMode, ['mitra_kerja', 'BAS'], true))
             type_karyawan: @json($typeKaryawanMode),
             @endif
@@ -75,7 +78,41 @@
         if (Array.isArray(p.departmen) && p.departmen.length === 0) delete p.departmen;
         if (Array.isArray(p.sub_departmen) && p.sub_departmen.length === 0) delete p.sub_departmen;
         if (Array.isArray(p.tipe_karyawan) && p.tipe_karyawan.length === 0) delete p.tipe_karyawan;
+        if (Array.isArray(p.pws) && p.pws.length === 0) delete p.pws;
         return p;
+    }
+
+    function loadWtoPwsGroups() {
+        const params = {
+            departmen: getMultiSelectValues('wto_departmen'),
+            sub_departmen: getMultiSelectValues('wto_sub_departmen'),
+            tipe_karyawan: getMultiSelectValues('wto_tipe_karyawan'),
+        };
+        if (Array.isArray(params.departmen) && params.departmen.length === 0) delete params.departmen;
+        if (Array.isArray(params.sub_departmen) && params.sub_departmen.length === 0) delete params.sub_departmen;
+        if (Array.isArray(params.tipe_karyawan) && params.tipe_karyawan.length === 0) delete params.tipe_karyawan;
+
+        const savedSelection = getMultiSelectValues('wto_pws');
+
+        $.get("{{ url('/hr/hrdashboard/pws-groups') }}", params, function (res) {
+            const groups = res.groups || [];
+            const $list = $('#wtoPwsList');
+            $list.empty();
+            groups.forEach(function (g) {
+                const safe = String(g).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+                const isChecked = savedSelection.indexOf(g) !== -1 ? 'checked' : '';
+                $list.append(
+                    '<label class="hd-ms-item">' +
+                        '<input type="checkbox" name="wto_pws[]" value="' + safe + '" ' + isChecked + '>' +
+                        '<span>' + safe + '</span>' +
+                    '</label>'
+                );
+            });
+            const $wrapper = $('.hd-multi-select[data-target="wto_pws"]');
+            if ($wrapper.length && typeof updateMsLabel === 'function') {
+                updateMsLabel($wrapper);
+            }
+        });
     }
 
     function loadWtoData(page) {
@@ -94,7 +131,7 @@
 
             let rows = '';
             if (!res.data || res.data.length === 0) {
-                rows = '<tr><td colspan="9" class="text-center text-muted">Tidak ada data untuk filter ini.</td></tr>';
+                rows = '<tr><td colspan="10" class="text-center text-muted">Tidak ada data untuk filter ini.</td></tr>';
             } else {
                 res.data.forEach(r => {
                     rows += `
@@ -104,6 +141,7 @@
                             <td>${escapeHtml(r.dept || '')}</td>
                             <td>${escapeHtml(r.sub_departmen || '')}</td>
                             <td>${escapeHtml(r.section || '')}</td>
+                            <td>${escapeHtml(r.pws || '')}</td>
                             <td>${fmtDate(r.tgl_in)}</td>
                             <td>${r.jam_spkl ?? ''}</td>
                             <td>${r.jam_hovt ?? ''}</td>
@@ -179,6 +217,7 @@
     // ===== WTO LINE CHARTS =====
     let wtoLineChartKaryawan = null;
     let wtoLineChartJamLembur = null;
+    let wtoLineChartJamLemburPerDept = null;
 
     function loadWtoChart() {
         const filterParams = getWtoFilterParams(1);
@@ -365,7 +404,7 @@
         return {
             chart: {
                 type: 'line',
-                height: 410,
+                height: 240,
                 marginBottom: 60,
                 renderTo: containerId,
             },
@@ -412,7 +451,7 @@
                     },
                     dataLabels: {
                         enabled: true,
-                        style: { fontSize: '10px', color: '#000', textOutline: '1px contrast' },
+                        style: { fontSize: '16px', color: '#000', textOutline: '1px contrast' },
                         formatter: function () { return Math.round(this.y); },
                         y: -8,
                     },
@@ -429,6 +468,7 @@
         if (!data || !data.months || data.months.length === 0) {
             $('#wtoChartKaryawan').html('<p class="text-center text-muted p-4">Tidak ada data untuk range ini.</p>');
             $('#wtoChartJamLembur').html('<p class="text-center text-muted p-4">Tidak ada data untuk range ini.</p>');
+            $('#wtoChartJamLemburPerDept').html('<p class="text-center text-muted p-4">Tidak ada data untuk range ini.</p>');
             return;
         }
 
@@ -446,7 +486,7 @@
         const optionsKaryawan = {
             chart: {
                 type: 'line',
-                height: 410,
+                height: 240,
                 marginBottom: 80,
             },
             title: { text: null },
@@ -458,7 +498,7 @@
                     formatter: function () {
                         return new Date(this.value).toLocaleDateString('id-ID', { month: 'short' });
                     },
-                    style: { fontSize: '11px' },
+                    style: { fontSize: '16px' },
                 },
                 plotBands: plotBands,
                 plotLines: plotLines,
@@ -560,59 +600,13 @@
 
         // Chart 2: Grafik Jam Lembur (multi-line: 2 series)
         renderWtoChartJamLembur(data);
+
+        // Chart 3: Grafik Jam Lembur per Departemen (grouped column)
+        renderWtoChartJamLemburPerDept(data);
     }
 
     function renderWtoChartJamLembur(data) {
-        if (!data.departments || data.departments.length === 0) {
-            $('#wtoChartJamLembur').html('<p class="text-center text-muted p-4">Tidak ada data departemen untuk range ini.</p>');
-            if (wtoLineChartJamLembur) wtoLineChartJamLembur.destroy();
-            wtoLineChartJamLembur = null;
-            return;
-        }
-
         const { plotBands, plotLines } = buildYearBoundaries(data.months);
-
-        const deptColors = [
-            { spkl: '#1e88e5', hovt: '#90caf9' },
-            { spkl: '#e65100', hovt: '#ffb74d' },
-            { spkl: '#43a047', hovt: '#a5d6a7' },
-            { spkl: '#8e24aa', hovt: '#ce93d8' },
-            { spkl: '#e53935', hovt: '#ef9a9a' },
-            { spkl: '#00acc1', hovt: '#80deea' },
-            { spkl: '#6d4c41', hovt: '#bcaaa4' },
-            { spkl: '#3949ab', hovt: '#9fa8da' },
-            { spkl: '#f4511e', hovt: '#ffab91' },
-            { spkl: '#00897b', hovt: '#80cbc4' },
-        ];
-
-        const allMonths = data.months || [];
-        const depts = data.departments || [];
-        const series = [];
-
-        depts.forEach((dept, idx) => {
-            const colors = deptColors[idx % deptColors.length];
-            const deptData = data.department_series[dept] || { jam_kerja: [], jam_libur: [] };
-
-            const datapointsKerja = allMonths.map((m, i) => [
-                new Date(m + '-01').getTime(),
-                Number(deptData.jam_kerja[i]) || 0,
-            ]);
-            const datapointsLibur = allMonths.map((m, i) => [
-                new Date(m + '-01').getTime(),
-                Number(deptData.jam_libur[i]) || 0,
-            ]);
-
-            series.push({
-                name: dept + ' - Jam Kerja (SPKL)',
-                data: datapointsKerja,
-                color: colors.spkl,
-            });
-            series.push({
-                name: dept + ' - Jam Libur (HOVT)',
-                data: datapointsLibur,
-                color: colors.hovt,
-            });
-        });
 
         const allJamKerja = (data.jam_kerja || []).map((v, i) => [
             new Date((data.months[i] || '') + '-01').getTime(),
@@ -623,41 +617,139 @@
             Number(v) || 0,
         ]);
 
-        series.push({
-            name: 'Total Jam Kerja (SPKL)',
-            data: allJamKerja,
-            type: 'line',
-            color: '#1565c0',
-            lineWidth: 3,
-            marker: { enabled: true, radius: 5, fillColor: '#1565c0', lineColor: '#fff', lineWidth: 2 },
-            dataLabels: {
-                enabled: true,
-                style: { fontSize: '16px', color: '#1565c0', fontWeight: '700', textOutline: '1px contrast' },
-                formatter: function () { return Math.round(this.y); },
-                y: -10,
+        const options = {
+            chart: {
+                type: 'line',
+                height: 240,
+                marginBottom: 80,
             },
-            zIndex: 10,
-        });
-        series.push({
-            name: 'Total Jam Libur (HOVT)',
-            data: allJamLibur,
-            type: 'line',
-            color: '#bf360c',
-            lineWidth: 3,
-            marker: { enabled: true, radius: 5, fillColor: '#bf360c', lineColor: '#fff', lineWidth: 2 },
-            dataLabels: {
-                enabled: true,
-                style: { fontSize: '16px', color: '#bf360c', fontWeight: '700', textOutline: '1px contrast' },
-                formatter: function () { return Math.round(this.y); },
-                y: -10,
+            title: { text: null },
+            credits: { enabled: false },
+            xAxis: {
+                type: 'datetime',
+                tickInterval: 30 * 24 * 3600 * 1000,
+                labels: {
+                    formatter: function () {
+                        return new Date(this.value).toLocaleDateString('id-ID', { month: 'short' });
+                    },
+                    style: { fontSize: '16px' },
+                },
+                plotBands: plotBands,
+                plotLines: plotLines,
             },
-            zIndex: 10,
+            yAxis: {
+                title: { text: 'Jam Lembur', style: { fontSize: '16px' } },
+                labels: {
+                    formatter: function () { return Math.round(this.value); },
+                    style: { fontSize: '16px' },
+                },
+                min: 0,
+            },
+            legend: {
+                enabled: true,
+                verticalAlign: 'bottom',
+                align: 'center',
+                layout: 'horizontal',
+                y: 10,
+                itemStyle: { fontSize: '16px', fontWeight: 600 },
+            },
+            credits: { enabled: false },
+            tooltip: {
+                headerFormat: '<b>{point.x:%B %Y}</b><br/>',
+                pointFormatter: function () {
+                    return '<span style="color:' + this.series.color + '">\u25CF</span> '
+                        + this.series.name + ': <b>' + Number(this.y).toLocaleString('id-ID', { maximumFractionDigits: 2 }) + '</b>';
+                },
+            },
+            plotOptions: {
+                line: {
+                    lineWidth: 3,
+                    marker: {
+                        enabled: true,
+                        radius: 5,
+                        lineColor: '#fff',
+                        lineWidth: 2,
+                    },
+                },
+            },
+            series: [
+                {
+                    name: 'Total Jam Kerja (SPKL)',
+                    data: allJamKerja,
+                    color: '#1565c0',
+                    marker: { fillColor: '#1565c0' },
+                    dataLabels: {
+                        enabled: true,
+                        allowOverlap: true,
+                        style: { fontSize: '16px', color: '#1565c0', fontWeight: '700', textOutline: '1px contrast' },
+                        formatter: function () { return Math.round(this.y); },
+                        y: -10,
+                    },
+                },
+                {
+                    name: 'Total Jam Libur (HOVT)',
+                    data: allJamLibur,
+                    color: '#bf360c',
+                    marker: { fillColor: '#bf360c' },
+                    dataLabels: {
+                        enabled: true,
+                        allowOverlap: true,
+                        style: { fontSize: '16px', color: '#bf360c', fontWeight: '700', textOutline: '1px contrast' },
+                        formatter: function () { return Math.round(this.y); },
+                        y: -10,
+                    },
+                },
+            ],
+        };
+
+        if (wtoLineChartJamLembur) wtoLineChartJamLembur.destroy();
+        wtoLineChartJamLembur = Highcharts.chart('wtoChartJamLembur', options);
+
+        renderWtoJamLemburDetailTable(data);
+    }
+
+    function renderWtoChartJamLemburPerDept(data) {
+        if (!data.departments || data.departments.length === 0) {
+            $('#wtoChartJamLemburPerDept').html('<p class="text-center text-muted p-4">Tidak ada data departemen untuk range ini.</p>');
+            if (wtoLineChartJamLemburPerDept) wtoLineChartJamLemburPerDept.destroy();
+            wtoLineChartJamLemburPerDept = null;
+            return;
+        }
+
+        const { plotBands, plotLines } = buildYearBoundaries(data.months);
+
+        const deptColors = [
+            '#1e88e5', '#e65100', '#43a047', '#8e24aa', '#e53935',
+            '#00acc1', '#6d4c41', '#3949ab', '#f4511e', '#00897b',
+        ];
+
+        const allMonths = data.months || [];
+        const depts = data.departments || [];
+        const series = [];
+
+        depts.forEach((dept, idx) => {
+            const color = deptColors[idx % deptColors.length];
+            const deptData = data.department_series[dept] || { jam_kerja: [], jam_libur: [] };
+
+            const datapoints = allMonths.map((m, i) => [
+                new Date(m + '-01').getTime(),
+                (Number(deptData.jam_kerja[i]) || 0) + (Number(deptData.jam_libur[i]) || 0),
+            ]);
+
+            series.push({
+                name: dept,
+                data: datapoints,
+                color: color,
+            });
         });
+
+        const chartWidth = Math.max(600, depts.length * allMonths.length * 30 + 200);
 
         const options = {
             chart: {
                 type: 'column',
-                height: 520,
+                height: 250,
+                width: chartWidth,
                 marginBottom: 100,
             },
             title: { text: null },
@@ -704,15 +796,19 @@
                     pointPadding: 0.1,
                     groupPadding: 0.2,
                     borderWidth: 0,
+                    dataLabels: {
+                        enabled: true,
+                        style: { fontSize: '16px', fontWeight: 700 },
+                        formatter: function () { return Math.round(this.y); },
+                    },
                 },
             },
             series: series,
         };
 
-        if (wtoLineChartJamLembur) wtoLineChartJamLembur.destroy();
-        wtoLineChartJamLembur = Highcharts.chart('wtoChartJamLembur', options);
-
-        renderWtoJamLemburDetailTable(data);
+        if (wtoLineChartJamLemburPerDept) wtoLineChartJamLemburPerDept.destroy();
+        wtoLineChartJamLemburPerDept = Highcharts.chart('wtoChartJamLemburPerDept', options);
+        document.getElementById('wtoChartJamLemburPerDept').style.minWidth = chartWidth + 'px';
     }
 
     function renderWtoJamLemburDetailTable(data) {
@@ -728,25 +824,31 @@
         let thead = '<tr><th rowspan="2" style="min-width:120px;">Departemen</th>';
         months.forEach(m => {
             const label = new Date(m + '-01').toLocaleDateString('id-ID', { month: 'short', year: 'numeric' });
-            thead += '<th colspan="2" class="text-center">' + label + '</th>';
+            thead += '<th colspan="3" class="text-center">' + label + '</th>';
         });
+        thead += '<th rowspan="2" class="text-center" style="min-width:70px;">Total</th>';
         thead += '</tr><tr>';
         months.forEach(() => {
-            thead += '<th class="text-right" style="min-width:55px;">SPKL</th><th class="text-right" style="min-width:55px;">HOVT</th>';
+            thead += '<th class="text-right" style="min-width:55px;">SPKL</th><th class="text-right" style="min-width:55px;">HOVT</th><th class="text-right" style="min-width:55px;">Total</th>';
         });
         thead += '</tr>';
 
         let tbody = '';
         depts.forEach(dept => {
             const d = series[dept] || {};
+            let totalDept = 0;
             tbody += '<tr><td>' + escapeHtml(dept) + '</td>';
             months.forEach((m, mi) => {
                 const spkl = Number(d.jam_kerja?.[mi]) || 0;
                 const hovt = Number(d.jam_libur?.[mi]) || 0;
+                const total = spkl + hovt;
+                totalDept += total;
                 const fmt = (v) => v.toLocaleString('id-ID', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
                 tbody += '<td class="text-right">' + fmt(spkl) + '</td>';
                 tbody += '<td class="text-right">' + fmt(hovt) + '</td>';
+                tbody += '<td class="text-right"><strong>' + fmt(total) + '</strong></td>';
             });
+            tbody += '<td class="text-right"><strong>' + totalDept.toLocaleString('id-ID', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + '</strong></td>';
             tbody += '</tr>';
         });
 
@@ -768,11 +870,12 @@
         currentWtoNama = getMultiSelectValues('wto_nama');
         loadWtoData();
         loadWtoNames();
+        loadWtoPwsGroups();
     });
 
     $('#btnWtoReset').on('click', function () {
         $('#wtoTglInRange').val('');
-        ['wto_departmen', 'wto_sub_departmen', 'wto_tipe_karyawan', 'wto_nama'].forEach(function (target) {
+        ['wto_departmen', 'wto_sub_departmen', 'wto_tipe_karyawan', 'wto_pws', 'wto_nama'].forEach(function (target) {
             const $wrapper = $('.hd-multi-select[data-target="' + target + '"]');
             $wrapper.find('input[type="checkbox"]').prop('checked', false);
             if ($wrapper.length && typeof updateMsLabel === 'function') {
@@ -791,6 +894,7 @@
         wtoCurrentPage = 1;
         loadWtoData();
         loadWtoNames();
+        loadWtoPwsGroups();
     });
 
     $('#btnWtoExport').on('click', function () {
@@ -839,6 +943,11 @@
             $('#filterDataCard').hide();
             loadWtoData(1);
             loadWtoNames();
+            loadWtoPwsGroups();
+            // Restart chart scroll jika auto-cycle aktif
+            if (cycleEnabled) {
+                setTimeout(startChartScroll, 1000);
+            }
         } else {
             $('#wtoFilterCard').hide();
             $('#wtoExtras').hide();
@@ -856,6 +965,8 @@
     });
 
     // ===== AUTO-CYCLE TOGGLE (works in normal view AND fullscreen) =====
+    let chartScrollTimer = null;
+
     function performCycle() {
         // Triple-guard: generation counter + global flag + local flag + timer
         if (!window.__wtoCycleActive || !cycleEnabled || !cycleTimer) return;
@@ -874,12 +985,49 @@
         }
     }
 
+    function startChartScroll() {
+        stopChartScroll();
+        const $container = $('#wtoChartJamLemburPerDept').parent();
+        if ($container.length === 0) return;
+        const el = $container[0];
+        const maxScroll = el.scrollWidth - el.clientWidth;
+        if (maxScroll <= 0) return;
+
+        let pos = 0;
+        let dir = 1;
+        chartScrollTimer = setInterval(function () {
+            if (!window.__wtoCycleActive) {
+                stopChartScroll();
+                return;
+            }
+            pos += dir * 7;
+            if (pos >= maxScroll) {
+                pos = maxScroll;
+                dir = -1;
+            } else if (pos <= 0) {
+                pos = 0;
+                dir = 1;
+            }
+            el.scrollLeft = pos;
+        }, 20);
+    }
+
+    function stopChartScroll() {
+        if (chartScrollTimer) {
+            clearInterval(chartScrollTimer);
+            chartScrollTimer = null;
+        }
+        const $c = $('#wtoChartJamLemburPerDept').parent();
+        if ($c.length) $c[0].scrollLeft = 0;
+    }
+
     function startCycle() {
         stopCycle(); // Always clear any existing interval first
         window.__wtoCycleActive = true;
         window.__wtoCycleGen++;
         cycleEnabled = true;
         cycleTimer = setInterval(performCycle, WTO_CYCLE_MS);
+        startChartScroll();
         updateCycleButton();
     }
 
@@ -891,6 +1039,7 @@
             clearInterval(cycleTimer);
         }
         cycleTimer = null;
+        stopChartScroll();
         updateCycleButton();
     }
 

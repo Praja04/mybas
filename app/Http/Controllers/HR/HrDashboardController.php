@@ -245,6 +245,7 @@ class HrDashboardController extends Controller
             'departments'         => $departments,
             'subDepartments'      => $subDepartments,
             'types'               => $types,
+            'pwsGroups'           => $this->getCachedDistinct('PWS'),
             'typeKaryawanMode'    => $typeKaryawanMode,
             'canFilterDepartmen'  => true,
             'canViewTopLembur'    => $this->hasTopLemburAccess(),
@@ -489,7 +490,7 @@ class HrDashboardController extends Controller
 
             fputcsv($fh, [
                 'NIK', 'Nama', 'Tgl Lahir', 'Tgl Masuk', 'Tgl Keluar (Valid From)',
-                'Departmen', 'Sub Departmen', 'Section', 'Tipe Karyawan', 'Jabatan',
+                'Departmen', 'Sub Departmen', 'Section', 'Group', 'Tipe Karyawan', 'Jabatan',
                 'Jenis Kelamin', 'Work Status', 'Status Nikah', 'Aktif',
                 'Aktif (Rentang Data)',
             ]);
@@ -503,7 +504,7 @@ class HrDashboardController extends Controller
                 fputcsv($fh, [
                     $r->NIK, $r->Nama, $r->{'Tgl Lahir'}, $r->{'Tgl Masuk'},
                     $tglKeluar, $r->Departmen, $r->{'Sub Departmen'},
-                    $r->Section, $r->{'Tipe Karyawan'}, $r->Jabatan,
+                    $r->Section, $r->PWS ?? '', $r->{'Tipe Karyawan'}, $r->Jabatan,
                     $r->{'Jenis Kelamin'}, $r->{'Work Status'}, $r->{'Status Nikah'}, $r->Aktif,
                     $this->calcAktifRentangData($r, $endDate),
                 ]);
@@ -763,6 +764,12 @@ class HrDashboardController extends Controller
             $query->whereIn('Tipe Karyawan', $types);
         }
 
+        // Filter PWS (Group)
+        $pwsGroups = $this->getArrayFilter($request, 'pws');
+        if (!empty($pwsGroups)) {
+            $query->whereIn('PWS', $pwsGroups);
+        }
+
         return $query->orderBy('NIK');
     }
 
@@ -788,6 +795,11 @@ class HrDashboardController extends Controller
         $types = $this->getArrayFilter($request, 'tipe_karyawan');
         if (!empty($types)) {
             $query->whereIn('Tipe Karyawan', $types);
+        }
+
+        $pwsGroups = $this->getArrayFilter($request, 'pws');
+        if (!empty($pwsGroups)) {
+            $query->whereIn('PWS', $pwsGroups);
         }
 
         return $query;
@@ -816,6 +828,11 @@ class HrDashboardController extends Controller
         $types = $this->getArrayFilter($request, 'tipe_karyawan');
         if (!empty($types)) {
             $query->whereIn('Tipe Karyawan', $types);
+        }
+
+        $pwsGroups = $this->getArrayFilter($request, 'pws');
+        if (!empty($pwsGroups)) {
+            $query->whereIn('PWS', $pwsGroups);
         }
 
         return $query;
@@ -863,6 +880,11 @@ class HrDashboardController extends Controller
         $types = $this->getArrayFilter($request, 'tipe_karyawan');
         if (!empty($types)) {
             $query->whereIn('Tipe Karyawan', $types);
+        }
+
+        $pwsGroups = $this->getArrayFilter($request, 'pws');
+        if (!empty($pwsGroups)) {
+            $query->whereIn('PWS', $pwsGroups);
         }
 
         return $query;
@@ -919,6 +941,11 @@ class HrDashboardController extends Controller
         $types = $this->getArrayFilter($request, 'tipe_karyawan');
         if (!empty($types)) {
             $query->whereIn('Tipe Karyawan', $types);
+        }
+
+        $pwsGroups = $this->getArrayFilter($request, 'pws');
+        if (!empty($pwsGroups)) {
+            $query->whereIn('PWS', $pwsGroups);
         }
 
         return $query;
@@ -1037,6 +1064,10 @@ class HrDashboardController extends Controller
         if (!empty($types)) {
             $base->whereIn(DB::raw('hme.`Tipe Karyawan`'), $types);
         }
+        $pwsGroups = $this->getArrayFilter($request, 'pws');
+        if (!empty($pwsGroups)) {
+            $base->whereIn(DB::raw('hme.`PWS`'), $pwsGroups);
+        }
         if (!empty($nama)) {
             $base->whereIn('wto.nama', $nama);
         }
@@ -1077,6 +1108,7 @@ class HrDashboardController extends Controller
                 DB::raw('hme.Departmen as dept'),
                 DB::raw('hme.`Sub Departmen` as sub_departmen'),
                 'wto.section',
+                DB::raw('hme.`PWS` as pws'),
                 'wto.tgl_in',
                 'wto.jam_spkl',
                 'wto.jam_hovt',
@@ -1145,6 +1177,10 @@ class HrDashboardController extends Controller
         if (!empty($types)) {
             $base->whereIn(DB::raw('hme.`Tipe Karyawan`'), $types);
         }
+        $pwsGroups = $this->getArrayFilter($request, 'pws');
+        if (!empty($pwsGroups)) {
+            $base->whereIn(DB::raw('hme.`PWS`'), $pwsGroups);
+        }
         if (!empty($nama)) {
             $base->whereIn('wto.nama', $nama);
         }
@@ -1162,6 +1198,7 @@ class HrDashboardController extends Controller
                 DB::raw('hme.Departmen as dept'),
                 DB::raw('hme.`Sub Departmen` as sub_departmen'),
                 'wto.section',
+                DB::raw('hme.`PWS` as pws'),
                 'wto.tgl_in',
                 'wto.jam_spkl',
                 'wto.jam_hovt',
@@ -1187,7 +1224,7 @@ class HrDashboardController extends Controller
             $fh = fopen('php://output', 'w');
             fwrite($fh, "\xEF\xBB\xBF");
             fputcsv($fh, [
-                'NIK', 'Nama', 'Departmen', 'Sub Departmen', 'Section',
+                'NIK', 'Nama', 'Departmen', 'Sub Departmen', 'Section', 'Group',
                 'Tgl In', 'Jam SPKL', 'Jam HOVT', 'Jam Lembur',
                 'No SPKL', 'Send By', 'Created At', 'Updated At',
             ]);
@@ -1200,6 +1237,7 @@ class HrDashboardController extends Controller
                     $r->dept,
                     $r->sub_departmen,
                     $r->section,
+                    $r->pws ?? '',
                     $r->tgl_in,
                     $spkl,
                     $hovt,
@@ -1255,6 +1293,10 @@ class HrDashboardController extends Controller
         }
         if (!empty($types)) {
             $base->whereIn(DB::raw('hme.`Tipe Karyawan`'), $types);
+        }
+        $pwsGroups = $this->getArrayFilter($request, 'pws');
+        if (!empty($pwsGroups)) {
+            $base->whereIn(DB::raw('hme.`PWS`'), $pwsGroups);
         }
         if (!empty($nama)) {
             $base->whereIn('wto.nama', $nama);
@@ -1404,6 +1446,10 @@ class HrDashboardController extends Controller
         if (!empty($types)) {
             $base->whereIn(DB::raw('hme.`Tipe Karyawan`'), $types);
         }
+        $pwsGroups = $this->getArrayFilter($request, 'pws');
+        if (!empty($pwsGroups)) {
+            $base->whereIn(DB::raw('hme.`PWS`'), $pwsGroups);
+        }
         if (!empty($nama)) {
             $base->whereIn('wto.nama', $nama);
         }
@@ -1466,6 +1512,10 @@ class HrDashboardController extends Controller
         if (!empty($types)) {
             $base->whereIn(DB::raw('hme.`Tipe Karyawan`'), $types);
         }
+        $pwsGroups = $this->getArrayFilter($request, 'pws');
+        if (!empty($pwsGroups)) {
+            $base->whereIn(DB::raw('hme.`PWS`'), $pwsGroups);
+        }
 
         $names = (clone $base)
             ->select('wto.nama')
@@ -1479,5 +1529,35 @@ class HrDashboardController extends Controller
             'names' => $names,
             'total' => $names->count(),
         ]);
+    }
+
+    public function pwsGroups(Request $request)
+    {
+        if (! $this->hasDashboardAccess()) {
+            return response()->json(['error' => 'forbidden'], 403);
+        }
+
+        $request = $this->sanitizeFilterRequest($request);
+
+        $query = HrMasterEmployee::query();
+        $this->applyUserAccessFilter($query, $request);
+
+        $depts = $this->getArrayFilter($request, 'departmen');
+        if (!empty($depts)) {
+            $query->whereIn('Departmen', $depts);
+        }
+        $subs = $this->getArrayFilter($request, 'sub_departmen');
+        if (!empty($subs)) {
+            $query->whereIn('Sub Departmen', $subs);
+        }
+        $types = $this->getArrayFilter($request, 'tipe_karyawan');
+        if (!empty($types)) {
+            $query->whereIn('Tipe Karyawan', $types);
+        }
+
+        $groups = $query->select('PWS')->distinct()->orderBy('PWS')
+            ->pluck('PWS')->filter()->values()->toArray();
+
+        return response()->json(['groups' => $groups]);
     }
 }

@@ -36,4 +36,5 @@ Route::group(['middleware' => ['auth', 'rules', 'access_log']], function () {
     Route::get('/hr/hrdashboard/wto-chart', 'HR\HrDashboardController@wtoChartData');
     Route::get('/hr/hrdashboard/wto-top-lembur', 'HR\HrDashboardController@wtoTopLembur');
     Route::get('/hr/hrdashboard/wto-names', 'HR\HrDashboardController@wtoNames');
+    Route::get('/hr/hrdashboard/pws-groups', 'HR\HrDashboardController@pwsGroups');
 });

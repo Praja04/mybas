@@ -43,6 +43,7 @@
                             <th>Dept</th>
                             <th>Sub Departmen</th>
                             <th>Section</th>
+                            <th>Group</th>
                             <th>Tgl In</th>
                             <th>Jam SPKL</th>
                             <th>Jam HOVT</th>
@@ -50,7 +51,7 @@
                         </tr>
                     </thead>
                     <tbody id="wtoTbody">
-                        <tr><td colspan="9" class="text-center text-muted">Klik "Terapkan Filter" untuk memuat data.</td></tr>
+                        <tr><td colspan="10" class="text-center text-muted">Klik "Terapkan Filter" untuk memuat data.</td></tr>
                     </tbody>
                 </table>
             </div>

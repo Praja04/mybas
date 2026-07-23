@@ -295,6 +295,32 @@
                     </div>
                 </div>
 
+                {{-- PWS / Group (Dropdown Multi-Select) --}}
+                <div class="col-md-2 mb-2">
+                    <label class="hd-form-label">Group</label>
+                    <div class="hd-multi-select" data-target="pws" data-placeholder="-- Semua Group --">
+                        <button type="button" class="hd-ms-btn">
+                            <span class="hd-ms-label">-- Semua Group --</span>
+                            <span class="hd-ms-caret">▾</span>
+                        </button>
+                        <div class="hd-ms-dropdown">
+                            <input type="text" class="hd-ms-search form-control form-control-sm" placeholder="Cari group...">
+                            <div class="hd-ms-actions">
+                                <button type="button" class="hd-ms-action" data-action="all">Pilih Semua</button>
+                                <button type="button" class="hd-ms-action" data-action="none">Kosongkan</button>
+                            </div>
+                            <div class="hd-ms-list" id="pwsList">
+                                @foreach ($pwsGroups as $g)
+                                    <label class="hd-ms-item">
+                                        <input type="checkbox" name="pws[]" value="{{ $g }}">
+                                        <span>{{ $g }}</span>
+                                    </label>
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="col-md-12 mb-2 d-flex align-items-end" style="gap:.5rem;">
                     <button type="submit" class="btn btn-primary btn-sm">Terapkan Filter</button>
                     <button type="button" class="btn btn-outline-secondary btn-sm" id="btnReset">Reset</button>
@@ -486,6 +512,7 @@
                         <th>Section</th>
                         <th>Tipe Karyawan</th>
                         <th>Jabatan</th>
+                        <th>Group</th>
                         <th>Jenis Kelamin</th>
                         <th>Work Status</th>
                         <th>Status Nikah</th>
@@ -495,7 +522,7 @@
                     </tr>
                 </thead>
                 <tbody id="dataTbody">
-                    <tr><td colspan="17" class="text-center text-muted">Silakan terapkan filter untuk melihat data.</td></tr>
+                    <tr><td colspan="18" class="text-center text-muted">Silakan terapkan filter untuk melihat data.</td></tr>
                 </tbody>
             </table>
         </div>
@@ -682,6 +709,7 @@
             departmen: getMultiSelectValues('departmen'),
             sub_departmen: getMultiSelectValues('sub_departmen'),
             tipe_karyawan: getMultiSelectValues('tipe_karyawan'),
+            pws: getMultiSelectValues('pws'),
             @if(!empty($typeKaryawanMode) && in_array($typeKaryawanMode, ['mitra_kerja', 'BAS'], true))
             type_karyawan: @json($typeKaryawanMode),
             @endif
@@ -691,6 +719,7 @@
         if (Array.isArray(p.departmen) && p.departmen.length === 0) delete p.departmen;
         if (Array.isArray(p.sub_departmen) && p.sub_departmen.length === 0) delete p.sub_departmen;
         if (Array.isArray(p.tipe_karyawan) && p.tipe_karyawan.length === 0) delete p.tipe_karyawan;
+        if (Array.isArray(p.pws) && p.pws.length === 0) delete p.pws;
 
         // Parse Rentang Data:
         //   end_date = snapshot untuk karyawan Aktif (Tgl Masuk <= end_date)
@@ -733,6 +762,39 @@
         return p;
     }
 
+    function loadPwsGroups() {
+        const params = {
+            departmen: getMultiSelectValues('departmen'),
+            sub_departmen: getMultiSelectValues('sub_departmen'),
+            tipe_karyawan: getMultiSelectValues('tipe_karyawan'),
+        };
+        if (Array.isArray(params.departmen) && params.departmen.length === 0) delete params.departmen;
+        if (Array.isArray(params.sub_departmen) && params.sub_departmen.length === 0) delete params.sub_departmen;
+        if (Array.isArray(params.tipe_karyawan) && params.tipe_karyawan.length === 0) delete params.tipe_karyawan;
+
+        const savedSelection = getMultiSelectValues('pws');
+
+        $.get("{{ url('/hr/hrdashboard/pws-groups') }}", params, function (res) {
+            const groups = res.groups || [];
+            const $list = $('#pwsList');
+            $list.empty();
+            groups.forEach(function (g) {
+                const safe = String(g).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+                const isChecked = savedSelection.indexOf(g) !== -1 ? 'checked' : '';
+                $list.append(
+                    '<label class="hd-ms-item">' +
+                        '<input type="checkbox" name="pws[]" value="' + safe + '" ' + isChecked + '>' +
+                        '<span>' + safe + '</span>' +
+                    '</label>'
+                );
+            });
+            const $wrapper = $('.hd-multi-select[data-target="pws"]');
+            if ($wrapper.length && typeof updateMsLabel === 'function') {
+                updateMsLabel($wrapper);
+            }
+        });
+    }
+
     function loadData() {
         let params = getFilterParams();
         $.get("{{ url('/hr/hrdashboard/data') }}", params, function (res) {
@@ -772,6 +834,7 @@
             renderDistribusiUsiaChart(res);
             renderHeadcountTrendChart(res);
         });
+        loadPwsGroups();
     }
 
     let employeeTypeChart = null;
@@ -1346,7 +1409,7 @@
     function renderTable(res) {
         let rows = '';
         if (!res.data || res.data.length === 0) {
-            rows = '<tr><td colspan="17" class="text-center text-muted">Tidak ada data yang cocok.</td></tr>';
+            rows = '<tr><td colspan="18" class="text-center text-muted">Tidak ada data yang cocok.</td></tr>';
         } else {
             res.data.forEach(r => {
                 let tglKeluar = (r.Aktif === 'N' || r.Aktif === 'n') ? (r['Valid From'] || '') : '';
@@ -1392,6 +1455,7 @@
                         <td>${escapeHtml(r.Section)}</td>
                         <td>${escapeHtml(r['Tipe Karyawan'])}</td>
                         <td>${escapeHtml(r.Jabatan)}</td>
+                        <td>${escapeHtml(r.PWS || '')}</td>
                         <td>${escapeHtml(r['Jenis Kelamin'])}</td>
                         <td>${escapeHtml(r['Work Status'])}</td>
                         <td>${escapeHtml(r['Status Nikah'])}</td>
@@ -1505,6 +1569,7 @@
             applyTipeKaryawanModePreselect();
         @endif
         currentPage = 1;
+        loadPwsGroups();
     });
 
     $('#btnExport').on('click', function () {
