@@ -970,6 +970,11 @@ class HrDashboardController extends Controller
             : now()->endOfDay();
         $startDate = (clone $endDate)->subMonths(23)->startOfMonth();
 
+        $snapshotDay = $request->get('snapshot_day');
+        $useCustomDay = $snapshotDay && $snapshotDay !== 'akhir_bulan'
+            && ctype_digit($snapshotDay) && (int)$snapshotDay >= 1 && (int)$snapshotDay <= 31;
+        $customDay = $useCustomDay ? (int)$snapshotDay : null;
+
         // Bangun 24 SUM(CASE WHEN ...) aggregations
         $selects  = [];
         $bindings = [];
@@ -979,7 +984,13 @@ class HrDashboardController extends Controller
         $i        = 0;
 
         while ($cursor <= $end) {
-            $monthEnd = (clone $cursor)->endOfMonth()->format('Y-m-d');
+            if ($customDay !== null) {
+                $lastDay = (clone $cursor)->endOfMonth()->day;
+                $day = min($customDay, $lastDay);
+                $monthEnd = (clone $cursor)->setDay($day)->format('Y-m-d');
+            } else {
+                $monthEnd = (clone $cursor)->endOfMonth()->format('Y-m-d');
+            }
             $alias    = 'm' . $i;
             $selects[] = "SUM(CASE WHEN `Tgl Masuk` <= ? "
                 . "AND (Aktif = 'Y' OR (Aktif = 'N' "

@@ -798,6 +798,7 @@
                     borderWidth: 0,
                     dataLabels: {
                         enabled: true,
+                        allowOverlap: true,
                         style: { fontSize: '16px', fontWeight: 700 },
                         formatter: function () { return Math.round(this.y); },
                     },

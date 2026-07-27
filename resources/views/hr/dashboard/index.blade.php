@@ -421,8 +421,17 @@
                 <div class="row">
                     <div class="col-md-12 mb-3">
                         <div class="hd-card" id="headcountTrendCard">
-                            <h4 style="display:flex; align-items:center; gap:.4rem;">
+                            <h4 style="display:flex; align-items:center; gap:.4rem; flex-wrap:wrap;">
                                 <span class="hd-chevron" style="visibility:hidden;"></span> Monthly Total HeadCount
+                                <span style="font-size:.75rem; font-weight:400; color:#666; margin-left:.5rem;">
+                                    Snapshot Day:
+                                    <select id="snapshotDay" class="form-control form-control-sm d-inline-block" style="width:auto; font-size:.75rem; padding:.1rem .4rem;">
+                                        <option value="akhir_bulan">Akhir Bulan</option>
+                                        @for ($d = 1; $d <= 31; $d++)
+                                            <option value="{{ $d }}">{{ $d }}</option>
+                                        @endfor
+                                    </select>
+                                </span>
                             </h4>
                             <div id="headcountTrendChart"></div>
                         </div>
@@ -710,6 +719,7 @@
             sub_departmen: getMultiSelectValues('sub_departmen'),
             tipe_karyawan: getMultiSelectValues('tipe_karyawan'),
             pws: getMultiSelectValues('pws'),
+            snapshot_day: $('#snapshotDay').val(),
             @if(!empty($typeKaryawanMode) && in_array($typeKaryawanMode, ['mitra_kerja', 'BAS'], true))
             type_karyawan: @json($typeKaryawanMode),
             @endif
