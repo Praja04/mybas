@@ -520,6 +520,24 @@
             $(id + " .progress-bar").css('opacity', "1");
         });
 
+        // Handle upload error - fix [object Object] display
+        myDropzone5.on("error", function(file, message) {
+            var errorMessage = '';
+            if (typeof message === 'string') {
+                errorMessage = message;
+            } else if (message && message.message) {
+                errorMessage = message.message;
+            } else {
+                errorMessage = 'Upload gagal. Silakan coba lagi.';
+            }
+            $(file.previewElement).find('[data-dz-errormessage]').text(errorMessage);
+        });
+
+        // Handle upload success
+        myDropzone5.on("success", function(file, response) {
+            $(file.previewElement).find('[data-dz-errormessage]').text('');
+        });
+
         // Hide the total progress bar when nothing's uploading anymore
         myDropzone5.on("complete", function(progress) {
             var thisProgressBar = id + " .dz-complete";
