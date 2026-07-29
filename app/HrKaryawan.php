@@ -13,4 +13,9 @@ class HrKaryawan extends Model
     {
         return $this->hasOne(Penghuni::class, 'nik', 'nik')->where('is_active', 'Y');
     }
+
+    public function spPelanggarans()
+    {
+        return $this->hasMany(SpPelanggaran::class, 'employee_id');
+    }
 }
