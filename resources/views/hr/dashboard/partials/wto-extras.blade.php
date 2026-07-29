@@ -1,5 +1,29 @@
 {{-- WT&O Data Table: di luar fullscreen wrap, hanya muncul saat tab WT&O aktif --}}
 <div id="wtoExtras" style="display:none;">
+    <style>
+        #wtoJamLemburDetailCard .sticky-col-l {
+            position: sticky;
+            left: 0;
+            z-index: 2;
+            background: #fff;
+            box-shadow: 2px 0 5px -2px rgba(0,0,0,.12);
+        }
+        #wtoJamLemburDetailCard thead .sticky-col-l {
+            z-index: 3;
+            background: #f5f5f5;
+        }
+        #wtoJamLemburDetailCard .sticky-col-r {
+            position: sticky;
+            right: 0;
+            z-index: 2;
+            background: #fff;
+            box-shadow: -2px 0 5px -2px rgba(0,0,0,.12);
+        }
+        #wtoJamLemburDetailCard thead .sticky-col-r {
+            z-index: 3;
+            background: #f5f5f5;
+        }
+    </style>
     <div class="hd-card" id="wtoJamLemburDetailCard">
         <h5 class="hd-card-toggle" data-target="#wtoJamLemburCollapse" style="cursor:pointer; user-select:none;">
             <span class="hd-chevron"></span> Detail Jam Lembur per Departemen

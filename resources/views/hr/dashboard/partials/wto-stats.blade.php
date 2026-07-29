@@ -56,6 +56,20 @@
                         Grafik Jam Lembur per Departemen
                     </h4>
                     <div style="overflow-x: auto;"><div id="wtoChartJamLemburPerDept" style="min-height: 250px;"></div></div>
+                    <div id="wtoChartJamLemburPerDeptLegend" style="
+                        display: flex;
+                        flex-wrap: wrap;
+                        justify-content: center;
+                        align-items: center;
+                        gap: .85rem 1.25rem;
+                        padding: .55rem .75rem;
+                        margin-top: .5rem;
+                        background: rgba(74, 20, 140, 0.05);
+                        border: 1px solid rgba(74, 20, 140, 0.18);
+                        border-radius: 4px;
+                        font-size: 14px;
+                        font-weight: 600;
+                    "></div>
                 </div>
             </div>
         </div>

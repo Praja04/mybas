@@ -90,6 +90,7 @@ class ProcessHrMasterEmployeeImport implements ShouldQueue
                         'Section'          => $row['Section'],
                         'Tipe Karyawan'    => $row['Tipe Karyawan'],
                         'Jabatan'          => $row['Jabatan'],
+                        'Level'            => $row['Level'],
                         'PWS'              => $row['PWS'],
                         'Jenis Kelamin'    => $row['Jenis Kelamin'],
                         'Work Status'      => $row['Work Status'],
@@ -219,6 +220,7 @@ class ProcessHrMasterEmployeeImport implements ShouldQueue
                 'Section'         => $section,
                 'Tipe Karyawan'   => $this->mitraKerjaChoice ?: $this->str($data, 11),
                 'Jabatan'         => $this->str($data, 12),
+                'Level'           => $this->str($data, 15),
                 'PWS'             => $this->mitraKerjaChoice ? $this->str($data, 13) : $this->str($data, 16),
                 'Jenis Kelamin'   => $this->str($data, 17 + $colOffset),
                 'Work Status'     => $this->str($data, 20 + $colOffset),
@@ -281,7 +283,7 @@ class ProcessHrMasterEmployeeImport implements ShouldQueue
 
         $update = [
             'Nama', 'Tgl Lahir', 'Tgl Masuk', 'Departmen', 'Sub Departmen',
-            'Section', 'Tipe Karyawan', 'Jabatan', 'PWS', 'Jenis Kelamin', 'Work Status',
+            'Section', 'Tipe Karyawan', 'Jabatan', 'Level', 'PWS', 'Jenis Kelamin', 'Work Status',
             'Status Nikah', 'Aktif', 'Valid From', 'send_by_username',
             'batch_id', 'status', 'updated_at',
         ];

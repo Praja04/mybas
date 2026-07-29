@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\HR;
 
 use App\Http\Controllers\Controller;
+use App\Models\HR\HrIzin;
 use App\Models\HR\HrMasterEmployee;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -249,6 +250,10 @@ class HrDashboardController extends Controller
             'typeKaryawanMode'    => $typeKaryawanMode,
             'canFilterDepartmen'  => true,
             'canViewTopLembur'    => $this->hasTopLemburAccess(),
+            'izinDepartments'     => $departments,
+            'izinSubDepartments'  => $subDepartments,
+            'canViewTopSkmk'      => true,
+            'canViewSakitRatio'   => true,
         ]);
     }
 
@@ -1570,5 +1575,439 @@ class HrDashboardController extends Controller
             ->pluck('PWS')->filter()->values()->toArray();
 
         return response()->json(['groups' => $groups]);
+    }
+
+    private function expandKategoriIjin(array $kategoriList): array
+    {
+        $map = [
+            'Cuti'    => ['CB', 'CDC1', 'CDC2', 'CDC3', 'CIM', 'CK', 'CKT', 'CH', 'CM', 'CNA', 'CHJ', 'C2', 'C', 'CUT'],
+            'Sakit'   => ['CHD', 'IM', 'KD', 'S'],
+            'Sakit KK' => ['SKK'],
+            'Mangkir' => ['A'],
+        ];
+        $codes = [];
+        foreach ($kategoriList as $cat) {
+            if (isset($map[$cat])) {
+                $codes = array_merge($codes, $map[$cat]);
+            }
+        }
+        return array_values(array_unique($codes));
+    }
+
+    private function buildIzinFilteredQuery(Request $request): \Illuminate\Database\Eloquent\Builder
+    {
+        $query = HrIzin::query()
+            ->leftJoin('hr_master_employee as hme', 'hme.NIK', '=', 'hr_izin.nik')
+            ->select(
+                'hr_izin.*',
+                DB::raw('hme.`Departmen` as dept_hme'),
+                DB::raw('hme.`Sub Departmen` as sub_departmen'),
+                DB::raw('hme.`Tipe Karyawan` as tipe_karyawan_hme'),
+                DB::raw('hme.`PWS` as pws')
+            );
+
+        $depts = $this->getArrayFilter($request, 'departmen');
+        if (!empty($depts)) {
+            $query->whereIn(DB::raw('hme.`Departmen`'), $depts);
+        }
+        $subs = $this->getArrayFilter($request, 'sub_departmen');
+        if (!empty($subs)) {
+            $query->whereIn(DB::raw('hme.`Sub Departmen`'), $subs);
+        }
+        $types = $this->getArrayFilter($request, 'tipe_karyawan');
+        if (!empty($types)) {
+            $query->whereIn(DB::raw('hme.`Tipe Karyawan`'), $types);
+        }
+        $pwsGroups = $this->getArrayFilter($request, 'pws');
+        if (!empty($pwsGroups)) {
+            $query->whereIn(DB::raw('hme.`PWS`'), $pwsGroups);
+        }
+
+        $izinIjin = $this->getArrayFilter($request, 'izin_ijin');
+        if (!empty($izinIjin)) {
+            $codes = $this->expandKategoriIjin($izinIjin);
+            if (!empty($codes)) {
+                $query->whereIn('hr_izin.kode_ijin', $codes);
+            }
+        }
+
+        $nama = $this->getArrayFilter($request, 'izin_nama');
+        if (!empty($nama)) {
+            $query->whereIn('hr_izin.nama', $nama);
+        }
+
+        $tglFrom = $request->get('izin_tgl_from');
+        $tglTo   = $request->get('izin_tgl_to');
+        if (!empty($tglFrom)) {
+            $query->whereDate('hr_izin.tgl', '>=', $tglFrom);
+        }
+        if (!empty($tglTo)) {
+            $query->whereDate('hr_izin.tgl', '<=', $tglTo);
+        }
+
+        return $query;
+    }
+
+    public function izinData(Request $request)
+    {
+        if (! $this->hasDashboardAccess()) {
+            return response()->json(['error' => 'forbidden'], 403);
+        }
+        $request = $this->sanitizeFilterRequest($request);
+
+        $base = $this->buildIzinFilteredQuery($request);
+
+        $totalHariIzin   = (clone $base)->count();
+        $totalHariCuti   = (clone $base)->whereIn('hr_izin.kode_ijin', $this->expandKategoriIjin(['Cuti']))->count();
+        $totalHariSakit  = (clone $base)->whereIn('hr_izin.kode_ijin', $this->expandKategoriIjin(['Sakit', 'Sakit KK']))->count();
+        $totalHariMangkir = (clone $base)->where('hr_izin.kode_ijin', 'A')->count();
+
+        $perPage = (int) $request->get('per_page', 25);
+        $perPage = max(1, min($perPage, 100));
+        $page = max(1, (int) $request->get('page', 1));
+
+        $total = (clone $base)->count();
+        $rows = (clone $base)
+            ->orderBy('hr_izin.tgl', 'desc')
+            ->orderBy('hr_izin.nik')
+            ->forPage($page, $perPage)
+            ->get();
+
+        return response()->json([
+            'stats' => [
+                'total_hari_izin'    => $totalHariIzin,
+                'total_hari_cuti'    => $totalHariCuti,
+                'total_hari_sakit'   => $totalHariSakit,
+                'total_hari_mangkir' => $totalHariMangkir,
+            ],
+            'data' => $rows,
+            'meta' => [
+                'page'      => $page,
+                'per_page'  => $perPage,
+                'total'     => $total,
+                'last_page' => max(1, (int) ceil($total / $perPage)),
+            ],
+        ]);
+    }
+
+    public function izinExport(Request $request)
+    {
+        if (! $this->hasDashboardAccess()) {
+            return response()->json(['error' => 'forbidden'], 403);
+        }
+        $request = $this->sanitizeFilterRequest($request);
+        $rows = $this->buildIzinFilteredQuery($request)
+            ->orderBy('hr_izin.tgl', 'desc')
+            ->orderBy('hr_izin.nik')
+            ->get();
+
+        $filename = 'izin_export_' . date('Ymd_His') . '.csv';
+        $headers = [
+            'Content-Type'        => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ];
+
+        $callback = function () use ($rows) {
+            $fh = fopen('php://output', 'w');
+            fwrite($fh, "\xEF\xBB\xBF");
+            fputcsv($fh, ['NIK', 'Nama', 'Dept', 'Sub Departmen', 'Group', 'Section', 'TGL', 'Kode Ijin', 'Ijin', 'Keterangan', 'No SPI']);
+            foreach ($rows as $r) {
+                fputcsv($fh, [
+                    $r->nik, $r->nama, $r->dept_hme ?? $r->dept,
+                    $r->sub_departmen, $r->pws, $r->section,
+                    $r->tgl, $r->kode_ijin, HrIzin::getKategoriIjin($r->kode_ijin), $r->keterangan, $r->no_spi,
+                ]);
+            }
+            fclose($fh);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    public function izinNames(Request $request)
+    {
+        if (! $this->hasDashboardAccess()) {
+            return response()->json(['error' => 'forbidden'], 403);
+        }
+        $request = $this->sanitizeFilterRequest($request);
+        $names = $this->buildIzinFilteredQuery($request)
+            ->distinct()
+            ->orderBy('hr_izin.nama')
+            ->pluck('hr_izin.nama')
+            ->filter()
+            ->values()
+            ->toArray();
+
+        return response()->json(['names' => $names]);
+    }
+
+    public function izinChartData(Request $request)
+    {
+        if (! $this->hasDashboardAccess()) {
+            return response()->json(['error' => 'forbidden'], 403);
+        }
+        $request = $this->sanitizeFilterRequest($request);
+        $base = $this->buildIzinFilteredQuery($request);
+
+        $rawRows = (clone $base)
+            ->select(
+                DB::raw("DATE_FORMAT(hr_izin.tgl, '%Y-%m') as month"),
+                DB::raw("CASE
+                    WHEN hr_izin.kode_ijin IN ('" . implode("','", $this->expandKategoriIjin(['Cuti'])) . "') THEN 'Cuti'
+                    WHEN hr_izin.kode_ijin IN ('" . implode("','", $this->expandKategoriIjin(['Sakit'])) . "') THEN 'Sakit'
+                    WHEN hr_izin.kode_ijin IN ('" . implode("','", $this->expandKategoriIjin(['Sakit KK'])) . "') THEN 'Sakit KK'
+                    WHEN hr_izin.kode_ijin = 'A' THEN 'Mangkir'
+                    ELSE 'Lainnya'
+                END as kategori"),
+                DB::raw("COUNT(*) as total"),
+                DB::raw("COUNT(DISTINCT hr_izin.nik) as distinct_nik")
+            )
+            ->groupBy(DB::raw("DATE_FORMAT(hr_izin.tgl, '%Y-%m')"), 'kategori')
+            ->orderBy('month')
+            ->get();
+
+        $months = $rawRows->pluck('month')->unique()->sort()->values()->toArray();
+        if (empty($months)) {
+            $months = [date('Y-m')];
+        } else {
+            $first = $months[0];
+            $last  = end($months);
+            $cursor = \Carbon\Carbon::parse($first . '-01')->startOfMonth();
+            $end    = \Carbon\Carbon::parse($last . '-01')->startOfMonth();
+            $months = [];
+            while ($cursor <= $end) {
+                $months[] = $cursor->format('Y-m');
+                $cursor->addMonth();
+            }
+        }
+
+        $kategoris = ['Cuti', 'Sakit', 'Sakit KK', 'Mangkir'];
+        $rows = [];
+        $distinctNik = [];
+        foreach ($kategoris as $kat) {
+            $rows[$kat] = [];
+            $distinctNik[$kat] = [];
+        }
+
+        foreach ($months as $m) {
+            foreach ($kategoris as $kat) {
+                $match = $rawRows->first(function ($r) use ($m, $kat) {
+                    return $r->month === $m && $r->kategori === $kat;
+                });
+                $rows[$kat][] = $match ? (int) $match->total : 0;
+                $distinctNik[$kat][] = $match ? (int) $match->distinct_nik : 0;
+            }
+        }
+
+        return response()->json([
+            'months'      => $months,
+            'rows'        => $rows,
+            'distinct_nik' => $distinctNik,
+        ]);
+    }
+
+    public function izinTopSakit(Request $request)
+    {
+        if (! $this->hasDashboardAccess()) {
+            return response()->json(['error' => 'forbidden'], 403);
+        }
+        $request = $this->sanitizeFilterRequest($request);
+        $base = $this->buildIzinFilteredQuery($request)
+            ->whereIn('hr_izin.kode_ijin', $this->expandKategoriIjin(['Sakit']));
+
+        $rows = (clone $base)
+            ->select(
+                'hr_izin.nik', 'hr_izin.nama',
+                DB::raw('hme.`Departmen` as dept'),
+                DB::raw('hme.`Sub Departmen` as sub_departmen'),
+                DB::raw('hme.`PWS` as pws'),
+                DB::raw('COUNT(*) as total_records')
+            )
+            ->groupBy('hr_izin.nik', 'hr_izin.nama', DB::raw('hme.`Departmen`'), DB::raw('hme.`Sub Departmen`'), DB::raw('hme.`PWS`'))
+            ->orderByDesc('total_records')
+            ->limit(10)
+            ->get();
+
+        return response()->json(['data' => $rows]);
+    }
+
+    public function izinTopMangkir(Request $request)
+    {
+        if (! $this->hasDashboardAccess()) {
+            return response()->json(['error' => 'forbidden'], 403);
+        }
+        $request = $this->sanitizeFilterRequest($request);
+        $base = $this->buildIzinFilteredQuery($request)
+            ->where('hr_izin.kode_ijin', 'A');
+
+        $rows = (clone $base)
+            ->select(
+                'hr_izin.nik', 'hr_izin.nama',
+                DB::raw('hme.`Departmen` as dept'),
+                DB::raw('hme.`Sub Departmen` as sub_departmen'),
+                DB::raw('hme.`PWS` as pws'),
+                DB::raw('COUNT(*) as total_records')
+            )
+            ->groupBy('hr_izin.nik', 'hr_izin.nama', DB::raw('hme.`Departmen`'), DB::raw('hme.`Sub Departmen`'), DB::raw('hme.`PWS`'))
+            ->orderByDesc('total_records')
+            ->limit(10)
+            ->get();
+
+        return response()->json(['data' => $rows]);
+    }
+
+
+    public function izinSakitRatioDept(Request $request)
+    {
+        if (! $this->hasDashboardAccess()) {
+            return response()->json(['error' => 'forbidden'], 403);
+        }
+        $request = $this->sanitizeFilterRequest($request);
+
+        $tglFrom = $request->get('izin_tgl_from');
+        $tglTo   = $request->get('izin_tgl_to');
+        $drillDept = $request->get('drilldown_dept');
+
+        $sakitCodes = $this->expandKategoriIjin(['Sakit']);
+
+        $sickDaysQuery = HrIzin::query()
+            ->leftJoin('hr_master_employee as hme', 'hme.NIK', '=', 'hr_izin.nik')
+            ->whereIn('hr_izin.kode_ijin', $sakitCodes);
+
+        if (!empty($tglFrom)) {
+            $sickDaysQuery->whereDate('hr_izin.tgl', '>=', $tglFrom);
+        }
+        if (!empty($tglTo)) {
+            $sickDaysQuery->whereDate('hr_izin.tgl', '<=', $tglTo);
+        }
+
+        $types = $this->getArrayFilter($request, 'tipe_karyawan');
+        if (!empty($types)) {
+            $sickDaysQuery->whereIn(DB::raw('hme.`Tipe Karyawan`'), $types);
+        }
+
+        $depts = $this->getArrayFilter($request, 'departmen');
+        if (!empty($depts)) {
+            $sickDaysQuery->whereIn(DB::raw('hme.`Departmen`'), $depts);
+        }
+        $subs = $this->getArrayFilter($request, 'sub_departmen');
+        if (!empty($subs)) {
+            $sickDaysQuery->whereIn(DB::raw('hme.`Sub Departmen`'), $subs);
+        }
+        $pws = $this->getArrayFilter($request, 'pws');
+        if (!empty($pws)) {
+            $sickDaysQuery->whereIn('hme.PWS', $pws);
+        }
+        $nama = $this->getArrayFilter($request, 'izin_nama');
+        if (!empty($nama)) {
+            $sickDaysQuery->whereIn('hr_izin.nama', $nama);
+        }
+
+        $groupByColumn = $drillDept ? 'Sub Departmen' : 'Departmen';
+        $groupByField  = DB::raw('hme.`' . $groupByColumn . '`');
+        $labelField = $drillDept ? 'sub_departmen' : 'dept';
+
+        // Simpan clone bersih sebelum filter drilldown (untuk fallback working days)
+        $workingDaysBaseQuery = clone $sickDaysQuery;
+
+        if ($drillDept) {
+            $sickDaysQuery->where(DB::raw('hme.`Departmen`'), $drillDept);
+        }
+
+        $sickDays = $sickDaysQuery
+            ->select(
+                DB::raw('hme.`' . $groupByColumn . '` as label'),
+                DB::raw('COUNT(DISTINCT hr_izin.nik) as headcount_sick'),
+                DB::raw('COUNT(*) as sick_days')
+            )
+            ->groupBy($groupByField)
+            ->orderByDesc('sick_days')
+            ->get();
+
+        $headcountQuery = HrMasterEmployee::query()->where('Aktif', 'Y');
+        if ($drillDept) {
+            $headcountQuery->where('Departmen', $drillDept);
+        }
+        if (!empty($types)) {
+            $headcountQuery->whereIn('Tipe Karyawan', $types);
+        }
+        if (!empty($depts)) {
+            $headcountQuery->whereIn('Departmen', $depts);
+        }
+        if (!empty($subs)) {
+            $headcountQuery->whereIn(DB::raw('`Sub Departmen`'), $subs);
+        }
+        if (!empty($pws)) {
+            $headcountQuery->whereIn('PWS', $pws);
+        }
+        $headcounts = $headcountQuery
+            ->select(
+                $groupByColumn . ' as label',
+                DB::raw('COUNT(*) as headcount')
+            )
+            ->groupBy($groupByColumn)
+            ->pluck('headcount', 'label');
+
+        // Working days: Senin–Sabtu (Minggu libur). Fallback ke rentang data jika tgl kosong.
+        $workingDays = 0;
+        $rangeStart  = null;
+        $rangeEnd    = null;
+        if (!empty($tglFrom) && !empty($tglTo)) {
+            $rangeStart = $tglFrom;
+            $rangeEnd   = $tglTo;
+        } else {
+            $minMax = (clone $workingDaysBaseQuery)
+                ->selectRaw('MIN(hr_izin.tgl) as min_tgl, MAX(hr_izin.tgl) as max_tgl')
+                ->first();
+            if ($minMax && $minMax->min_tgl && $minMax->max_tgl) {
+                $rangeStart = $minMax->min_tgl;
+                $rangeEnd   = $minMax->max_tgl;
+            }
+        }
+        if ($rangeStart && $rangeEnd) {
+            $cursor = \Carbon\Carbon::parse($rangeStart)->startOfDay();
+            $end    = \Carbon\Carbon::parse($rangeEnd)->startOfDay();
+            while ($cursor->lte($end)) {
+                if ($cursor->dayOfWeek !== \Carbon\Carbon::SUNDAY) {
+                    $workingDays++;
+                }
+                $cursor->addDay();
+            }
+        }
+        $workingDays = max(1, $workingDays);
+
+        // Merge, hitung ratio, sort, lalu top 10 (non-drilldown)
+        $data = [];
+        foreach ($sickDays as $sd) {
+            $label = $sd->label ?: 'Unknown';
+            $hc = (int) ($headcounts[$label] ?? 0);
+            if ($hc === 0) {
+                continue;
+            }
+            $data[] = [
+                'label'          => $label,
+                'sick_days'      => (int) $sd->sick_days,
+                'headcount'      => $hc,
+                'headcount_sick' => (int) $sd->headcount_sick,
+                'ratio'          => round(((int) $sd->sick_days) / ($hc * $workingDays) * 100, 2),
+                'working_days'   => $workingDays,
+            ];
+        }
+
+        // Sort by ratio DESC
+        usort($data, fn ($a, $b) => $b['ratio'] <=> $a['ratio']);
+
+        if (!$drillDept) {
+            $data = array_slice($data, 0, 10);
+        }
+
+        return response()->json([
+            'data'          => $data,
+            'working_days'  => $workingDays,
+            'tgl_from'      => $tglFrom,
+            'tgl_to'        => $tglTo,
+            'is_drilldown'  => !empty($drillDept),
+            'drill_dept'    => $drillDept,
+        ]);
     }
 }
