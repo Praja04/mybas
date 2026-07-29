@@ -331,8 +331,11 @@
         </div>
     </div>
 
-    {{-- WT&O Filter (di bawah Filter Data, hanya muncul saat tab WT&O aktif) --}}
-    @include('hr.dashboard.partials.wto-filter')
+{{-- WT&O Filter (di bawah Filter Data, hanya muncul saat tab WT&O aktif) --}}
+@include('hr.dashboard.partials.wto-filter')
+
+{{-- Izin Filter (di bawah WT&O Filter, hanya muncul saat tab Izin aktif) --}}
+@include('hr.dashboard.partials.iz-filter')
 
     {{-- TAB NAVIGATION --}}
     <ul class="nav nav-tabs hd-tab-nav" id="hdDashboardTabs" role="tablist" style="display:none;">
@@ -346,6 +349,15 @@
                 <i class="la la-clock-o"></i> Working Time &amp; Overtime Dashboard
             </button>
         </li>
+        @if ($typeKaryawanMode =="BAS")
+        <li class="nav-item" role="presentation">
+            <button class="nav-link hd-tab-btn" id="hdTabIzinBtn" data-target="hdIzinSection" type="button" role="tab">
+                <i class="la la-file-text-o"></i> Lost Workdays Dashboard
+            </button>
+        </li>
+        @else
+        
+        @endif
         <li class="nav-item ms-auto align-self-center" style="padding-right:.75rem;">
             <button type="button" id="btnToggleAutoCycle"
                     class="btn btn-sm btn-outline-secondary"
@@ -426,10 +438,8 @@
                                 <span style="font-size:.75rem; font-weight:400; color:#666; margin-left:.5rem;">
                                     Snapshot Day:
                                     <select id="snapshotDay" class="form-control form-control-sm d-inline-block" style="width:auto; font-size:.75rem; padding:.1rem .4rem;">
-                                        <option value="akhir_bulan">Akhir Bulan</option>
-                                        @for ($d = 1; $d <= 31; $d++)
-                                            <option value="{{ $d }}">{{ $d }}</option>
-                                        @endfor
+                                        <option value="akhir_bulan">Periode 1-31 (Periode Bulan)</option>
+                                        <option value="21">Periode 21-20 (Periode Gaji)</option>
                                     </select>
                                 </span>
                             </h4>
@@ -482,10 +492,16 @@
 
         {{-- TAB CONTENT: Working Time & Overtime (WT&O) - stats only, in fullscreen wrap --}}
         @include('hr.dashboard.partials.wto-stats')
+
+        {{-- TAB CONTENT: Izin (Lost Workdays) - stats only, in fullscreen wrap --}}
+        @include('hr.dashboard.partials.iz-stats')
     </div>
 
     {{-- WT&O Extras (filter + data table) - OUTSIDE fullscreen wrap --}}
     @include('hr.dashboard.partials.wto-extras')
+
+    {{-- Izin Extras (data table + top 10 + sakit ratio) - OUTSIDE fullscreen wrap --}}
+    @include('hr.dashboard.partials.iz-extras')
 
     {{-- DATA TABLE --}}
     <div class="hd-card" id="dataCard" style="display:none;">
@@ -1611,5 +1627,8 @@
 
 {{-- WT&O scripts: filter, table, auto-cycle antar section --}}
 @include('hr.dashboard.partials.wto-scripts')
+
+{{-- Izin scripts: filter, table, names, chart --}}
+@include('hr.dashboard.partials.iz-scripts')
 
 @endpush
