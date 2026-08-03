@@ -349,15 +349,11 @@
                 <i class="la la-clock-o"></i> Working Time &amp; Overtime Dashboard
             </button>
         </li>
-        @if ($typeKaryawanMode =="BAS")
         <li class="nav-item" role="presentation">
             <button class="nav-link hd-tab-btn" id="hdTabIzinBtn" data-target="hdIzinSection" type="button" role="tab">
                 <i class="la la-file-text-o"></i> Lost Workdays Dashboard
             </button>
         </li>
-        @else
-        
-        @endif
         <li class="nav-item ms-auto align-self-center" style="padding-right:.75rem;">
             <button type="button" id="btnToggleAutoCycle"
                     class="btn btn-sm btn-outline-secondary"
@@ -500,7 +496,7 @@
     {{-- WT&O Extras (filter + data table) - OUTSIDE fullscreen wrap --}}
     @include('hr.dashboard.partials.wto-extras')
 
-    {{-- Izin Extras (data table + top 10 + sakit ratio) - OUTSIDE fullscreen wrap --}}
+    {{-- Izin Extras (data table + top 10 + sakit/mangkir ratio) - OUTSIDE fullscreen wrap --}}
     @include('hr.dashboard.partials.iz-extras')
 
     {{-- DATA TABLE --}}

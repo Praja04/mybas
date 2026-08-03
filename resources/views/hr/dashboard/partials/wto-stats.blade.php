@@ -55,7 +55,7 @@
                         <span class="hd-chevron" style="visibility:hidden;"></span>
                         Grafik Jam Lembur per Departemen
                     </h4>
-                    <div style="overflow-x: auto;"><div id="wtoChartJamLemburPerDept" style="min-height: 250px;"></div></div>
+                    <div style="overflow-x: auto;"><div id="wtoChartJamLemburPerDept" style="min-height: 210px;"></div></div>
                     <div id="wtoChartJamLemburPerDeptLegend" style="
                         display: flex;
                         flex-wrap: wrap;
