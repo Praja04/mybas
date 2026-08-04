@@ -39,7 +39,16 @@
 </style>
 
 <div class="container-fluid">
-    <h1 class="mk-page-title">Upload File Mangkir HRDASH</h1>
+    <h1 class="mk-page-title">Upload File Mangkir HRDASH @if(!empty($isMitraKerja) && $isMitraKerja)Mitra Kerja @endif</h1>
+
+    @if(!empty($isMitraKerja) && $isMitraKerja)
+        <div class="alert alert-warning" style="font-size:.85rem; padding:.5rem .75rem;">
+            <i class="fas fa-info-circle"></i>
+            <strong>Mode Mitra Kerja aktif.</strong>
+            Gunakan template mangkir mitra kerja dengan kolom: NIK, Nama, Company, Dept, Section, Business Area, Tgl, Kode Shift, Shift Time, Break Time, No Tukar Shift, Keterangan.
+            Hanya baris dengan Keterangan <strong>"Alpa"</strong> yang diimport (Kode Ijin otomatis A).
+        </div>
+    @endif
 
     <div class="mk-card">
         <h5>Import Mangkir HRDASH CSV</h5>
@@ -49,11 +58,14 @@
         </p>
         <p class="text-muted" style="font-size:.85rem; margin-bottom:1rem;">
             <strong class="text-warning">Kode Ijin otomatis di-set "A" (Mangkir).</strong>
-            No SPI dan Keterangan dikosongkan otomatis.
+            No SPI dikosongkan otomatis.
         </p>
 
         <form id="formUpload" enctype="multipart/form-data">
             @csrf
+            @if(!empty($isMitraKerja) && $isMitraKerja)
+                <input type="hidden" name="type_karyawan" value="mitra_kerja">
+            @endif
             <div class="row align-items-end">
                 <div class="col-md-6">
                     <label class="form-label" style="font-weight:600;">File CSV:</label>
@@ -67,20 +79,39 @@
             </div>
         </form>
 
-        <div class="mt-3 p-2" style="background:#f5f5f5; font-size:.8rem;">
-            <strong>Kolom CSV (baris 1) — 12 kolom:</strong>
-            NIK, Nama, Company, Dept, Section, Business Area, Tgl, Kode Shift, Shift Time, Break Time, No Tukar Shift, Keterangan
-            <br><br>
-            <strong>Kolom yang diambil (5):</strong>
-            NIK, Nama, Dept, Section, Tgl
-            <br>
-            <strong>Kolom diabaikan:</strong>
-            Company, Business Area, Kode Shift, Shift Time, Break Time, No Tukar Shift, Keterangan
-            <br>
-            <strong>Kode Ijin otomatis:</strong> A (Mangkir) &middot;
-            <strong>No SPI:</strong> NULL &middot;
-            <strong>Keterangan:</strong> NULL
-        </div>
+        @if(!empty($isMitraKerja) && $isMitraKerja)
+            <div class="mt-3 p-2" style="background:#f5f5f5; font-size:.8rem;">
+                <strong>Template CSV Mitra Kerja:</strong><br>
+                <strong>Baris 1 (Judul):</strong> judul bebas (mis. "Time Validation - Mangkir")<br>
+                <strong>Baris 2 (Header) — 12 kolom:</strong>
+                NIK, Nama, Company, Dept, Section, Business Area, Tgl, Kode Shift, Shift Time, Break Time, No Tukar Shift, Keterangan
+                <br>
+                <strong>Baris 3+ (Value):</strong> isi data sesuai header.<br><br>
+                <strong>Kolom yang diambil (6):</strong>
+                NIK, Nama, Dept, Section, Tgl, Keterangan
+                <br>
+                <strong>Kolom diabaikan:</strong>
+                Company, Business Area, Kode Shift, Shift Time, Break Time, No Tukar Shift
+                <br>
+                <strong>Kode Ijin otomatis:</strong> A (Mangkir) &middot; hanya jika Keterangan = <strong>"Alpa"</strong> &middot;
+                <strong>No SPI:</strong> NULL
+            </div>
+        @else
+            <div class="mt-3 p-2" style="background:#f5f5f5; font-size:.8rem;">
+                <strong>Kolom CSV (baris 1) — 12 kolom:</strong>
+                NIK, Nama, Company, Dept, Section, Business Area, Tgl, Kode Shift, Shift Time, Break Time, No Tukar Shift, Keterangan
+                <br><br>
+                <strong>Kolom yang diambil (5):</strong>
+                NIK, Nama, Dept, Section, Tgl
+                <br>
+                <strong>Kolom diabaikan:</strong>
+                Company, Business Area, Kode Shift, Shift Time, Break Time, No Tukar Shift, Keterangan
+                <br>
+                <strong>Kode Ijin otomatis:</strong> A (Mangkir) &middot;
+                <strong>No SPI:</strong> NULL &middot;
+                <strong>Keterangan:</strong> NULL
+            </div>
+        @endif
     </div>
 
     <div class="mk-card">
@@ -100,8 +131,13 @@
                 <label class="form-label" style="font-weight:600;">Tipe Karyawan</label>
                 <select class="form-control form-control-sm" id="orphanTipe">
                     <option value="">-- Pilih --</option>
-                    <option value="Staff">Staff</option>
-                    <option value="Non Staff">Non Staff</option>
+                    @if(!empty($isMitraKerja) && $isMitraKerja)
+                        <option value="Fortuna">Fortuna</option>
+                        <option value="KMJ">KMJ</option>
+                    @else
+                        <option value="Staff">Staff</option>
+                        <option value="Non Staff">Non Staff</option>
+                    @endif
                 </select>
             </div>
             <div class="col-md-3">
@@ -343,6 +379,10 @@
 <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/id.js"></script>
 <script src="{{ asset('assets/velzon/libs/sweetalert2/sweetalert2.min.js') }}"></script>
 <script>
+    const TYPE_KARYAWAN_MODE = @json($typeKaryawan ?? null);
+    const IS_MITRA_KERJA = TYPE_KARYAWAN_MODE === 'mitra_kerja';
+    const ORPHAN_TIPE_LABEL = IS_MITRA_KERJA ? 'Fortuna / KMJ' : 'Staff / Non Staff';
+
     let currentBatchId = null;
     let currentBatchFileName = null;
     let currentPage = 1;
@@ -438,7 +478,7 @@
     }
 
     function loadHistory() {
-        $.get("{{ url('/hr/upload-file-mangkir-hrdash/history') }}", { page: historyPage, per_page: 5 }, function (res) {
+        $.get("{{ url('/hr/upload-file-mangkir-hrdash/history') }}", { page: historyPage, per_page: 5, type_karyawan: TYPE_KARYAWAN_MODE }, function (res) {
             let html = '';
             if (!res.data || res.data.length === 0) {
                 html = '<p class="text-muted">Belum ada riwayat import.</p>';
@@ -839,7 +879,8 @@
             {
                 search:   $('#searchInput').val(),
                 page:     recCurrentPage,
-                per_page: $('#recPerPage').val()
+                per_page: $('#recPerPage').val(),
+                type_karyawan: TYPE_KARYAWAN_MODE
             },
             function (res) {
                 let rows = '';
@@ -1009,7 +1050,7 @@
         }
         const tipe = $('#orphanTipe').val();
         if (!tipe) {
-            Swal.fire('Peringatan', 'Pilih Tipe Karyawan (Staff / Non Staff) terlebih dahulu.', 'warning');
+            Swal.fire('Peringatan', 'Pilih Tipe Karyawan (' + ORPHAN_TIPE_LABEL + ') terlebih dahulu.', 'warning');
             return;
         }
         orphanTglFrom = range.from;
@@ -1018,7 +1059,7 @@
 
         $('#btnCheckOrphans').prop('disabled', true).html('<i class="la la-spinner la-spin"></i> Memuat...');
         $.get("{{ url('/hr/upload-file-mangkir-hrdash/check-orphans') }}/" + currentBatchId,
-            { tgl_from: orphanTglFrom, tgl_to: orphanTglTo, tipe: orphanTipe },
+            { tgl_from: orphanTglFrom, tgl_to: orphanTglTo, tipe: orphanTipe, type_karyawan: TYPE_KARYAWAN_MODE },
             function (res) {
                 if (!res.success) {
                     Swal.fire('Error', res.message || 'Gagal mengecek data.', 'error');

@@ -46,7 +46,7 @@
 
     @if (isset($canViewTopSkmk) && $canViewTopSkmk)
     {{-- Web Speech API: zero server-side dependency, suara dari browser --}}
-    <div class="hd-card mt-2" id="izinTopSkmkLoopCard" style="background:linear-gradient(135deg,#f3e5f5 0%,#e1f5fe 100%);">
+    {{-- <div class="hd-card mt-2" id="izinTopSkmkLoopCard" style="background:linear-gradient(135deg,#f3e5f5 0%,#e1f5fe 100%);">
         <div class="d-flex justify-content-between align-items-center flex-wrap" style="gap:.5rem;">
             <div>
                 <h5 style="margin:0; font-size:1rem; font-weight:700; color:#4a148c;">
@@ -66,7 +66,7 @@
                 </button>
             </div>
         </div>
-    </div>
+    </div> --}}
 
     <div class="hd-card mt-2" id="izinTopSakitCard">
         <h5 class="hd-card-toggle" data-target="#izinTopSakitCollapse" style="cursor:pointer; user-select:none;">
@@ -99,12 +99,12 @@
             <span class="hd-chevron"></span> Top 10 Karyawan Mangkir
         </h5>
         <div class="collapse show" id="izinTopMangkirCollapse">
-            <div class="d-flex justify-content-between align-items-center mb-2" style="font-size:.82rem;">
+            {{-- <div class="d-flex justify-content-between align-items-center mb-2" style="font-size:.82rem;">
                 <button type="button" class="btn btn-sm btn-primary" id="btnPlayTopMangkir">
                     <i class="la la-volume-up"></i> Dengarkan
                 </button>
                 <span class="text-muted">Klik tombol untuk membacakan data melalui speaker (Web Speech API).</span>
-            </div>
+            </div> --}}
             <div class="table-responsive">
                 <table class="table table-bordered table-hover hd-table">
                     <thead class="thead-light">
@@ -127,21 +127,25 @@
     </div>
     @endif
 
-    @if (isset($canViewSakitRatio) && $canViewSakitRatio)
-    <div class="hd-card mt-2" id="izinSakitRatioDeptCard">
-        <h5 class="hd-card-toggle" data-target="#izinSakitRatioDeptCollapse" style="cursor:pointer; user-select:none;">
-            <span class="hd-chevron"></span> Sakit Ratio per Departemen
-        </h5>
-        <div class="collapse show" id="izinSakitRatioDeptCollapse">
-            <div class="d-flex justify-content-between align-items-center mb-2" id="izinSakitRatioDeptToolbar" style="display:none;">
-                <button type="button" class="btn btn-sm btn-outline-secondary" id="btnSakitRatioBack">
-                    <i class="la la-arrow-left"></i> Kembali ke Departemen
-                </button>
-                <span class="text-muted" id="izinSakitRatioDeptTitle" style="font-size:.82rem; font-weight:600;"></span>
-            </div>
-            <div class="px-2 mb-1" id="izinSakitRatioDeptMeta" style="font-size:.75rem; color:#666;"></div>
-            <div id="izinSakitRatioDeptChart" style="min-height: 420px;">
-                <p class="text-center text-muted p-4">Klik "Terapkan Filter" untuk memuat data.</p>
+    @if ((isset($canViewSakitRatio) && $canViewSakitRatio) || (isset($canViewMangkirRatio) && $canViewMangkirRatio))
+    <div class="row mt-2">
+        <div class="col-12">
+            <div class="hd-card" id="izinRatioGabunganCard">
+                <h5 class="hd-card-toggle" data-target="#izinRatioGabunganCollapse" style="cursor:pointer; user-select:none;">
+                    <span class="hd-chevron"></span> Sakit &amp; Mangkir Ratio per Departemen
+                </h5>
+                <div class="collapse show" id="izinRatioGabunganCollapse">
+                    <div class="d-flex justify-content-between align-items-center mb-2" id="izinRatioGabunganToolbar" style="display:none;">
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="btnRatioGabunganBack">
+                            <i class="la la-arrow-left"></i> Kembali ke Departemen
+                        </button>
+                        <span class="text-muted" id="izinRatioGabunganTitle" style="font-size:.82rem; font-weight:600;"></span>
+                    </div>
+                    <div class="px-2 mb-1" id="izinRatioGabunganMeta" style="font-size:.75rem; color:#666;"></div>
+                    <div id="izinRatioGabunganChart" style="min-height: 420px;">
+                        <p class="text-center text-muted p-4">Klik "Terapkan Filter" untuk memuat data.</p>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

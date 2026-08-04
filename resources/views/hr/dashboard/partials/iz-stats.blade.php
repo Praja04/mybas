@@ -9,28 +9,48 @@
         </div>
 
         <div class="row" id="izinStatsRow" style="display:flex; align-items:stretch;">
-            <div class="col-md-3 mb-3">
+            <div class="col mb-3">
                 <div class="hd-stat h-100" style="background:#fce4ec; color:#c2185b;">
                     <div class="hd-stat-value" id="izinStatTotalHariIzin">0</div>
-                    <div class="hd-stat-label">Total Hari Kerja Hilang</div>
+                    <div class="hd-stat-label" style="font-size:14px;">Total Hari Kerja Hilang</div>
+                    <div class="hd-stat-label" style="font-size:14px;">(Sakit + Sakit KK + Mangkir + Cuti + Minggu)</div>
                 </div>
             </div>
-            <div class="col-md-3 mb-3">
-                <div class="hd-stat hd-stat-blue h-100">
-                    <div class="hd-stat-value" id="izinStatTotalHariCuti">0</div>
-                    <div class="hd-stat-label">Total Hari Cuti</div>
+            <div class="col mb-3">
+                <div class="hd-stat h-100" style="background:#fce4ec; color:#c2185b;">
+                    <div class="hd-stat-value" id="izinStatTotalHariIzinTipe2">0</div>
+                    <div class="hd-stat-label" style="font-size:14px;">Total Hari Kerja Hilang</div>
+                    <div class="hd-stat-label" style="font-size:14px;">(Sakit + Sakit KK + Mangkir + Cuti)</div>
                 </div>
             </div>
-            <div class="col-md-3 mb-3">
+            <div class="col mb-3">
                 <div class="hd-stat hd-stat-orange h-100">
                     <div class="hd-stat-value" id="izinStatTotalHariSakit">0</div>
                     <div class="hd-stat-label">Total Hari Sakit</div>
                 </div>
             </div>
-            <div class="col-md-3 mb-3">
+            <div class="col mb-3">
+                <div class="hd-stat h-100" style="background:#fff3e0; color:#e65100;">
+                    <div class="hd-stat-value" id="izinStatTotalHariSakitKK">0</div>
+                    <div class="hd-stat-label">Total Hari Sakit KK</div>
+                </div>
+            </div>
+            <div class="col mb-3">
                 <div class="hd-stat h-100" style="background:#f3e5f5; color:#6a1b9a;">
                     <div class="hd-stat-value" id="izinStatTotalHariMangkir">0</div>
                     <div class="hd-stat-label">Total Hari Mangkir</div>
+                </div>
+            </div>
+            <div class="col mb-3">
+                <div class="hd-stat hd-stat-blue h-100">
+                    <div class="hd-stat-value" id="izinStatTotalHariCuti">0</div>
+                    <div class="hd-stat-label">Total Hari Cuti</div>
+                </div>
+            </div>
+            <div class="col mb-3">
+                <div class="hd-stat h-100" style="background:#e8f5e9; color:#2e7d32;">
+                    <div class="hd-stat-value" id="izinStatTotalHariMinggu">0</div>
+                    <div class="hd-stat-label">Total Hari Minggu</div>
                 </div>
             </div>
         </div>

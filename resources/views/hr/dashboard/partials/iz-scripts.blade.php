@@ -1,10 +1,12 @@
 {{-- Izin Scripts: filter, table, names, chart, PWS dynamic, tab integration --}}
+<script src="{{ asset('assets/js/line-chart-non-library-fauzi.js') }}"></script>
 <script>
 (function () {
     'use strict';
 
     let izinCurrentPage = 1;
     let currentIzinNama = [];
+    let lastIzinStats = null;
 
     const KODE_IJIN_MAP = {
         'Cuti':     ['CB', 'CDC1', 'CDC2', 'CDC3', 'CIM', 'CK', 'CKT', 'CH', 'CM', 'CNA', 'CHJ', 'C2', 'C', 'CUT'],
@@ -90,10 +92,13 @@
 
         $.get("{{ url('/hr/hrdashboard/izin-data') }}?" + params, function (res) {
             if (res.stats) {
-                $('#izinStatTotalHariIzin').text((res.stats.total_hari_izin || 0).toLocaleString());
+                lastIzinStats = res.stats;
+                updateIzinStatTotal(res.stats);
                 $('#izinStatTotalHariCuti').text((res.stats.total_hari_cuti || 0).toLocaleString());
                 $('#izinStatTotalHariSakit').text((res.stats.total_hari_sakit || 0).toLocaleString());
+                $('#izinStatTotalHariSakitKK').text((res.stats.total_hari_sakit_kk || 0).toLocaleString());
                 $('#izinStatTotalHariMangkir').text((res.stats.total_hari_mangkir || 0).toLocaleString());
+                $('#izinStatTotalHariMinggu').text((res.stats.total_hari_minggu || 0).toLocaleString());
             }
 
             let rows = '';
@@ -123,7 +128,7 @@
             loadIzinChart();
             loadIzinTopSakit();
             loadIzinTopMangkir();
-            loadIzinSakitRatioDept();
+            loadIzinRatioGabungan();
         }).fail(function (xhr) {
             if (xhr.status === 403) {
                 Swal.fire('Akses Ditolak', 'Anda tidak memiliki akses ke dashboard ini.', 'error');
@@ -243,66 +248,6 @@
     let izinLineChart = null;
     let izinLineChartKaryawan = null;
 
-    function buildIzinYearBoundaries(months) {
-        if (!months || months.length === 0) return { plotBands: [], plotLines: [] };
-        const yearSet = new Set();
-        months.forEach(m => yearSet.add(parseInt(m.substring(0, 4))));
-        const years = Array.from(yearSet).sort();
-        const plotBands = [];
-        const plotLines = [];
-        const midPoints = [];
-        years.forEach((year, idx) => {
-            const yearMonths = months.filter(m => m.startsWith(String(year)));
-            if (yearMonths.length === 0) return;
-            const firstMonth = yearMonths[0];
-            const lastMonth  = yearMonths[yearMonths.length - 1];
-            const fromTs = new Date(firstMonth + '-01').getTime();
-            const lastMonthTs = new Date(lastMonth + '-01').getTime();
-            const lm = parseInt(lastMonth.substring(5, 7));
-            const ly = parseInt(lastMonth.substring(0, 4));
-            let ny = ly, nm = lm + 1;
-            if (nm > 12) { nm = 1; ny++; }
-            const toTs = new Date(`${ny}-${String(nm).padStart(2, '0')}-01`).getTime();
-            let midTs = null;
-            if (idx < years.length - 1) {
-                const nextYearMonths = months.filter(m => m.startsWith(String(years[idx + 1])));
-                const nextYearFirstMonth = nextYearMonths[0];
-                const nextTs = new Date(nextYearFirstMonth + '-01').getTime();
-                midTs = (lastMonthTs + nextTs) / 2;
-            }
-            const bandFrom = idx === 0 ? fromTs : midPoints[idx - 1];
-            const bandTo   = (idx === years.length - 1) ? toTs : midTs;
-            if (midTs !== null) midPoints.push(midTs);
-            plotBands.push({
-                from: bandFrom,
-                to: bandTo,
-                color: [
-                    'rgba(220, 232, 255, 0.50)',
-                    'rgba(255, 243, 205, 0.50)',
-                    'rgba(212, 237, 218, 0.50)',
-                    'rgba(248, 215, 218, 0.50)',
-                ][idx % 4],
-                label: {
-                    text: `<b>${year}</b>`,
-                    align: 'center',
-                    verticalAlign: 'bottom',
-                    y: 40,
-                    style: { fontSize: '14px', color: '#333', fontWeight: '700' }
-                }
-            });
-            if (midTs !== null) {
-                plotLines.push({
-                    value: midTs,
-                    color: '#666',
-                    width: 1.5,
-                    dashStyle: 'Solid',
-                    zIndex: 4
-                });
-            }
-        });
-        return { plotBands, plotLines };
-    }
-
     function loadIzinChart() {
         const params = $.param(getIzinFilterParams(1));
         $.get("{{ url('/hr/hrdashboard/izin-chart') }}?" + params, function (res) {
@@ -403,66 +348,136 @@
     }
 
 
-    function getIzinSakitRatioDeptFilterParams() {
-        const p = getIzinFilterParams(1);
-        p.izin_ijin = ['Sakit'];
-        return p;
-    }
+    let ratioGabunganChart = null;
+    let ratioGabunganDrillDept = null;
 
-    let sakitRatioChart = null;
-    let sakitRatioDrillDept = null;
+    function loadIzinRatioGabungan(drillDept) {
+        if ($('#izinRatioGabunganChart').length === 0) return;
+        ratioGabunganDrillDept = drillDept || null;
 
-    function loadIzinSakitRatioDept(drillDept) {
-        if ($('#izinSakitRatioDeptChart').length === 0) return;
-        sakitRatioDrillDept = drillDept || null;
-        const filterParams = getIzinSakitRatioDeptFilterParams();
-        if (drillDept) {
-            filterParams.drilldown_dept = drillDept;
-        }
-        const params = $.param(filterParams);
-        $.get("{{ url('/hr/hrdashboard/izin-sakit-ratio-dept') }}?" + params, function (res) {
-            renderIzinSakitRatioDept(res);
+        const sakitParams = getIzinFilterParams(1);
+        sakitParams.izin_ijin = ['Sakit'];
+        if (drillDept) sakitParams.drilldown_dept = drillDept;
+
+        const mangkirParams = getIzinFilterParams(1);
+        mangkirParams.izin_ijin = ['Mangkir'];
+        if (drillDept) mangkirParams.drilldown_dept = drillDept;
+
+        $.when(
+            $.get("{{ url('/hr/hrdashboard/izin-sakit-ratio-dept') }}?" + $.param(sakitParams)),
+            $.get("{{ url('/hr/hrdashboard/izin-mangkir-ratio-dept') }}?" + $.param(mangkirParams))
+        ).done(function (sakitRes, mangkirRes) {
+            renderIzinRatioGabungan(sakitRes[0], mangkirRes[0]);
         }).fail(function (xhr) {
-            console.error('Gagal load sakit ratio dept', xhr);
+            console.error('Gagal load ratio Sakit & Mangkir', xhr);
+            $('#izinRatioGabunganChart').html(
+                '<p class="text-center text-muted p-4">Gagal memuat data ratio.</p>'
+            );
         });
     }
 
-    function renderIzinSakitRatioDept(res) {
-        if (!res || !res.data || res.data.length === 0) {
-            $('#izinSakitRatioDeptChart').html(
+    function renderIzinRatioGabungan(sakitRes, mangkirRes) {
+        if (!$('#izinRatioGabunganChart').length) return;
+
+        const sakitData = (sakitRes && sakitRes.data) ? sakitRes.data : [];
+        const mangkirData = (mangkirRes && mangkirRes.data) ? mangkirRes.data : [];
+        const workingDays = (sakitRes && sakitRes.working_days)
+            || (mangkirRes && mangkirRes.working_days)
+            || 0;
+        const tglFrom = (sakitRes && sakitRes.tgl_from)
+            || (mangkirRes && mangkirRes.tgl_from)
+            || '';
+        const tglTo = (sakitRes && sakitRes.tgl_to)
+            || (mangkirRes && mangkirRes.tgl_to)
+            || '';
+        const isDrill = Boolean(
+            (sakitRes && sakitRes.is_drilldown) ||
+            (mangkirRes && mangkirRes.is_drilldown)
+        );
+        const drillDept = (sakitRes && sakitRes.drill_dept)
+            || (mangkirRes && mangkirRes.drill_dept)
+            || '';
+
+        if (sakitData.length === 0 && mangkirData.length === 0) {
+            $('#izinRatioGabunganChart').html(
                 '<p class="text-center text-muted p-4">Tidak ada data untuk filter ini.</p>'
             );
-            $('#izinSakitRatioDeptToolbar').hide();
-            $('#izinSakitRatioDeptMeta').text('');
-            $('#izinSakitRatioDeptTitle').text('');
+            $('#izinRatioGabunganToolbar').hide();
+            $('#izinRatioGabunganMeta').text('');
+            $('#izinRatioGabunganTitle').text('');
             return;
         }
 
-        if (res.is_drilldown) {
-            $('#izinSakitRatioDeptToolbar').show();
-            $('#izinSakitRatioDeptTitle').text('Sub Departemen dalam: ' + res.drill_dept);
+        if (isDrill) {
+            $('#izinRatioGabunganToolbar').show();
+            $('#izinRatioGabunganTitle').text('Sub Departemen dalam: ' + drillDept);
         } else {
-            $('#izinSakitRatioDeptToolbar').hide();
-            $('#izinSakitRatioDeptTitle').text('');
+            $('#izinRatioGabunganToolbar').hide();
+            $('#izinRatioGabunganTitle').text('');
         }
 
-        let metaText = 'Working Days: ' + res.working_days + ' hari (Senin–Sabtu)';
-        if (res.tgl_from && res.tgl_to) {
-            metaText += ' &mdash; ' + res.tgl_from + ' s/d ' + res.tgl_to;
+        let metaText = 'Working Days: ' + workingDays + ' hari (Senin–Sabtu)';
+        if (tglFrom && tglTo) {
+            metaText += ' &mdash; ' + tglFrom + ' s/d ' + tglTo;
         }
-        $('#izinSakitRatioDeptMeta').html(metaText);
+        $('#izinRatioGabunganMeta').html(metaText);
 
-        const data = res.data.slice().sort((a, b) => a.ratio - b.ratio);
-        const categories = data.map(d => d.label);
-        const ratios = data.map(d => d.ratio);
+        const sakitMap = {};
+        sakitData.forEach(d => { sakitMap[d.label] = d; });
+        const mangkirMap = {};
+        mangkirData.forEach(d => { mangkirMap[d.label] = d; });
 
+        const allLabels = new Set();
+        sakitData.forEach(d => allLabels.add(d.label));
+        mangkirData.forEach(d => allLabels.add(d.label));
+
+        const merged = Array.from(allLabels).map(label => {
+            const s = sakitMap[label] || {
+                ratio: 0,
+                sick_days: 0,
+                headcount_sick: 0,
+                headcount: 0,
+                working_days: workingDays,
+                dept: '',
+                sub_dept: null,
+                can_drill: false,
+            };
+            const m = mangkirMap[label] || {
+                ratio: 0,
+                mangkir_days: 0,
+                headcount_mangkir: 0,
+                headcount: 0,
+                working_days: workingDays,
+                dept: '',
+                sub_dept: null,
+                can_drill: false,
+            };
+            return {
+                label: label,
+                sakitRatio: Number(s.ratio || 0),
+                mangkirRatio: Number(m.ratio || 0),
+                sakitDays: Number(s.sick_days || 0),
+                mangkirDays: Number(m.mangkir_days || 0),
+                headcount: Math.max(Number(s.headcount || 0), Number(m.headcount || 0)),
+                headcountSick: Number(s.headcount_sick || 0),
+                headcountMangkir: Number(m.headcount_mangkir || 0),
+                workingDays: Number(s.working_days || m.working_days || workingDays),
+                dept: s.dept || m.dept || '',
+                subDept: s.sub_dept || m.sub_dept || '',
+                canDrill: Boolean(s.can_drill || m.can_drill),
+            };
+        }).sort((a, b) =>
+            (a.sakitRatio + a.mangkirRatio) - (b.sakitRatio + b.mangkirRatio)
+        );
+
+        const categories = merged.map(d => d.label);
         const tooltipDataMap = {};
-        data.forEach(d => { tooltipDataMap[d.label] = d; });
+        merged.forEach(d => { tooltipDataMap[d.label] = d; });
 
         const options = {
             chart: {
                 type: 'bar',
-                height: Math.max(420, data.length * 42 + 80),
+                height: Math.max(420, merged.length * 50 + 100),
             },
             title: { text: null },
             credits: { enabled: false },
@@ -480,7 +495,7 @@
             yAxis: {
                 min: 0,
                 title: {
-                    text: 'Sakit Ratio (%)',
+                    text: 'Ratio (%)',
                     style: { fontSize: '14px' },
                 },
                 labels: {
@@ -488,22 +503,36 @@
                     style: { fontSize: '14px' },
                 },
             },
-            legend: { enabled: false },
+            legend: {
+                enabled: true,
+                align: 'right',
+                verticalAlign: 'top',
+                itemStyle: { fontSize: '14px', fontWeight: 600 },
+            },
             tooltip: {
-                headerFormat: '<b>{point.key}</b><br/>',
+                shared: false,
                 pointFormatter: function () {
                     const d = tooltipDataMap[this.category];
                     if (!d) return '';
-                    return '<b style="color:#c2185b;">Ratio: ' + d.ratio.toFixed(2) + '%</b><br/>'
-                        + 'Sick Days: ' + d.sick_days + ' hari<br/>'
+                    if (this.series.name === 'Sakit Ratio') {
+                        return '<b style="color:#43a047;">Sakit Ratio: ' + d.sakitRatio.toFixed(2) + '%</b><br/>'
+                            + 'Sick Days: ' + d.sakitDays + ' hari<br/>'
+                            + 'Headcount: ' + d.headcount + ' orang<br/>'
+                            + 'Headcount Sick: ' + d.headcountSick + ' orang<br/>'
+                            + 'Working Days: ' + d.workingDays + ' hari';
+                    }
+                    return '<b style="color:#ee9f27;">Mangkir Ratio: ' + d.mangkirRatio.toFixed(2) + '%</b><br/>'
+                        + 'Mangkir Days: ' + d.mangkirDays + ' hari<br/>'
                         + 'Headcount: ' + d.headcount + ' orang<br/>'
-                        + 'Headcount Sick: ' + (d.headcount_sick || 0) + ' orang<br/>'
-                        + 'Working Days: ' + d.working_days + ' hari';
+                        + 'Headcount Mangkir: ' + d.headcountMangkir + ' orang<br/>'
+                        + 'Working Days: ' + d.workingDays + ' hari';
                 },
             },
             plotOptions: {
                 bar: {
                     borderRadius: 4,
+                    pointPadding: 0.0,
+                    groupPadding: 0.1,
                     dataLabels: {
                         enabled: true,
                         formatter: function () { return this.y.toFixed(2) + '%'; },
@@ -512,8 +541,9 @@
                     point: {
                         events: {
                             click: function () {
-                                if (!sakitRatioDrillDept && this.category) {
-                                    loadIzinSakitRatioDept(this.category);
+                                const d = tooltipDataMap[this.category];
+                                if (!ratioGabunganDrillDept && d && d.canDrill && d.dept) {
+                                    loadIzinRatioGabungan(d.dept);
                                 }
                             },
                         },
@@ -521,18 +551,26 @@
                     cursor: 'pointer',
                 },
             },
-            series: [{
-                name: 'Sakit Ratio',
-                data: ratios.map(r => ({ y: r, color: '#43a047' })),
-            }],
+            series: [
+                {
+                    name: 'Sakit Ratio',
+                    color: '#43a047',
+                    data: merged.map(d => ({ y: d.sakitRatio, color: '#43a047' })),
+                },
+                {
+                    name: 'Mangkir Ratio',
+                    color: '#ee9f27',
+                    data: merged.map(d => ({ y: d.mangkirRatio, color: '#ee9f27' })),
+                },
+            ],
         };
 
-        if (sakitRatioChart) sakitRatioChart.destroy();
-        sakitRatioChart = Highcharts.chart('izinSakitRatioDeptChart', options);
+        if (ratioGabunganChart) ratioGabunganChart.destroy();
+        ratioGabunganChart = Highcharts.chart('izinRatioGabunganChart', options);
     }
 
-    $(document).on('click', '#btnSakitRatioBack', function () {
-        loadIzinSakitRatioDept(null);
+    $(document).on('click', '#btnRatioGabunganBack', function () {
+        loadIzinRatioGabungan(null);
     });
 
     const IZIN_CHART_SERIES = [
@@ -542,90 +580,6 @@
         { key: 'Mangkir',  name: 'Mangkir',  color: '#6a1b9a' },
     ];
 
-    function buildIzinMultiLineChartOptions(months, valuesByKategori, yAxisTitle, valueLabel) {
-        const { plotBands, plotLines } = buildIzinYearBoundaries(months);
-        const series = IZIN_CHART_SERIES.map(s => ({
-            name: s.name,
-            color: s.color,
-            data: months.map((m, i) => [
-                new Date(m + '-01').getTime(),
-                (valuesByKategori[s.key] || [])[i] || 0,
-            ]),
-            dataLabels: {
-                enabled: true,
-                crop: false,
-                overflow: 'allow',
-                useHTML: false,
-                allowOverlap: true,
-                style: {
-                    fontSize: '14px',
-                    color: s.color,
-                    textOutline: '1px contrast',
-                    fontWeight: '600',
-                },
-                formatter: function () {
-                    return Math.round(this.y);
-                },
-            },
-        }));
-
-        return {
-            chart: {
-                type: 'line',
-                height: 320,
-                marginBottom: 80,
-            },
-            title: { text: null },
-            credits: { enabled: false },
-            xAxis: {
-                type: 'datetime',
-                tickInterval: 30 * 24 * 3600 * 1000,
-                labels: {
-                    formatter: function () {
-                        return new Date(this.value).toLocaleDateString('id-ID', { month: 'short' });
-                    },
-                    style: { fontSize: '14px' },
-                },
-                plotBands: plotBands,
-                plotLines: plotLines,
-            },
-            yAxis: {
-                title: { text: yAxisTitle, style: { fontSize: '14px' } },
-                labels: {
-                    formatter: function () { return Math.round(this.value); },
-                    style: { fontSize: '14px' },
-                },
-                min: 0,
-            },
-            legend: {
-                enabled: true,
-                position: 'top',
-                align: 'right',
-                itemStyle: { fontSize: '14px', fontWeight: 600 },
-            },
-            tooltip: {
-                headerFormat: '<b>{point.x:%B %Y}</b><br/>',
-                shared: true,
-                pointFormatter: function () {
-                    return '<span style="color:' + this.series.color + '">●</span> '
-                        + '<b>' + this.series.name + '</b>: ' + Math.round(this.y) + ' ' + valueLabel;
-                },
-            },
-            plotOptions: {
-                line: {
-                    lineWidth: 2.5,
-                    marker: {
-                        enabled: true,
-                        radius: 4,
-                        lineColor: '#fff',
-                        lineWidth: 2,
-                    },
-                },
-            },
-            series: series,
-        };
-    }
-
     function renderIzinChart(data) {
         if (!data || !data.months || data.months.length === 0) {
             $('#izinChartBulanan').html('<p class="text-center text-muted p-4">Tidak ada data untuk range ini.</p>');
@@ -633,23 +587,47 @@
             return;
         }
 
-        const optRows = buildIzinMultiLineChartOptions(
-            data.months,
-            data.rows || {},
-            'Jumlah Hari Izin',
-            'hari'
-        );
-        if (izinLineChart) izinLineChart.destroy();
-        izinLineChart = Highcharts.chart('izinChartBulanan', optRows);
+        var xLabels = data.months.map(function (m) {
+            return new Date(m + '-01').toLocaleDateString('id-ID', { month: 'short' });
+        });
 
-        const optKaryawan = buildIzinMultiLineChartOptions(
-            data.months,
-            data.distinct_nik || {},
-            'Jumlah Karyawan',
-            'karyawan'
-        );
+        var series1 = IZIN_CHART_SERIES.map(function (s) {
+            return {
+                name: s.name,
+                color: s.color,
+                data: (data.rows && data.rows[s.key] || []).map(function (v) { return v || 0; }),
+            };
+        });
+
+        if (izinLineChart) izinLineChart.destroy();
+        izinLineChart = new FauziLineChart({
+            container: '#izinChartBulanan',
+            height: 320,
+            series: series1,
+            xLabels: xLabels,
+            months: data.months,
+            yAxisTitle: 'Jumlah Hari Izin',
+            valueUnit: 'hari',
+        });
+
+        var series2 = IZIN_CHART_SERIES.map(function (s) {
+            return {
+                name: s.name,
+                color: s.color,
+                data: (data.distinct_nik && data.distinct_nik[s.key] || []).map(function (v) { return v || 0; }),
+            };
+        });
+
         if (izinLineChartKaryawan) izinLineChartKaryawan.destroy();
-        izinLineChartKaryawan = Highcharts.chart('izinChartKaryawanBulanan', optKaryawan);
+        izinLineChartKaryawan = new FauziLineChart({
+            container: '#izinChartKaryawanBulanan',
+            height: 320,
+            series: series2,
+            xLabels: xLabels,
+            months: data.months,
+            yAxisTitle: 'Jumlah Karyawan',
+            valueUnit: 'karyawan',
+        });
     }
 
     $('#btnIzinApply').on('click', function () {
@@ -920,5 +898,10 @@
 
     window.loadIzinData = loadIzinData;
     window.loadIzinNames = loadIzinNames;
+
+    function updateIzinStatTotal(stats) {
+        $('#izinStatTotalHariIzin').text((stats.total_hari_kerja_hilang_tipe1 || 0).toLocaleString());
+        $('#izinStatTotalHariIzinTipe2').text((stats.total_hari_kerja_hilang_tipe2 || 0).toLocaleString());
+    }
 })();
 </script>

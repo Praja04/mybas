@@ -49,9 +49,9 @@ class ProcessHrIzinImport implements ShouldQueue
                 ->where('status', 'created')
                 ->delete();
 
-            $rows = $this->type === 'mangkir'
-                ? $this->readMangkirRows($this->filePath)
-                : $this->readIzinRows($this->filePath);
+            $rows = $this->type === 'mangkir' || $this->type === 'mangkir_mitra'
+                ? $this->readMangkirRows($this->filePath, $this->type === 'mangkir_mitra')
+                : $this->readIzinRows($this->filePath, $this->type === 'mitra_kerja');
 
             $batch->total_data = count($rows);
             $batch->save();
@@ -127,7 +127,7 @@ class ProcessHrIzinImport implements ShouldQueue
         }
     }
 
-    protected function readIzinRows(string $path): array
+    protected function readIzinRows(string $path, bool $isMitraKerja = false): array
     {
         if (! file_exists($path)) {
             throw new \RuntimeException("File tidak ditemukan: {$path}");
@@ -140,6 +140,13 @@ class ProcessHrIzinImport implements ShouldQueue
 
         $delimiter = $this->detectDelimiter($fh);
         rewind($fh);
+
+        // Mode mitra_kerja: template compact
+        //   Row 1 = Judul
+        //   Row 2 = Header: NIK | Nama | Company Mitra Kerja | Dept | Section | Business Area | Tgl | No SPI | Kode Ijin | Keterangan
+        //   Row 3+ = value
+        // Mode izin biasa (BAS): header di Row 1, value mulai Row 2
+        $startRow = $isMitraKerja ? 3 : 2;
 
         $rows = [];
         $rowNumber = 0;
@@ -154,7 +161,7 @@ class ProcessHrIzinImport implements ShouldQueue
         while (($data = fgetcsv($fh, 0, $delimiter)) !== false) {
             $rowNumber++;
 
-            if ($rowNumber < 2) {
+            if ($rowNumber < $startRow) {
                 continue;
             }
 
@@ -200,7 +207,7 @@ class ProcessHrIzinImport implements ShouldQueue
         return $rows;
     }
 
-    protected function readMangkirRows(string $path): array
+    protected function readMangkirRows(string $path, bool $isMitraKerja = false): array
     {
         if (! file_exists($path)) {
             throw new \RuntimeException("File tidak ditemukan: {$path}");
@@ -214,13 +221,17 @@ class ProcessHrIzinImport implements ShouldQueue
         $delimiter = $this->detectDelimiter($fh);
         rewind($fh);
 
+        // Mode mitra_kerja: template dengan baris 1 = judul, baris 2 = header,
+        // baris 3+ = value. Mode biasa: baris 1 = header, baris 2+ = value.
+        $startRow = $isMitraKerja ? 3 : 2;
+
         $rows = [];
         $rowNumber = 0;
 
         while (($data = fgetcsv($fh, 0, $delimiter)) !== false) {
             $rowNumber++;
 
-            if ($rowNumber < 2) {
+            if ($rowNumber < $startRow) {
                 continue;
             }
 
@@ -233,6 +244,16 @@ class ProcessHrIzinImport implements ShouldQueue
             $tgl = $dateRaw === '' ? null : HrEmployeeNormalizer::normalizeDate($dateRaw);
             if ($tgl === null) {
                 continue;
+            }
+
+            $keterangan = $this->str($data, 11);
+
+            if ($isMitraKerja) {
+                // Mitra kerja: hanya baris dengan Keterangan "Alpa" yang diimport,
+                // Kode Ijin otomatis "A".
+                if ($keterangan === null || mb_strtolower(trim($keterangan)) !== 'alpa') {
+                    continue;
+                }
             }
 
             $deptRaw = $this->str($data, 3);
@@ -248,7 +269,7 @@ class ProcessHrIzinImport implements ShouldQueue
                 'tgl'        => $tgl,
                 'no_spi'     => null,
                 'kode_ijin'  => 'A',
-                'keterangan' => null,
+                'keterangan' => $isMitraKerja ? $keterangan : null,
             ];
         }
 

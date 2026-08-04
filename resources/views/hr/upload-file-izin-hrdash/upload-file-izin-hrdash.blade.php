@@ -29,6 +29,14 @@
 <div class="container-fluid">
     <h1 class="iz-page-title">Upload File Izin HRDASH</h1>
 
+    @if(!empty($isMitraKerja) && $isMitraKerja)
+        <div class="alert alert-warning" style="font-size:.85rem; padding:.5rem .75rem;">
+            <i class="fas fa-info-circle"></i>
+            <strong>Mode Mitra Kerja aktif.</strong>
+            Gunakan template izin mitra kerja dengan kolom: NIK, Nama, Company Mitra Kerja, Dept, Section, Business Area, Tgl, No SPI, Kode Ijin, Keterangan.
+        </div>
+    @endif
+
     <div class="iz-card">
         <h5>Import Izin HRDASH CSV</h5>
         <p class="text-muted" style="font-size:.85rem; margin-bottom:1rem;">
@@ -43,6 +51,9 @@
 
         <form id="formUpload" enctype="multipart/form-data">
             @csrf
+            @if(!empty($isMitraKerja) && $isMitraKerja)
+                <input type="hidden" name="type_karyawan" value="mitra_kerja">
+            @endif
             <div class="row align-items-end">
                 <div class="col-md-6">
                     <label class="form-label" style="font-weight:600;">File CSV:</label>
@@ -56,12 +67,23 @@
             </div>
         </form>
 
-        <div class="mt-3 p-2" style="background:#f5f5f5; font-size:.8rem;">
-            <strong>Kolom CSV (baris 1) — 15 kolom:</strong>
-            NIK, Nama, Company, Dept, Section, Business Area, Tgl, No SPI,
-            <strong class="text-danger">Kode Ijin (KD, CB, CDC1, CDC2, CDC3, CHD, CIM, CK, CKT, CH, CM, CNA, CHJ, C2, C, CUT, IM, S, SKK)</strong>,
-            Keterangan, No Tukar Shift, Created Date, Created By, Changed Date, Changed By
-        </div>
+        @if(!empty($isMitraKerja) && $isMitraKerja)
+            <div class="mt-3 p-2" style="background:#f5f5f5; font-size:.8rem;">
+                <strong>Template CSV Mitra Kerja:</strong><br>
+                <strong>Baris 1 (Judul):</strong> Judul bebas<br>
+                <strong>Baris 2 (Header):</strong> NIK, Nama, Company Mitra Kerja, Dept, Section, Business Area, Tgl, No SPI,
+                <strong class="text-danger">Kode Ijin (KD, CB, CDC1, CDC2, CDC3, CHD, CIM, CK, CKT, CH, CM, CNA, CHJ, C2, C, CUT, IM, S, SKK)</strong>,
+                Keterangan<br>
+                <strong>Baris 3+ (Value):</strong> isi data sesuai header.
+            </div>
+        @else
+            <div class="mt-3 p-2" style="background:#f5f5f5; font-size:.8rem;">
+                <strong>Kolom CSV (baris 1) — 15 kolom:</strong>
+                NIK, Nama, Company, Dept, Section, Business Area, Tgl, No SPI,
+                <strong class="text-danger">Kode Ijin (KD, CB, CDC1, CDC2, CDC3, CHD, CIM, CK, CKT, CH, CM, CNA, CHJ, C2, C, CUT, IM, S, SKK)</strong>,
+                Keterangan, No Tukar Shift, Created Date, Created By, Changed Date, Changed By
+            </div>
+        @endif
     </div>
 
     <div class="iz-card">

@@ -66,4 +66,5 @@ Route::group(['middleware' => ['auth', 'rules', 'access_log']], function () {
     Route::get('/hr/hrdashboard/izin-top-sakit', 'HR\HrDashboardController@izinTopSakit');
     Route::get('/hr/hrdashboard/izin-top-mangkir', 'HR\HrDashboardController@izinTopMangkir');
     Route::get('/hr/hrdashboard/izin-sakit-ratio-dept', 'HR\HrDashboardController@izinSakitRatioDept');
+    Route::get('/hr/hrdashboard/izin-mangkir-ratio-dept', 'HR\HrDashboardController@izinMangkirRatioDept');
 });

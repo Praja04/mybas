@@ -404,7 +404,8 @@
         return {
             chart: {
                 type: 'line',
-                height: 240,
+                marginTop: 40,
+                height: 230,
                 marginBottom: 60,
                 renderTo: containerId,
             },
@@ -486,7 +487,8 @@
         const optionsKaryawan = {
             chart: {
                 type: 'line',
-                height: 240,
+                height: 230,
+                marginTop: 45,
                 marginBottom: 80,
             },
             title: { text: null },
@@ -620,7 +622,7 @@
         const options = {
             chart: {
                 type: 'line',
-                height: 240,
+                height: 230,
                 marginBottom: 80,
             },
             title: { text: null },
@@ -770,10 +772,10 @@
             const options = {
             chart: {
                 type: 'column',
-                height: 250,
+                height: 210,
                 width: chartWidth,
                 marginTop: 20,
-                marginBottom: 80,
+                marginBottom: 40,
             },
             title: { text: null },
             credits: { enabled: false },
@@ -1011,8 +1013,9 @@
     function performCycle() {
         // Triple-guard: generation counter + global flag + local flag + timer
         if (!window.__wtoCycleActive || !cycleEnabled || !cycleTimer) return;
-        const nextTab = currentTab === WTO_TABS[0] ? WTO_TABS[1] : WTO_TABS[0];
-        switchDashboardTab(nextTab);
+        const curIdx = WTO_TABS.indexOf(currentTab);
+        const nextIdx = (curIdx + 1) % WTO_TABS.length;
+        switchDashboardTab(WTO_TABS[nextIdx]);
     }
 
     function updateCycleButton() {

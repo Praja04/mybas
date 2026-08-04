@@ -24,10 +24,14 @@ class UploadFileMangkirHrdashController extends Controller
         }
     }
 
-    public function index()
+    public function index(Request $request)
     {
         $this->checkPermission('hr_upload_file_mangkir_hrdash');
-        return view('hr.upload-file-mangkir-hrdash.upload-file-mangkir-hrdash');
+        $typeKaryawan = $request->get('type_karyawan');
+        return view('hr.upload-file-mangkir-hrdash.upload-file-mangkir-hrdash', [
+            'typeKaryawan' => $typeKaryawan,
+            'isMitraKerja' => $typeKaryawan === 'mitra_kerja',
+        ]);
     }
 
     public function upload(Request $request)
@@ -38,14 +42,24 @@ class UploadFileMangkirHrdashController extends Controller
             'file' => 'required|file|mimes:csv,txt',
         ]);
 
+        $typeKaryawan = $request->get('type_karyawan');
+        $isMitraKerja = $typeKaryawan === 'mitra_kerja';
+
         $file = $request->file('file');
 
         $tmpPath = $file->getRealPath();
         $fh = fopen($tmpPath, 'r');
         if ($fh !== false) {
-            $firstLine = fgets($fh);
+            // Template mitra kerja: baris 1 = judul, baris 2 = header.
+            // Template biasa: baris 1 = header.
+            if ($isMitraKerja) {
+                fgets($fh);
+                $headerLine = fgets($fh);
+            } else {
+                $headerLine = fgets($fh);
+            }
             fclose($fh);
-            if ($firstLine !== false && mb_stripos($firstLine, 'Kode Ijin') !== false) {
+            if ($headerLine !== false && mb_stripos($headerLine, 'Kode Ijin') !== false) {
                 return response()->json([
                     'success' => false,
                     'message' => 'File yang diupload adalah template Izin (mengandung kolom "Kode Ijin"), bukan template Mangkir. Silakan upload file mangkir yang benar.',
@@ -69,9 +83,14 @@ class UploadFileMangkirHrdashController extends Controller
             'file_path'        => $path,
         ]);
 
-        ProcessHrIzinImport::dispatch($batchId, storage_path('app/public/' . $path), $username, 'mangkir');
+        ProcessHrIzinImport::dispatch(
+            $batchId,
+            storage_path('app/public/' . $path),
+            $username,
+            $isMitraKerja ? 'mangkir_mitra' : 'mangkir'
+        );
 
-        $batch->update(['filename' => '[MANGKIR] ' . $file->getClientOriginalName()]);
+        $batch->update(['filename' => ($isMitraKerja ? '[MANGKIR MITRA KERJA] ' : '[MANGKIR] ') . $file->getClientOriginalName()]);
 
         return response()->json([
             'success'  => true,
@@ -89,8 +108,10 @@ class UploadFileMangkirHrdashController extends Controller
         $page    = (int) $request->get('page', 1);
         $username = Auth::user()->username ?? (Auth::user()->name ?? '');
 
+        $isMitraKerja = $request->get('type_karyawan') === 'mitra_kerja';
+
         $query = HrIzinBatch::where('send_by_username', $username)
-            ->where('filename', 'like', '[MANGKIR]%')
+            ->where('filename', 'like', $isMitraKerja ? '[MANGKIR MITRA KERJA]%' : '[MANGKIR]%')
             ->orderBy('id', 'desc');
 
         $total    = (clone $query)->count();
@@ -101,7 +122,7 @@ class UploadFileMangkirHrdashController extends Controller
             return [
                 'id'                     => $b->id,
                 'batch_id'               => $b->batch_id,
-                'filename'               => preg_replace('/^\[MANGKIR\]\s*/', '', $b->filename),
+                'filename'               => preg_replace('/^\[MANGKIR(?:\s+MITRA KERJA)?\]\s*/', '', $b->filename),
                 'send_by_username'       => $b->send_by_username,
                 'created_count'          => (int) $b->created_count,
                 'updated_count'          => (int) $b->updated_count,
@@ -258,6 +279,8 @@ class UploadFileMangkirHrdashController extends Controller
         $perPage = max(1, min($perPage, 100));
         $page    = max(1, $page);
 
+        $isMitraKerja = $request->get('type_karyawan') === 'mitra_kerja';
+
         $query = HrIzin::query()
             ->leftJoin('users', 'users.username', '=', 'hr_izin.send_by_username')
             ->leftJoin('hr_master_employee as hme', 'hme.NIK', '=', 'hr_izin.nik')
@@ -267,6 +290,10 @@ class UploadFileMangkirHrdashController extends Controller
                 'users.name as updated_by_name',
                 DB::raw('hme.`Sub Departmen` as sub_departmen')
             );
+
+        if ($isMitraKerja) {
+            $query->whereIn('hme.Tipe Karyawan', ['KMJ', 'Fortuna']);
+        }
 
         if ($search !== '') {
             $query->where('hr_izin.nik', 'like', "%{$search}%");
@@ -292,10 +319,12 @@ class UploadFileMangkirHrdashController extends Controller
     {
         $this->checkPermission('hr_upload_file_mangkir_hrdash');
 
+        $isMitraKerja = $request->get('type_karyawan') === 'mitra_kerja';
+
         $request->validate([
             'tgl_from' => 'required|date_format:Y-m-d',
             'tgl_to'   => 'required|date_format:Y-m-d|after_or_equal:tgl_from',
-            'tipe'     => 'required|in:Staff,Non Staff',
+            'tipe'     => $isMitraKerja ? 'required|in:KMJ,Fortuna' : 'required|in:Staff,Non Staff',
         ]);
 
         $batch = HrIzinBatch::where('batch_id', $batchId)->first();
