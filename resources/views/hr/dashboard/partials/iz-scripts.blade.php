@@ -6,7 +6,6 @@
 
     let izinCurrentPage = 1;
     let currentIzinNama = [];
-    let izinTipeAktif = 1;
     let lastIzinStats = null;
 
     const KODE_IJIN_MAP = {
@@ -522,7 +521,7 @@
                             + 'Headcount Sick: ' + d.headcountSick + ' orang<br/>'
                             + 'Working Days: ' + d.workingDays + ' hari';
                     }
-                    return '<b style="color:#6a1b9a;">Mangkir Ratio: ' + d.mangkirRatio.toFixed(2) + '%</b><br/>'
+                    return '<b style="color:#ee9f27;">Mangkir Ratio: ' + d.mangkirRatio.toFixed(2) + '%</b><br/>'
                         + 'Mangkir Days: ' + d.mangkirDays + ' hari<br/>'
                         + 'Headcount: ' + d.headcount + ' orang<br/>'
                         + 'Headcount Mangkir: ' + d.headcountMangkir + ' orang<br/>'
@@ -532,6 +531,8 @@
             plotOptions: {
                 bar: {
                     borderRadius: 4,
+                    pointPadding: 0.0,
+                    groupPadding: 0.1,
                     dataLabels: {
                         enabled: true,
                         formatter: function () { return this.y.toFixed(2) + '%'; },
@@ -558,8 +559,8 @@
                 },
                 {
                     name: 'Mangkir Ratio',
-                    color: '#6a1b9a',
-                    data: merged.map(d => ({ y: d.mangkirRatio, color: '#6a1b9a' })),
+                    color: '#ee9f27',
+                    data: merged.map(d => ({ y: d.mangkirRatio, color: '#ee9f27' })),
                 },
             ],
         };
@@ -899,24 +900,8 @@
     window.loadIzinNames = loadIzinNames;
 
     function updateIzinStatTotal(stats) {
-        if (izinTipeAktif === 1) {
-            $('#izinStatTotalHariIzin').text((stats.total_hari_kerja_hilang_tipe1 || 0).toLocaleString());
-            $('#izinStatSubtitle').text('(Sakit + Sakit KK + Mangkir + Cuti + Minggu)');
-            $('.izin-card-tipe1-only').show();
-        } else {
-            $('#izinStatTotalHariIzin').text((stats.total_hari_kerja_hilang_tipe2 || 0).toLocaleString());
-            $('#izinStatSubtitle').text('(Sakit + Sakit KK + Mangkir + Cuti)');
-            $('.izin-card-tipe1-only').hide();
-        }
-        $('.izin-tipe-btn').removeClass('active');
-        $('.izin-tipe-btn[data-tipe="' + izinTipeAktif + '"]').addClass('active');
+        $('#izinStatTotalHariIzin').text((stats.total_hari_kerja_hilang_tipe1 || 0).toLocaleString());
+        $('#izinStatTotalHariIzinTipe2').text((stats.total_hari_kerja_hilang_tipe2 || 0).toLocaleString());
     }
-
-    $(document).on('click', '.izin-tipe-btn', function () {
-        izinTipeAktif = parseInt($(this).data('tipe'));
-        if (lastIzinStats) {
-            updateIzinStatTotal(lastIzinStats);
-        }
-    });
 })();
 </script>

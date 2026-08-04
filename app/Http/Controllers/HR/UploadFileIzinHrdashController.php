@@ -24,10 +24,14 @@ class UploadFileIzinHrdashController extends Controller
         }
     }
 
-    public function index()
+    public function index(Request $request)
     {
         $this->checkPermission('hr_upload_file_izin_hrdash');
-        return view('hr.upload-file-izin-hrdash.upload-file-izin-hrdash');
+        $typeKaryawan = $request->get('type_karyawan');
+        return view('hr.upload-file-izin-hrdash.upload-file-izin-hrdash', [
+            'typeKaryawan' => $typeKaryawan,
+            'isMitraKerja' => $typeKaryawan === 'mitra_kerja',
+        ]);
     }
 
     public function upload(Request $request)
@@ -38,14 +42,24 @@ class UploadFileIzinHrdashController extends Controller
             'file' => 'required|file|mimes:csv,txt',
         ]);
 
+        $typeKaryawan = $request->get('type_karyawan');
+        $isMitraKerja = $typeKaryawan === 'mitra_kerja';
+
         $file = $request->file('file');
 
         $tmpPath = $file->getRealPath();
         $fh = fopen($tmpPath, 'r');
         if ($fh !== false) {
-            $firstLine = fgets($fh);
+            // Template mitra kerja: baris 1 = judul, baris 2 = header.
+            // Template biasa: baris 1 = header.
+            if ($isMitraKerja) {
+                fgets($fh);
+                $headerLine = fgets($fh);
+            } else {
+                $headerLine = fgets($fh);
+            }
             fclose($fh);
-            if ($firstLine !== false && mb_stripos($firstLine, 'Kode Ijin') === false) {
+            if ($headerLine !== false && mb_stripos($headerLine, 'Kode Ijin') === false) {
                 return response()->json([
                     'success' => false,
                     'message' => 'File yang diupload bukan template Izin (tidak mengandung kolom "Kode Ijin"). Silakan upload file izin yang benar.',
@@ -69,7 +83,12 @@ class UploadFileIzinHrdashController extends Controller
             'file_path'        => $path,
         ]);
 
-        ProcessHrIzinImport::dispatch($batchId, storage_path('app/public/' . $path), $username);
+        ProcessHrIzinImport::dispatch(
+            $batchId,
+            storage_path('app/public/' . $path),
+            $username,
+            $isMitraKerja ? 'mitra_kerja' : 'izin'
+        );
 
         return response()->json([
             'success'  => true,

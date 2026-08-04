@@ -552,42 +552,61 @@
                     height: textHeight,
                     x: px - textWidth / 2,
                     y: labelY,
+                    hidden: false,
                 });
             }
 
-            self._resolveLabelCollisions(labelsAtX);
+            self._resolveLabelCollisions(labelsAtX, layout);
 
             for (var li = 0; li < labelsAtX.length; li++) {
-                var lbl = labelsAtX[li];
-                allLabels.push(lbl);
-
-                // White background for readability
-                var pad = 2;
-                ctx.fillStyle = 'rgba(255,255,255,0.85)';
-                ctx.fillRect(
-                    lbl.x - pad,
-                    lbl.y - pad,
-                    lbl.width + pad * 2,
-                    lbl.height + pad * 2
-                );
-
-                // Text outline
-                ctx.fillStyle = lbl.color;
-                ctx.font = '600 16px sans-serif';
-                ctx.textAlign = 'left';
-                ctx.textBaseline = 'top';
-                ctx.shadowColor = '#fff';
-                ctx.shadowBlur = 2;
-                ctx.fillText(lbl.text, lbl.x, lbl.y);
-                ctx.shadowBlur = 0;
+                allLabels.push(labelsAtX[li]);
             }
+        }
+
+        // Resolusi lintas kolom: label antar bulan berdekatan tidak boleh saling tumpuk
+        self._resolveCrossColumnCollisions(allLabels, layout);
+
+        for (var di = 0; di < allLabels.length; di++) {
+            var lbl = allLabels[di];
+            if (lbl.hidden) continue;
+
+            // White background for readability
+            var pad = 2;
+            ctx.fillStyle = 'rgba(255,255,255,0.85)';
+            ctx.fillRect(
+                lbl.x - pad,
+                lbl.y - pad,
+                lbl.width + pad * 2,
+                lbl.height + pad * 2
+            );
+
+            // Text outline
+            ctx.fillStyle = lbl.color;
+            ctx.font = '600 16px sans-serif';
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'top';
+            ctx.shadowColor = '#fff';
+            ctx.shadowBlur = 2;
+            ctx.fillText(lbl.text, lbl.x, lbl.y);
+            ctx.shadowBlur = 0;
         }
 
         self._dataLabelPositions = allLabels;
     };
 
-    FauziLineChart.prototype._resolveLabelCollisions = function (labels) {
-        if (labels.length < 2) return;
+    FauziLineChart.prototype._resolveLabelCollisions = function (labels, layout) {
+        var boundsTop = layout.plotTop + 2;
+        var boundsBottom = layout.plotBottom - 2;
+        var MIN_GAP = 4;
+
+        if (labels.length < 2) {
+            if (labels.length === 1) {
+                var only = labels[0];
+                if (only.y < boundsTop) only.y = boundsTop;
+                if (only.y + only.height > boundsBottom) only.y = boundsBottom - only.height;
+            }
+            return;
+        }
 
         var n = labels.length;
         var adj = new Array(n);
@@ -599,7 +618,6 @@
                 var b = labels[j];
                 var overlapY = Math.abs((a.y + a.height / 2) - (b.y + b.height / 2))
                     < (a.height + b.height) / 2;
-                var overlapX = Math.abs(a.px - b.px) < Math.max(a.width, b.width);
                 if (overlapY) {
                     adj[i].push(j);
                     adj[j].push(i);
@@ -630,24 +648,106 @@
             groups.push(group);
         }
 
-        var MIN_GAP = 4;
-
         for (var g = 0; g < groups.length; g++) {
             var group = groups[g];
-            if (group.length < 2) continue;
+            if (group.length < 2) {
+                var single = group[0];
+                if (single.y < boundsTop) single.y = boundsTop;
+                if (single.y + single.height > boundsBottom) single.y = boundsBottom - single.height;
+                continue;
+            }
 
             group.sort(function (a, b) { return a.value - b.value; });
 
-            for (var k = 1; k < group.length; k++) {
-                var prev = group[k - 1];
-                var curr = group[k];
-                var neededY = prev.y - prev.height - MIN_GAP;
+            var stackTop = group[0].y;
+            if (stackTop < boundsTop) stackTop = boundsTop;
+            group[0].y = stackTop;
+            var stackBottom = stackTop + group[0].height;
 
-                if (curr.y > neededY) {
-                    var offset = neededY - curr.y;
-                    curr.y += offset;
+            for (var k = 1; k < group.length; k++) {
+                var lbl = group[k];
+
+                var aboveY = stackTop - lbl.height - MIN_GAP;
+                if (aboveY >= boundsTop) {
+                    lbl.y = aboveY;
+                    stackTop = aboveY;
+                    continue;
+                }
+
+                var belowY = stackBottom + MIN_GAP;
+                if (belowY + lbl.height <= boundsBottom) {
+                    lbl.y = belowY;
+                    stackBottom = belowY + lbl.height;
+                    continue;
+                }
+
+                lbl.hidden = true;
+            }
+        }
+    };
+
+    FauziLineChart.prototype._resolveCrossColumnCollisions = function (labels, layout) {
+        var boundsTop = layout.plotTop + 2;
+        var boundsBottom = layout.plotBottom - 2;
+        var MIN_GAP = 4;
+        if (!labels || labels.length < 2) return;
+
+        function overlapsXY(a, b) {
+            if (a.hidden || b.hidden) return false;
+            var horiz = Math.abs(a.px - b.px) < (a.width + b.width) / 2 - 1;
+            var vert = a.y < b.y + b.height && b.y < a.y + a.height;
+            return horiz && vert;
+        }
+
+        var placed = [];
+
+        for (var i = 0; i < labels.length; i++) {
+            var L = labels[i];
+            if (L.hidden) continue;
+
+            var guard = 0;
+            while (guard < 6) {
+                guard++;
+                var conflict = null;
+                for (var p = 0; p < placed.length; p++) {
+                    if (overlapsXY(L, placed[p])) {
+                        conflict = placed[p];
+                        break;
+                    }
+                }
+                if (!conflict) break;
+
+                var candidates = [
+                    conflict.y - L.height - MIN_GAP,
+                    conflict.y + conflict.height + MIN_GAP
+                ];
+                var moved = false;
+                for (var c = 0; c < candidates.length; c++) {
+                    var ny = candidates[c];
+                    if (ny < boundsTop || ny + L.height > boundsBottom) continue;
+                    var prevY = L.y;
+                    L.y = ny;
+                    var ok = true;
+                    for (var p2 = 0; p2 < placed.length; p2++) {
+                        if (overlapsXY(L, placed[p2])) {
+                            ok = false;
+                            break;
+                        }
+                    }
+                    if (ok) {
+                        moved = true;
+                        break;
+                    }
+                    L.y = prevY;
+                }
+
+                if (!moved) {
+                    L.hidden = true;
+                    break;
                 }
             }
+
+            if (!L.hidden) placed.push(L);
         }
     };
 
