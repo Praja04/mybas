@@ -251,7 +251,7 @@ class ProcessHrIzinImport implements ShouldQueue
             if ($isMitraKerja) {
                 // Mitra kerja: hanya baris dengan Keterangan "Alpa" yang diimport,
                 // Kode Ijin otomatis "A".
-                if ($keterangan === null || mb_strtolower(trim($keterangan)) !== 'alpa') {
+                if ($keterangan === null || !in_array(mb_strtolower(trim($keterangan)), ['alpa', 'alpha'], true)) {
                     continue;
                 }
             }
