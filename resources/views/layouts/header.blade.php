@@ -812,7 +812,7 @@
                                                         <span></span>
                                                     </i>
                                                     <span class="menu-text">Pembagian</span>
-                                                </a>``
+                                                </a>
                                             </li>
                                         @endif
                                         @if (in_array('hr_karyawan', $permissions))
@@ -824,6 +824,16 @@
                                                 </a>
                                             </li>
                                         @endif
+                                        @if (in_array('sp_pelanggaran', $permissions ?? []) || in_array('hr', $permissions ?? []))
+                                             <li class="menu-item" aria-haspopup="true">
+                                                 <a href="{{ url('/sp-pelanggaran/trace') }}" class="menu-link">
+                                                     <i class="menu-bullet menu-bullet-line">
+                                                         <span></span>
+                                                     </i>
+                                                     <span class="menu-text">SP Pelanggaran</span>
+                                                 </a>
+                                             </li>
+                                         @endif
                                     </ul>
                                 </div>
                             </li>

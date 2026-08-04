@@ -776,8 +776,27 @@ require base_path('routes/pos-security.php');
 require base_path('routes/pos-security/ajax.php');
 require base_path('routes/pos-security/datatable.php');
 
-// local only
-require base_path('routes/mail-testing.php');
+// SP Pelanggaran Routes
+Route::group(['middleware' => ['auth', 'rules']], function () {
+    Route::get('/sp-pelanggaran', [App\Http\Controllers\SpPelanggaranController::class, 'index'])->name('sp_pelanggaran.index');
+    Route::post('/sp-pelanggaran', [App\Http\Controllers\SpPelanggaranController::class, 'store'])->name('sp_pelanggaran.store');
+    Route::post('/sp-pelanggaran/{id}/update', [App\Http\Controllers\SpPelanggaranController::class, 'update'])->name('sp_pelanggaran.update');
+    Route::delete('/sp-pelanggaran/{id}', [App\Http\Controllers\SpPelanggaranController::class, 'destroy'])->name('sp_pelanggaran.destroy');
+    Route::get('/sp-pelanggaran/check-active/{employee_id}', [App\Http\Controllers\SpPelanggaranController::class, 'checkActiveSp']);
+    Route::post('/sp-pelanggaran/{id}/report', [App\Http\Controllers\SpPelanggaranController::class, 'reportToAdmin']);
+
+    // Approval Flow & Analytics
+    Route::get('/sp-pelanggaran/dashboard', [App\Http\Controllers\SpPelanggaranController::class, 'dashboard'])->name('sp_pelanggaran.dashboard');
+    Route::get('/sp-pelanggaran/trace', [App\Http\Controllers\SpPelanggaranController::class, 'trace'])->name('sp_pelanggaran.trace');
+    Route::get('/sp-pelanggaran/approval', [App\Http\Controllers\SpPelanggaranController::class, 'approvalList'])->name('sp_pelanggaran.approval');
+    Route::get('/sp-pelanggaran/{id}/detail', [App\Http\Controllers\SpPelanggaranController::class, 'getSpDetail']);
+    Route::post('/sp-pelanggaran/{id}/submit-to-depthead', [App\Http\Controllers\SpPelanggaranController::class, 'submitToDeptHead'])->name('sp_pelanggaran.submit_depthead');
+    Route::post('/sp-pelanggaran/{id}/depthead-approve', [App\Http\Controllers\SpPelanggaranController::class, 'deptHeadApprove'])->name('sp_pelanggaran.depthead_approve');
+    Route::post('/sp-pelanggaran/{id}/depthead-reject', [App\Http\Controllers\SpPelanggaranController::class, 'deptHeadReject'])->name('sp_pelanggaran.depthead_reject');
+    Route::post('/sp-pelanggaran/{id}/irstaff-submit', [App\Http\Controllers\SpPelanggaranController::class, 'irStaffSubmit'])->name('sp_pelanggaran.irstaff_submit');
+    Route::post('/sp-pelanggaran/{id}/irhead-approve', [App\Http\Controllers\SpPelanggaranController::class, 'irHeadApprove'])->name('sp_pelanggaran.irhead_approve');
+    Route::post('/sp-pelanggaran/{id}/irhead-reject', [App\Http\Controllers\SpPelanggaranController::class, 'irHeadReject'])->name('sp_pelanggaran.irhead_reject');
+});
 
 Route::fallback(function () {
     abort(404);
