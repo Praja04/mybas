@@ -39,9 +39,13 @@
         <div class="row mt-2">
             <div class="col-12">
                 <div class="hd-card">
-                    <h4 style="display:flex; align-items:center; gap:.4rem;">
+                    <h4 style="display:flex; align-items:center; gap:.6rem;">
                         <span class="hd-chevron" style="visibility:hidden;"></span>
                         Grafik Jumlah Karyawan Lembur
+                        <select class="form-control form-control-sm" id="wtoPeriode" style="width:auto; padding:.2rem .5rem; font-size:.8rem;">
+                            <option value="1-akhir" selected>Periode: 1 &ndash; 31</option>
+                            <option value="21-20">Periode: 21 &ndash; 20</option>
+                        </select>
                     </h4>
                     <div id="wtoChartKaryawan" style="min-height: 240px;"></div>
                 </div>
@@ -55,7 +59,21 @@
                         <span class="hd-chevron" style="visibility:hidden;"></span>
                         Grafik Jam Lembur per Departemen
                     </h4>
-                    <div style="overflow-x: auto;"><div id="wtoChartJamLemburPerDept" style="min-height: 250px;"></div></div>
+                    <div style="overflow-x: auto;"><div id="wtoChartJamLemburPerDept" style="min-height: 210px;"></div></div>
+                    <div id="wtoChartJamLemburPerDeptLegend" style="
+                        display: flex;
+                        flex-wrap: wrap;
+                        justify-content: center;
+                        align-items: center;
+                        gap: .85rem 1.25rem;
+                        padding: .55rem .75rem;
+                        margin-top: .5rem;
+                        background: rgba(74, 20, 140, 0.05);
+                        border: 1px solid rgba(74, 20, 140, 0.18);
+                        border-radius: 4px;
+                        font-size: 14px;
+                        font-weight: 600;
+                    "></div>
                 </div>
             </div>
         </div>

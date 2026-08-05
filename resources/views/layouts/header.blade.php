@@ -1401,7 +1401,9 @@
                         {{-- HR Dashboard --}}
                         @if (in_array('hr_dashboard_navbar', $permissions)
                             || in_array('hr_upload_file_mp', $permissions)
-                            || in_array('hr_upload_working_time_and_overtime', $permissions))
+                            || in_array('hr_upload_working_time_and_overtime', $permissions)
+                            || in_array('hr_upload_file_izin_hrdash', $permissions)
+                            || in_array('hr_upload_file_mangkir_hrdash', $permissions))
                             <li class="menu-item menu-item-submenu menu-item-rel" data-menu-toggle="click"
                                 aria-haspopup="true">
                                 <a href="javascript:" class="menu-link menu-toggle">
@@ -1463,6 +1465,42 @@
                                                         <span></span>
                                                     </i>
                                                     <span class="menu-text">Upload Working Time &amp; Overtime Mitra Kerja</span>
+                                                </a>
+                                            </li>
+                                        @endif
+                                        @if (in_array('hr_upload_file_izin_hrdash', $permissions))
+                                            <li class="menu-item" aria-haspopup="true">
+                                                <a href="{{ url('/hr/upload-file-izin-hrdash') }}" class="menu-link">
+                                                    <i class="menu-bullet menu-bullet-line">
+                                                        <span></span>
+                                                    </i>
+                                                    <span class="menu-text">Upload File Izin HRDASH</span>
+                                                </a>
+                                            </li>
+                                            <li class="menu-item" aria-haspopup="true">
+                                                <a href="{{ url('/hr/upload-file-izin-hrdash?type_karyawan=mitra_kerja') }}" class="menu-link">
+                                                    <i class="menu-bullet menu-bullet-line">
+                                                        <span></span>
+                                                    </i>
+                                                    <span class="menu-text">Upload File Izin HRDASH Mitra Kerja</span>
+                                                </a>
+                                            </li>
+                                        @endif
+                                        @if (in_array('hr_upload_file_mangkir_hrdash', $permissions))
+                                            <li class="menu-item" aria-haspopup="true">
+                                                <a href="{{ url('/hr/upload-file-mangkir-hrdash') }}" class="menu-link">
+                                                    <i class="menu-bullet menu-bullet-line">
+                                                        <span></span>
+                                                    </i>
+                                                    <span class="menu-text">Upload File Mangkir HRDASH</span>
+                                                </a>
+                                            </li>
+                                            <li class="menu-item" aria-haspopup="true">
+                                                <a href="{{ url('/hr/upload-file-mangkir-hrdash?type_karyawan=mitra_kerja') }}" class="menu-link">
+                                                    <i class="menu-bullet menu-bullet-line">
+                                                        <span></span>
+                                                    </i>
+                                                    <span class="menu-text">Upload File Mangkir HRDASH Mitra Kerja</span>
                                                 </a>
                                             </li>
                                         @endif

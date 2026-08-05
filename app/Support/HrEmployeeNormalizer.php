@@ -183,6 +183,8 @@ class HrEmployeeNormalizer
         'Engineering Utility & Boiler'                 => 'Engineering Otomotif & Utility',
         'Engineering Project & Electrical'             => 'Engineering Project & Electrical',
         'ITE'                                          => 'ITE',
+        'Ite'                                          => 'ITE',
+        'Engineering Wwtp'                             => 'Engineering Otomotif & Utility',
         'Engineering WWTP'                             => 'Engineering Otomotif & Utility',
         'Accounting'                                   => 'Finance & Accounting',
         'Finance & Accounting'                         => 'Finance & Accounting',

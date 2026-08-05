@@ -6,7 +6,7 @@
     window.loadWtoData        = loadWtoData;
     window.switchDashboardTab = switchDashboardTab;
 
-    const WTO_TABS    = ['hdStatsSection', 'hdWtoSection'];
+    const WTO_TABS    = ['hdStatsSection', 'hdWtoSection', 'hdIzinSection'];
     const WTO_CYCLE_MS = 10000;
     let   currentTab   = 'hdStatsSection';
     let   cycleTimer   = null;
@@ -221,6 +221,7 @@
 
     function loadWtoChart() {
         const filterParams = getWtoFilterParams(1);
+        filterParams.periode = $('#wtoPeriode').val() || '1-akhir';
         const params = $.param(filterParams);
         $.get("{{ url('/hr/hrdashboard/wto-chart') }}?" + params, function (res) {
             renderWtoCharts(res);
@@ -404,7 +405,8 @@
         return {
             chart: {
                 type: 'line',
-                height: 240,
+                marginTop: 40,
+                height: 230,
                 marginBottom: 60,
                 renderTo: containerId,
             },
@@ -486,7 +488,8 @@
         const optionsKaryawan = {
             chart: {
                 type: 'line',
-                height: 240,
+                height: 230,
+                marginTop: 45,
                 marginBottom: 80,
             },
             title: { text: null },
@@ -620,7 +623,7 @@
         const options = {
             chart: {
                 type: 'line',
-                height: 240,
+                height: 230,
                 marginBottom: 80,
             },
             title: { text: null },
@@ -711,6 +714,7 @@
     function renderWtoChartJamLemburPerDept(data) {
         if (!data.departments || data.departments.length === 0) {
             $('#wtoChartJamLemburPerDept').html('<p class="text-center text-muted p-4">Tidak ada data departemen untuk range ini.</p>');
+            $('#wtoChartJamLemburPerDeptLegend').empty();
             if (wtoLineChartJamLemburPerDept) wtoLineChartJamLemburPerDept.destroy();
             wtoLineChartJamLemburPerDept = null;
             return;
@@ -725,15 +729,21 @@
 
         const allMonths = data.months || [];
         const depts = data.departments || [];
+
+        // Default hanya 1 tahun terakhir (12 bulan)
+        const MONTHS_LIMIT = 12;
+        const months = allMonths.length > MONTHS_LIMIT ? allMonths.slice(-MONTHS_LIMIT) : allMonths;
+        const offset = allMonths.length > MONTHS_LIMIT ? allMonths.length - MONTHS_LIMIT : 0;
+
         const series = [];
 
         depts.forEach((dept, idx) => {
             const color = deptColors[idx % deptColors.length];
             const deptData = data.department_series[dept] || { jam_kerja: [], jam_libur: [] };
 
-            const datapoints = allMonths.map((m, i) => [
+            const datapoints = months.map((m, i) => [
                 new Date(m + '-01').getTime(),
-                (Number(deptData.jam_kerja[i]) || 0) + (Number(deptData.jam_libur[i]) || 0),
+                (Number(deptData.jam_kerja[i + offset]) || 0) + (Number(deptData.jam_libur[i + offset]) || 0),
             ]);
 
             series.push({
@@ -743,14 +753,30 @@
             });
         });
 
-        const chartWidth = Math.max(600, depts.length * allMonths.length * 30 + 200);
+        // Render custom HTML legend (di luar chart, di luar scroll container,
+        // sehingga tetap terlihat walau user scroll horizontal).
+        const $legend = $('#wtoChartJamLemburPerDeptLegend');
+        $legend.empty();
+        depts.forEach((dept, idx) => {
+            const color = deptColors[idx % deptColors.length];
+            const safeName = $('<div>').text(dept).html();
+            $legend.append(
+                '<span style="display:inline-flex; align-items:center; gap:.4rem; white-space:nowrap;">'
+                + '<span style="display:inline-block; width:14px; height:14px; border-radius:3px; background:' + color + ';"></span>'
+                + '<span style="color:#333;">' + safeName + '</span>'
+                + '</span>'
+            );
+        });
 
-        const options = {
+        const chartWidth = Math.max(600, depts.length * months.length * 30 + 200);
+
+            const options = {
             chart: {
                 type: 'column',
-                height: 250,
+                height: 210,
                 width: chartWidth,
-                marginBottom: 100,
+                marginTop: 20,
+                marginBottom: 40,
             },
             title: { text: null },
             credits: { enabled: false },
@@ -775,12 +801,7 @@
                 min: 0,
             },
             legend: {
-                enabled: true,
-                verticalAlign: 'bottom',
-                align: 'center',
-                layout: 'horizontal',
-                y: 10,
-                itemStyle: { fontSize: '16px', fontWeight: 600 },
+                enabled: false,
             },
             credits: { enabled: false },
             tooltip: {
@@ -793,14 +814,21 @@
             plotOptions: {
                 column: {
                     grouping: true,
-                    pointPadding: 0.1,
-                    groupPadding: 0.2,
+                    pointPadding: 0.0,
+                    groupPadding: 0.1,
                     borderWidth: 0,
                     dataLabels: {
                         enabled: true,
                         allowOverlap: true,
+                        rotation: -90,
+                        align: 'center',
+                        verticalAlign: 'bottom',
+                        inside: false,
+                        crop: false,
+                        overflow: 'allow',
                         style: { fontSize: '16px', fontWeight: 700 },
                         formatter: function () { return Math.round(this.y); },
+                        y: -4,
                     },
                 },
             },
@@ -822,12 +850,12 @@
         const depts = data.departments;
         const series = data.department_series || {};
 
-        let thead = '<tr><th rowspan="2" style="min-width:120px;">Departemen</th>';
+        let thead = '<tr><th rowspan="2" class="sticky-col-l" style="min-width:120px;">Departemen</th>';
         months.forEach(m => {
             const label = new Date(m + '-01').toLocaleDateString('id-ID', { month: 'short', year: 'numeric' });
             thead += '<th colspan="3" class="text-center">' + label + '</th>';
         });
-        thead += '<th rowspan="2" class="text-center" style="min-width:70px;">Total</th>';
+        thead += '<th rowspan="2" class="text-center sticky-col-r" style="min-width:70px;">Total</th>';
         thead += '</tr><tr>';
         months.forEach(() => {
             thead += '<th class="text-right" style="min-width:55px;">SPKL</th><th class="text-right" style="min-width:55px;">HOVT</th><th class="text-right" style="min-width:55px;">Total</th>';
@@ -838,7 +866,7 @@
         depts.forEach(dept => {
             const d = series[dept] || {};
             let totalDept = 0;
-            tbody += '<tr><td>' + escapeHtml(dept) + '</td>';
+            tbody += '<tr><td class="sticky-col-l">' + escapeHtml(dept) + '</td>';
             months.forEach((m, mi) => {
                 const spkl = Number(d.jam_kerja?.[mi]) || 0;
                 const hovt = Number(d.jam_libur?.[mi]) || 0;
@@ -849,7 +877,7 @@
                 tbody += '<td class="text-right">' + fmt(hovt) + '</td>';
                 tbody += '<td class="text-right"><strong>' + fmt(total) + '</strong></td>';
             });
-            tbody += '<td class="text-right"><strong>' + totalDept.toLocaleString('id-ID', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + '</strong></td>';
+            tbody += '<td class="text-right sticky-col-r"><strong>' + totalDept.toLocaleString('id-ID', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + '</strong></td>';
             tbody += '</tr>';
         });
 
@@ -876,6 +904,7 @@
 
     $('#btnWtoReset').on('click', function () {
         $('#wtoTglInRange').val('');
+        $('#wtoPeriode').val('1-akhir');
         ['wto_departmen', 'wto_sub_departmen', 'wto_tipe_karyawan', 'wto_pws', 'wto_nama'].forEach(function (target) {
             const $wrapper = $('.hd-multi-select[data-target="' + target + '"]');
             $wrapper.find('input[type="checkbox"]').prop('checked', false);
@@ -901,6 +930,10 @@
     $('#btnWtoExport').on('click', function () {
         const params = $.param(getWtoFilterParams(1));
         window.open("{{ url('/hr/hrdashboard/wto-export') }}?" + params, '_blank');
+    });
+
+    $('#wtoPeriode').on('change', function () {
+        loadWtoChart();
     });
 
     // Init flatpickr for Tgl In range
@@ -940,6 +973,8 @@
         if (tabId === 'hdWtoSection') {
             $('#wtoFilterCard').show();
             $('#wtoExtras').show();
+            $('#izinFilterCard').hide();
+            $('#izinExtras').hide();
             $('#dataCard').hide();
             $('#filterDataCard').hide();
             loadWtoData(1);
@@ -949,9 +984,22 @@
             if (cycleEnabled) {
                 setTimeout(startChartScroll, 1000);
             }
+        } else if (tabId === 'hdIzinSection') {
+            $('#wtoFilterCard').hide();
+            $('#wtoExtras').hide();
+            $('#izinFilterCard').show();
+            $('#izinExtras').show();
+            $('#dataCard').hide();
+            $('#filterDataCard').hide();
+            if (typeof window.loadIzinData === 'function') {
+                window.loadIzinData(1);
+                window.loadIzinNames();
+            }
         } else {
             $('#wtoFilterCard').hide();
             $('#wtoExtras').hide();
+            $('#izinFilterCard').hide();
+            $('#izinExtras').hide();
             $('#dataCard').show();
             $('#filterDataCard').show();
         }
@@ -971,8 +1019,9 @@
     function performCycle() {
         // Triple-guard: generation counter + global flag + local flag + timer
         if (!window.__wtoCycleActive || !cycleEnabled || !cycleTimer) return;
-        const nextTab = currentTab === WTO_TABS[0] ? WTO_TABS[1] : WTO_TABS[0];
-        switchDashboardTab(nextTab);
+        const curIdx = WTO_TABS.indexOf(currentTab);
+        const nextIdx = (curIdx + 1) % WTO_TABS.length;
+        switchDashboardTab(WTO_TABS[nextIdx]);
     }
 
     function updateCycleButton() {
