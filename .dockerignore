@@ -1,0 +1,12 @@
+.git
+.idea
+.vscode
+vendor
+node_modules
+storage
+public/uploads
+*.rar
+*.log
+.env.backup
+.gitignore
+README.md
