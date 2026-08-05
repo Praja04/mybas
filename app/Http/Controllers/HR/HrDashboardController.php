@@ -1291,6 +1291,7 @@ class HrDashboardController extends Controller
         $nama    = $this->getArrayFilter($request, 'wto_nama');
         $tglFrom = $request->get('wto_tgl_in_from');
         $tglTo   = $request->get('wto_tgl_in_to');
+        $periode = $request->get('periode') === '21-20' ? '21-20' : '1-akhir';
 
         if (!empty($tglFrom) && empty($tglTo)) {
             $tglTo = $tglFrom;
@@ -1298,6 +1299,11 @@ class HrDashboardController extends Controller
             $tglFrom = $tglTo;
         }
 
+        // Bucket bulan: periode "21-20" → tgl 21 s/d akhir bulan masuk ke
+        // bucket bulan berikutnya (mis. 21-31 Juli masuk ke Agustus).
+        $ymExpr = $periode === '21-20'
+            ? "DATE_FORMAT(DATE_ADD(wto.tgl_in, INTERVAL IF(DAY(wto.tgl_in) >= 21, 1, 0) MONTH), '%Y-%m')"
+            : "DATE_FORMAT(wto.tgl_in, '%Y-%m')";
 
         $base = DB::table('hr_workingtimeandovertime as wto')
             ->leftJoin('hr_master_employee as hme', 'hme.NIK', '=', 'wto.nik');
@@ -1327,14 +1333,14 @@ class HrDashboardController extends Controller
 
         $rows = (clone $base)
             ->select(
-                DB::raw("DATE_FORMAT(wto.tgl_in, '%Y-%m') as ym"),
+                DB::raw($ymExpr . ' as ym'),
                 DB::raw("COALESCE(hme.Departmen, 'Unknown') as dept"),
                 DB::raw("COUNT(DISTINCT CASE WHEN wto.jam_spkl > 0 THEN wto.nik END) as hari_kerja"),
                 DB::raw("COUNT(DISTINCT CASE WHEN wto.jam_hovt > 0 THEN wto.nik END) as hari_libur"),
                 DB::raw("SUM(CASE WHEN wto.jam_spkl > 0 THEN wto.jam_spkl ELSE 0 END) as jam_kerja"),
                 DB::raw("SUM(CASE WHEN wto.jam_hovt > 0 THEN wto.jam_hovt ELSE 0 END) as jam_libur")
             )
-            ->groupBy('ym', 'hme.Departmen')
+            ->groupBy(DB::raw($ymExpr), 'hme.Departmen')
             ->orderBy('ym')
             ->orderBy('hme.Departmen')
             ->get();
@@ -1357,8 +1363,8 @@ class HrDashboardController extends Controller
 
         $dataStart = $rows->first()->ym;
         $dataEnd   = $rows->last()->ym;
-        $startYm   = $tglFrom ? substr($tglFrom, 0, 7) : $dataStart;
-        $endYm     = $tglTo   ? substr($tglTo,   0, 7) : $dataEnd;
+        $startYm   = $tglFrom ? $this->bucketYm($tglFrom, $periode) : $dataStart;
+        $endYm     = $tglTo   ? $this->bucketYm($tglTo, $periode)   : $dataEnd;
 
         $allMonths = [];
         $cursor = new \DateTime($startYm . '-01');
@@ -1422,6 +1428,24 @@ class HrDashboardController extends Controller
             'range_start'       => $startYm,
             'range_end'         => $endYm,
         ]);
+    }
+
+    /**
+     * Hitung bulan bucket untuk sebuah tanggal pada periode tertentu.
+     * "21-20": jika tanggal >= 21, masuk ke bulan berikutnya.
+     */
+    private function bucketYm(string $date, string $periode): string
+    {
+        if ($periode !== '21-20') {
+            return substr($date, 0, 7);
+        }
+
+        $d = \Carbon\Carbon::parse($date);
+        if ($d->day >= 21) {
+            $d->addMonth();
+        }
+
+        return $d->format('Y-m');
     }
 
     /**

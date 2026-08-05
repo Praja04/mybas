@@ -466,9 +466,7 @@
                 subDept: s.sub_dept || m.sub_dept || '',
                 canDrill: Boolean(s.can_drill || m.can_drill),
             };
-        }).sort((a, b) =>
-            (a.sakitRatio + a.mangkirRatio) - (b.sakitRatio + b.mangkirRatio)
-        );
+        }).sort((a, b) => String(a.label).localeCompare(String(b.label), 'id'));
 
         const categories = merged.map(d => d.label);
         const tooltipDataMap = {};

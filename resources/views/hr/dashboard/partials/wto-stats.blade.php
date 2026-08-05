@@ -39,9 +39,13 @@
         <div class="row mt-2">
             <div class="col-12">
                 <div class="hd-card">
-                    <h4 style="display:flex; align-items:center; gap:.4rem;">
+                    <h4 style="display:flex; align-items:center; gap:.6rem;">
                         <span class="hd-chevron" style="visibility:hidden;"></span>
                         Grafik Jumlah Karyawan Lembur
+                        <select class="form-control form-control-sm" id="wtoPeriode" style="width:auto; padding:.2rem .5rem; font-size:.8rem;">
+                            <option value="1-akhir" selected>Periode: 1 &ndash; 31</option>
+                            <option value="21-20">Periode: 21 &ndash; 20</option>
+                        </select>
                     </h4>
                     <div id="wtoChartKaryawan" style="min-height: 240px;"></div>
                 </div>

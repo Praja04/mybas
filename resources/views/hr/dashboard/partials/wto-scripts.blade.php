@@ -221,6 +221,7 @@
 
     function loadWtoChart() {
         const filterParams = getWtoFilterParams(1);
+        filterParams.periode = $('#wtoPeriode').val() || '1-akhir';
         const params = $.param(filterParams);
         $.get("{{ url('/hr/hrdashboard/wto-chart') }}?" + params, function (res) {
             renderWtoCharts(res);
@@ -903,6 +904,7 @@
 
     $('#btnWtoReset').on('click', function () {
         $('#wtoTglInRange').val('');
+        $('#wtoPeriode').val('1-akhir');
         ['wto_departmen', 'wto_sub_departmen', 'wto_tipe_karyawan', 'wto_pws', 'wto_nama'].forEach(function (target) {
             const $wrapper = $('.hd-multi-select[data-target="' + target + '"]');
             $wrapper.find('input[type="checkbox"]').prop('checked', false);
@@ -928,6 +930,10 @@
     $('#btnWtoExport').on('click', function () {
         const params = $.param(getWtoFilterParams(1));
         window.open("{{ url('/hr/hrdashboard/wto-export') }}?" + params, '_blank');
+    });
+
+    $('#wtoPeriode').on('change', function () {
+        loadWtoChart();
     });
 
     // Init flatpickr for Tgl In range
