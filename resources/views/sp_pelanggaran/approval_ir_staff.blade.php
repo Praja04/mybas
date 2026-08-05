@@ -81,17 +81,28 @@
 $(document).ready(function() {
     $('.btnSubmitIr').on('click', function() {
         let id = $(this).data('id');
-        let notes = prompt('Masukkan Catatan Review (Opsional):');
-        if (notes === null) return;
-
-        $.post('/sp-pelanggaran/' + id + '/irstaff-submit', {
-            _token: '{{ csrf_token() }}',
-            notes: notes
-        }, function(res) {
-            alert(res.message);
-            location.reload();
-        }).fail(function(xhr) {
-            alert('Gagal: ' + (xhr.responseJSON ? xhr.responseJSON.message : 'Error'));
+        Swal.fire({
+            title: 'Ajukan ke IR Head',
+            input: 'textarea',
+            inputLabel: 'Catatan Review IR Staff (Opsional):',
+            inputPlaceholder: 'Masukkan catatan review...',
+            showCancelButton: true,
+            confirmButtonText: '<i class="ri-send-plane-fill me-1"></i> Teruskan ke IR Head',
+            confirmButtonColor: '#28a745',
+            cancelButtonText: 'Batal'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                let notes = result.value || '';
+                Swal.fire({ title: 'Memproses...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                $.post('/sp-pelanggaran/' + id + '/irstaff-submit', {
+                    _token: '{{ csrf_token() }}',
+                    notes: notes
+                }, function(res) {
+                    Swal.fire('Berhasil!', res.message, 'success').then(() => location.reload());
+                }).fail(function(xhr) {
+                    Swal.fire('Gagal!', xhr.responseJSON ? xhr.responseJSON.message : 'Terjadi kesalahan.', 'error');
+                });
+            }
         });
     });
 });

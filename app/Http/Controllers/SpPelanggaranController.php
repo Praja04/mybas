@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\HrKaryawan;
 use App\SpPelanggaran;
 use App\SpApprovalLog;
+use App\SpKodePelanggaran;
 use App\User;
 use App\Mail\SpNotification;
 use Illuminate\Http\Request;
@@ -59,7 +60,9 @@ class SpPelanggaranController extends Controller
             }
         }
 
-        return view('sp_pelanggaran.index', compact('employees', 'editSp'));
+        $masterKodes = SpKodePelanggaran::orderBy('kode', 'asc')->get();
+
+        return view('sp_pelanggaran.index', compact('employees', 'editSp', 'masterKodes'));
     }
 
     public function dashboard(Request $request)
@@ -81,18 +84,30 @@ class SpPelanggaranController extends Controller
         }
 
         $currentYear = Carbon::now()->year;
+        $sixMonthsAgo = Carbon::now()->subMonths(6);
 
-        // Clone queries for metrics
-        $activeQuery = clone $query;
-        $trendQuery = clone $query;
-        $deptQuery = clone $query;
-
-        // 1. Total SP Aktif (Tahun ini, APPROVED)
-        $totalSpActive = $activeQuery->where('current_status', SpPelanggaran::STATUS_APPROVED)
-            ->whereYear('tanggal_pelanggaran', $currentYear)
+        // 1. SP AKTIF (APPROVED & Masa berlaku <= 6 Bulan)
+        $totalSpActive = (clone $query)->where('current_status', SpPelanggaran::STATUS_APPROVED)
+            ->where('tanggal_pelanggaran', '>=', $sixMonthsAgo)
             ->count();
 
-        // 2. SP Sedang Diproses
+        // 2. SP TIDAK AKTIF / EXPIRED (APPROVED & Masa berlaku > 6 Bulan)
+        $totalSpExpired = (clone $query)->where('current_status', SpPelanggaran::STATUS_APPROVED)
+            ->where('tanggal_pelanggaran', '<', $sixMonthsAgo)
+            ->count();
+
+        // 3. SP+3 / SP BERAT (APPROVED & Jenis SP 3)
+        $totalSpBerat = (clone $query)->where('current_status', SpPelanggaran::STATUS_APPROVED)
+            ->whereIn('jenis_pelanggaran', ['SP 3', 'Surat Peringatan 3 (SP 3)'])
+            ->count();
+
+        // 4. SP DITOLAK (REJECTED oleh Dept Head / IR Staff / IR Head)
+        $totalSpRejected = (clone $query)->where('current_status', SpPelanggaran::STATUS_REJECTED)->count();
+
+        // 5. SP CANCEL (CANCELLED oleh Admin / Dept Head / IR Staff)
+        $totalSpCancelled = (clone $query)->where('current_status', SpPelanggaran::STATUS_CANCELLED)->count();
+
+        // 6. SP Sedang Diproses
         $totalSpProcess = (clone $query)->whereIn('current_status', [
             SpPelanggaran::STATUS_DRAFT,
             SpPelanggaran::STATUS_PENDING_DH,
@@ -116,7 +131,7 @@ class SpPelanggaranController extends Controller
         }
 
         // 4. Tren SP per Bulan
-        $trends = $trendQuery->select(DB::raw('MONTH(tanggal_pelanggaran) as bulan'), DB::raw('count(*) as total'))
+        $trends = (clone $query)->select(DB::raw('MONTH(tanggal_pelanggaran) as bulan'), DB::raw('count(*) as total'))
             ->where('current_status', SpPelanggaran::STATUS_APPROVED)
             ->whereYear('tanggal_pelanggaran', $currentYear)
             ->groupBy(DB::raw('MONTH(tanggal_pelanggaran)'))
@@ -129,7 +144,7 @@ class SpPelanggaranController extends Controller
 
         // 5. Top Departemen Penyumbang SP
         $topDepartments = [];
-        $deptData = $deptQuery->select(DB::raw('COALESCE(hr_karyawan.kode_divisi, hr_karyawan.kode_bagian) as kode_department'), DB::raw('count(sp_pelanggarans.id) as total'))
+        $deptData = (clone $query)->select(DB::raw('COALESCE(hr_karyawan.kode_divisi, hr_karyawan.kode_bagian) as kode_department'), DB::raw('count(sp_pelanggarans.id) as total'))
             ->join('hr_karyawan', 'hr_karyawan.id', '=', 'sp_pelanggarans.employee_id')
             ->where('sp_pelanggarans.current_status', SpPelanggaran::STATUS_APPROVED)
             ->whereYear('sp_pelanggarans.tanggal_pelanggaran', $currentYear)
@@ -146,7 +161,7 @@ class SpPelanggaranController extends Controller
         }
 
         return view('sp_pelanggaran.dashboard', compact(
-            'totalSpActive', 'totalSpProcess', 'chartDistribusi', 'chartTrendData', 'topDepartments', 'currentYear', 'userRole'
+            'totalSpActive', 'totalSpExpired', 'totalSpBerat', 'totalSpRejected', 'totalSpCancelled', 'totalSpProcess', 'chartDistribusi', 'chartTrendData', 'topDepartments', 'currentYear', 'userRole'
         ));
     }
 
@@ -169,6 +184,9 @@ class SpPelanggaranController extends Controller
         $data = $validated;
         $data['created_by_user_id'] = Auth::id() ?: session('user_id');
         $data['current_status'] = SpPelanggaran::STATUS_DRAFT;
+
+        $data['nomor_sp_generated'] = null;
+        $data['no_sp'] = null;
 
         if ($request->hasFile('lampiran')) {
             $file = $request->file('lampiran');
@@ -393,6 +411,52 @@ class SpPelanggaranController extends Controller
         ]);
     }
 
+    public function deptHeadMassApprove(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'integer|exists:sp_pelanggarans,id',
+            'notes' => 'nullable|string',
+        ]);
+
+        $ids = $request->input('ids', []);
+        $notes = $request->input('notes', 'Mass Approved by Dept Head');
+
+        $spRecords = SpPelanggaran::whereIn('id', $ids)
+            ->where('current_status', SpPelanggaran::STATUS_PENDING_DH)
+            ->get();
+
+        if ($spRecords->isEmpty()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Tidak ada SP berstatus Pending Dept Head yang dapat diapprove.'
+            ], 422);
+        }
+
+        $approvedCount = 0;
+        foreach ($spRecords as $sp) {
+            $sp->update([
+                'current_status' => SpPelanggaran::STATUS_PENDING_IR,
+                'dept_head_approved_at' => now(),
+                'dept_head_notes' => $notes,
+            ]);
+
+            SpApprovalLog::logAction(
+                $sp->id,
+                Auth::id() ?: session('user_id'),
+                SpApprovalLog::ACTION_DEPT_HEAD_APPROVE,
+                $notes
+            );
+
+            $approvedCount++;
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'message' => "Berhasil menyetujui {$approvedCount} SP sekaligus dan diteruskan ke IR Staff."
+        ]);
+    }
+
     public function deptHeadReject(Request $request, $id)
     {
         $sp = SpPelanggaran::findOrFail($id);
@@ -613,9 +677,27 @@ class SpPelanggaranController extends Controller
             });
         }
 
-        $spRecords = $query->paginate(10);
+        if ($request->filled('status')) {
+            $st = $request->status;
+            if ($st === 'AKTIF') {
+                $query->where('kategori_sp', 'AKTIF');
+            } elseif ($st === 'EXPIRED') {
+                $query->where('kategori_sp', 'EXPIRED');
+            } elseif ($st === 'SP3') {
+                $query->where('kategori_sp', 'SP3');
+            } elseif ($st === 'REJECTED') {
+                $query->where('kategori_sp', 'DITOLAK');
+            } elseif ($st === 'CANCELLED') {
+                $query->where('kategori_sp', 'CANCEL');
+            } else {
+                $query->where('current_status', $st);
+            }
+        }
 
-        return view('sp_pelanggaran.trace', compact('spRecords'));
+        $sps = $query->paginate(10);
+        $spRecords = $sps;
+
+        return view('sp_pelanggaran.trace', compact('sps', 'spRecords'));
     }
 
     public function getSpDetail($id)
@@ -644,19 +726,427 @@ class SpPelanggaranController extends Controller
 
     private function sendFinalEmail(SpPelanggaran $sp)
     {
-        $employee = $sp->employee;
-        if (!$employee || !$employee->email) {
+        // Anti-Looping & Anti-Spam Guard: cegah kirim ulang jika sudah dikirim sebelumnya
+        if ($sp->email_sent === 'Y') {
+            logger()->info("Email final SP #{$sp->id} sudah pernah dikirim sebelumnya. Pengiriman dibatalkan untuk mencegah looping.");
             return;
         }
 
-        try {
-            Mail::to($employee->email)->send(new SpNotification($sp, 'final'));
+        $recipients = [];
+
+        // 1. Email Karyawan yang kena SP
+        if ($sp->employee && !empty($sp->employee->email)) {
+            $recipients[] = trim($sp->employee->email);
+        }
+
+        // 2. Email Dept Head dari Karyawan yang kena SP
+        if ($sp->deptHead && !empty($sp->deptHead->email)) {
+            $recipients[] = trim($sp->deptHead->email);
+        } elseif ($sp->employee) {
+            $kodeDept = $sp->employee->kode_divisi ?: $sp->employee->kode_bagian;
+            if ($kodeDept) {
+                $dhUser = User::where('dept_id', $kodeDept)
+                    ->whereNotNull('email')
+                    ->where('email', '!=', '')
+                    ->first();
+                if ($dhUser) {
+                    $recipients[] = trim($dhUser->email);
+                }
+            }
+        }
+
+        // 3. Email IR Staff
+        if ($sp->irStaff && !empty($sp->irStaff->email)) {
+            $recipients[] = trim($sp->irStaff->email);
+        } else {
+            $irStaffUsers = User::where(function($q) {
+                $q->whereHas('directPermissions', function($permQ) {
+                    $permQ->where('codename', 'sp_pelanggaran_ir_staff');
+                })->orWhereHas('group.permissions', function($permQ) {
+                    $permQ->where('codename', 'sp_pelanggaran_ir_staff');
+                });
+            })->whereNotNull('email')->where('email', '!=', '')->pluck('email')->toArray();
+
+            foreach ($irStaffUsers as $email) {
+                if (!empty($email)) {
+                    $recipients[] = trim($email);
+                }
+            }
+        }
+
+        // Unique & filter empty emails
+        $recipients = array_values(array_unique(array_filter($recipients)));
+
+        if (empty($recipients)) {
+            logger()->warning("Tidak ada penerima email yang valid untuk SP final ID #{$sp->id}");
+            return;
+        }
+
+        $sentCount = 0;
+        foreach ($recipients as $recipientEmail) {
+            // Validasi format sintaks email (mencegah typo fatal)
+            if (!filter_var($recipientEmail, FILTER_VALIDATE_EMAIL)) {
+                logger()->warning("Format email tidak valid (diabaikan): {$recipientEmail} untuk SP #{$sp->id}");
+                continue;
+            }
+
+            try {
+                Mail::to($recipientEmail)->send(new SpNotification($sp, 'final'));
+                $sentCount++;
+                logger()->info("Email PDF Final SP #{$sp->id} berhasil dikirim ke: {$recipientEmail}");
+            } catch (\Exception $e) {
+                // Jika 1 email gagal / typo, perulangan TETAP berlanjut ke email penerima lain!
+                logger()->error("Gagal mengirim email final SP #{$sp->id} ke {$recipientEmail}: " . $e->getMessage());
+            }
+        }
+
+        if ($sentCount > 0) {
             $sp->update([
                 'email_sent' => 'Y',
                 'email_sent_at' => now(),
             ]);
+        }
+    }
+
+    public function cancelSp(Request $request, $id)
+    {
+        $sp = SpPelanggaran::findOrFail($id);
+
+        $request->validate([
+            'notes' => 'required|string'
+        ]);
+
+        $sp->update([
+            'current_status' => SpPelanggaran::STATUS_CANCELLED,
+            'dept_head_notes' => $request->input('notes'),
+        ]);
+
+        SpApprovalLog::logAction(
+            $sp->id,
+            Auth::id() ?: session('user_id'),
+            SpApprovalLog::ACTION_CANCEL,
+            'SP Cancelled: ' . $request->input('notes')
+        );
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'SP berhasil dibatalkan (CANCELLED).'
+        ]);
+    }
+
+    public function masterKodeIndex(Request $request)
+    {
+        if (!Auth::check() && !session('login') && !session('username')) {
+            return redirect('/login');
+        }
+
+        $query = SpKodePelanggaran::query()->orderBy('kode', 'asc');
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('kode', 'like', "%{$search}%")
+                  ->orWhere('nama_pelanggaran', 'like', "%{$search}%")
+                  ->orWhere('jenis_sp', 'like', "%{$search}%");
+            });
+        }
+
+        $masterKodes = $query->paginate(10);
+        return view('sp_pelanggaran.master_kode', compact('masterKodes'));
+    }
+
+    public function masterKodeStore(Request $request)
+    {
+        $request->validate([
+            'kode' => 'required|string|max:50|unique:sp_kode_pelanggarans,kode',
+            'nama_pelanggaran' => 'required|string|max:255',
+            'jenis_sp' => 'required|string',
+            'pasal_dilanggar' => 'nullable|string',
+            'deskripsi' => 'nullable|string',
+        ]);
+
+        SpKodePelanggaran::create($request->only([
+            'kode', 'nama_pelanggaran', 'jenis_sp', 'pasal_dilanggar', 'deskripsi'
+        ]));
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Kode Pelanggaran berhasil ditambahkan!'
+        ]);
+    }
+
+    public function masterKodeUpdate(Request $request, $id)
+    {
+        $kodeModel = SpKodePelanggaran::findOrFail($id);
+
+        $request->validate([
+            'kode' => 'required|string|max:50|unique:sp_kode_pelanggarans,kode,' . $id,
+            'nama_pelanggaran' => 'required|string|max:255',
+            'jenis_sp' => 'required|string',
+            'pasal_dilanggar' => 'nullable|string',
+            'deskripsi' => 'nullable|string',
+        ]);
+
+        $kodeModel->update($request->only([
+            'kode', 'nama_pelanggaran', 'jenis_sp', 'pasal_dilanggar', 'deskripsi'
+        ]));
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Kode Pelanggaran berhasil diperbarui!'
+        ]);
+    }
+
+    public function masterKodeDestroy($id)
+    {
+        $kodeModel = SpKodePelanggaran::findOrFail($id);
+        $kodeModel->delete();
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Kode Pelanggaran berhasil dihapus!'
+        ]);
+    }
+
+    public function getKodeDetail($id)
+    {
+        $kodeModel = SpKodePelanggaran::findOrFail($id);
+        return response()->json([
+            'status' => 'success',
+            'data' => $kodeModel
+        ]);
+    }
+
+    public function exportData(Request $request)
+    {
+        if (!Auth::check() && !session('login') && !session('username')) {
+            return redirect('/login');
+        }
+
+        $user = Auth::user();
+        $permissions = view()->shared('permissions') ?: [];
+        $isIrRole = in_array('sp_pelanggaran_ir_staff', $permissions) || in_array('sp_pelanggaran_ir_head', $permissions);
+        $userDept = ($user ? $user->dept_id : null) ?: session('kode_department');
+
+        $query = SpPelanggaran::with('employee')->orderBy('tanggal_pelanggaran', 'desc');
+
+        if (!$isIrRole && $userDept) {
+            $query->whereHas('employee', function ($empQ) use ($userDept) {
+                $empQ->where('kode_divisi', $userDept)
+                     ->orWhere('kode_bagian', $userDept);
+            });
+        }
+
+        // Filter Klasifikasi
+        $kategori = $request->get('kategori', 'ALL');
+        if ($kategori !== 'ALL') {
+            if (in_array($kategori, ['AKTIF', 'EXPIRED', 'SP3', 'DITOLAK', 'CANCEL', 'PROSES'])) {
+                $query->where('kategori_sp', $kategori);
+            }
+        }
+
+        // Filter Tanggal
+        if ($request->filled('start_date')) {
+            $query->whereDate('tanggal_pelanggaran', '>=', $request->start_date);
+        }
+        if ($request->filled('end_date')) {
+            $query->whereDate('tanggal_pelanggaran', '<=', $request->end_date);
+        }
+
+        $sps = $query->get();
+        $format = strtolower($request->get('format', 'excel'));
+
+        $kategoriLabelMap = [
+            'ALL' => 'Semua Klasifikasi (Aktif, Expired, SP3, Ditolak, Cancel)',
+            'AKTIF' => 'SP Aktif (<= 6 Bulan)',
+            'EXPIRED' => 'Tidak Aktif (Expired > 6 Bulan)',
+            'SP3' => 'SP+3 / SP Berat',
+            'DITOLAK' => 'SP Ditolak',
+            'CANCEL' => 'SP Cancel / Dibatalkan',
+            'PROSES' => 'SP Sedang Diproses',
+        ];
+        $kategoriLabel = $kategoriLabelMap[$kategori] ?? 'Semua Data';
+
+        if ($format === 'pdf') {
+            $pdf = \Barryvdh\DomPDF\Facade::loadHTML(view('sp_pelanggaran.export_pdf', compact('sps', 'kategoriLabel', 'kategori'))->render());
+            $pdf->setPaper('a4', 'landscape');
+            $fileName = 'Rekapitulasi_SP_' . $kategori . '_' . date('Ymd_His') . '.pdf';
+            return $pdf->download($fileName);
+        }
+
+        // Default: Export to Excel (.xlsx) using PhpSpreadsheet
+        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Rekap SP');
+
+        // Header Title
+        $sheet->setCellValue('A1', 'PT. BUMI ALAM SEGAR');
+        $sheet->setCellValue('A2', 'LAPORAN REKAPITULASI & RIWAYAT SURAT PERINGATAN (SP) KARYAWAN');
+        $sheet->setCellValue('A3', 'Filter: ' . $kategoriLabel . ' | Tanggal Cetak: ' . date('d/m/Y H:i'));
+
+        $sheet->mergeCells('A1:J1');
+        $sheet->mergeCells('A2:J2');
+        $sheet->mergeCells('A3:J3');
+
+        $sheet->getStyle('A1:A2')->getFont()->setBold(true)->setSize(14);
+        $sheet->getStyle('A1:A3')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+
+        // Table Headers
+        $headers = [
+            'A5' => 'NO',
+            'B5' => 'NOMOR SP',
+            'C5' => 'NIK',
+            'D5' => 'NAMA KARYAWAN',
+            'E5' => 'DEPT / BAGIAN',
+            'F5' => 'GROUP',
+            'G5' => 'JENIS SP',
+            'H5' => 'TGL KEJADIAN',
+            'I5' => 'BERLAKU SAMPAI',
+            'J5' => 'KLASIFIKASI STATUS',
+        ];
+
+        foreach ($headers as $cell => $val) {
+            $sheet->setCellValue($cell, $val);
+        }
+
+        $headerStyle = [
+            'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+            'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['rgb' => '1E3C72']],
+            'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER],
+            'borders' => ['allBorders' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN]],
+        ];
+        $sheet->getStyle('A5:J5')->applyFromArray($headerStyle);
+
+        $row = 6;
+        foreach ($sps as $idx => $sp) {
+            $emp = $sp->employee;
+            $divisiName = null;
+            $bagianName = null;
+
+            if ($emp) {
+                if (!empty($emp->kode_divisi)) {
+                    $div = \DB::table('pkw_divisi')->where('id', $emp->kode_divisi)->orWhere('kode_divisi', $emp->kode_divisi)->first();
+                    $divisiName = $div ? ($div->nama_divisi ?? $div->kode_divisi) : (\DB::table('departments')->where('id', $emp->kode_divisi)->value('name') ?: $emp->kode_divisi);
+                }
+                if (!empty($emp->kode_bagian)) {
+                    $bag = \DB::table('pkw_bagian')->where('id', $emp->kode_bagian)->orWhere('kode_bagian', $emp->kode_bagian)->first();
+                    $bagianName = $bag ? ($bag->nama_bagian ?? $bag->kode_bagian) : $emp->kode_bagian;
+                }
+            }
+            $deptBagian = $divisiName && $bagianName ? "{$divisiName} - {$bagianName}" : ($divisiName ?: ($bagianName ?: '-'));
+            $groupVal = $emp ? ($emp->kode_group ?? $emp->group ?? '-') : '-';
+
+            $sheet->setCellValue('A' . $row, $idx + 1);
+            $sheet->setCellValue('B' . $row, $sp->nomor_sp_generated ?: ($sp->no_sp ?: 'DRAFT'));
+            $sheet->setCellValue('C' . $row, $emp->nik ?? '-');
+            $sheet->setCellValue('D' . $row, $emp->nama ?? '-');
+            $sheet->setCellValue('E' . $row, $deptBagian);
+            $sheet->setCellValue('F' . $row, $groupVal ?: '-');
+            $sheet->setCellValue('G' . $row, $sp->jenis_pelanggaran);
+            $sheet->setCellValue('H' . $row, \Carbon\Carbon::parse($sp->tanggal_pelanggaran)->format('d/m/Y'));
+            $sheet->setCellValue('I' . $row, $sp->masa_berlaku_sampai ? \Carbon\Carbon::parse($sp->masa_berlaku_sampai)->format('d/m/Y') : '-');
+            $sheet->setCellValue('J' . $row, $sp->kategori_sp ?: $sp->current_status);
+
+            $sheet->getStyle('A' . $row . ':J' . $row)->getBorders()->getAllBorders()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
+            $sheet->getStyle('A' . $row)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('C' . $row)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('F' . $row)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('H' . $row . ':J' . $row)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+
+            $row++;
+        }
+
+        foreach (range('A', 'J') as $col) {
+            $sheet->getColumnDimension($col)->setAutoSize(true);
+        }
+
+        $fileName = 'Rekapitulasi_SP_' . $kategori . '_' . date('Ymd_His') . '.xlsx';
+        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment; filename="' . $fileName . '"');
+        header('Cache-Control: max-age=0');
+
+        $writer->save('php://output');
+        exit;
+    }
+
+    public function importMasterKode(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:xlsx,xls'
+        ]);
+
+        try {
+            $file = $request->file('file');
+            $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($file->getPathname());
+
+            $importedCount = 0;
+            $updatedCount = 0;
+
+            foreach ($spreadsheet->getSheetNames() as $sheetName) {
+                $sheet = $spreadsheet->getSheetByName($sheetName);
+                $rows = $sheet->toArray(null, true, true, true);
+
+                foreach ($rows as $row) {
+                    $colA = trim($row['A'] ?? '');
+                    $colB = trim($row['B'] ?? '');
+                    $colC = trim($row['C'] ?? '');
+                    $colD = trim($row['D'] ?? '');
+
+                    if (empty($colA) || strtolower($colA) === 'nama pelanggaran' || strtolower($colA) === 'kode') {
+                        continue;
+                    }
+
+                    $namaPelanggaran = $colA;
+                    $deskripsi = $colB ?: $colA;
+                    $pasal = $colC ?: null;
+                    $jenisSpRaw = $colD ?: 'SP 1';
+
+                    $jenisSp = $jenisSpRaw;
+                    if (stripos($jenisSpRaw, 'Teguran') !== false) {
+                        $jenisSp = 'Teguran Lisan';
+                    } elseif (stripos($jenisSpRaw, 'SP I') !== false && stripos($jenisSpRaw, 'SP II') === false && stripos($jenisSpRaw, 'SP III') === false) {
+                        $jenisSp = 'SP 1';
+                    } elseif (stripos($jenisSpRaw, 'SP II') !== false && stripos($jenisSpRaw, 'SP III') === false) {
+                        $jenisSp = 'SP 2';
+                    } elseif (stripos($jenisSpRaw, 'SP III') !== false || stripos($jenisSpRaw, 'SP 3') !== false) {
+                        $jenisSp = 'SP 3';
+                    }
+
+                    $slugKode = 'KODE-' . strtoupper(substr(md5($namaPelanggaran), 0, 6));
+
+                    $existing = SpKodePelanggaran::where('nama_pelanggaran', $namaPelanggaran)->first();
+
+                    if ($existing) {
+                        $existing->update([
+                            'jenis_sp' => $jenisSp,
+                            'pasal_dilanggar' => $pasal,
+                            'deskripsi' => $deskripsi,
+                        ]);
+                        $updatedCount++;
+                    } else {
+                        SpKodePelanggaran::create([
+                            'kode' => $slugKode,
+                            'nama_pelanggaran' => $namaPelanggaran,
+                            'jenis_sp' => $jenisSp,
+                            'pasal_dilanggar' => $pasal,
+                            'deskripsi' => $deskripsi,
+                        ]);
+                        $importedCount++;
+                    }
+                }
+            }
+
+            return response()->json([
+                'status' => 'success',
+                'message' => "Import Master Kode SP Berhasil! Total Baru: {$importedCount}, Diperbarui: {$updatedCount}"
+            ]);
+
         } catch (\Exception $e) {
-            logger()->error('Gagal mengirim email final SP: ' . $e->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Gagal mengimpor file Excel: ' . $e->getMessage()
+            ], 500);
         }
     }
 }

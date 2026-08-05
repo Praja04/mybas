@@ -21,6 +21,7 @@ class SpApprovalLog extends Model
     const ACTION_IR_STAFF_SUBMIT = 'IR_STAFF_SUBMIT';
     const ACTION_IR_HEAD_APPROVE = 'IR_HEAD_APPROVE';
     const ACTION_IR_HEAD_REJECT = 'IR_HEAD_REJECT';
+    const ACTION_CANCEL = 'CANCEL';
     const ACTION_EMAIL_SENT = 'EMAIL_SENT';
 
     public function spPelanggaran()

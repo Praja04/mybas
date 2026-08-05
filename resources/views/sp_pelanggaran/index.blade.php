@@ -53,6 +53,26 @@
                             @csrf
                             <input type="hidden" name="id" id="sp_id" value="{{ isset($editSp) ? $editSp->id : '' }}">
                             
+                            <div class="mb-4 p-3 bg-light border rounded">
+                                <label for="select_kode_pelanggaran" class="form-label fw-bold text-primary mb-1">
+                                    <i class="ri-magic-line me-1"></i> Auto-Suggest Kode & Jenis Pelanggaran (Pilih untuk Auto-Fill)
+                                </label>
+                                <select id="select_kode_pelanggaran" class="form-select select2">
+                                    <option value="">-- Ketik Nama/Kode Pelanggaran (misal: Telat, Mangkir, K01, K02) --</option>
+                                    @if(isset($masterKodes))
+                                        @foreach($masterKodes as $mk)
+                                            <option value="{{ $mk->id }}" 
+                                                    data-jenis="{{ $mk->jenis_sp }}" 
+                                                    data-pasal="{{ $mk->pasal_dilanggar }}" 
+                                                    data-deskripsi="{{ $mk->deskripsi }}">
+                                                {{ $mk->kode }} - {{ $mk->nama_pelanggaran }} [{{ $mk->jenis_sp }}]
+                                            </option>
+                                        @endforeach
+                                    @endif
+                                </select>
+                                <div class="form-text text-muted small">Memilih kode akan mengisi Jenis SP, Pasal, dan Detail Alasan secara otomatis.</div>
+                            </div>
+
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="form-group mb-3">
@@ -147,6 +167,25 @@
 $(document).ready(function() {
     $('.select2').select2({ theme: 'bootstrap-5' });
 
+    $('#select_kode_pelanggaran').on('change', function() {
+        let $opt = $(this).find(':selected');
+        if ($opt.val()) {
+            let jenis = $opt.data('jenis');
+            let pasal = $opt.data('pasal');
+            let deskripsi = $opt.data('deskripsi');
+
+            if (jenis) {
+                $('#jenis_pelanggaran').val(jenis).trigger('change');
+            }
+            if (pasal) {
+                $('#pasal_dilanggar').val(pasal);
+            }
+            if (deskripsi) {
+                $('#alasan').val(deskripsi);
+            }
+        }
+    });
+
     $('#spForm').on('submit', function(e) {
         e.preventDefault();
         let formData = new FormData(this);
@@ -162,12 +201,13 @@ $(document).ready(function() {
             contentType: false,
             processData: false,
             success: function(res) {
-                alert(res.message);
-                window.location.href = "{{ route('sp_pelanggaran.trace') }}";
+                Swal.fire('Berhasil!', res.message, 'success').then(function() {
+                    window.location.href = "{{ route('sp_pelanggaran.trace') }}";
+                });
             },
             error: function(xhr) {
                 let err = xhr.responseJSON ? xhr.responseJSON.message : 'Terjadi kesalahan sistem.';
-                alert('Gagal: ' + err);
+                Swal.fire('Gagal!', err, 'error');
                 $('#btnSaveSp').prop('disabled', false).html('<i class="ri-save-line me-1"></i> Simpan SP');
             }
         });
