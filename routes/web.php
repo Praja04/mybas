@@ -792,10 +792,21 @@ Route::group(['middleware' => ['auth', 'rules']], function () {
     Route::get('/sp-pelanggaran/{id}/detail', [App\Http\Controllers\SpPelanggaranController::class, 'getSpDetail']);
     Route::post('/sp-pelanggaran/{id}/submit-to-depthead', [App\Http\Controllers\SpPelanggaranController::class, 'submitToDeptHead'])->name('sp_pelanggaran.submit_depthead');
     Route::post('/sp-pelanggaran/{id}/depthead-approve', [App\Http\Controllers\SpPelanggaranController::class, 'deptHeadApprove'])->name('sp_pelanggaran.depthead_approve');
+    Route::post('/sp-pelanggaran/depthead-mass-approve', [App\Http\Controllers\SpPelanggaranController::class, 'deptHeadMassApprove'])->name('sp_pelanggaran.depthead_mass_approve');
     Route::post('/sp-pelanggaran/{id}/depthead-reject', [App\Http\Controllers\SpPelanggaranController::class, 'deptHeadReject'])->name('sp_pelanggaran.depthead_reject');
     Route::post('/sp-pelanggaran/{id}/irstaff-submit', [App\Http\Controllers\SpPelanggaranController::class, 'irStaffSubmit'])->name('sp_pelanggaran.irstaff_submit');
     Route::post('/sp-pelanggaran/{id}/irhead-approve', [App\Http\Controllers\SpPelanggaranController::class, 'irHeadApprove'])->name('sp_pelanggaran.irhead_approve');
     Route::post('/sp-pelanggaran/{id}/irhead-reject', [App\Http\Controllers\SpPelanggaranController::class, 'irHeadReject'])->name('sp_pelanggaran.irhead_reject');
+    Route::post('/sp-pelanggaran/{id}/cancel', [App\Http\Controllers\SpPelanggaranController::class, 'cancelSp'])->name('sp_pelanggaran.cancel');
+    Route::get('/sp-pelanggaran/export', [App\Http\Controllers\SpPelanggaranController::class, 'exportData'])->name('sp_pelanggaran.export');
+
+    // Master Kode Pelanggaran (IR Staff)
+    Route::get('/sp-pelanggaran/master-kode', [App\Http\Controllers\SpPelanggaranController::class, 'masterKodeIndex'])->name('sp_pelanggaran.master_kode');
+    Route::post('/sp-pelanggaran/master-kode', [App\Http\Controllers\SpPelanggaranController::class, 'masterKodeStore'])->name('sp_pelanggaran.master_kode_store');
+    Route::post('/sp-pelanggaran/master-kode/{id}/update', [App\Http\Controllers\SpPelanggaranController::class, 'masterKodeUpdate'])->name('sp_pelanggaran.master_kode_update');
+    Route::delete('/sp-pelanggaran/master-kode/{id}', [App\Http\Controllers\SpPelanggaranController::class, 'masterKodeDestroy'])->name('sp_pelanggaran.master_kode_destroy');
+    Route::get('/sp-pelanggaran/master-kode/{id}/detail', [App\Http\Controllers\SpPelanggaranController::class, 'getKodeDetail'])->name('sp_pelanggaran.master_kode_detail');
+    Route::post('/sp-pelanggaran/master-kode/import', [App\Http\Controllers\SpPelanggaranController::class, 'importMasterKode'])->name('sp_pelanggaran.master_kode_import');
 });
 
 Route::fallback(function () {

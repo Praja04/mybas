@@ -84,33 +84,60 @@
 $(document).ready(function() {
     $('.btnApproveFinal').on('click', function() {
         let id = $(this).data('id');
-        let notes = prompt('Masukkan Catatan Approval Final (Opsional):');
-        if (notes === null) return;
-
-        $.post('/sp-pelanggaran/' + id + '/irhead-approve', {
-            _token: '{{ csrf_token() }}',
-            notes: notes
-        }, function(res) {
-            alert(res.message);
-            location.reload();
-        }).fail(function(xhr) {
-            alert('Gagal: ' + (xhr.responseJSON ? xhr.responseJSON.message : 'Error'));
+        Swal.fire({
+            title: 'Persetujuan Final SP (Approve)',
+            input: 'textarea',
+            inputLabel: 'Catatan Persetujuan Final (Opsional):',
+            inputPlaceholder: 'Masukkan catatan persetujuan final...',
+            showCancelButton: true,
+            confirmButtonText: '<i class="ri-checkbox-circle-fill me-1"></i> Approve Final & Terbitkan Nomor SP',
+            confirmButtonColor: '#28a745',
+            cancelButtonText: 'Batal'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                let notes = result.value || '';
+                Swal.fire({ title: 'Memproses Final Approval & Kirim Email...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                $.post('/sp-pelanggaran/' + id + '/irhead-approve', {
+                    _token: '{{ csrf_token() }}',
+                    notes: notes
+                }, function(res) {
+                    Swal.fire('Berhasil!', res.message, 'success').then(() => location.reload());
+                }).fail(function(xhr) {
+                    Swal.fire('Gagal!', xhr.responseJSON ? xhr.responseJSON.message : 'Terjadi kesalahan.', 'error');
+                });
+            }
         });
     });
 
     $('.btnRejectFinal').on('click', function() {
         let id = $(this).data('id');
-        let notes = prompt('Masukkan Catatan Penolakan (Wajib):');
-        if (!notes) { alert('Catatan penolakan harus diisi.'); return; }
-
-        $.post('/sp-pelanggaran/' + id + '/irhead-reject', {
-            _token: '{{ csrf_token() }}',
-            notes: notes
-        }, function(res) {
-            alert(res.message);
-            location.reload();
-        }).fail(function(xhr) {
-            alert('Gagal: ' + (xhr.responseJSON ? xhr.responseJSON.message : 'Error'));
+        Swal.fire({
+            title: 'Penolakan Final SP',
+            input: 'textarea',
+            inputLabel: 'Catatan Penolakan Final (Wajib):',
+            inputPlaceholder: 'Masukkan alasan penolakan final...',
+            inputValidator: (value) => {
+                if (!value.trim()) {
+                    return 'Catatan penolakan final wajib diisi!';
+                }
+            },
+            showCancelButton: true,
+            confirmButtonText: '<i class="ri-close-circle-line me-1"></i> Tolak Final',
+            confirmButtonColor: '#d33',
+            cancelButtonText: 'Batal'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                let notes = result.value;
+                Swal.fire({ title: 'Memproses...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                $.post('/sp-pelanggaran/' + id + '/irhead-reject', {
+                    _token: '{{ csrf_token() }}',
+                    notes: notes
+                }, function(res) {
+                    Swal.fire('Berhasil!', res.message, 'success').then(() => location.reload());
+                }).fail(function(xhr) {
+                    Swal.fire('Gagal!', xhr.responseJSON ? xhr.responseJSON.message : 'Terjadi kesalahan.', 'error');
+                });
+            }
         });
     });
 });

@@ -55,6 +55,14 @@ if ($hasAnyPerm(['sp_pelanggaran_dh', 'sp_pelanggaran_ir_staff', 'sp_pelanggaran
         'submenu' => [],
     ];
 }
+if ($hasAnyPerm(['sp_pelanggaran_ir_staff', 'sp_pelanggaran_ir_head'])) {
+    $transaksiItems[] = [
+        'path' => 'sp-pelanggaran/master-kode',
+        'label' => 'Master Kode SP',
+        'icon' => 'mdi-book-open-page-variant-outline',
+        'submenu' => [],
+    ];
+}
 
 if (!empty($transaksiItems)) {
     $menus[] = [
@@ -69,6 +77,12 @@ if (!empty($transaksiItems)) {
 
     @yield('content')
 
-    <x-slot name="styles">@stack('styles')</x-slot>
-    <x-slot name="scripts">@stack('scripts')</x-slot>
+    <x-slot name="styles">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+        @stack('styles')
+    </x-slot>
+    <x-slot name="scripts">
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        @stack('scripts')
+    </x-slot>
 </x-templates.velzon-hs.base>

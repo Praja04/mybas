@@ -28,6 +28,9 @@ class SpPelanggaran extends Model
         'pasal_dilanggar',
         'uraian_pelanggaran',
         'current_status',
+        'kategori_sp',
+        'masa_berlaku_sampai',
+        'is_active',
         'assigned_dept_head_id',
         'dept_head_approved_at',
         'dept_head_notes',
@@ -40,6 +43,45 @@ class SpPelanggaran extends Model
         'email_sent_at',
     ];
 
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::saving(function ($model) {
+            $model->syncKlasifikasiFields();
+        });
+    }
+
+    public function syncKlasifikasiFields()
+    {
+        $date = $this->tanggal_pelanggaran ? Carbon::parse($this->tanggal_pelanggaran) : Carbon::parse($this->created_at ?: now());
+        $sampai = $date->copy()->addMonths(6);
+
+        $this->masa_berlaku_sampai = $sampai->format('Y-m-d');
+
+        if ($this->current_status === self::STATUS_CANCELLED) {
+            $this->kategori_sp = 'CANCEL';
+            $this->is_active = 0;
+        } elseif ($this->current_status === self::STATUS_REJECTED) {
+            $this->kategori_sp = 'DITOLAK';
+            $this->is_active = 0;
+        } elseif ($this->current_status === self::STATUS_APPROVED) {
+            if ($sampai->isPast()) {
+                $this->kategori_sp = 'EXPIRED';
+                $this->is_active = 0;
+            } elseif (in_array($this->jenis_pelanggaran, ['SP 3', 'Surat Peringatan 3 (SP 3)'])) {
+                $this->kategori_sp = 'SP3';
+                $this->is_active = 1;
+            } else {
+                $this->kategori_sp = 'AKTIF';
+                $this->is_active = 1;
+            }
+        } else {
+            $this->kategori_sp = 'PROSES';
+            $this->is_active = 0;
+        }
+    }
+
     // Status constants
     const STATUS_DRAFT = 'DRAFT';
     const STATUS_PENDING_DH = 'PENDING_DH';
@@ -47,6 +89,54 @@ class SpPelanggaran extends Model
     const STATUS_PENDING_IR_HEAD = 'PENDING_IR_HEAD';
     const STATUS_APPROVED = 'APPROVED';
     const STATUS_REJECTED = 'REJECTED';
+    const STATUS_CANCELLED = 'CANCELLED';
+
+    /**
+     * Check if SP is active (APPROVED and within 6 months of validity)
+     */
+    public function isActiveSp()
+    {
+        if ($this->current_status !== self::STATUS_APPROVED) {
+            return false;
+        }
+        $date = $this->tanggal_pelanggaran ? Carbon::parse($this->tanggal_pelanggaran) : Carbon::parse($this->updated_at);
+        return $date->copy()->addMonths(6)->isFuture() || $date->copy()->addMonths(6)->isToday();
+    }
+
+    /**
+     * Check if SP is expired (> 6 months after issue)
+     */
+    public function isExpiredSp()
+    {
+        if ($this->current_status !== self::STATUS_APPROVED) {
+            return false;
+        }
+        $date = $this->tanggal_pelanggaran ? Carbon::parse($this->tanggal_pelanggaran) : Carbon::parse($this->updated_at);
+        return $date->copy()->addMonths(6)->isPast();
+    }
+
+    /**
+     * Get 5-classification status text
+     */
+    public function getKlasifikasiStatusAttribute()
+    {
+        if ($this->current_status === self::STATUS_CANCELLED) {
+            return 'CANCEL';
+        }
+        if ($this->current_status === self::STATUS_REJECTED) {
+            return 'DITOLAK';
+        }
+        if ($this->current_status === self::STATUS_APPROVED) {
+            if ($this->isExpiredSp()) {
+                return 'TIDAK AKTIF (EXPIRED)';
+            }
+            if (in_array($this->jenis_pelanggaran, ['SP 3', 'Surat Peringatan 3 (SP 3)'])) {
+                return 'SP+3';
+            }
+            return 'AKTIF';
+        }
+        return 'PROSES (' . $this->current_status . ')';
+    }
 
     public function employee()
     {
@@ -79,29 +169,57 @@ class SpPelanggaran extends Model
     }
 
     /**
-     * Generate nomor SP dengan format: SP-{KODE_DIVISI}/{MMYYYY}/{NNN}
+     * Convert month number to Roman numeral
+     */
+    public static function numberToRoman($number)
+    {
+        $map = [
+            12 => 'XII', 11 => 'XI', 10 => 'X', 9 => 'IX',
+            8  => 'VIII', 7  => 'VII', 6 => 'VI', 5 => 'V',
+            4  => 'IV', 3  => 'III', 2 => 'II', 1 => 'I'
+        ];
+        return $map[(int)$number] ?? 'I';
+    }
+
+    /**
+     * Generate nomor SP dengan format: No. {URUT}/SP/{KODE_DEPT}/{BULAN_ROMAWI}/{TAHUN}
+     * Contoh: No. 64/SP/IER/VII/2026
      */
     public static function generateNomorSp($employeeId)
     {
-        $employee = HrKaryawan::findOrFail($employeeId);
-        $kodeDept = $employee->kode_divisi ?? $employee->kode_bagian ?? 'UNK';
+        $employee = HrKaryawan::find($employeeId);
+        $kodeDept = 'UNK';
 
-        $bulan = Carbon::now()->format('m');
-        $tahun = Carbon::now()->format('Y');
-        $bulanTahun = $bulan . $tahun;
-
-        $lastSp = self::where('nomor_sp_generated', 'like', "SP-{$kodeDept}/{$bulanTahun}%")
-            ->orderBy('nomor_sp_generated', 'desc')
-            ->first();
-
-        if ($lastSp && preg_match('/\/(\d{3})$/', $lastSp->nomor_sp_generated, $matches)) {
-            $nextNumber = intval($matches[1]) + 1;
-        } else {
-            $nextNumber = 1;
+        if ($employee) {
+            if (!empty($employee->kode_divisi)) {
+                $div = \DB::table('pkw_divisi')->where('id', $employee->kode_divisi)->orWhere('kode_divisi', $employee->kode_divisi)->first();
+                if ($div) {
+                    $kodeDept = $div->kode_divisi ?? $div->nama_divisi;
+                } else {
+                    $dept = \DB::table('departments')->where('id', $employee->kode_divisi)->first();
+                    $kodeDept = $dept ? $dept->name : $employee->kode_divisi;
+                }
+            } elseif (!empty($employee->kode_bagian)) {
+                $bag = \DB::table('pkw_bagian')->where('id', $employee->kode_bagian)->orWhere('kode_bagian', $employee->kode_bagian)->first();
+                $kodeDept = $bag ? ($bag->kode_bagian ?? $bag->nama_bagian) : $employee->kode_bagian;
+            }
         }
 
-        $formattedNumber = str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
-        return "SP-{$kodeDept}/{$bulanTahun}/{$formattedNumber}";
+        $kodeDept = strtoupper(trim($kodeDept));
+
+        // Global sequence counter
+        $maxId = self::max('id') ?: 0;
+        $nextSeq = $maxId + 1;
+
+        $lastSp = self::whereNotNull('nomor_sp_generated')->orderBy('id', 'desc')->first();
+        if ($lastSp && preg_match('/(?:No\.\s*|^)(\d+)\/SP\//i', $lastSp->nomor_sp_generated, $matches)) {
+            $nextSeq = max($nextSeq, intval($matches[1]) + 1);
+        }
+
+        $bulanRomawi = self::numberToRoman(Carbon::now()->format('n'));
+        $tahun = Carbon::now()->format('Y');
+
+        return "{$nextSeq}/SP/{$kodeDept}/{$bulanRomawi}/{$tahun}";
     }
 
     public function canSubmitToDeptHead()
