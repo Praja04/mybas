@@ -65,3 +65,6 @@ services:
 networks:
   mybas:
     driver: bridge
+    ipam:
+      config:
+        - subnet: 10.200.1.0/24

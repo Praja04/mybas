@@ -26,10 +26,13 @@ COPY . .
 
 RUN mkdir -p storage/framework/cache/data storage/framework/sessions storage/framework/views storage/logs \
     && composer dump-autoload --optimize \
-    && php artisan package:discover --ansi
+    && php artisan package:discover --ansi \
+    && chmod -R 777 storage bootstrap/cache
 
-RUN chown -R www-data:www-data storage bootstrap/cache \
-    && chmod -R 775 storage bootstrap/cache
+COPY docker/entrypoint.sh /usr/local/bin/mybas-entrypoint.sh
+RUN chmod +x /usr/local/bin/mybas-entrypoint.sh
+
+ENTRYPOINT ["mybas-entrypoint.sh"]
 
 EXPOSE 9000
 
