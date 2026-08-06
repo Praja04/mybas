@@ -35,6 +35,7 @@ Dokumentasi ini untuk programmer maupun AI agent (Claude, Cursor, dll.) yang men
 | `docker-compose.yml` | Service `app`, `nginx`, `queue` |
 | `docker/nginx/default.conf` | Nginx: Laravel + gzip + cache aset statis |
 | `docker/php-fpm/www.conf` | Pool FPM: `pm=dynamic`, min 10 / max 50 worker |
+| `docker/php/opcache.ini` | OPcache production: 512MB, 20000 file, `validate_timestamps=0` |
 | `.dockerignore` | Mengecualikan vendor/node_modules/.git/storage dari build |
 
 ## 3. Prasyarat
@@ -93,6 +94,12 @@ Setelah ini, aplikasi bisa diakses di **http://localhost:8080**.
 - Menjalankan **2 worker** `php artisan queue:work database --tries=3 --timeout=90 --sleep=1` dalam satu container via `sh -c ... & wait`.
 - Perlu tabel `jobs` di DB (migration `2023_11_22_083702_create_jobs_table.php`, sudah ada).
 - Berguna karena aplikasi banyak memakai `ShouldQueue` (Mail, Telegram, HR jobs).
+
+### 5.6 OPcache (`docker/php/opcache.ini`, baked ke image)
+- `opcache.enable=1`, `memory_consumption=512`, `max_accelerated_files=20000`, `fast_shutdown=1`.
+- **`validate_timestamps=0`** — perubahan kode TIDAK otomatis terlihat (harus rebuild image, sama seperti aturan bake di §7). Jangan set ini ke 1 di production.
+- Benchmark nyata di lingkungan ini: `/login` dari **23.9 → 224.9 req/s** (~9.4x) dengan `ab -n 500 -c 20`.
+- Karena code baked ke image, cache tidak perlu di-flush saat deploy — konten cache terhapus otomatis saat container baru di-recreate.
 
 ## 6. Operasional Sehari-hari
 

@@ -11,9 +11,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         libxml2-dev \
         libcurl4-openssl-dev \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install -j$(nproc) pdo_mysql mbstring exif pcntl bcmath gd zip \
+    && docker-php-ext-install -j$(nproc) pdo_mysql mbstring exif pcntl bcmath gd zip opcache \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
+
+COPY docker/php/opcache.ini /usr/local/etc/php/conf.d/zz-opcache.ini
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
