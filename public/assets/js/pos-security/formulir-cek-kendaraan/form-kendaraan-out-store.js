@@ -145,7 +145,7 @@ $(document).ready(function () {
                     setStepOut("table");
 
                     if (window.cekKendaraanOutTable) {
-                        window.cekKendaraanOutTable.ajax.reload(null, false);
+                        window.cekKendaraanOutTable.reload(null, false);
                     }
 
                     return;

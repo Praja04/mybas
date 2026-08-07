@@ -102,7 +102,7 @@ $(document).ready(function () {
                         await window.IDBDraft.deleteDraft(photoSessionId);
                         delete window.draftCache[photoSessionId];
 
-                        window.cekKendaraanInTable.ajax.reload(null, false);
+                        window.cekKendaraanInTable.reload(null, false);
                     }
                     
                     photoStore = {};
@@ -189,7 +189,7 @@ $(document).ready(function () {
                     setStep("table");
 
                     if (window.cekKendaraanInTable) {
-                        window.cekKendaraanInTable.ajax.reload(null, false);
+                        window.cekKendaraanInTable.reload(null, false);
                     }
 
                     return;

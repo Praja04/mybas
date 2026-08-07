@@ -25,7 +25,7 @@
                         </p>
                     </div>
 
-                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="location.reload()">
+                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="if(window.cekKendaraanInTable) { window.cekKendaraanInTable.reload(null, true); } else { location.reload(); }">
                         <i class="mdi mdi-refresh"></i> Refresh
                     </button>
                 </div>
@@ -54,19 +54,46 @@
                 </div>
 
                 <div id="tableWrapper">
+                    <!-- Controls (Per Page & Search) -->
+                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-3">
+                        <div class="d-flex align-items-center gap-2">
+                            <select id="perPageSelectIn" class="form-select form-select-sm" style="width: auto;">
+                                <option value="10" selected>10</option>
+                                <option value="25">25</option>
+                                <option value="50">50</option>
+                            </select>
+                            <span class="text-muted small">entri per halaman</span>
+                        </div>
+                        <div style="width: 250px;" class="max-w-100">
+                            <input type="text" id="searchInputIn" class="form-control form-control-sm" placeholder="Cari nomor polisi...">
+                        </div>
+                    </div>
+
                     <div class="table-responsive">
-                        <table class="kendaraan-in-datatables table nowrap align-middle" style="width:100%">
+                        <table class="table nowrap align-middle" id="tableInCustom" style="width:100%">
                             <thead>
                                 <tr>
-                                    <th>No</th>
+                                    <th style="width: 5%">No</th>
                                     <th>Nomor Polisi</th>
                                     <th>Status</th>
-                                    <th>Aksi</th>
+                                    <th style="width: 15%">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody>
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted py-3">Memuat data...</td>
+                                </tr>
                             </tbody>
                         </table>
+                    </div>
+
+                    <!-- Pagination -->
+                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-2 mt-3">
+                        <div id="paginationInfoIn" class="text-muted small"></div>
+                        <nav>
+                            <ul class="pagination pagination-sm mb-0" id="paginationListIn">
+                            </ul>
+                        </nav>
                     </div>
                 </div>
 

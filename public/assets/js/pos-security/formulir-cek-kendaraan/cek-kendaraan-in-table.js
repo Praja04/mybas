@@ -2,88 +2,153 @@ import { getDatatable } from "../../shared/services/datatable.services.js";
 
 export class ContentDatatable {
     constructor() {
-        this._datatable = {
-            className: ".kendaraan-in-datatables",
-            url: API_DATATABLE_KENDARAAN_IN,
-            method: "GET",
-            language: {
-                emptyTable: "Semua kendaraan sudah dicek masuk",
-                zeroRecords: "Data kendaraan tidak ditemukan",
-                loadingRecords: "Memuat data...",
-                processing: "Loading...",
-            },
-            dataColumns: {
-                column: [
-                    {
-                        data: "DT_RowIndex",
-                        name: "DT_RowIndex",
-                        orderable: false,
-                        searchable: false,
-                    },
-                    {
-                        data: "nomor_polisi",
-                        name: "v.nopol",
-                        orderable: false,
-                    },
-                    {
-                    data: null,
-                    name: "status",
-                    orderable: false,
-                    searchable: false,
-                    render: function (data, type, row) {
-                        return window.getStatusWithDraft(row);
-                    }
-                    },
-                    {
-                        data: "action",
-                        name: "action",
-                        orderable: false,
-                        searchable: false,
-                    },
-                ],
-            },
-            columnDefs: [
-                {
-                    targets: 1, // Nomor Polisi
-                    responsivePriority: 1,
-                },
-                {
-                    targets: -1, // Action
-                    responsivePriority: 2,
-                },
-            ],
-            dataSend: {},
-        };
+        this.url = API_DATATABLE_KENDARAAN_IN;
+        this.currentPage = 1;
+        this.perPage = 10;
+        this.search = '';
     }
 
-    
     initialize() {
-        return new Promise((resolve, reject) => {
-            $(() => {
-                // Extracting filename from URL
-                const url = new URL(this._datatable.url);
-                const filename = url.pathname.split("/").pop();
+        // Expose instance globally for reloads or other triggers
+        window.cekKendaraanInTable = this;
 
-                getDatatable(this._datatable)
-                    .then((dt) => {
-                        console.log("datatable content initialized");
-                        window.cekKendaraanInTable = dt;
-                        resolve();
-                    })
-                    .catch((error) => {
-                        console.error(
-                            "datatable content  initialization failed:",
-                            error
-                        );
-                        reject(error);
-                    });
+        // Bind DOM events
+        $('#perPageSelectIn').on('change', (e) => {
+            this.perPage = parseInt($(e.target).val());
+            this.currentPage = 1;
+            this.load();
+        });
+
+        // Add a small debounce for typing search
+        let searchTimeout;
+        $('#searchInputIn').on('input', (e) => {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                this.search = $(e.target).val();
+                this.currentPage = 1;
+                this.load();
+            }, 300);
+        });
+
+        // Initial load
+        return this.load();
+    }
+
+    load() {
+        return new Promise((resolve, reject) => {
+            const tableBody = $('#tableInCustom tbody');
+            tableBody.html('<tr><td colspan="4" class="text-center text-muted py-3">Memuat data...</td></tr>');
+
+            $.ajax({
+                url: this.url,
+                method: 'GET',
+                data: {
+                    page: this.currentPage,
+                    per_page: this.perPage,
+                    search: this.search
+                },
+                success: (response) => {
+                    this.render(response);
+                    resolve(response);
+                },
+                error: (xhr, status, error) => {
+                    tableBody.html('<tr><td colspan="4" class="text-center text-danger py-3">Gagal memuat data. Silakan coba lagi.</td></tr>');
+                    reject(error);
+                }
             });
+        });
+    }
+
+    // Alias reload to load
+    reload(callback, resetPaging = true) {
+        if (resetPaging) {
+            this.currentPage = 1;
+        }
+        return this.load().then(() => {
+            if (typeof callback === 'function') callback();
+        });
+    }
+
+    render(response) {
+        const tableBody = $('#tableInCustom tbody');
+        tableBody.empty();
+
+        const data = response.data || [];
+        if (data.length === 0) {
+            tableBody.html('<tr><td colspan="4" class="text-center text-muted py-3">Semua kendaraan sudah dicek masuk</td></tr>');
+            $('#paginationInfoIn').text('Menampilkan 0 sampai 0 dari 0 entri');
+            $('#paginationListIn').empty();
+            return;
+        }
+
+        // Render rows
+        data.forEach((row) => {
+            const tr = $('<tr></tr>');
+            
+            // Format status with draft badge if applicable
+            let statusBadge = row.status_html;
+            if (window.getStatusWithDraft) {
+                statusBadge = window.getStatusWithDraft(row);
+            }
+
+            tr.append(`<td>${row.DT_RowIndex}</td>`);
+            tr.append(`<td>${row.nomor_polisi_html}</td>`);
+            tr.append(`<td>${statusBadge}</td>`);
+            tr.append(`<td>${row.action_html}</td>`);
+            tableBody.append(tr);
+        });
+
+        // Render pagination info
+        const from = response.from || 0;
+        const to = response.to || 0;
+        const total = response.total || 0;
+        $('#paginationInfoIn').text(`Menampilkan ${from} sampai ${to} dari ${total} entri`);
+
+        // Render pagination links
+        const paginationList = $('#paginationListIn');
+        paginationList.empty();
+
+        const lastPage = response.last_page || 1;
+        
+        // Prev button
+        const prevClass = this.currentPage === 1 ? 'disabled' : '';
+        const prevBtn = $(`<li class="page-item ${prevClass}"><a class="page-link" href="#" data-page="${this.currentPage - 1}">←</a></li>`);
+        paginationList.append(prevBtn);
+
+        // Page numbers
+        const maxVisible = 5;
+        let startPage = Math.max(1, this.currentPage - Math.floor(maxVisible / 2));
+        let endPage = Math.min(lastPage, startPage + maxVisible - 1);
+        if (endPage - startPage + 1 < maxVisible) {
+            startPage = Math.max(1, endPage - maxVisible + 1);
+        }
+
+        for (let p = startPage; p <= endPage; p++) {
+            const activeClass = p === this.currentPage ? 'active' : '';
+            const pageItem = $(`<li class="page-item ${activeClass}"><a class="page-link" href="#" data-page="${p}">${p}</a></li>`);
+            paginationList.append(pageItem);
+        }
+
+        // Next button
+        const nextClass = this.currentPage === lastPage ? 'disabled' : '';
+        const nextBtn = $(`<li class="page-item ${nextClass}"><a class="page-link" href="#" data-page="${this.currentPage + 1}">→</a></li>`);
+        paginationList.append(nextBtn);
+
+        // Bind pagination clicks
+        paginationList.find('a').on('click', (e) => {
+            e.preventDefault();
+            const targetPage = parseInt($(e.target).attr('data-page'));
+            if (targetPage >= 1 && targetPage <= lastPage && targetPage !== this.currentPage) {
+                this.currentPage = targetPage;
+                this.load();
+            }
         });
     }
 }
 
-async function preloadDraftCache() {
+window.ContentDatatableIn = ContentDatatable;
 
+async function preloadDraftCache() {
     if (!window.IDBDraft) {
         console.warn("IDBDraft belum siap");
         return;
@@ -99,8 +164,6 @@ async function preloadDraftCache() {
 
     console.log("Draft cache loaded:", window.draftCache);
 }
-
-
 
 const contentDatatable = new ContentDatatable();
 
@@ -135,6 +198,6 @@ window.getStatusWithDraft = function (row) {
 
     // status normal dari backend
     return `
-        ${row.status}
+        ${row.status_html || row.status || '-'}
     `;
 };
