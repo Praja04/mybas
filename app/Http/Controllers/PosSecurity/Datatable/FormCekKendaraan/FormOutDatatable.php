@@ -12,8 +12,44 @@ class FormOutDatatable extends Controller
 {
     public function index(Request $request)
     {
+        $perPage = $request->input('per_page', 10);
+        $search = $request->input('search');
+
         $query = $this->rawData($request);
-        return $this->DrawTable($query);
+
+        if (!empty($search)) {
+            $query->where('v.nopol', 'like', '%' . $search . '%');
+        }
+
+        $paginated = $query->paginate($perPage);
+
+        $paginated->getCollection()->transform(function ($item, $key) use ($paginated) {
+            $item->DT_RowIndex = ($paginated->currentPage() - 1) * $paginated->perPage() + $key + 1;
+            
+            $item->nomor_polisi_html = '<strong>' . ($item->nomor_polisi ?: '-') . '</strong>';
+            $item->action_html = '
+                <button 
+                    type="button"
+                    class="btn btn-sm btn-primary open-form-out"
+                    data-trncekid="' . e($item->trncekid) . '"
+                    data-trnvisitorid="' . e($item->trnvisitorid) . '"
+                    data-nomor-polisi="' . e($item->nomor_polisi) . '"
+                    data-nama-supir="' . e($item->namavisitor) . '"
+                    data-company="' . e($item->namacomp) . '"
+                    data-muatan-type="' . e($item->muatan_type) . '"
+                    data-truck-type="' . e($item->truck_type) . '"
+                    data-truck-type-other="' . e($item->truck_type_other) . '"
+                    data-checked-in-at="' . e($item->checked_in_at) . '"
+                >
+                    Lakukan Cek Keluar
+                </button>
+            ';
+            $item->status_html = '<span class="badge bg-warning">Belum Cek Keluar</span>';
+            
+            return $item;
+        });
+
+        return response()->json($paginated);
     }
 
     private function rawData($request)
@@ -94,36 +130,4 @@ class FormOutDatatable extends Controller
             ->limit(300);
     }
 
-    private function DrawTable($query)
-    {
-        return DataTables::of($query)
-            ->addIndexColumn()
-            ->editColumn('nomor_polisi', function ($item) {
-                return '<strong>' . ($item->nomor_polisi ?: '-') . '</strong>';
-            })
-            ->addColumn('action', function ($item) {
-                return '
-                    <button 
-                        type="button"
-                        class="btn btn-sm btn-primary open-form-out"
-                        data-trncekid="' . e($item->trncekid) . '"
-                        data-trnvisitorid="' . e($item->trnvisitorid) . '"
-                        data-nomor-polisi="' . e($item->nomor_polisi) . '"
-                        data-nama-supir="' . e($item->namavisitor) . '"
-                        data-company="' . e($item->namacomp) . '"
-                        data-muatan-type="' . e($item->muatan_type) . '"
-                        data-truck-type="' . e($item->truck_type) . '"
-                        data-truck-type-other="' . e($item->truck_type_other) . '"
-                        data-checked-in-at="' . e($item->checked_in_at) . '"
-                    >
-                        Lakukan Cek Keluar
-                    </button>
-                ';
-            })
-            ->addColumn('status', function ($item) {
-                return '<span class="badge bg-warning">Belum Cek Keluar</span>';
-            })
-            ->rawColumns(['nomor_polisi', 'action', 'status'])
-            ->make(true);
-    }
 }
