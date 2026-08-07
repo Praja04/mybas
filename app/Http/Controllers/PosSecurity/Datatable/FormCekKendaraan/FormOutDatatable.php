@@ -65,7 +65,11 @@ class FormOutDatatable extends Controller
                 DB::raw("'transaction' as source"),
                 'created_at',
             ])
-            ->where('keterangan', 'SUPIR');
+            ->where('keterangan', 'SUPIR')
+            ->where(function ($q) {
+                $q->whereNull('kartu_dikembalikan')
+                  ->orWhere('kartu_dikembalikan', 0);
+            });
 
         // visitor VENDOR
         $vendor = DB::table('ga_visitor_vendor')
@@ -80,6 +84,10 @@ class FormOutDatatable extends Controller
             ])
             ->whereNotNull('nopol')
             ->where('nopol', '!=', '')
+            ->where(function ($q) {
+                $q->whereNull('kartu_dikembalikan')
+                  ->orWhere('kartu_dikembalikan', 0);
+            })
             ->whereNotExists(function ($query) {
                 $query->select(DB::raw(1))
                     ->from('ga_visitor_transaction')
@@ -106,11 +114,6 @@ class FormOutDatatable extends Controller
             })
             ->whereNotNull('c.checked_in_at') // sudah cek masuk
             ->whereNull('c.checked_out_at') // tapi belum cek keluar
-            ->where(function ($q) {
-                $q->whereNull('v.kartu_dikembalikan')
-                    ->orWhere('v.kartu_dikembalikan', 0);
-            })
-
             ->select([
                 'v.trnvisitorid',
                 'v.nopol as nomor_polisi',
