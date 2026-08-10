@@ -293,6 +293,8 @@
                 <div id="capturedImageContainer" class="mt-3" style="display: none;">
                     <img id="capturedImage" class="img-fluid rounded shadow" />
                 </div>
+
+                <input type="file" id="fileInput" accept="image/*" multiple style="display: none;">
             </div>
             <div class="modal-footer justify-content-between">
                 <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
@@ -300,6 +302,9 @@
                     <button id="retakeBtn" class="btn btn-warning me-2" style="display: none;">Tambah
                         Foto</button>
                     <button id="captureBtn" class="btn btn-secondary me-2" style="display: none;">Capture</button>
+                    <button id="uploadGalleryBtn" class="btn btn-info text-white me-2">
+                        <i class="mdi mdi-image-multiple"></i> Galeri
+                    </button>
                     <button id="saveBtn" class="btn btn-primary" style="display: none;">Simpan Semua</button>
                 </div>
             </div>
@@ -324,12 +329,17 @@
                 <div id="capturedImageContainerSupplier" class="mt-3" style="display: none;">
                     <img id="capturedImageSupplier" class="img-fluid rounded shadow" />
                 </div>
+
+                <input type="file" id="fileInputSupplier" accept="image/*" style="display: none;">
             </div>
             <div class="modal-footer justify-content-between">
                 <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
                 <div>
                     <button id="retakeBtnSupplier" class="btn btn-warning me-2" style="display: none;">Ulangi</button>
                     <button id="captureBtnSupplier" class="btn btn-secondary me-2" style="display: none;">Capture</button>
+                    <button id="uploadGalleryBtnSupplier" class="btn btn-info text-white me-2">
+                        <i class="mdi mdi-image"></i> Galeri
+                    </button>
                     <button id="saveBtnSupplier" class="btn btn-primary" style="display: none;">Simpan</button>
                 </div>
             </div>

@@ -253,6 +253,8 @@
                 <div id="capturedImageContainerOut" class="mt-3" style="display: none;">
                     <img id="capturedImageOut" class="img-fluid rounded shadow" />
                 </div>
+
+                <input type="file" id="fileInputOut" accept="image/*" multiple style="display: none;">
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
@@ -260,6 +262,9 @@
                     <button id="retakeBtnOut" class="btn btn-warning me-2" style="display: none;">Tambah
                         Foto</button>
                     <button id="captureBtnOut" class="btn btn-secondary me-2" style="display: none;">Capture</button>
+                    <button id="uploadGalleryBtnOut" class="btn btn-info text-white me-2">
+                        <i class="mdi mdi-image-multiple"></i> Galeri
+                    </button>
                     <button id="saveBtnOut" class="btn btn-primary" style="display: none;">Simpan Semua</button>
                 </div>
             </div>
