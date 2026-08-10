@@ -18,7 +18,7 @@
                     <!-- HEADER FORM -->
                     <div id="headerForm" style="display:none">
                         <h2 class="fw-bold text-primary">
-                            Form Pengecekan Kendaraan (Masuk) TESTING
+                            Form Pengecekan Kendaraan (Masuk)
                         </h2>
                         <p class="text-muted">
                             Lengkapi data pengecekan kendaraan masuk
