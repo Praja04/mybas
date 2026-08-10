@@ -12,6 +12,8 @@
     const capturedImageContainer = document.getElementById(
         "capturedImageContainer"
     );
+    const uploadGalleryBtn = document.getElementById("uploadGalleryBtn");
+    const fileInput = document.getElementById("fileInput");
 
     let activePhotoKey = null;
     window.photoStore = {};
@@ -48,6 +50,7 @@
                 { el: startCamera, show: false },
                 { el: captureBtn, show: true },
                 { el: retakeBtn, show: false },
+                { el: uploadGalleryBtn, show: true },
                 { el: saveBtn, show: false },
             ]);
         } catch (err) {
@@ -76,6 +79,7 @@
             { el: video, show: false },
             { el: captureBtn, show: false },
             { el: retakeBtn, show: true },
+            { el: uploadGalleryBtn, show: false },
             { el: saveBtn, show: true },
         ]);
 
@@ -90,6 +94,7 @@
             { el: video, show: true },
             { el: captureBtn, show: true },
             { el: retakeBtn, show: false },
+            { el: uploadGalleryBtn, show: true },
             { el: saveBtn, show: false },
         ]);
 
@@ -144,10 +149,13 @@
         if (capturedImageContainer)
             capturedImageContainer.style.display = "none";
 
+        if (fileInput) fileInput.value = "";
+
         toggleElements([
             { el: startCamera, show: true },
             { el: captureBtn, show: false },
             { el: retakeBtn, show: false },
+            { el: uploadGalleryBtn, show: true },
             { el: saveBtn, show: false },
         ]);
 
@@ -158,6 +166,39 @@
             ctx.clearRect(0, 0, canvas.width, canvas.height);
         }
     };
+
+    function handleGalleryUpload(e) {
+        const files = e.target.files;
+        if (!files || files.length === 0) return;
+
+        stopStream();
+        if (video) video.style.display = "none";
+
+        let loadedCount = 0;
+        for (let i = 0; i < files.length; i++) {
+            const reader = new FileReader();
+            reader.onload = function (event) {
+                const dataURL = event.target.result;
+                tempPhotos.push(dataURL);
+
+                if (capturedImage) capturedImage.src = dataURL;
+                if (capturedImageContainer)
+                    capturedImageContainer.style.display = "block";
+
+                loadedCount++;
+                if (loadedCount === files.length) {
+                    toggleElements([
+                        { el: video, show: false },
+                        { el: captureBtn, show: false },
+                        { el: retakeBtn, show: true },
+                        { el: uploadGalleryBtn, show: false },
+                        { el: saveBtn, show: true },
+                    ]);
+                }
+            };
+            reader.readAsDataURL(files[i]);
+        }
+    }
 
     document.addEventListener("DOMContentLoaded", function () {
         const modalElement = document.getElementById("myModal");
@@ -178,6 +219,10 @@
         if (captureBtn) captureBtn.addEventListener("click", captureImage);
         if (retakeBtn) retakeBtn.addEventListener("click", retakePhoto);
         if (saveBtn) saveBtn.addEventListener("click", saveCapture);
+        if (uploadGalleryBtn && fileInput) {
+            uploadGalleryBtn.addEventListener("click", () => fileInput.click());
+            fileInput.addEventListener("change", handleGalleryUpload);
+        }
     });
 
     // ============================================================
@@ -191,6 +236,8 @@
     const startCameraSupplier = document.getElementById("startCameraSupplier");
     const capturedImageSupplier = document.getElementById("capturedImageSupplier");
     const capturedImageContainerSupplier = document.getElementById("capturedImageContainerSupplier");
+    const uploadGalleryBtnSupplier = document.getElementById("uploadGalleryBtnSupplier");
+    const fileInputSupplier = document.getElementById("fileInputSupplier");
 
     let activeSupplierKey = null;   // 'foto_diri'
     let tempSupplierPhoto = null;   // single capture
@@ -223,6 +270,7 @@
                 { el: startCameraSupplier, show: false },
                 { el: captureBtnSupplier, show: true },
                 { el: retakeBtnSupplier, show: false },
+                { el: uploadGalleryBtnSupplier, show: true },
                 { el: saveBtnSupplier, show: false },
             ]);
         } catch (err) {
@@ -249,6 +297,7 @@
             { el: videoSupplier, show: false },
             { el: captureBtnSupplier, show: false },
             { el: retakeBtnSupplier, show: true },
+            { el: uploadGalleryBtnSupplier, show: false },
             { el: saveBtnSupplier, show: true },
         ]);
 
@@ -265,6 +314,7 @@
             { el: videoSupplier, show: true },
             { el: captureBtnSupplier, show: true },
             { el: retakeBtnSupplier, show: false },
+            { el: uploadGalleryBtnSupplier, show: true },
             { el: saveBtnSupplier, show: false },
         ]);
 
@@ -323,10 +373,13 @@
         if (capturedImageContainerSupplier)
             capturedImageContainerSupplier.style.display = "none";
 
+        if (fileInputSupplier) fileInputSupplier.value = "";
+
         toggleSupplier([
             { el: startCameraSupplier, show: true },
             { el: captureBtnSupplier, show: false },
             { el: retakeBtnSupplier, show: false },
+            { el: uploadGalleryBtnSupplier, show: true },
             { el: saveBtnSupplier, show: false },
         ]);
 
@@ -336,6 +389,33 @@
             const ctx = canvasSupplier.getContext("2d");
             ctx.clearRect(0, 0, canvasSupplier.width, canvasSupplier.height);
         }
+    }
+
+    function handleGalleryUploadSupplier(e) {
+        const files = e.target.files;
+        if (!files || files.length === 0) return;
+
+        stopStreamSupplier();
+        if (videoSupplier) videoSupplier.style.display = "none";
+
+        const reader = new FileReader();
+        reader.onload = function (event) {
+            const dataURL = event.target.result;
+            tempSupplierPhoto = dataURL;
+
+            if (capturedImageSupplier) capturedImageSupplier.src = dataURL;
+            if (capturedImageContainerSupplier)
+                capturedImageContainerSupplier.style.display = "block";
+
+            toggleSupplier([
+                { el: videoSupplier, show: false },
+                { el: captureBtnSupplier, show: false },
+                { el: retakeBtnSupplier, show: true },
+                { el: uploadGalleryBtnSupplier, show: false },
+                { el: saveBtnSupplier, show: true },
+            ]);
+        };
+        reader.readAsDataURL(files[0]);
     }
 
     document.addEventListener("DOMContentLoaded", function () {
@@ -360,6 +440,10 @@
             retakeBtnSupplier.addEventListener("click", retakePhotoSupplier);
         if (saveBtnSupplier)
             saveBtnSupplier.addEventListener("click", saveCaptureSupplier);
+        if (uploadGalleryBtnSupplier && fileInputSupplier) {
+            uploadGalleryBtnSupplier.addEventListener("click", () => fileInputSupplier.click());
+            fileInputSupplier.addEventListener("change", handleGalleryUploadSupplier);
+        }
     });
 
     // Set key & label saat tombol foto identitas diklik

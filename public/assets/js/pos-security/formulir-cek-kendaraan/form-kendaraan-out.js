@@ -9,6 +9,8 @@
     const capturedImageContainerOut = document.getElementById(
         "capturedImageContainerOut"
     );
+    const uploadGalleryBtnOut = document.getElementById("uploadGalleryBtnOut");
+    const fileInputOut = document.getElementById("fileInputOut");
 
     let activePhotoKey = null;
     window.photoStore = {};
@@ -45,6 +47,7 @@
                 { el: startCamera, show: false },
                 { el: captureBtn, show: true },
                 { el: retakeBtn, show: false },
+                { el: uploadGalleryBtnOut, show: true },
                 { el: saveBtn, show: false },
             ]);
         } catch (err) {
@@ -73,6 +76,7 @@
             { el: videoOut, show: false },
             { el: captureBtn, show: false },
             { el: retakeBtn, show: true },
+            { el: uploadGalleryBtnOut, show: false },
             { el: saveBtn, show: true },
         ]);
 
@@ -87,6 +91,7 @@
             { el: videoOut, show: true },
             { el: captureBtn, show: true },
             { el: retakeBtn, show: false },
+            { el: uploadGalleryBtnOut, show: true },
             { el: saveBtn, show: false },
         ]);
 
@@ -141,10 +146,13 @@
         if (capturedImageContainerOut)
             capturedImageContainerOut.style.display = "none";
 
+        if (fileInputOut) fileInputOut.value = "";
+
         toggleElements([
             { el: startCamera, show: true },
             { el: captureBtn, show: false },
             { el: retakeBtn, show: false },
+            { el: uploadGalleryBtnOut, show: true },
             { el: saveBtn, show: false },
         ]);
 
@@ -155,6 +163,39 @@
             ctx.clearRect(0, 0, canvasOut.width, canvasOut.height);
         }
     };
+
+    function handleGalleryUploadOut(e) {
+        const files = e.target.files;
+        if (!files || files.length === 0) return;
+
+        stopStream();
+        if (videoOut) videoOut.style.display = "none";
+
+        let loadedCount = 0;
+        for (let i = 0; i < files.length; i++) {
+            const reader = new FileReader();
+            reader.onload = function (event) {
+                const dataURL = event.target.result;
+                tempPhotos.push(dataURL);
+
+                if (capturedImageOut) capturedImageOut.src = dataURL;
+                if (capturedImageContainerOut)
+                    capturedImageContainerOut.style.display = "block";
+
+                loadedCount++;
+                if (loadedCount === files.length) {
+                    toggleElements([
+                        { el: videoOut, show: false },
+                        { el: captureBtn, show: false },
+                        { el: retakeBtn, show: true },
+                        { el: uploadGalleryBtnOut, show: false },
+                        { el: saveBtn, show: true },
+                    ]);
+                }
+            };
+            reader.readAsDataURL(files[i]);
+        }
+    }
 
     function renderFotoSectionOut(truckType) {
         const $fotoSection = $("#fotoSectionOut");
@@ -232,6 +273,10 @@
         if (captureBtn) captureBtn.addEventListener("click", captureImage);
         if (retakeBtn) retakeBtn.addEventListener("click", retakePhoto);
         if (saveBtn) saveBtn.addEventListener("click", saveCaptureOut);
+        if (uploadGalleryBtnOut && fileInputOut) {
+            uploadGalleryBtnOut.addEventListener("click", () => fileInputOut.click());
+            fileInputOut.addEventListener("change", handleGalleryUploadOut);
+        }
     });
 
     $(document).ready(function () {
