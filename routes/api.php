@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\BarrierGate\ParkingTapController;
 use App\Http\Controllers\TestController;
+use App\Http\Controllers\Api\SupplierApiController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -26,3 +27,6 @@ Route::get('/send-email', [TestController::class, 'sendEmail']);
 Route::post('/store-card', [ParkingTapController::class, 'storeCard']);
 Route::get('/parking-histories', [ParkingTapController::class, 'getData']);
 Route::post('/parking-histories', [ParkingTapController::class, 'parkingHistory']);
+
+Route::get('/supplier-data', [SupplierApiController::class, 'getSupplierData']);
+
