@@ -156,26 +156,26 @@ class PermitController extends Controller
             $timeNow = $now->format('H:i');
             $hourNow = $now->hour;
 
-            $isValidShift = (
-                ($timeNow >= '11:30' && $timeNow <= '13:00') ||
-                ($timeNow >= '17:30' && $timeNow <= '19:00') ||
-                ($timeNow >= '01:30' && $timeNow <= '03:00')
-            );
+            // $isValidShift = (
+            //     ($timeNow >= '11:30' && $timeNow <= '13:00') ||
+            //     ($timeNow >= '17:30' && $timeNow <= '19:00') ||
+            //     ($timeNow >= '01:30' && $timeNow <= '03:00')
+            // );
 
-            if (! $isValidShift) {
-                if ($hourNow >= 6 && $hourNow < 14) {
-                    $shiftMsg = "Shift 1 (11:30 - 13:00)";
-                } elseif ($hourNow >= 14 && $hourNow < 22) {
-                    $shiftMsg = "Shift 2 (17:30 - 19:00)";
-                } else {
-                    $shiftMsg = "Shift 3 (01:30 - 03:00)";
-                }
+            // if (! $isValidShift) {
+            //     if ($hourNow >= 6 && $hourNow < 14) {
+            //         $shiftMsg = "Shift 1 (11:30 - 13:00)";
+            //     } elseif ($hourNow >= 14 && $hourNow < 22) {
+            //         $shiftMsg = "Shift 2 (17:30 - 19:00)";
+            //     } else {
+            //         $shiftMsg = "Shift 3 (01:30 - 03:00)";
+            //     }
 
-                return response()->json([
-                    'success' => false,
-                    'message' => "Saat ini bukan waktu istirahat. Waktu yang diizinkan untuk " . $shiftMsg . ".",
-                ], 400);
-            }
+            //     return response()->json([
+            //         'success' => false,
+            //         'message' => "Saat ini bukan waktu istirahat. Waktu yang diizinkan untuk " . $shiftMsg . ".",
+            //     ], 400);
+            // }
 
             LunchBreak::create([
                 'nik'        => $nik,
