@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers\IzinKeluar;
 
 use App\Exports\IzinKeluarExport;
@@ -156,26 +157,26 @@ class PermitController extends Controller
             $timeNow = $now->format('H:i');
             $hourNow = $now->hour;
 
-            // $isValidShift = (
-            //     ($timeNow >= '11:30' && $timeNow <= '13:00') ||
-            //     ($timeNow >= '17:30' && $timeNow <= '19:00') ||
-            //     ($timeNow >= '01:30' && $timeNow <= '03:00')
-            // );
+            $isValidShift = (
+                ($timeNow >= '11:30' && $timeNow <= '13:00') ||
+                ($timeNow >= '17:30' && $timeNow <= '19:00') ||
+                ($timeNow >= '01:30' && $timeNow <= '03:00')
+            );
 
-            // if (! $isValidShift) {
-            //     if ($hourNow >= 6 && $hourNow < 14) {
-            //         $shiftMsg = "Shift 1 (11:30 - 13:00)";
-            //     } elseif ($hourNow >= 14 && $hourNow < 22) {
-            //         $shiftMsg = "Shift 2 (17:30 - 19:00)";
-            //     } else {
-            //         $shiftMsg = "Shift 3 (01:30 - 03:00)";
-            //     }
+            if (! $isValidShift) {
+                if ($hourNow >= 6 && $hourNow < 14) {
+                    $shiftMsg = "Shift 1 (11:30 - 13:00)";
+                } elseif ($hourNow >= 14 && $hourNow < 22) {
+                    $shiftMsg = "Shift 2 (17:30 - 19:00)";
+                } else {
+                    $shiftMsg = "Shift 3 (01:30 - 03:00)";
+                }
 
-            //     return response()->json([
-            //         'success' => false,
-            //         'message' => "Saat ini bukan waktu istirahat. Waktu yang diizinkan untuk " . $shiftMsg . ".",
-            //     ], 400);
-            // }
+                return response()->json([
+                    'success' => false,
+                    'message' => "Saat ini bukan waktu istirahat. Waktu yang diizinkan untuk " . $shiftMsg . ".",
+                ], 400);
+            }
 
             LunchBreak::create([
                 'nik'        => $nik,
@@ -215,10 +216,10 @@ class PermitController extends Controller
             } elseif ($outHour >= 1 && $outHour <= 3) {
                 // Shift 3 (01:30 - 03:00), batas jam 03:00
                 $lastReturnTime = Carbon::today()->setTime(3, 0, 0);
-                
+
                 // Jika checkOutTime jam 22 ke atas (misal overnite shift), kita pastikan hari sama
                 if ($now->hour >= 1 && $now->hour <= 3 && $checkOutTime->hour >= 20) {
-                     $lastReturnTime = $checkOutTime->copy()->addDay()->setTime(3, 0, 0);
+                    $lastReturnTime = $checkOutTime->copy()->addDay()->setTime(3, 0, 0);
                 }
             } else {
                 // Shift 1, batas jam 13:00
