@@ -11,12 +11,14 @@ class SpPelanggaran extends Model
 
     protected $fillable = [
         'employee_id',
+        'kode_admin',
+        'kode_ir',
         'no_sp',
-        'tanggal_pelanggaran',
         'jenis_pelanggaran',
         'status',
         'alasan',
         'lampiran',
+        'lampiran_cancel',
         'sesuai_ketentuan',
         'reported_to_admin',
         'created_by_user_id',
@@ -39,6 +41,8 @@ class SpPelanggaran extends Model
         'ir_head_approved_at',
         'ir_head_notes',
         'nomor_sp_generated',
+        'mangkir_ke',
+        'bulan_mangkir',
         'email_sent',
         'email_sent_at',
     ];
@@ -62,6 +66,9 @@ class SpPelanggaran extends Model
         if ($this->current_status === self::STATUS_CANCELLED) {
             $this->kategori_sp = 'CANCEL';
             $this->is_active = 0;
+        } elseif (in_array($this->current_status, [self::STATUS_CANCEL_PENDING_DH, self::STATUS_CANCEL_PENDING_IR, self::STATUS_CANCEL_PENDING_IR_HEAD])) {
+            $this->kategori_sp = 'PROSES_CANCEL';
+            $this->is_active = 1; // Masih aktif sampai IR Head approve cancel
         } elseif ($this->current_status === self::STATUS_REJECTED) {
             $this->kategori_sp = 'DITOLAK';
             $this->is_active = 0;
@@ -90,6 +97,11 @@ class SpPelanggaran extends Model
     const STATUS_APPROVED = 'APPROVED';
     const STATUS_REJECTED = 'REJECTED';
     const STATUS_CANCELLED = 'CANCELLED';
+
+    // Cancel workflow statuses (for already issued SPs)
+    const STATUS_CANCEL_PENDING_DH = 'CANCEL_PENDING_DH';
+    const STATUS_CANCEL_PENDING_IR = 'CANCEL_PENDING_IR';
+    const STATUS_CANCEL_PENDING_IR_HEAD = 'CANCEL_PENDING_IR_HEAD';
 
     /**
      * Check if SP is active (APPROVED and within 6 months of validity)
@@ -168,6 +180,11 @@ class SpPelanggaran extends Model
         return $this->hasMany(SpApprovalLog::class, 'sp_pelanggaran_id')->orderBy('created_at', 'desc');
     }
 
+    public function dates()
+    {
+        return $this->hasMany(SpPelanggaranDate::class, 'sp_pelanggaran_id')->orderBy('tanggal', 'asc');
+    }
+
     /**
      * Convert month number to Roman numeral
      */
@@ -185,48 +202,47 @@ class SpPelanggaran extends Model
      * Generate nomor SP dengan format: No. {URUT}/SP/{KODE_DEPT}/{BULAN_ROMAWI}/{TAHUN}
      * Contoh: No. 64/SP/IER/VII/2026
      */
-    public static function generateNomorSp($employeeId)
+    public static function generateNomorSp($employeeId = null)
     {
-        $employee = HrKaryawan::find($employeeId);
-        $kodeDept = 'UNK';
+        $currentYear = Carbon::now()->format('Y');
+        $bulanRomawi = self::numberToRoman(Carbon::now()->format('n'));
 
-        if ($employee) {
-            if (!empty($employee->kode_divisi)) {
-                $div = \DB::table('pkw_divisi')->where('id', $employee->kode_divisi)->orWhere('kode_divisi', $employee->kode_divisi)->first();
-                if ($div) {
-                    $kodeDept = $div->kode_divisi ?? $div->nama_divisi;
-                } else {
-                    $dept = \DB::table('departments')->where('id', $employee->kode_divisi)->first();
-                    $kodeDept = $dept ? $dept->name : $employee->kode_divisi;
+        // Query all generated SPs in the current year
+        $approvedSpsThisYear = self::whereNotNull('nomor_sp_generated')
+            ->where(function($q) use ($currentYear) {
+                $q->whereYear('ir_head_approved_at', $currentYear)
+                  ->orWhereYear('created_at', $currentYear)
+                  ->orWhere('nomor_sp_generated', 'like', "%/{$currentYear}");
+            })
+            ->get();
+
+        $maxSeq = 0;
+        foreach ($approvedSpsThisYear as $sp) {
+            if (preg_match('/(?:No\.\s*|^)(\d+)\/SP\//i', $sp->nomor_sp_generated, $matches)) {
+                $seq = intval($matches[1]);
+                if ($seq > $maxSeq) {
+                    $maxSeq = $seq;
                 }
-            } elseif (!empty($employee->kode_bagian)) {
-                $bag = \DB::table('pkw_bagian')->where('id', $employee->kode_bagian)->orWhere('kode_bagian', $employee->kode_bagian)->first();
-                $kodeDept = $bag ? ($bag->kode_bagian ?? $bag->nama_bagian) : $employee->kode_bagian;
             }
         }
 
-        $kodeDept = strtoupper(trim($kodeDept));
+        $nextSeq = $maxSeq + 1;
 
-        // Global sequence counter
-        $maxId = self::max('id') ?: 0;
-        $nextSeq = $maxId + 1;
+        return "{$nextSeq}/SP/IR/{$bulanRomawi}/{$currentYear}";
+    }
 
-        $lastSp = self::whereNotNull('nomor_sp_generated')->orderBy('id', 'desc')->first();
-        if ($lastSp && preg_match('/(?:No\.\s*|^)(\d+)\/SP\//i', $lastSp->nomor_sp_generated, $matches)) {
-            $nextSeq = max($nextSeq, intval($matches[1]) + 1);
+    public function getTanggalPelanggaranAttribute()
+    {
+        $firstDate = $this->dates ? $this->dates->first() : null;
+        if ($firstDate) {
+            return $firstDate->tanggal;
         }
-
-        $bulanRomawi = self::numberToRoman(Carbon::now()->format('n'));
-        $tahun = Carbon::now()->format('Y');
-
-        return "{$nextSeq}/SP/{$kodeDept}/{$bulanRomawi}/{$tahun}";
+        return $this->created_at ? $this->created_at->format('Y-m-d') : date('Y-m-d');
     }
 
     public function canSubmitToDeptHead()
     {
         return in_array($this->current_status, [self::STATUS_DRAFT, self::STATUS_REJECTED]) 
-            && !empty($this->jenis_pelanggaran)
-            && !empty($this->tanggal_pelanggaran)
             && !empty($this->employee_id);
     }
 

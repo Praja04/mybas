@@ -27,15 +27,18 @@ class SpNotification extends Mailable
     {
         $spNum = $this->sp->nomor_sp_generated ?: $this->sp->no_sp ?: 'Draft';
         $empName = $this->sp->employee->nama ?? 'Karyawan';
+        $isMangkir = ($this->sp->sumber_data === 'MANGKIR');
+        $jenis = $isMangkir ? 'SP Mangkir' : 'SP Pelanggaran';
 
-        if ($this->notificationType === 'pending_dh') {
-            $subject = 'Approval Surat Peringatan - Mybas Online';
+        // Email ke Dept Head (saat Admin Submit)
+        if (in_array($this->notificationType, ['pending_dh', 'SUBMIT_DEPT_HEAD'])) {
+            $subject = '[Persetujuan Diperlukan] ' . $jenis . ' Karyawan - Mybas Online';
             return $this->subject($subject)
                         ->view('emails.sp_approval_notification', ['sp' => $this->sp]);
         }
 
-        // Default / Final Approved Official Email
-        $subject = 'Surat Peringatan PT BAS - ' . $spNum;
+        // Email Final ke Karyawan + Dept Head (saat IR Head Approve)
+        $subject = 'Surat Peringatan Resmi PT BAS - ' . $spNum . ' (' . $empName . ')';
         $htmlContent = view('emails.sp_template_official', ['sp' => $this->sp])->render();
 
         $pdf = PDF::loadHTML($htmlContent);

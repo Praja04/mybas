@@ -145,23 +145,31 @@
 
     $deptHeadName = $sp->deptHead ? $sp->deptHead->name : 'Dept Head';
     $approvalUrl = url('/sp-pelanggaran/approval');
+    $isMangkir = ($sp->sumber_data === 'MANGKIR');
+    $jenisSp = $isMangkir ? 'SP Mangkir' : 'SP Pelanggaran';
+    $titleBanner = $isMangkir ? 'Approval SP Mangkir Karyawan' : 'Approval Surat Peringatan';
+    $subtitleBanner = $isMangkir ? 'Data mangkir/alpha karyawan menunggu persetujuan Anda' : 'Permintaan persetujuan baru menunggu Anda';
+    $kodeLabel = $isMangkir ? ($sp->kode_admin ?: 'Mangkir ' . $sp->mangkir_ke) : ($sp->kode_admin ?: '-');
+    $bentukLabel = $isMangkir 
+        ? ('Karyawan tercatat mangkir/alpha' . ($sp->mangkir_ke ? ' ke-' . $sp->mangkir_ke . ' dalam bulan tersebut' : '')) 
+        : ($sp->alasan ?: '-');
 @endphp
 
 <div class="email-container">
     <div class="banner">
-        <h1>Approval Surat Peringatan</h1>
-        <p>Permintaan persetujuan baru menunggu Anda</p>
+        <h1>{{ $titleBanner }}</h1>
+        <p>{{ $subtitleBanner }}</p>
     </div>
 
     <div class="content">
         <div class="salutation">Yth. Bapak/Ibu {{ strtoupper($deptHeadName) }},</div>
         
         <div class="intro-text">
-            Ada pengajuan Surat Peringatan (SP) baru yang membutuhkan persetujuan Anda sebagai <strong>Manager User / Dept Head</strong>:
+            Ada pengajuan <strong>{{ $jenisSp }}</strong> baru yang membutuhkan persetujuan Anda sebagai <strong>Manager / Dept Head</strong>:
         </div>
 
         <div class="detail-card">
-            <h3>Detail Pengajuan SP</h3>
+            <h3>Detail Pengajuan {{ $jenisSp }}</h3>
             <table class="detail-table">
                 <tr>
                     <td class="label">Nama Karyawan</td>
@@ -180,12 +188,18 @@
                     <td class="value">{{ \Carbon\Carbon::parse($sp->tanggal_pelanggaran)->format('d F Y') }}</td>
                 </tr>
                 <tr>
-                    <td class="label">Jenis SP</td>
-                    <td class="value"><strong>{{ $sp->jenis_pelanggaran }}</strong></td>
+                    <td class="label">{{ $isMangkir ? 'Kode Mangkir' : 'Kode Pelanggaran' }}</td>
+                    <td class="value"><strong>{{ $kodeLabel }}</strong></td>
                 </tr>
+                @if(!$isMangkir)
                 <tr>
-                    <td class="label">Bentuk Pelanggaran</td>
-                    <td class="value">{{ $sp->alasan }}</td>
+                    <td class="label">Jenis SP</td>
+                    <td class="value">{{ $sp->jenis_pelanggaran ?: '(Akan ditetapkan IR Staff)' }}</td>
+                </tr>
+                @endif
+                <tr>
+                    <td class="label">{{ $isMangkir ? 'Keterangan' : 'Bentuk Pelanggaran' }}</td>
+                    <td class="value">{{ $bentukLabel }}</td>
                 </tr>
             </table>
         </div>

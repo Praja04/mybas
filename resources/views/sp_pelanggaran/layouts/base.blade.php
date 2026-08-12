@@ -16,8 +16,14 @@ $monitoringItems = [];
 if ($hasAnyPerm(['sp_pelanggaran', 'sp_pelanggaran_admin', 'sp_pelanggaran_dh', 'sp_pelanggaran_ir_staff', 'sp_pelanggaran_ir_head'])) {
     $monitoringItems[] = [
         'path' => 'sp-pelanggaran/trace',
-        'label' => 'Trace SP',
+        'label' => 'Trace SP Pelanggaran',
         'icon' => 'mdi-eye-outline',
+        'submenu' => [],
+    ];
+    $monitoringItems[] = [
+        'path' => 'sp-mangkir/trace',
+        'label' => 'Trace SP Mangkir',
+        'icon' => 'mdi-account-clock-outline',
         'submenu' => [],
     ];
 }
@@ -46,6 +52,12 @@ if ($hasAnyPerm(['sp_pelanggaran_admin'])) {
         'icon' => 'mdi-file-document-edit-outline',
         'submenu' => [],
     ];
+    $transaksiItems[] = [
+        'path' => 'sp-mangkir',
+        'label' => 'Input SP Mangkir',
+        'icon' => 'mdi-account-clock-outline',
+        'submenu' => [],
+    ];
 }
 if ($hasAnyPerm(['sp_pelanggaran_dh', 'sp_pelanggaran_ir_staff', 'sp_pelanggaran_ir_head'])) {
     $transaksiItems[] = [
@@ -64,10 +76,19 @@ if ($hasAnyPerm(['sp_pelanggaran_ir_staff', 'sp_pelanggaran_ir_head'])) {
     ];
 }
 
+if ($hasAnyPerm(['sp_pelanggaran_dh', 'sp_pelanggaran_approval_dh', 'sp_pelanggaran_ir_staff', 'sp_pelanggaran_ir_head'])) {
+    $transaksiItems[] = [
+        'path'    => 'ttd-digital',
+        'label'   => 'TTD Digital',
+        'icon'    => 'mdi-draw-pen',
+        'submenu' => [],
+    ];
+}
+
 if (!empty($transaksiItems)) {
     $menus[] = [
         'label' => 'Pelanggaran Karyawan',
-        'menu' => $transaksiItems,
+        'menu'  => $transaksiItems,
     ];
 }
 

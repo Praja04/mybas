@@ -3,6 +3,11 @@
 @push('styles')
 <style>
     .gradient-header { background: linear-gradient(135deg, #1e3c72, #2a5298); color: #ffffff; }
+    .nav-tabs .nav-link.active {
+        font-weight: 600;
+        border-bottom: 3px solid #1e3c72;
+        color: #1e3c72;
+    }
 </style>
 @endpush
 
@@ -13,7 +18,7 @@
             <h4 class="mb-0 text-primary"><i class="ri-book-read-line me-2"></i> Master Data Kode Pelanggaran (IR Staff)</h4>
             <div>
                 <button class="btn btn-success me-1" data-bs-toggle="modal" data-bs-target="#modalImportMaster">
-                    <i class="ri-file-excel-line me-1"></i> Import Master Excel
+                    <i class="ri-file-excel-line me-1"></i> Import Master Excel (kode_admin & kode_ir)
                 </button>
                 <button class="btn btn-primary" id="btnTambahKode">
                     <i class="ri-add-line me-1"></i> Tambah Master Kode
@@ -23,16 +28,43 @@
     </div>
 </div>
 
+<!-- Nav Tabs Kategori Kode -->
+<div class="row mb-3">
+    <div class="col-12">
+        <ul class="nav nav-tabs bg-white px-3 pt-2 rounded shadow-sm">
+            <li class="nav-item">
+                <a class="nav-link {{ ($kategori ?? 'ALL') === 'ALL' ? 'active' : '' }}" 
+                   href="{{ route('sp_pelanggaran.master_kode', ['kategori' => 'ALL', 'search' => request('search')]) }}">
+                    <i class="ri-node-tree me-1"></i> Semua Master Kode
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {{ ($kategori ?? '') === 'ADMIN' ? 'active' : '' }}" 
+                   href="{{ route('sp_pelanggaran.master_kode', ['kategori' => 'ADMIN', 'search' => request('search')]) }}">
+                    <i class="ri-user-settings-line me-1"></i> Kode Admin (Form Input)
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {{ ($kategori ?? '') === 'IR' ? 'active' : '' }}" 
+                   href="{{ route('sp_pelanggaran.master_kode', ['kategori' => 'IR', 'search' => request('search')]) }}">
+                    <i class="ri-shield-user-line me-1"></i> Kode IR (Penetapan IR Staff)
+                </a>
+            </li>
+        </ul>
+    </div>
+</div>
+
 <div class="card mb-4 shadow-sm border-0">
     <div class="card-body">
         <form method="GET" action="{{ route('sp_pelanggaran.master_kode') }}" class="row g-3 align-items-end">
+            <input type="hidden" name="kategori" value="{{ $kategori ?? 'ALL' }}">
             <div class="col-md-9">
-                <label for="search" class="form-label text-muted small">Cari Kode, Nama Pelanggaran, atau Jenis SP</label>
+                <label for="search" class="form-label text-muted small">Cari Kode, Bentuk Pelanggaran, atau Dasar Pertimbangan</label>
                 <div class="input-group">
-                    <input type="text" class="form-control" name="search" id="search" placeholder="Contoh: K01, Terlambat, SP 1" value="{{ request('search') }}">
+                    <input type="text" class="form-control" name="search" id="search" placeholder="Contoh: Teguran Lisan 2x, SOP, Terlambat..." value="{{ request('search') }}">
                     <button class="btn btn-outline-primary" type="submit"><i class="ri-search-line"></i> Cari</button>
                     @if(request('search'))
-                        <a href="{{ route('sp_pelanggaran.master_kode') }}" class="btn btn-outline-secondary">Reset</a>
+                        <a href="{{ route('sp_pelanggaran.master_kode', ['kategori' => $kategori ?? 'ALL']) }}" class="btn btn-outline-secondary">Reset</a>
                     @endif
                 </div>
             </div>
@@ -43,7 +75,7 @@
 <div class="card shadow-sm border-0">
     <div class="card-header gradient-header py-3">
         <h5 class="card-title mb-0 text-white">
-            <i class="ri-list-check me-2"></i> Daftar Master Kode Pelanggaran
+            <i class="ri-list-check me-2"></i> Daftar Master Kode Pelanggaran ({{ $kategori ?? 'ALL' }})
         </h5>
     </div>
     <div class="card-body p-0">
@@ -51,26 +83,34 @@
             <table class="table table-hover align-middle mb-0">
                 <thead class="table-light text-muted">
                     <tr>
-                        <th width="5%">No</th>
-                        <th width="10%">Kode</th>
-                        <th width="25%">Nama Pelanggaran</th>
-                        <th width="15%">Jenis SP (Auto-Set)</th>
-                        <th width="25%">Pasal Yang Dilanggar</th>
-                        <th width="20%" class="text-center">Aksi</th>
+                        <th width="4%">No</th>
+                        <th width="10%">Kategori</th>
+                        <th width="20%">Kode Pelanggaran</th>
+                        <th width="30%">Bentuk Pelanggaran</th>
+                        <th width="22%">Dasar Pertimbangan / Pasal</th>
+                        <th width="8%">Tingkat SP</th>
+                        <th width="14%" class="text-center">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse($masterKodes as $index => $mk)
                     <tr>
                         <td>{{ ($masterKodes->currentPage() - 1) * $masterKodes->perPage() + $index + 1 }}</td>
-                        <td><span class="badge bg-dark fs-6">{{ $mk->kode }}</span></td>
-                        <td><strong>{{ $mk->nama_pelanggaran }}</strong></td>
                         <td>
-                            <span class="badge {{ in_array($mk->jenis_sp, ['SP 1','SP 2','SP 3']) ? 'bg-danger' : 'bg-warning text-dark' }}">
+                            @if(($mk->kategori_kode ?? 'ADMIN') === 'IR')
+                                <span class="badge bg-success">KODE IR</span>
+                            @else
+                                <span class="badge bg-primary">KODE ADMIN</span>
+                            @endif
+                        </td>
+                        <td><strong class="text-dark">{{ $mk->kode }}</strong></td>
+                        <td>{{ $mk->bentuk_pelanggaran ?: $mk->nama_pelanggaran }}</td>
+                        <td><small class="text-muted">{{ $mk->dasar_pertimbangan ?: ($mk->pasal_dilanggar ?: '-') }}</small></td>
+                        <td>
+                            <span class="badge {{ in_array($mk->jenis_sp, ['SP 1','SP 2','SP 3','SP II','SP III','SP III+']) ? 'bg-danger' : 'bg-warning text-dark' }}">
                                 {{ $mk->jenis_sp }}
                             </span>
                         </td>
-                        <td><small class="text-muted">{{ $mk->pasal_dilanggar ?: '-' }}</small></td>
                         <td class="text-center">
                             <button class="btn btn-sm btn-outline-warning btnEditKode me-1" data-id="{{ $mk->id }}">
                                 <i class="ri-pencil-line"></i> Edit
@@ -82,8 +122,8 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="6" class="text-center py-5 text-muted">
-                            Belum ada master data kode pelanggaran.
+                        <td colspan="7" class="text-center py-5 text-muted">
+                            Belum ada data master kode pelanggaran untuk kategori ini.
                         </td>
                     </tr>
                     @endforelse
@@ -93,14 +133,14 @@
     </div>
     @if($masterKodes->hasPages())
     <div class="card-footer bg-light py-2">
-        {{ $masterKodes->links() }}
+        {{ $masterKodes->appends(request()->query())->links() }}
     </div>
     @endif
 </div>
 
 <!-- Modal Form Master Kode -->
 <div class="modal fade" id="modalFormKode" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content">
             <form id="formKode">
                 @csrf
@@ -110,32 +150,42 @@
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <div class="mb-3">
-                        <label for="kode" class="form-label fw-bold">Kode Pelanggaran <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="kode" name="kode" placeholder="Contoh: K01, K02" required>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="kategori_kode" class="form-label fw-bold">Kategori Master Kode <span class="text-danger">*</span></label>
+                            <select class="form-select" id="kategori_kode" name="kategori_kode" required>
+                                <option value="ADMIN">KODE ADMIN (Sheet kode_admin - Form Admin)</option>
+                                <option value="IR">KODE IR (Sheet kode_ir - Penetapan IR)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="jenis_sp" class="form-label fw-bold">Tingkat SP <span class="text-danger">*</span></label>
+                            <select class="form-select" id="jenis_sp" name="jenis_sp" required>
+                                <option value="SP I">SP I</option>
+                                <option value="SP II">SP II</option>
+                                <option value="SP III">SP III</option>
+                                <option value="SP III+">SP III+ / SP Berat</option>
+                                <option value="Teguran Lisan">Teguran Lisan</option>
+                            </select>
+                        </div>
                     </div>
+
                     <div class="mb-3">
-                        <label for="nama_pelanggaran" class="form-label fw-bold">Nama / Kategori Pelanggaran <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="nama_pelanggaran" name="nama_pelanggaran" placeholder="Contoh: Terlambat Masuk Kerja (> 30 Menit)" required>
+                        <label for="kode" class="form-label fw-bold">Kode / Judul Pelanggaran <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="kode" name="kode" placeholder="Contoh: Teguran Lisan 2x, SP I + SOP" required>
                     </div>
+
                     <div class="mb-3">
-                        <label for="jenis_sp" class="form-label fw-bold">Jenis SP (Auto-Fill Sistem) <span class="text-danger">*</span></label>
-                        <select class="form-select" id="jenis_sp" name="jenis_sp" required>
-                            <option value="">-- Pilih Jenis SP --</option>
-                            <option value="Teguran Lisan">Teguran Lisan</option>
-                            <option value="SP 1">Surat Peringatan 1 (SP 1)</option>
-                            <option value="SP 2">Surat Peringatan 2 (SP 2)</option>
-                            <option value="SP 3">Surat Peringatan 3 (SP 3)</option>
-                        </select>
+                        <label for="bentuk_pelanggaran" class="form-label fw-bold">Bentuk Pelanggaran (Uraian)</label>
+                        <textarea class="form-control" id="bentuk_pelanggaran" name="bentuk_pelanggaran" rows="3" placeholder="Penjelasan mengenai bentuk pelanggaran..."></textarea>
                     </div>
+
                     <div class="mb-3">
-                        <label for="pasal_dilanggar" class="form-label fw-bold">Pasal Yang Dilanggar</label>
-                        <input type="text" class="form-control" id="pasal_dilanggar" name="pasal_dilanggar" placeholder="Contoh: Pasal 4 Ayat 2 Peraturan Perusahaan">
+                        <label for="dasar_pertimbangan" class="form-label fw-bold">Dasar Pertimbangan / Pasal Peraturan Perusahaan</label>
+                        <textarea class="form-control" id="dasar_pertimbangan" name="dasar_pertimbangan" rows="3" placeholder="Rujukan pasal atau ketentuan Peraturan Perusahaan..."></textarea>
                     </div>
-                    <div class="mb-3">
-                        <label for="deskripsi" class="form-label fw-bold">Deskripsi Standar / Alasan Pelanggaran</label>
-                        <textarea class="form-control" id="deskripsi" name="deskripsi" rows="3" placeholder="Deskripsi umum pelanggaran..."></textarea>
-                    </div>
+                    
+                    <input type="hidden" id="nama_pelanggaran" name="nama_pelanggaran">
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
@@ -160,7 +210,7 @@
                     <div class="mb-3">
                         <label class="form-label fw-bold">Upload File Excel Kode Master SP:</label>
                         <input type="file" name="file" class="form-control" accept=".xlsx, .xls" required>
-                        <small class="text-muted d-block mt-1">Format berkas Excel `.xlsx` seperti "kode master sp.xlsx".</small>
+                        <small class="text-muted d-block mt-1">Mengimpor otomatis dari sheet `kode_admin` dan `kode_ir` pada file "kode master sp.xlsx".</small>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -176,6 +226,53 @@
 @push('scripts')
 <script>
 $(document).ready(function() {
+    let modalForm = new bootstrap.Modal(document.getElementById('modalFormKode'));
+
+    $('#btnTambahKode').on('click', function() {
+        $('#formKode')[0].reset();
+        $('#kode_id').val('');
+        $('#kategori_kode').val('ADMIN');
+        $('#modalTitle').html('<i class="ri-add-circle-line me-2"></i> Tambah Master Kode Pelanggaran');
+        modalForm.show();
+    });
+
+    $(document).on('click', '.btnEditKode', function() {
+        let id = $(this).data('id');
+        $.get('/sp-pelanggaran/master-kode/' + id + '/detail', function(res) {
+            if (res.status === 'success') {
+                let data = res.data;
+                $('#kode_id').val(data.id);
+                $('#kategori_kode').val(data.kategori_kode || 'ADMIN');
+                $('#kode').val(data.kode);
+                $('#nama_pelanggaran').val(data.nama_pelanggaran || data.kode);
+                $('#jenis_sp').val(data.jenis_sp);
+                $('#bentuk_pelanggaran').val(data.bentuk_pelanggaran || data.deskripsi);
+                $('#dasar_pertimbangan').val(data.dasar_pertimbangan || data.pasal_dilanggar);
+                $('#modalTitle').html('<i class="ri-pencil-line me-2"></i> Edit Master Kode Pelanggaran');
+                modalForm.show();
+            }
+        });
+    });
+
+    $('#formKode').on('submit', function(e) {
+        e.preventDefault();
+        let id = $('#kode_id').val();
+        let url = id ? ('/sp-pelanggaran/master-kode/' + id + '/update') : '/sp-pelanggaran/master-kode';
+        
+        $('#nama_pelanggaran').val($('#kode').val());
+
+        let $btn = $('#btnSaveKode');
+        $btn.prop('disabled', true).html('<i class="ri-loader-4-line spinner me-1"></i> Menyimpan...');
+
+        $.post(url, $(this).serialize(), function(res) {
+            Swal.fire('Berhasil!', res.message, 'success').then(() => location.reload());
+        }).fail(function(xhr) {
+            let err = xhr.responseJSON ? xhr.responseJSON.message : 'Gagal menyimpan master kode.';
+            Swal.fire('Gagal!', err, 'error');
+            $btn.prop('disabled', false).html('Simpan Master Kode');
+        });
+    });
+
     $('#importMasterForm').on('submit', function(e) {
         e.preventDefault();
         let formData = new FormData(this);
@@ -196,48 +293,6 @@ $(document).ready(function() {
                 Swal.fire('Gagal!', err, 'error');
                 $btn.prop('disabled', false).html('<i class="ri-upload-2-line me-1"></i> Import Sekarang');
             }
-        });
-    });
-    let modalForm = new bootstrap.Modal(document.getElementById('modalFormKode'));
-
-    $('#btnTambahKode').on('click', function() {
-        $('#formKode')[0].reset();
-        $('#kode_id').val('');
-        $('#modalTitle').html('<i class="ri-add-circle-line me-2"></i> Tambah Master Kode Pelanggaran');
-        modalForm.show();
-    });
-
-    $(document).on('click', '.btnEditKode', function() {
-        let id = $(this).data('id');
-        $.get('/sp-pelanggaran/master-kode/' + id + '/detail', function(res) {
-            if (res.status === 'success') {
-                let data = res.data;
-                $('#kode_id').val(data.id);
-                $('#kode').val(data.kode);
-                $('#nama_pelanggaran').val(data.nama_pelanggaran);
-                $('#jenis_sp').val(data.jenis_sp);
-                $('#pasal_dilanggar').val(data.pasal_dilanggar);
-                $('#deskripsi').val(data.deskripsi);
-                $('#modalTitle').html('<i class="ri-pencil-line me-2"></i> Edit Master Kode Pelanggaran');
-                modalForm.show();
-            }
-        });
-    });
-
-    $('#formKode').on('submit', function(e) {
-        e.preventDefault();
-        let id = $('#kode_id').val();
-        let url = id ? ('/sp-pelanggaran/master-kode/' + id + '/update') : '/sp-pelanggaran/master-kode';
-        
-        let $btn = $('#btnSaveKode');
-        $btn.prop('disabled', true).html('<i class="ri-loader-4-line spinner me-1"></i> Menyimpan...');
-
-        $.post(url, $(this).serialize(), function(res) {
-            Swal.fire('Berhasil!', res.message, 'success').then(() => location.reload());
-        }).fail(function(xhr) {
-            let err = xhr.responseJSON ? xhr.responseJSON.message : 'Gagal menyimpan master kode.';
-            Swal.fire('Gagal!', err, 'error');
-            $btn.prop('disabled', false).html('Simpan Master Kode');
         });
     });
 
