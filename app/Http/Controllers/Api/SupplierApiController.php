@@ -37,7 +37,9 @@ class SupplierApiController extends Controller
                 ->select([
                     'v.trnvisitorid',
                     'v.nopol',
-                    'v.namacomp as nama_perusahaan'
+                    'v.namacomp as nama_perusahaan',
+                    'v.namavisitor as nama_driver',
+                    'v.nohpdriver as no_hp_driver'
                 ])
                 ->distinct();
 
