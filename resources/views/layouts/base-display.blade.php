@@ -176,9 +176,28 @@
 
             $(document).ajaxError(function(event, xhr) {
                 if (xhr.status === 401 || xhr.status === 419) {
-                    window.location.href = "/login";
+                    window.location.href = "{{ route('login') }}";
                 }
             });
+
+            // Auto-redirect to login when session lifetime expires
+            (function() {
+                var sessionLifetime = {{ config('session.lifetime', 30) }} * 60 * 1000;
+                var timeoutTimer;
+
+                function startTimer() {
+                    clearTimeout(timeoutTimer);
+                    timeoutTimer = setTimeout(function() {
+                        window.location.href = "{{ route('login') }}";
+                    }, sessionLifetime);
+                }
+
+                startTimer();
+
+                $(document).ajaxSuccess(function() {
+                    startTimer();
+                });
+            })();
 
             get_time();
 
