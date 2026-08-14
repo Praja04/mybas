@@ -163,7 +163,7 @@
                                     icon: 'success',
                                     title: 'ABSEN KELUAR BERHASIL',
                                     text: 'Absen keluar pada jam istirahat.',
-                                    timer: 3500,
+                                    timer: 1000,
                                     showConfirmButton: false
                                 });
                             } else {
@@ -172,7 +172,7 @@
                                         icon: 'success',
                                         title: 'ABSEN MASUK BERHASIL',
                                         text: 'Kembali tepat waktu.',
-                                        timer: 3500,
+                                        timer: 1000,
                                         showConfirmButton: false
                                     });
                                 } else {
@@ -181,7 +181,7 @@
                                         title: 'TERLAMBAT MASUK',
                                         text: 'Terlambat ' + d.menit_terlambat +
                                             ' menit.',
-                                        timer: 4000,
+                                        timer: 1500,
                                         showConfirmButton: false
                                     });
                                 }
@@ -216,7 +216,7 @@
                             icon: 'error',
                             title: 'ABSENSI GAGAL',
                             text: errorMsg,
-                            timer: 4500,
+                            timer: 1500,
                             showConfirmButton: false
                         });
                     }
