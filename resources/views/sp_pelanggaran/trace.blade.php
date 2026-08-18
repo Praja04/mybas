@@ -129,18 +129,22 @@
                         </td>
                         <td class="text-center">
                             <div class="d-flex align-items-center justify-content-center gap-1 flex-nowrap">
-                                @if($isAdmin && in_array($cs, ['DRAFT', 'REJECTED']))
+                                @if($isAdmin && $cs === 'DRAFT')
                                     <button class="btn btn-sm btn-success btnSubmitDh py-1 px-2 text-nowrap" data-id="{{ $sp->id }}" title="Submit ke Dept Head">
                                         <i class="ri-send-plane-fill me-1"></i> Submit
                                     </button>
                                     <a href="{{ route('sp_pelanggaran.index', ['edit' => $sp->id]) }}" class="btn btn-sm btn-warning text-dark py-1 px-2" title="Edit Draf SP">
-                                        <i class="ri-pencil-line"></i>
+                                        <i class="ri-pencil-line"></i> Edit
+                                    </a>
+                                @elseif($isAdmin && $cs === 'REJECTED')
+                                    <a href="{{ route('sp_pelanggaran.index', ['edit' => $sp->id]) }}" class="btn btn-sm btn-warning text-dark py-1 px-2 text-nowrap" title="Edit & Perbaiki Data SP Yang Ditolak">
+                                        <i class="ri-pencil-line me-1"></i> Edit & Perbaiki
                                     </a>
                                 @endif
 
-                                {{-- Tombol Hapus: Untuk DRAFT / PENDING sebelum SP Terbit --}}
+                                {{-- Tombol Hapus: Untuk DRAFT / PENDING_DH oleh Admin, atau IR Role --}}
                                 @if($cs !== 'APPROVED' && !in_array($cs, ['CANCELLED', 'CANCEL_PENDING_DH', 'CANCEL_PENDING_IR', 'CANCEL_PENDING_IR_HEAD']))
-                                    @if($isIrRole || ($isAdmin && in_array($cs, ['DRAFT', 'PENDING_DH', 'REJECTED'])))
+                                    @if($isIrRole || ($isAdmin && in_array($cs, ['DRAFT', 'PENDING_DH'])))
                                         <button class="btn btn-sm btn-outline-danger btnDeleteSp py-1 px-2 text-nowrap" data-id="{{ $sp->id }}" title="Hapus Data SP">
                                             <i class="ri-delete-bin-line me-1"></i> Hapus
                                         </button>
@@ -387,13 +391,18 @@ $(document).ready(function() {
             if (res.status === 'success') {
                 let sp = res.data;
                 let emp = sp.employee || {};
-                let dateDisplay = sp.tanggal_pelanggaran || '-';
-                if (sp.dates && sp.dates.length > 1) {
-                    let dateList = sp.dates.map(d => {
-                        let parts = d.tanggal.split('-');
-                        return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : d.tanggal;
-                    }).join(', ');
-                    dateDisplay = `<strong>${sp.tanggal_pelanggaran}</strong><br><small class="text-primary"><i class="ri-calendar-event-line me-1"></i>Total ${sp.dates.length} Tanggal: ${dateList}</small>`;
+                let dateDisplay = '-';
+                let datesArr = (sp.dates && sp.dates.length > 0) ? sp.dates.map(d => d.tanggal) : (sp.tanggal_pelanggaran ? [sp.tanggal_pelanggaran] : []);
+                if (datesArr.length > 0) {
+                    let formattedList = datesArr.map(d => {
+                        let parts = d.split('-');
+                        return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : d;
+                    });
+                    if (datesArr.length > 1) {
+                        dateDisplay = `<strong>${formattedList[0]}</strong> <span class="badge bg-info text-dark">Multi-Date (${datesArr.length} Tanggal)</span><br><small class="text-primary"><i class="ri-calendar-event-line me-1"></i>Total ${datesArr.length} Tanggal Kejadian: ${formattedList.join(', ')}</small>`;
+                    } else {
+                        dateDisplay = formattedList[0];
+                    }
                 }
 
                 let lampiranPelanggaran = sp.lampiran
@@ -403,6 +412,10 @@ $(document).ready(function() {
                 let lampiranCancel = sp.lampiran_cancel
                     ? `<a href="/${sp.lampiran_cancel}" target="_blank" class="btn btn-sm btn-outline-warning text-dark fw-bold"><i class="ri-file-download-line me-1"></i> Bukti Pembatalan (Saat Cancel SP)</a>`
                     : `<span class="text-muted small"><i class="ri-close-circle-line me-1"></i> Tidak ada lampiran pembatalan</span>`;
+
+                let lampiranKonseling = sp.file_konseling
+                    ? `<a href="/${sp.file_konseling}" target="_blank" class="btn btn-sm btn-success text-white fw-bold"><i class="ri-file-pdf-line me-1"></i> PDF Hasil Konseling</a>`
+                    : `<span class="text-muted small"><i class="ri-close-circle-line me-1"></i> Belum ada file konseling</span>`;
 
                 let html = `
                     <div class="row mb-3">
@@ -431,18 +444,24 @@ $(document).ready(function() {
                         <p class="p-2 bg-light rounded">${sp.alasan || '-'}</p>
                     </div>
                     <div class="mb-3">
-                        <label class="fw-bold d-block mb-2"><i class="ri-attachment-2 me-1"></i> File Bukti / Lampiran (Pelanggaran & Pembatalan):</label>
+                        <label class="fw-bold d-block mb-2"><i class="ri-attachment-2 me-1"></i> File Bukti & Dokumen (Pelanggaran, Pembatalan & Konseling):</label>
                         <div class="row g-2">
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <div class="p-2 border rounded bg-light">
-                                    <strong class="d-block small text-primary mb-1"><i class="ri-file-text-line me-1"></i> 1. Lampiran Bukti Pelanggaran:</strong>
+                                    <strong class="d-block small text-primary mb-1"><i class="ri-file-text-line me-1"></i> 1. Bukti Pelanggaran:</strong>
                                     ${lampiranPelanggaran}
                                 </div>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <div class="p-2 border rounded bg-light">
-                                    <strong class="d-block small text-dark mb-1"><i class="ri-file-warning-line me-1 text-warning"></i> 2. Lampiran Bukti Pembatalan:</strong>
+                                    <strong class="d-block small text-dark mb-1"><i class="ri-file-warning-line me-1 text-warning"></i> 2. Bukti Pembatalan:</strong>
                                     ${lampiranCancel}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="p-2 border rounded bg-light">
+                                    <strong class="d-block small text-success mb-1"><i class="ri-file-certificate-line me-1"></i> 3. PDF Hasil Konseling:</strong>
+                                    ${lampiranKonseling}
                                 </div>
                             </div>
                         </div>

@@ -85,6 +85,15 @@ if ($hasAnyPerm(['sp_pelanggaran_dh', 'sp_pelanggaran_approval_dh', 'sp_pelangga
     ];
 }
 
+if ($hasAnyPerm(['sp_pelanggaran', 'sp_pelanggaran_admin', 'sp_pelanggaran_dh', 'sp_pelanggaran_ir_staff', 'sp_pelanggaran_ir_head'])) {
+    $transaksiItems[] = [
+        'path'    => 'sp-pelanggaran/upload-konseling',
+        'label'   => 'Upload Konseling',
+        'icon'    => 'mdi-file-certificate-outline',
+        'submenu' => [],
+    ];
+}
+
 if (!empty($transaksiItems)) {
     $menus[] = [
         'label' => 'Pelanggaran Karyawan',

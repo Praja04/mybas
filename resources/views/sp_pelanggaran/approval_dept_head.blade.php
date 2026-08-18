@@ -95,7 +95,16 @@
                         </td>
                         <td>{{ ($spRecords->currentPage() - 1) * $spRecords->perPage() + $index + 1 }}</td>
                         <td><strong class="text-primary">{{ $sp->nomor_sp_generated ?: ($sp->no_sp ?: 'DRAFT') }}</strong></td>
-                        <td>{{ \Carbon\Carbon::parse($sp->tanggal_pelanggaran)->format('d M Y') }}</td>
+                        <td>
+                            @if($sp->dates && $sp->dates->count() > 1)
+                                <strong>{{ \Carbon\Carbon::parse($sp->tanggal_pelanggaran)->format('d M Y') }}</strong>
+                                <br><small class="badge bg-info text-dark" style="font-size: 10px;"><i class="ri-calendar-event-line me-1"></i>{{ $sp->dates->count() }} Tanggal</small>
+                            @elseif($sp->tanggal_pelanggaran)
+                                {{ \Carbon\Carbon::parse($sp->tanggal_pelanggaran)->format('d M Y') }}
+                            @else
+                                -
+                            @endif
+                        </td>
                         <td><strong>{{ $sp->employee->nama ?? '-' }}</strong></td>
                         <td><code>{{ $sp->employee->nik ?? '-' }}</code></td>
                         <td>
@@ -119,11 +128,8 @@
                                     <i class="ri-check-double-line me-1"></i> Approve Cancel
                                 </button>
                             @else
-                                <button class="btn btn-sm btn-success btnApproveSp me-1" data-id="{{ $sp->id }}">
+                                <button class="btn btn-sm btn-success btnApproveSp" data-id="{{ $sp->id }}">
                                     <i class="ri-check-line"></i> Approve
-                                </button>
-                                <button class="btn btn-sm btn-danger btnRejectSp" data-id="{{ $sp->id }}">
-                                    <i class="ri-close-line"></i> Reject
                                 </button>
                             @endif
                         </td>
@@ -242,7 +248,20 @@ $(document).ready(function() {
                 $('#detail_nama_karyawan').text(emp.nama || '-');
                 $('#detail_nik_karyawan').text(emp.nik || '-');
                 $('#detail_dept_karyawan').text(emp.kode_divisi || emp.kode_bagian || '-');
-                $('#detail_tanggal_pelanggaran').text(data.tanggal_pelanggaran || '-');
+                let dateDisplay = '-';
+                let datesArr = (data.dates && data.dates.length > 0) ? data.dates.map(d => d.tanggal) : (data.tanggal_pelanggaran ? [data.tanggal_pelanggaran] : []);
+                if (datesArr.length > 0) {
+                    let formattedList = datesArr.map(d => {
+                        let parts = d.split('-');
+                        return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : d;
+                    });
+                    if (datesArr.length > 1) {
+                        dateDisplay = `<strong>${formattedList[0]}</strong> <span class="badge bg-info text-dark">Multi-Date (${datesArr.length} Tanggal)</span><br><small class="text-primary"><i class="ri-calendar-event-line me-1"></i>Total ${datesArr.length} Tanggal Kejadian: ${formattedList.join(', ')}</small>`;
+                    } else {
+                        dateDisplay = formattedList[0];
+                    }
+                }
+                $('#detail_tanggal_pelanggaran').html(dateDisplay);
 
                 $('#detail_nomor_sp').text(data.nomor_sp_generated || data.no_sp || 'DRAFT');
                 $('#detail_kode_admin').text(data.kode_admin || '-');

@@ -54,7 +54,7 @@ class SpMangkirController extends Controller
             });
         }
 
-        $query = SpPelanggaran::with(['employee', 'creator'])
+        $query = SpPelanggaran::with(['employee', 'creator', 'dates'])
             ->where('sumber_data', 'MANGKIR')
             ->orderBy('created_at', 'desc');
 
@@ -93,7 +93,7 @@ class SpMangkirController extends Controller
         $isIrRole = in_array('sp_pelanggaran_ir_staff', $permissions) || in_array('sp_pelanggaran_ir_head', $permissions);
         $userDept = ($user ? $user->dept_id : null) ?: session('kode_department');
 
-        $query = SpPelanggaran::with(['employee', 'creator'])
+        $query = SpPelanggaran::with(['employee', 'creator', 'dates'])
             ->where('sumber_data', 'MANGKIR')
             ->orderBy('created_at', 'desc');
 

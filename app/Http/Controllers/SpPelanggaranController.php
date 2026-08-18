@@ -331,6 +331,9 @@ class SpPelanggaranController extends Controller
             $data['lampiran'] = 'uploads/sp/' . $filename;
         }
 
+        // Reset status ke DRAFT jika sebelumnya DITOLAK/DRAFT agar bisa diajukan ulang
+        $data['current_status'] = SpPelanggaran::STATUS_DRAFT;
+
         $sp->update($data);
 
         // Sync ke tabel sp_pelanggaran_dates (Tabel Relasional Multi-Date Dinamis)
@@ -356,12 +359,12 @@ class SpPelanggaranController extends Controller
         $permissions = view()->shared('permissions') ?: [];
         $isIrRole = in_array('sp_pelanggaran_ir_staff', $permissions) || in_array('sp_pelanggaran_ir_head', $permissions);
 
-        // Poin 1: Admin hanya bisa hapus sebelum Dept Head approve (DRAFT / PENDING_DH).
-        // Kalau sudah disetujui Dept Head, hanya IR role yang bisa hapus.
+        // Admin hanya bisa hapus sebelum disetujui Dept Head (DRAFT / PENDING_DH).
+        // SP yang DITOLAK (REJECTED), diproses IR, atau Approved tidak dapat dihapus oleh Admin (hanya bisa Edit & Perbaiki).
         if (!$isIrRole && !in_array($sp->current_status, [SpPelanggaran::STATUS_DRAFT, SpPelanggaran::STATUS_PENDING_DH])) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Data SP yang telah disetujui Dept Head hanya dapat dihapus oleh pihak IR.'
+                'message' => 'Data SP yang ditolak atau dalam proses persetujuan tidak dapat dihapus oleh Admin (hanya dapat Diperbaiki atau dikelola IR).'
             ], 403);
         }
 
@@ -892,7 +895,7 @@ class SpPelanggaranController extends Controller
         $user = Auth::user();
         $userDept = ($user ? $user->dept_id : null) ?: session('kode_department');
 
-        $query = SpPelanggaran::with('employee', 'creator')
+        $query = SpPelanggaran::with(['employee', 'creator', 'dates'])
             ->orderBy('updated_at', 'desc');
 
         if ($userRole === 'dept_head' && $userDept) {
@@ -959,7 +962,7 @@ class SpPelanggaranController extends Controller
         $isIrRole = in_array('sp_pelanggaran_ir_staff', $permissions) || in_array('sp_pelanggaran_ir_head', $permissions);
         $userDept = ($user ? $user->dept_id : null) ?: session('kode_department');
 
-        $query = SpPelanggaran::with('employee', 'creator')
+        $query = SpPelanggaran::with(['employee', 'creator', 'dates'])
             ->where(function($q) {
                 $q->where('sumber_data', 'PELANGGARAN')
                   ->orWhereNull('sumber_data');
@@ -1012,7 +1015,7 @@ class SpPelanggaranController extends Controller
 
     public function getSpDetail($id)
     {
-        $sp = SpPelanggaran::with('employee', 'creator', 'approvalLogs', 'deptHead', 'irStaff', 'dates')
+        $sp = SpPelanggaran::with(['employee', 'creator', 'approvalLogs', 'deptHead', 'irStaff', 'dates', 'uploaderKonseling'])
             ->findOrFail($id);
 
         return response()->json([
@@ -1858,5 +1861,206 @@ class SpPelanggaranController extends Controller
                 'message' => 'Gagal mengimpor file Excel: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Menu & View for Upload / View Hasil Konseling SP (Pelanggaran & Mangkir)
+     * Hanya SP yang sudah terbit (current_status = 'APPROVED') yang ditampilkan.
+     * Admin dapat mengunggah file PDF konseling.
+     * IR Staff, IR Head, dan Dept Head hanya dapat melihat/mengunduh file konseling.
+     */
+    public function uploadKonselingIndex(Request $request)
+    {
+        if (!Auth::check() && !session('login') && !session('username')) {
+            return redirect('/login');
+        }
+
+        $user = Auth::user();
+        $permissions = view()->shared('permissions') ?: [];
+        $isIrRole = in_array('sp_pelanggaran_ir_staff', $permissions) || in_array('sp_pelanggaran_ir_head', $permissions);
+        $isAdminRole = in_array('sp_pelanggaran_admin', $permissions) || ($user && in_array($user->user_role, ['admin', 'superadmin']));
+        $userDept = ($user ? $user->dept_id : null) ?: session('kode_department');
+
+        // Query SP yang sudah terbit (APPROVED) baik SP Pelanggaran maupun SP Mangkir
+        $query = SpPelanggaran::with(['employee', 'creator', 'uploaderKonseling', 'dates'])
+            ->where('current_status', SpPelanggaran::STATUS_APPROVED)
+            ->orderBy('updated_at', 'desc');
+
+        // Filter Dept Head (non-IR role)
+        if (!$isIrRole && !$isAdminRole && $userDept) {
+            $query->whereHas('employee', function ($empQ) use ($userDept) {
+                $empQ->where('kode_divisi', $userDept)
+                     ->orWhere('kode_bagian', $userDept);
+            });
+        }
+
+        // Search Filter (Nomor SP, Kode Admin, NIK, Nama Karyawan)
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('no_sp', 'like', "%{$search}%")
+                  ->orWhere('nomor_sp_generated', 'like', "%{$search}%")
+                  ->orWhere('kode_admin', 'like', "%{$search}%")
+                  ->orWhere('kode_ir', 'like', "%{$search}%")
+                  ->orWhereHas('employee', function ($empQ) use ($search) {
+                      $empQ->where('nama', 'like', "%{$search}%")
+                           ->orWhere('nik', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        // Filter Sumber Data (PELANGGARAN / MANGKIR)
+        if ($request->filled('sumber')) {
+            $sumber = $request->sumber;
+            if ($sumber === 'PELANGGARAN') {
+                $query->where(function($q) {
+                    $q->where('sumber_data', 'PELANGGARAN')
+                      ->orWhereNull('sumber_data');
+                });
+            } elseif ($sumber === 'MANGKIR') {
+                $query->where('sumber_data', 'MANGKIR');
+            }
+        }
+
+        // Filter Status Upload Konseling
+        if ($request->filled('status_konseling')) {
+            $stKonseling = $request->status_konseling;
+            if ($stKonseling === 'SUDAH') {
+                $query->whereNotNull('file_konseling');
+            } elseif ($stKonseling === 'BELUM') {
+                $query->whereNull('file_konseling');
+            }
+        }
+
+        // Hitung statistik untuk cards/badges
+        $totalTerbit = (clone $query)->count();
+        $countSudah  = (clone $query)->whereNotNull('file_konseling')->count();
+        $countBelum  = (clone $query)->whereNull('file_konseling')->count();
+
+        $spRecords = $query->paginate(10)->appends($request->query());
+
+        // Hak akses upload hanya untuk Admin
+        $canUpload = $isAdminRole || in_array('sp_pelanggaran_admin', $permissions);
+
+        return view('sp_pelanggaran.upload_konseling', compact(
+            'spRecords', 'totalTerbit', 'countSudah', 'countBelum', 'canUpload'
+        ));
+    }
+
+    /**
+     * Admin Upload / Update File PDF Konseling SP
+     */
+    public function storeKonseling(Request $request, $id)
+    {
+        $permissions = view()->shared('permissions') ?: [];
+        $user = Auth::user();
+        $isAdmin = in_array('sp_pelanggaran_admin', $permissions) || ($user && in_array($user->user_role, ['admin', 'superadmin']));
+
+        if (!$isAdmin) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Hanya Admin yang memiliki hak akses untuk mengunggah file PDF konseling.'
+            ], 403);
+        }
+
+        $sp = SpPelanggaran::findOrFail($id);
+
+        if ($sp->current_status !== SpPelanggaran::STATUS_APPROVED) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Upload konseling hanya dapat dilakukan untuk SP yang telah resmi terbit (Approved).'
+            ], 422);
+        }
+
+        $request->validate([
+            'file_konseling' => 'required|file|mimes:pdf|max:2048', // Max 2MB PDF
+        ], [
+            'file_konseling.required' => 'File PDF konseling wajib diunggah.',
+            'file_konseling.mimes' => 'Format file konseling harus berupa PDF.',
+            'file_konseling.max' => 'Ukuran file PDF konseling maksimal 2 MB. Silakan kompres file terlebih dahulu jika terlalu besar.',
+        ]);
+
+        if ($request->hasFile('file_konseling')) {
+            // Delete old file if exists
+            if ($sp->file_konseling && file_exists(public_path($sp->file_konseling))) {
+                @unlink(public_path($sp->file_konseling));
+            }
+
+            $file = $request->file('file_konseling');
+            $filename = 'konseling_' . $sp->id . '_' . time() . '_' . preg_replace('/[^A-Za-z0-9\._-]/', '', $file->getClientOriginalName());
+            $uploadPath = public_path('uploads/sp_konseling');
+
+            if (!file_exists($uploadPath)) {
+                mkdir($uploadPath, 0777, true);
+            }
+
+            $file->move($uploadPath, $filename);
+            $filePath = 'uploads/sp_konseling/' . $filename;
+
+            $sp->update([
+                'file_konseling' => $filePath,
+                'uploaded_konseling_at' => now(),
+                'uploaded_konseling_by' => Auth::id() ?: session('user_id'),
+            ]);
+
+            SpApprovalLog::logAction(
+                $sp->id,
+                Auth::id() ?: session('user_id'),
+                'UPLOAD_KONSELING',
+                'Admin mengunggah file PDF hasil konseling: ' . $filename
+            );
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'File PDF hasil konseling berhasil diunggah!',
+                'file_path' => asset($filePath)
+            ]);
+        }
+
+        return response()->json([
+            'status' => 'error',
+            'message' => 'Gagal mengunggah file.'
+        ], 400);
+    }
+
+    /**
+     * Admin Delete File PDF Konseling SP
+     */
+    public function deleteKonseling($id)
+    {
+        $permissions = view()->shared('permissions') ?: [];
+        $user = Auth::user();
+        $isAdmin = in_array('sp_pelanggaran_admin', $permissions) || ($user && in_array($user->user_role, ['admin', 'superadmin']));
+
+        if (!$isAdmin) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Hanya Admin yang memiliki hak akses untuk menghapus file PDF konseling.'
+            ], 403);
+        }
+
+        $sp = SpPelanggaran::findOrFail($id);
+
+        if ($sp->file_konseling && file_exists(public_path($sp->file_konseling))) {
+            @unlink(public_path($sp->file_konseling));
+        }
+
+        $sp->update([
+            'file_konseling' => null,
+            'uploaded_konseling_at' => null,
+            'uploaded_konseling_by' => null,
+        ]);
+
+        SpApprovalLog::logAction(
+            $sp->id,
+            Auth::id() ?: session('user_id'),
+            'DELETE_KONSELING',
+            'Admin menghapus file PDF hasil konseling'
+        );
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'File PDF hasil konseling berhasil dihapus.'
+        ]);
     }
 }

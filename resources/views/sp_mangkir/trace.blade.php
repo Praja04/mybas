@@ -11,6 +11,7 @@
 @php
     $userPermissions = view()->shared('permissions') ?: [];
     $isAdmin = in_array('sp_pelanggaran_admin', $userPermissions);
+    $isIrRole = in_array('sp_pelanggaran_ir_staff', $userPermissions) || in_array('sp_pelanggaran_ir_head', $userPermissions);
 @endphp
 <div class="row mb-3">
     <div class="col-12">
@@ -81,7 +82,16 @@
                         <td>
                             <strong class="text-primary">{{ $sp->nomor_sp_generated ?: ($sp->no_sp ?: 'DRAFT') }}</strong>
                         </td>
-                        <td>{{ \Carbon\Carbon::parse($sp->tanggal_pelanggaran)->format('d M Y') }}</td>
+                        <td>
+                            @if($sp->dates && $sp->dates->count() > 1)
+                                <strong>{{ \Carbon\Carbon::parse($sp->tanggal_pelanggaran)->format('d M Y') }}</strong>
+                                <br><small class="badge bg-info text-dark" style="font-size: 10px;"><i class="ri-calendar-event-line me-1"></i>{{ $sp->dates->count() }} Tanggal</small>
+                            @elseif($sp->tanggal_pelanggaran)
+                                {{ \Carbon\Carbon::parse($sp->tanggal_pelanggaran)->format('d M Y') }}
+                            @else
+                                -
+                            @endif
+                        </td>
                         <td><strong>{{ $sp->employee->nama ?? '-' }}</strong></td>
                         <td><code>{{ $sp->employee->nik ?? '-' }}</code></td>
                         <td>
@@ -353,13 +363,27 @@ $(document).ready(function() {
             if (res.status === 'success') {
                 let sp = res.data;
                 let emp = sp.employee || {};
+                let dateDisplay = '-';
+                let datesArr = (sp.dates && sp.dates.length > 0) ? sp.dates.map(d => d.tanggal) : (sp.tanggal_pelanggaran ? [sp.tanggal_pelanggaran] : []);
+                if (datesArr.length > 0) {
+                    let formattedList = datesArr.map(d => {
+                        let parts = d.split('-');
+                        return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : d;
+                    });
+                    if (datesArr.length > 1) {
+                        dateDisplay = `<strong>${formattedList[0]}</strong> <span class="badge bg-info text-dark">Multi-Date (${datesArr.length} Tanggal)</span><br><small class="text-primary"><i class="ri-calendar-event-line me-1"></i>Total ${datesArr.length} Tanggal Mangkir: ${formattedList.join(', ')}</small>`;
+                    } else {
+                        dateDisplay = formattedList[0];
+                    }
+                }
+
                 let html = `
                     <div class="row mb-3">
                         <div class="col-md-6">
                             <table class="table table-sm table-borderless">
                                 <tr><th width="35%">Karyawan</th><td>: <strong>${emp.nama || '-'}</strong></td></tr>
                                 <tr><th>NIK</th><td>: ${emp.nik || '-'}</td></tr>
-                                <tr><th>Tanggal Mangkir</th><td>: ${sp.tanggal_pelanggaran || '-'}</td></tr>
+                                <tr><th>Tanggal Mangkir</th><td>: ${dateDisplay}</td></tr>
                                 <tr><th>Kode Admin</th><td>: <span class="badge bg-primary">${sp.kode_admin || '-'}</span></td></tr>
                             </table>
                         </div>

@@ -45,6 +45,15 @@ class SpPelanggaran extends Model
         'bulan_mangkir',
         'email_sent',
         'email_sent_at',
+        // Counseling PDF fields
+        'file_konseling',
+        'uploaded_konseling_at',
+        'uploaded_konseling_by',
+    ];
+
+    protected $appends = [
+        'tanggal_pelanggaran',
+        'formatted_dates_list',
     ];
 
     protected static function boot()
@@ -175,6 +184,11 @@ class SpPelanggaran extends Model
         return $this->belongsTo(User::class, 'ir_head_approved_id', 'id');
     }
 
+    public function uploaderKonseling()
+    {
+        return $this->belongsTo(User::class, 'uploaded_konseling_by');
+    }
+
     public function approvalLogs()
     {
         return $this->hasMany(SpApprovalLog::class, 'sp_pelanggaran_id')->orderBy('created_at', 'desc');
@@ -233,16 +247,41 @@ class SpPelanggaran extends Model
 
     public function getTanggalPelanggaranAttribute()
     {
-        $firstDate = $this->dates ? $this->dates->first() : null;
+        if ($this->relationLoaded('dates') && $this->dates && $this->dates->count() > 0) {
+            $first = $this->dates->first();
+            return $first ? $first->tanggal : null;
+        }
+
+        $firstDate = $this->dates()->first();
         if ($firstDate) {
             return $firstDate->tanggal;
         }
+
+        if (isset($this->attributes['tanggal_pelanggaran']) && !empty($this->attributes['tanggal_pelanggaran'])) {
+            return $this->attributes['tanggal_pelanggaran'];
+        }
+
         return $this->created_at ? $this->created_at->format('Y-m-d') : date('Y-m-d');
+    }
+
+    public function getFormattedDatesListAttribute()
+    {
+        if ($this->relationLoaded('dates') && $this->dates && $this->dates->count() > 0) {
+            return $this->dates->pluck('tanggal')->toArray();
+        }
+
+        $dates = $this->dates()->pluck('tanggal')->toArray();
+        if (count($dates) > 0) {
+            return $dates;
+        }
+
+        $main = $this->tanggal_pelanggaran;
+        return $main ? [$main] : [];
     }
 
     public function canSubmitToDeptHead()
     {
-        return in_array($this->current_status, [self::STATUS_DRAFT, self::STATUS_REJECTED]) 
+        return $this->current_status === self::STATUS_DRAFT 
             && !empty($this->employee_id);
     }
 

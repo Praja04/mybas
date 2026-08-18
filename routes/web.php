@@ -807,6 +807,11 @@ Route::group(['middleware' => ['auth', 'rules']], function () {
     Route::post('/sp-pelanggaran/{id}/irhead-approve-cancel', [App\Http\Controllers\SpPelanggaranController::class, 'irHeadApproveCancel'])->name('sp_pelanggaran.irhead_approve_cancel');
     Route::get('/sp-pelanggaran/export', [App\Http\Controllers\SpPelanggaranController::class, 'exportData'])->name('sp_pelanggaran.export');
 
+    // Upload & View PDF Konseling Hasil SP (Pelanggaran & Mangkir)
+    Route::get('/sp-pelanggaran/upload-konseling', [App\Http\Controllers\SpPelanggaranController::class, 'uploadKonselingIndex'])->name('sp_pelanggaran.upload_konseling');
+    Route::post('/sp-pelanggaran/{id}/upload-konseling', [App\Http\Controllers\SpPelanggaranController::class, 'storeKonseling'])->name('sp_pelanggaran.store_konseling');
+    Route::delete('/sp-pelanggaran/{id}/delete-konseling', [App\Http\Controllers\SpPelanggaranController::class, 'deleteKonseling'])->name('sp_pelanggaran.delete_konseling');
+
     // Master Kode Pelanggaran (IR Staff)
     Route::get('/sp-pelanggaran/master-kode', [App\Http\Controllers\SpPelanggaranController::class, 'masterKodeIndex'])->name('sp_pelanggaran.master_kode');
     Route::post('/sp-pelanggaran/master-kode', [App\Http\Controllers\SpPelanggaranController::class, 'masterKodeStore'])->name('sp_pelanggaran.master_kode_store');

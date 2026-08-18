@@ -53,6 +53,31 @@
 
             <div id="two-column-menu"></div>
             <ul class="navbar-nav" id="navbar-nav">
+                @php
+                    $bestMatchingPath = '';
+                    $decodedMenus = json_decode($menus) ?: [];
+                    foreach ($decodedMenus as $mGroup) {
+                        if (!empty($mGroup->menu)) {
+                            foreach ($mGroup->menu as $mItem) {
+                                if (empty($mItem->submenu)) {
+                                    if (request()->is($mItem->path) || request()->is($mItem->path . '/*')) {
+                                        if (strlen($mItem->path) > strlen($bestMatchingPath)) {
+                                            $bestMatchingPath = $mItem->path;
+                                        }
+                                    }
+                                } else {
+                                    foreach ($mItem->submenu as $sItem) {
+                                        if (request()->is($sItem->path) || request()->is($sItem->path . '/*')) {
+                                            if (strlen($sItem->path) > strlen($bestMatchingPath)) {
+                                                $bestMatchingPath = $sItem->path;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                @endphp
                 @foreach (json_decode($menus) as $menu)
                     @php
                         $visibleMenuItems = collect($menu->menu)->filter(function ($menuItem) use ($permissions) {
@@ -115,7 +140,10 @@
                         <li class="nav-item">
                             @if (count($menuItem->submenu) == 0)
                                 <!-- MENU SINGLE (TANPA SUBMENU) -->
-                                <a class="nav-link menu-link {{ request()->is($menuItem->path . '*') ? 'active' : '' }}"
+                                @php
+                                    $isItemActive = ($bestMatchingPath !== '') ? ($menuItem->path === $bestMatchingPath) : request()->is($menuItem->path . '*');
+                                @endphp
+                                <a class="nav-link menu-link {{ $isItemActive ? 'active' : '' }}"
                                     data-identity="{{ str_replace('/', '-', $menuItem->path) }}"
                                     href="{{ url($menuItem->path) }}">
                                     <i class="mdi {{ $menuItem->icon }}"></i> <span>{{ $menuItem->label }}</span>
@@ -128,7 +156,8 @@
                                     // Cek apakah ada anak submenu yang lagi aktif
                                     $isChildActive = false;
                                     foreach ($menuItem->submenu as $sub) {
-                                        if (request()->is($sub->path . '*')) {
+                                        $subActive = ($bestMatchingPath !== '') ? ($sub->path === $bestMatchingPath) : request()->is($sub->path . '*');
+                                        if ($subActive) {
                                             $isChildActive = true;
                                             break;
                                         }
@@ -153,11 +182,13 @@
                                                         @continue
                                                     @endif
 
-                                                    <!-- FIX BUG KTP: Pakai Full Path (Safe ID) buat Data Identity + Pengecekan request()->is() -->
+                                                    @php
+                                                        $isSubActive = ($bestMatchingPath !== '') ? ($submenu->path === $bestMatchingPath) : request()->is($submenu->path);
+                                                    @endphp
                                                     <li class="nav-item">
                                                         <a data-identity="{{ str_replace('/', '-', $submenu->path) }}"
                                                             href="{{ url($submenu->path) }}"
-                                                            class="nav-link {{ request()->is($submenu->path) ? 'active' : '' }}">{!! $submenu->label !!}</a>
+                                                            class="nav-link {{ $isSubActive ? 'active' : '' }}">{!! $submenu->label !!}</a>
                                                     </li>
                                                 @endforeach
                                             </ul>
