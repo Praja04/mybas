@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers\IzinKeluar;
 
 use App\Exports\IzinKeluarExport;
@@ -215,10 +216,10 @@ class PermitController extends Controller
             } elseif ($outHour >= 1 && $outHour <= 3) {
                 // Shift 3 (01:30 - 03:00), batas jam 03:00
                 $lastReturnTime = Carbon::today()->setTime(3, 0, 0);
-                
+
                 // Jika checkOutTime jam 22 ke atas (misal overnite shift), kita pastikan hari sama
                 if ($now->hour >= 1 && $now->hour <= 3 && $checkOutTime->hour >= 20) {
-                     $lastReturnTime = $checkOutTime->copy()->addDay()->setTime(3, 0, 0);
+                    $lastReturnTime = $checkOutTime->copy()->addDay()->setTime(3, 0, 0);
                 }
             } else {
                 // Shift 1, batas jam 13:00
