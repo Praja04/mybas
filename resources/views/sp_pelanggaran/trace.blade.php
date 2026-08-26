@@ -34,10 +34,10 @@
 <div class="card shadow-sm border-0">
     <div class="card-header bg-white py-3">
         <form method="GET" action="{{ route('sp_pelanggaran.trace') }}" class="row g-2">
-            <div class="col-md-3">
+            <div class="col-md-4">
                 <input type="text" name="search" class="form-control form-control-sm" placeholder="Cari NIK, Nama, No SP..." value="{{ request('search') }}">
             </div>
-            <div class="col-md-3">
+            <div class="col-md-5">
                 <select name="status" class="form-select form-select-sm">
                     <option value="">-- Semua Status --</option>
                     <option value="AKTIF" {{ request('status') === 'AKTIF' ? 'selected' : '' }}>🟢 SP Aktif (<= 6 Bln)</option>
@@ -51,7 +51,7 @@
                     <option value="PENDING_IR_HEAD" {{ request('status') === 'PENDING_IR_HEAD' ? 'selected' : '' }}>Pending IR Head</option>
                 </select>
             </div>
-            <div class="col-md-2">
+            <div class="col-md-3">
                 <button type="submit" class="btn btn-sm btn-secondary w-100"><i class="ri-search-line me-1"></i> Filter</button>
             </div>
         </form>
@@ -156,6 +156,13 @@
                                     <button class="btn btn-sm btn-outline-warning btnCancelSp py-1 px-2 text-nowrap" data-id="{{ $sp->id }}" title="Ajukan Pembatalan (Cancel SP)">
                                         <i class="ri-ban-line me-1"></i> Ajukan Cancel
                                     </button>
+                                @endif
+
+                                {{-- Tombol Download PDF: HANYA untuk SP yang sudah TERBIT (APPROVED) --}}
+                                @if($cs === 'APPROVED')
+                                    <a href="{{ route('sp_pelanggaran.export_sp_pdf', $sp->id) }}" class="btn btn-sm btn-outline-danger py-1 px-2 text-nowrap" title="Download Surat Peringatan (PDF)" target="_blank">
+                                        <i class="ri-file-pdf-line me-1"></i> PDF
+                                    </a>
                                 @endif
 
                                 <button class="btn btn-sm btn-outline-primary btnDetailSp py-1 px-2 text-nowrap" data-id="{{ $sp->id }}" title="Lihat Detail & Tracking">

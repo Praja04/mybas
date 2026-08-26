@@ -806,6 +806,7 @@ Route::group(['middleware' => ['auth', 'rules']], function () {
     Route::post('/sp-pelanggaran/{id}/irstaff-approve-cancel', [App\Http\Controllers\SpPelanggaranController::class, 'irStaffApproveCancel'])->name('sp_pelanggaran.irstaff_approve_cancel');
     Route::post('/sp-pelanggaran/{id}/irhead-approve-cancel', [App\Http\Controllers\SpPelanggaranController::class, 'irHeadApproveCancel'])->name('sp_pelanggaran.irhead_approve_cancel');
     Route::get('/sp-pelanggaran/export', [App\Http\Controllers\SpPelanggaranController::class, 'exportData'])->name('sp_pelanggaran.export');
+    Route::get('/sp-pelanggaran/{id}/export-pdf', [App\Http\Controllers\SpPelanggaranController::class, 'exportSpPdf'])->name('sp_pelanggaran.export_sp_pdf');
 
     // Upload & View PDF Konseling Hasil SP (Pelanggaran & Mangkir)
     Route::get('/sp-pelanggaran/upload-konseling', [App\Http\Controllers\SpPelanggaranController::class, 'uploadKonselingIndex'])->name('sp_pelanggaran.upload_konseling');

@@ -43,7 +43,7 @@ if (!empty($monitoringItems)) {
     ];
 }
 
-// Pelanggaran Karyawan Group
+// Pelanggaran Karyawan Group (Transaksi / Pengajuan & Approval)
 $transaksiItems = [];
 if ($hasAnyPerm(['sp_pelanggaran_admin'])) {
     $transaksiItems[] = [
@@ -67,24 +67,6 @@ if ($hasAnyPerm(['sp_pelanggaran_dh', 'sp_pelanggaran_ir_staff', 'sp_pelanggaran
         'submenu' => [],
     ];
 }
-if ($hasAnyPerm(['sp_pelanggaran_ir_staff', 'sp_pelanggaran_ir_head'])) {
-    $transaksiItems[] = [
-        'path' => 'sp-pelanggaran/master-kode',
-        'label' => 'Master Kode SP',
-        'icon' => 'mdi-book-open-page-variant-outline',
-        'submenu' => [],
-    ];
-}
-
-if ($hasAnyPerm(['sp_pelanggaran_dh', 'sp_pelanggaran_approval_dh', 'sp_pelanggaran_ir_staff', 'sp_pelanggaran_ir_head'])) {
-    $transaksiItems[] = [
-        'path'    => 'ttd-digital',
-        'label'   => 'TTD Digital',
-        'icon'    => 'mdi-draw-pen',
-        'submenu' => [],
-    ];
-}
-
 if ($hasAnyPerm(['sp_pelanggaran', 'sp_pelanggaran_admin', 'sp_pelanggaran_dh', 'sp_pelanggaran_ir_staff', 'sp_pelanggaran_ir_head'])) {
     $transaksiItems[] = [
         'path'    => 'sp-pelanggaran/upload-konseling',
@@ -98,6 +80,32 @@ if (!empty($transaksiItems)) {
     $menus[] = [
         'label' => 'Pelanggaran Karyawan',
         'menu'  => $transaksiItems,
+    ];
+}
+
+// Master Data Group
+$masterItems = [];
+if ($hasAnyPerm(['sp_pelanggaran_ir_staff', 'sp_pelanggaran_ir_head'])) {
+    $masterItems[] = [
+        'path' => 'sp-pelanggaran/master-kode',
+        'label' => 'Master Kode SP',
+        'icon' => 'mdi-book-open-page-variant-outline',
+        'submenu' => [],
+    ];
+}
+if ($hasAnyPerm(['sp_pelanggaran_dh', 'sp_pelanggaran_approval_dh', 'sp_pelanggaran_ir_staff', 'sp_pelanggaran_ir_head'])) {
+    $masterItems[] = [
+        'path'    => 'ttd-digital',
+        'label'   => 'TTD Digital',
+        'icon'    => 'mdi-draw-pen',
+        'submenu' => [],
+    ];
+}
+
+if (!empty($masterItems)) {
+    $menus[] = [
+        'label' => 'Master Data',
+        'menu'  => $masterItems,
     ];
 }
 

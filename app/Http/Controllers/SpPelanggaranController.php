@@ -28,13 +28,14 @@ class SpPelanggaranController extends Controller
         $permissions = view()->shared('permissions') ?: [];
         $isIrRole = in_array('sp_pelanggaran_ir_staff', $permissions) || in_array('sp_pelanggaran_ir_head', $permissions);
         $userDept = ($user ? $user->dept_id : null) ?: session('kode_department');
+        $deptCodes = $this->getDeptCodes($userDept);
 
         // Fetch list of active employees for selection dropdown from hr_karyawan
         $employeeQuery = HrKaryawan::query();
-        if (!$isIrRole && $userDept) {
-            $employeeQuery->where(function($q) use ($userDept) {
-                $q->where('kode_divisi', $userDept)
-                  ->orWhere('kode_bagian', $userDept);
+        if (!$isIrRole && !empty($deptCodes)) {
+            $employeeQuery->where(function($q) use ($deptCodes) {
+                $q->whereIn('kode_divisi', $deptCodes)
+                  ->orWhereIn('kode_bagian', $deptCodes);
             });
         }
         $employees = $employeeQuery->orderBy('nama', 'asc')->get();
@@ -205,6 +206,7 @@ class SpPelanggaranController extends Controller
 
         $data['created_by_user_id'] = Auth::id() ?: session('user_id');
         $data['current_status'] = SpPelanggaran::STATUS_DRAFT;
+        $data['sumber_data'] = $request->input('sumber_data') ?: 'PELANGGARAN';
 
         $rawDates = [$primaryDate];
         if ($request->has('tanggal_terlambat_list') && is_array($request->tanggal_terlambat_list)) {
@@ -235,7 +237,38 @@ class SpPelanggaranController extends Controller
         }
 
         $data['nomor_sp_generated'] = null;
-        $data['no_sp'] = null;
+
+        // Auto Lookup Dept Head & Emails
+        $employee = HrKaryawan::find($request->employee_id);
+        $deptHeadUser = null;
+        if ($employee) {
+            $kodeDept = $employee->kode_divisi ?: $employee->kode_bagian;
+            if ($kodeDept) {
+                $deptHeadUser = User::where('dept_id', $kodeDept)
+                    ->where(function($q) {
+                        $q->whereHas('directPermissions', function($p) {
+                            $p->whereIn('codename', ['sp_pelanggaran_dh', 'sp_pelanggaran_approval_dh']);
+                        })->orWhereHas('group.permissions', function($p) {
+                            $p->whereIn('codename', ['sp_pelanggaran_dh', 'sp_pelanggaran_approval_dh']);
+                        });
+                    })
+                    ->whereNotNull('email')->where('email', '!=', '')
+                    ->first();
+            }
+            if (!$deptHeadUser) {
+                $deptHeadUser = User::where(function($q) {
+                    $q->whereHas('directPermissions', function($p) {
+                        $p->whereIn('codename', ['sp_pelanggaran_dh', 'sp_pelanggaran_approval_dh']);
+                    })->orWhereHas('group.permissions', function($p) {
+                        $p->whereIn('codename', ['sp_pelanggaran_dh', 'sp_pelanggaran_approval_dh']);
+                    });
+                })->whereNotNull('email')->where('email', '!=', '')->first();
+            }
+        }
+
+        $data['assigned_dept_head_id'] = $deptHeadUser ? $deptHeadUser->id : null;
+        $data['email_dept_head'] = $deptHeadUser ? $deptHeadUser->email : null;
+        $data['email_dept_user'] = ($employee && !empty($employee->email)) ? $employee->email : null;
 
         if ($request->hasFile('lampiran')) {
             $file = $request->file('lampiran');
@@ -578,6 +611,7 @@ class SpPelanggaranController extends Controller
 
         $sp->update([
             'current_status' => SpPelanggaran::STATUS_PENDING_IR,
+            'assigned_dept_head_id' => $sp->assigned_dept_head_id ?: (Auth::id() ?: session('user_id')),
             'dept_head_approved_at' => now(),
             'dept_head_notes' => $request->input('notes'),
         ]);
@@ -621,6 +655,7 @@ class SpPelanggaranController extends Controller
         foreach ($spRecords as $sp) {
             $sp->update([
                 'current_status' => SpPelanggaran::STATUS_PENDING_IR,
+                'assigned_dept_head_id' => $sp->assigned_dept_head_id ?: (Auth::id() ?: session('user_id')),
                 'dept_head_approved_at' => now(),
                 'dept_head_notes' => $notes,
             ]);
@@ -688,6 +723,8 @@ class SpPelanggaranController extends Controller
         $updateData = [
             'current_status' => SpPelanggaran::STATUS_PENDING_IR_HEAD,
             'ir_staff_notes' => $request->input('notes'),
+            'ir_staff_id'    => Auth::id() ?: session('user_id'),
+            'email_dept_hr'  => Auth::user() ? Auth::user()->email : session('user_email'),
         ];
 
         if ($request->filled('kode_ir')) {
@@ -860,6 +897,7 @@ class SpPelanggaranController extends Controller
         $sp->update([
             'current_status' => SpPelanggaran::STATUS_REJECTED,
             'ir_staff_notes' => $request->input('notes'),
+            'ir_staff_id'    => Auth::id() ?: session('user_id'),
         ]);
 
         SpApprovalLog::logAction(
@@ -898,10 +936,11 @@ class SpPelanggaranController extends Controller
         $query = SpPelanggaran::with(['employee', 'creator', 'dates'])
             ->orderBy('updated_at', 'desc');
 
-        if ($userRole === 'dept_head' && $userDept) {
-            $query->whereHas('employee', function ($empQ) use ($userDept) {
-                $empQ->where('kode_divisi', $userDept)
-                     ->orWhere('kode_bagian', $userDept);
+        $deptCodes = $this->getDeptCodes($userDept);
+        if ($userRole === 'dept_head' && !empty($deptCodes)) {
+            $query->whereHas('employee', function ($empQ) use ($deptCodes) {
+                $empQ->whereIn('kode_divisi', $deptCodes)
+                     ->orWhereIn('kode_bagian', $deptCodes);
             });
         }
 
@@ -963,16 +1002,13 @@ class SpPelanggaranController extends Controller
         $userDept = ($user ? $user->dept_id : null) ?: session('kode_department');
 
         $query = SpPelanggaran::with(['employee', 'creator', 'dates'])
-            ->where(function($q) {
-                $q->where('sumber_data', 'PELANGGARAN')
-                  ->orWhereNull('sumber_data');
-            })
             ->orderBy('updated_at', 'desc');
 
-        if (!$isIrRole && $userDept) {
-            $query->whereHas('employee', function ($empQ) use ($userDept) {
-                $empQ->where('kode_divisi', $userDept)
-                     ->orWhere('kode_bagian', $userDept);
+        $deptCodes = $this->getDeptCodes($userDept);
+        if (!$isIrRole && !empty($deptCodes)) {
+            $query->whereHas('employee', function ($empQ) use ($deptCodes) {
+                $empQ->whereIn('kode_divisi', $deptCodes)
+                     ->orWhereIn('kode_bagian', $deptCodes);
             });
         }
 
@@ -1024,6 +1060,31 @@ class SpPelanggaranController extends Controller
         ]);
     }
 
+    /**
+     * Export PDF Surat Peringatan Resmi (format sama persis dengan lampiran email final)
+     * Bisa diakses dari halaman Trace SP Pelanggaran & Trace SP Mangkir
+     */
+    public function exportSpPdf($id)
+    {
+        $sp = SpPelanggaran::with(['employee', 'deptHead', 'irStaff', 'dates', 'approvalLogs'])
+            ->findOrFail($id);
+
+        // Hanya SP yang sudah APPROVED yang bisa di-download PDF-nya
+        if ($sp->current_status !== SpPelanggaran::STATUS_APPROVED) {
+            return redirect()->back()->with('error', 'PDF hanya tersedia untuk SP yang sudah disetujui (APPROVED).');
+        }
+
+        $htmlContent = view('emails.sp_template_official', ['sp' => $sp])->render();
+
+        $pdf = \Barryvdh\DomPDF\Facade::loadHTML($htmlContent);
+        $pdf->setPaper('a4', 'portrait');
+
+        $spNum = $sp->nomor_sp_generated ?: 'DRAFT';
+        $pdfFileName = 'Surat_Peringatan_' . str_replace(['/', '\\', ' '], '_', $spNum) . '.pdf';
+
+        return $pdf->download($pdfFileName);
+    }
+
     private function sendApprovalNotification($sp, $user, $type)
     {
         if (!$user || !$user->email) {
@@ -1045,46 +1106,49 @@ class SpPelanggaranController extends Controller
             return;
         }
 
+        // Pastikan relasi penting di-load
+        $sp->loadMissing(['employee', 'deptHead', 'irStaff']);
+
         $recipients = [];
 
-        // 1. Email Karyawan yang kena SP
+        // 1. Email Karyawan yang kena SP (murni dari hr_karyawan)
         if ($sp->employee && !empty($sp->employee->email)) {
             $recipients[] = trim($sp->employee->email);
+        } elseif (!empty($sp->email_dept_user)) {
+            $recipients[] = trim($sp->email_dept_user);
         }
 
-        // 2. Email Dept Head dari Karyawan yang kena SP
+        // 2. Email Dept Head berwenang yang menyetujui / menangani SP ini
         if ($sp->deptHead && !empty($sp->deptHead->email)) {
             $recipients[] = trim($sp->deptHead->email);
+        } elseif (!empty($sp->email_dept_head)) {
+            $recipients[] = trim($sp->email_dept_head);
         } elseif ($sp->employee) {
             $kodeDept = $sp->employee->kode_divisi ?: $sp->employee->kode_bagian;
             if ($kodeDept) {
+                // Cari HANYA Dept Head spesifik di departemen yang sama
                 $dhUser = User::where('dept_id', $kodeDept)
-                    ->whereNotNull('email')
-                    ->where('email', '!=', '')
+                    ->where(function($q) {
+                        $q->whereHas('directPermissions', function($p) {
+                            $p->whereIn('codename', ['sp_pelanggaran_dh', 'sp_pelanggaran_approval_dh']);
+                        })->orWhereHas('group.permissions', function($p) {
+                            $p->whereIn('codename', ['sp_pelanggaran_dh', 'sp_pelanggaran_approval_dh']);
+                        });
+                    })
+                    ->whereNotNull('email')->where('email', '!=', '')
                     ->first();
-                if ($dhUser) {
+
+                if ($dhUser && !empty($dhUser->email)) {
                     $recipients[] = trim($dhUser->email);
                 }
             }
         }
 
-        // 3. Email IR Staff
+        // 3. Email IR Staff yang memproses / meninjau SP ini
         if ($sp->irStaff && !empty($sp->irStaff->email)) {
             $recipients[] = trim($sp->irStaff->email);
-        } else {
-            $irStaffUsers = User::where(function($q) {
-                $q->whereHas('directPermissions', function($permQ) {
-                    $permQ->where('codename', 'sp_pelanggaran_ir_staff');
-                })->orWhereHas('group.permissions', function($permQ) {
-                    $permQ->where('codename', 'sp_pelanggaran_ir_staff');
-                });
-            })->whereNotNull('email')->where('email', '!=', '')->pluck('email')->toArray();
-
-            foreach ($irStaffUsers as $email) {
-                if (!empty($email)) {
-                    $recipients[] = trim($email);
-                }
-            }
+        } elseif (!empty($sp->email_dept_hr)) {
+            $recipients[] = trim($sp->email_dept_hr);
         }
 
         // Unique & filter empty emails
@@ -1094,6 +1158,8 @@ class SpPelanggaranController extends Controller
             logger()->warning("Tidak ada penerima email yang valid untuk SP final ID #{$sp->id}");
             return;
         }
+
+        logger()->info("Pengiriman Email Final SP #{$sp->id} ditujukan ke (" . count($recipients) . " penerima khusus): " . implode(', ', $recipients));
 
         $sentCount = 0;
         foreach ($recipients as $recipientEmail) {
@@ -1108,7 +1174,6 @@ class SpPelanggaranController extends Controller
                 $sentCount++;
                 logger()->info("Email PDF Final SP #{$sp->id} berhasil dikirim ke: {$recipientEmail}");
             } catch (\Exception $e) {
-                // Jika 1 email gagal / typo, perulangan TETAP berlanjut ke email penerima lain!
                 logger()->error("Gagal mengirim email final SP #{$sp->id} ke {$recipientEmail}: " . $e->getMessage());
             }
         }
@@ -1456,10 +1521,11 @@ class SpPelanggaranController extends Controller
 
         $query = SpPelanggaran::with(['employee', 'dates'])->orderBy('id', 'desc');
 
-        if (!$isIrRole && $userDept) {
-            $query->whereHas('employee', function ($empQ) use ($userDept) {
-                $empQ->where('kode_divisi', $userDept)
-                     ->orWhere('kode_bagian', $userDept);
+        $deptCodes = $this->getDeptCodes($userDept);
+        if (!$isIrRole && !empty($deptCodes)) {
+            $query->whereHas('employee', function ($empQ) use ($deptCodes) {
+                $empQ->whereIn('kode_divisi', $deptCodes)
+                     ->orWhereIn('kode_bagian', $deptCodes);
             });
         }
 
@@ -1887,10 +1953,11 @@ class SpPelanggaranController extends Controller
             ->orderBy('updated_at', 'desc');
 
         // Filter Dept Head (non-IR role)
-        if (!$isIrRole && !$isAdminRole && $userDept) {
-            $query->whereHas('employee', function ($empQ) use ($userDept) {
-                $empQ->where('kode_divisi', $userDept)
-                     ->orWhere('kode_bagian', $userDept);
+        $deptCodes = $this->getDeptCodes($userDept);
+        if (!$isIrRole && !$isAdminRole && !empty($deptCodes)) {
+            $query->whereHas('employee', function ($empQ) use ($deptCodes) {
+                $empQ->whereIn('kode_divisi', $deptCodes)
+                     ->orWhereIn('kode_bagian', $deptCodes);
             });
         }
 
@@ -2062,5 +2129,24 @@ class SpPelanggaranController extends Controller
             'status' => 'success',
             'message' => 'File PDF hasil konseling berhasil dihapus.'
         ]);
+    }
+
+    private function getDeptCodes($userDept)
+    {
+        if (!$userDept) {
+            return [];
+        }
+
+        $deptCodes = [$userDept, (string)$userDept];
+
+        if (is_numeric($userDept)) {
+            $dept = \Illuminate\Support\Facades\DB::table('departments')->where('id', $userDept)->first();
+            if ($dept && !empty($dept->name)) {
+                $deptCodes[] = strtoupper(trim($dept->name));
+                $deptCodes[] = $dept->name;
+            }
+        }
+
+        return array_unique(array_filter($deptCodes));
     }
 }

@@ -29,13 +29,14 @@ class SpMangkirController extends Controller
         $permissions = view()->shared('permissions') ?: [];
         $isIrRole = in_array('sp_pelanggaran_ir_staff', $permissions) || in_array('sp_pelanggaran_ir_head', $permissions);
         $userDept = ($user ? $user->dept_id : null) ?: session('kode_department');
+        $deptCodes = $this->getDeptCodes($userDept);
 
         $employeeQuery = HrKaryawan::where('active', 'Y');
 
-        if (!$isIrRole && $userDept) {
-            $employeeQuery->where(function($q) use ($userDept) {
-                $q->where('kode_divisi', $userDept)
-                  ->orWhere('kode_bagian', $userDept);
+        if (!$isIrRole && !empty($deptCodes)) {
+            $employeeQuery->where(function($q) use ($deptCodes) {
+                $q->whereIn('kode_divisi', $deptCodes)
+                  ->orWhereIn('kode_bagian', $deptCodes);
             });
         }
 
@@ -58,10 +59,10 @@ class SpMangkirController extends Controller
             ->where('sumber_data', 'MANGKIR')
             ->orderBy('created_at', 'desc');
 
-        if (!$isIrRole && $userDept) {
-            $query->whereHas('employee', function ($empQ) use ($userDept) {
-                $empQ->where('kode_divisi', $userDept)
-                     ->orWhere('kode_bagian', $userDept);
+        if (!$isIrRole && !empty($deptCodes)) {
+            $query->whereHas('employee', function ($empQ) use ($deptCodes) {
+                $empQ->whereIn('kode_divisi', $deptCodes)
+                     ->orWhereIn('kode_bagian', $deptCodes);
             });
         }
 
@@ -97,10 +98,12 @@ class SpMangkirController extends Controller
             ->where('sumber_data', 'MANGKIR')
             ->orderBy('created_at', 'desc');
 
-        if (!$isIrRole && $userDept) {
-            $query->whereHas('employee', function ($empQ) use ($userDept) {
-                $empQ->where('kode_divisi', $userDept)
-                     ->orWhere('kode_bagian', $userDept);
+        $deptCodes = $this->getDeptCodes($userDept);
+
+        if (!$isIrRole && !empty($deptCodes)) {
+            $query->whereHas('employee', function ($empQ) use ($deptCodes) {
+                $empQ->whereIn('kode_divisi', $deptCodes)
+                     ->orWhereIn('kode_bagian', $deptCodes);
             });
         }
 
@@ -363,5 +366,24 @@ class SpMangkirController extends Controller
             'status' => 'success',
             'message' => 'Data SP Mangkir berhasil dihapus.'
         ]);
+    }
+
+    private function getDeptCodes($userDept)
+    {
+        if (!$userDept) {
+            return [];
+        }
+
+        $deptCodes = [$userDept, (string)$userDept];
+
+        if (is_numeric($userDept)) {
+            $dept = \Illuminate\Support\Facades\DB::table('departments')->where('id', $userDept)->first();
+            if ($dept && !empty($dept->name)) {
+                $deptCodes[] = strtoupper(trim($dept->name));
+                $deptCodes[] = $dept->name;
+            }
+        }
+
+        return array_unique(array_filter($deptCodes));
     }
 }

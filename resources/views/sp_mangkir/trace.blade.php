@@ -154,6 +154,13 @@
                                     </button>
                                 @endif
 
+                                {{-- Tombol Download PDF: HANYA untuk SP yang sudah TERBIT (APPROVED) --}}
+                                @if($cs === 'APPROVED')
+                                    <a href="{{ route('sp_pelanggaran.export_sp_pdf', $sp->id) }}" class="btn btn-sm btn-outline-danger py-1 px-2 text-nowrap" title="Download Surat Peringatan (PDF)" target="_blank">
+                                        <i class="ri-file-pdf-line me-1"></i> PDF
+                                    </a>
+                                @endif
+
                                 <button class="btn btn-sm btn-outline-primary btnDetailSp py-1 px-2 text-nowrap" data-id="{{ $sp->id }}" title="Lihat Detail & Tracking">
                                     <i class="ri-information-line me-1"></i> Detail
                                 </button>
