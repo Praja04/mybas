@@ -33,25 +33,13 @@ class SpPelanggaranController extends Controller
         // Fetch list of active employees for selection dropdown from hr_karyawan
         $employeeQuery = HrKaryawan::query();
         if (!$isIrRole && !empty($deptCodes)) {
-            $employeeQuery->where(function($q) use ($deptCodes) {
+            $employeeQuery->where(function ($q) use ($deptCodes) {
                 $q->whereIn('kode_divisi', $deptCodes)
-                  ->orWhereIn('kode_bagian', $deptCodes);
+                    ->orWhereIn('kode_bagian', $deptCodes);
             });
         }
-        $employees = $employeeQuery->orderBy('nama', 'asc')->get();
 
-        if ($employees->isEmpty()) {
-            $userQuery = User::query();
-            if (!$isIrRole && $userDept) {
-                $userQuery->where('dept_id', $userDept);
-            }
-            $employees = $userQuery->orderBy('name', 'asc')->get()->map(function($u) {
-                $u->nama = $u->name;
-                $u->nik = $u->username;
-                $u->kode_divisi = $u->dept_id;
-                return $u;
-            });
-        }
+        $employees = $employeeQuery->orderBy('nama', 'asc')->get();
 
         // Check for edit mode
         $editSp = null;
@@ -78,11 +66,14 @@ class SpPelanggaranController extends Controller
 
         // Filter for Dept Head
         if ($userRole === 'dept_head') {
-            $kodeDept = session('kode_department');
-            $query->whereHas('employee', function ($q) use ($kodeDept) {
-                $q->where('kode_divisi', $kodeDept)
-                  ->orWhere('kode_bagian', $kodeDept);
-            });
+            $userDept = (Auth::user() ? Auth::user()->dept_id : null) ?: session('kode_department');
+            $deptCodes = $this->getDeptCodes($userDept);
+            if (!empty($deptCodes)) {
+                $query->whereHas('employee', function ($q) use ($deptCodes) {
+                    $q->whereIn('kode_divisi', $deptCodes)
+                        ->orWhereIn('kode_bagian', $deptCodes);
+                });
+            }
         }
 
         $currentYear = Carbon::now()->year;
@@ -90,8 +81,8 @@ class SpPelanggaranController extends Controller
 
         // 1. SP AKTIF (APPROVED & Masa berlaku <= 6 Bulan)
         $totalSpActive = (clone $query)->where('current_status', SpPelanggaran::STATUS_APPROVED)
-            ->where(function($q) use ($sixMonthsAgo) {
-                $q->whereHas('dates', function($dq) use ($sixMonthsAgo) {
+            ->where(function ($q) use ($sixMonthsAgo) {
+                $q->whereHas('dates', function ($dq) use ($sixMonthsAgo) {
                     $dq->where('tanggal', '>=', $sixMonthsAgo);
                 })->orWhere('created_at', '>=', $sixMonthsAgo);
             })
@@ -99,8 +90,8 @@ class SpPelanggaranController extends Controller
 
         // 2. SP TIDAK AKTIF / EXPIRED (APPROVED & Masa berlaku > 6 Bulan)
         $totalSpExpired = (clone $query)->where('current_status', SpPelanggaran::STATUS_APPROVED)
-            ->where(function($q) use ($sixMonthsAgo) {
-                $q->whereDoesntHave('dates', function($dq) use ($sixMonthsAgo) {
+            ->where(function ($q) use ($sixMonthsAgo) {
+                $q->whereDoesntHave('dates', function ($dq) use ($sixMonthsAgo) {
                     $dq->where('tanggal', '>=', $sixMonthsAgo);
                 })->where('created_at', '<', $sixMonthsAgo);
             })
@@ -128,8 +119,8 @@ class SpPelanggaranController extends Controller
         // 3. Distribusi Jenis Pelanggaran
         $distribution = (clone $query)->select('jenis_pelanggaran', DB::raw('count(*) as total'))
             ->where('current_status', SpPelanggaran::STATUS_APPROVED)
-            ->where(function($q) use ($currentYear) {
-                $q->whereHas('dates', function($dq) use ($currentYear) {
+            ->where(function ($q) use ($currentYear) {
+                $q->whereHas('dates', function ($dq) use ($currentYear) {
                     $dq->whereYear('tanggal', $currentYear);
                 })->orWhereYear('created_at', $currentYear);
             })
@@ -152,7 +143,7 @@ class SpPelanggaranController extends Controller
             ->whereYear(DB::raw('COALESCE(sp_pelanggaran_dates.tanggal, sp_pelanggarans.created_at)'), $currentYear)
             ->groupBy(DB::raw('MONTH(COALESCE(sp_pelanggaran_dates.tanggal, sp_pelanggarans.created_at))'))
             ->get();
-        
+
         $chartTrendData = array_fill(0, 12, 0);
         foreach ($trends as $trend) {
             $chartTrendData[$trend->bulan - 1] = (int)$trend->total;
@@ -170,7 +161,7 @@ class SpPelanggaranController extends Controller
             ->orderBy('total', 'desc')
             ->limit(5)
             ->get();
-        
+
         foreach ($deptData as $d) {
             $topDepartments[] = [
                 'dept' => $d->kode_department ?? 'UNKNOWN',
@@ -179,7 +170,17 @@ class SpPelanggaranController extends Controller
         }
 
         return view('sp_pelanggaran.dashboard', compact(
-            'totalSpActive', 'totalSpExpired', 'totalSpBerat', 'totalSpRejected', 'totalSpCancelled', 'totalSpProcess', 'chartDistribusi', 'chartTrendData', 'topDepartments', 'currentYear', 'userRole'
+            'totalSpActive',
+            'totalSpExpired',
+            'totalSpBerat',
+            'totalSpRejected',
+            'totalSpCancelled',
+            'totalSpProcess',
+            'chartDistribusi',
+            'chartTrendData',
+            'topDepartments',
+            'currentYear',
+            'userRole'
         ));
     }
 
@@ -225,7 +226,7 @@ class SpPelanggaranController extends Controller
         $allInputDates = $rawDates;
 
         if (count($allInputDates) > 1) {
-            $formattedDates = array_map(function($d) {
+            $formattedDates = array_map(function ($d) {
                 return Carbon::parse($d)->format('d/m/Y');
             }, $allInputDates);
             $datesSummary = "[Terlambat " . count($allInputDates) . " Hari: " . implode(', ', $formattedDates) . "]";
@@ -245,10 +246,10 @@ class SpPelanggaranController extends Controller
             $kodeDept = $employee->kode_divisi ?: $employee->kode_bagian;
             if ($kodeDept) {
                 $deptHeadUser = User::where('dept_id', $kodeDept)
-                    ->where(function($q) {
-                        $q->whereHas('directPermissions', function($p) {
+                    ->where(function ($q) {
+                        $q->whereHas('directPermissions', function ($p) {
                             $p->whereIn('codename', ['sp_pelanggaran_dh', 'sp_pelanggaran_approval_dh']);
-                        })->orWhereHas('group.permissions', function($p) {
+                        })->orWhereHas('group.permissions', function ($p) {
                             $p->whereIn('codename', ['sp_pelanggaran_dh', 'sp_pelanggaran_approval_dh']);
                         });
                     })
@@ -256,10 +257,10 @@ class SpPelanggaranController extends Controller
                     ->first();
             }
             if (!$deptHeadUser) {
-                $deptHeadUser = User::where(function($q) {
-                    $q->whereHas('directPermissions', function($p) {
+                $deptHeadUser = User::where(function ($q) {
+                    $q->whereHas('directPermissions', function ($p) {
                         $p->whereIn('codename', ['sp_pelanggaran_dh', 'sp_pelanggaran_approval_dh']);
-                    })->orWhereHas('group.permissions', function($p) {
+                    })->orWhereHas('group.permissions', function ($p) {
                         $p->whereIn('codename', ['sp_pelanggaran_dh', 'sp_pelanggaran_approval_dh']);
                     });
                 })->whereNotNull('email')->where('email', '!=', '')->first();
@@ -342,7 +343,7 @@ class SpPelanggaranController extends Controller
         $allInputDates = $rawDates;
 
         if (count($allInputDates) > 1) {
-            $formattedDates = array_map(function($d) {
+            $formattedDates = array_map(function ($d) {
                 return Carbon::parse($d)->format('d/m/Y');
             }, $allInputDates);
             $datesSummary = "[Terlambat " . count($allInputDates) . " Hari: " . implode(', ', $formattedDates) . "]";
@@ -422,8 +423,8 @@ class SpPelanggaranController extends Controller
             ->where('employee_id', $employee_id)
             ->where('current_status', SpPelanggaran::STATUS_APPROVED)
             ->whereNotNull('jenis_pelanggaran')
-            ->where(function($q) use ($sixMonthsAgo) {
-                $q->whereHas('dates', function($dq) use ($sixMonthsAgo) {
+            ->where(function ($q) use ($sixMonthsAgo) {
+                $q->whereHas('dates', function ($dq) use ($sixMonthsAgo) {
                     $dq->where('tanggal', '>=', $sixMonthsAgo);
                 })->orWhere('created_at', '>=', $sixMonthsAgo);
             })
@@ -434,14 +435,14 @@ class SpPelanggaranController extends Controller
         $spHistory = SpPelanggaran::with(['employee', 'dates'])
             ->where('employee_id', $employee_id)
             ->whereIn('current_status', [SpPelanggaran::STATUS_APPROVED, SpPelanggaran::STATUS_PENDING_IR, SpPelanggaran::STATUS_PENDING_IR_HEAD])
-            ->where(function($q) use ($sixMonthsAgo) {
-                $q->whereHas('dates', function($dq) use ($sixMonthsAgo) {
+            ->where(function ($q) use ($sixMonthsAgo) {
+                $q->whereHas('dates', function ($dq) use ($sixMonthsAgo) {
                     $dq->where('tanggal', '>=', $sixMonthsAgo);
                 })->orWhere('created_at', '>=', $sixMonthsAgo);
             })
             ->orderBy('id', 'desc')
             ->get()
-            ->map(function($s) {
+            ->map(function ($s) {
                 $allDates = [];
                 if ($s->dates && $s->dates->count() > 0) {
                     $allDates = $s->dates->pluck('tanggal')->toArray();
@@ -542,26 +543,26 @@ class SpPelanggaranController extends Controller
         }
 
         $kodeDept = $sp->employee->kode_divisi ?? $sp->employee->kode_bagian ?? null;
-        
+
         // 1. Search user with Dept Head permission in employee's department
-        $deptHead = User::where(function($q) use ($kodeDept) {
+        $deptHead = User::where(function ($q) use ($kodeDept) {
             if ($kodeDept) {
                 $q->where('dept_id', $kodeDept);
             }
-        })->where(function($q) {
-            $q->whereHas('directPermissions', function($permQ) {
+        })->where(function ($q) {
+            $q->whereHas('directPermissions', function ($permQ) {
                 $permQ->whereIn('codename', ['sp_pelanggaran_dh', 'sp_pelanggaran_approval_dh']);
-            })->orWhereHas('group.permissions', function($permQ) {
+            })->orWhereHas('group.permissions', function ($permQ) {
                 $permQ->whereIn('codename', ['sp_pelanggaran_dh', 'sp_pelanggaran_approval_dh']);
             });
         })->whereNotNull('email')->where('email', '!=', '')->first();
 
         // 2. Search any user with Dept Head permission in system with valid email
         if (!$deptHead) {
-            $deptHead = User::where(function($q) {
-                $q->whereHas('directPermissions', function($permQ) {
+            $deptHead = User::where(function ($q) {
+                $q->whereHas('directPermissions', function ($permQ) {
                     $permQ->whereIn('codename', ['sp_pelanggaran_dh', 'sp_pelanggaran_approval_dh']);
-                })->orWhereHas('group.permissions', function($permQ) {
+                })->orWhereHas('group.permissions', function ($permQ) {
                     $permQ->whereIn('codename', ['sp_pelanggaran_dh', 'sp_pelanggaran_approval_dh']);
                 });
             })->whereNotNull('email')->where('email', '!=', '')->first();
@@ -932,15 +933,15 @@ class SpPelanggaranController extends Controller
 
         $user = Auth::user();
         $userDept = ($user ? $user->dept_id : null) ?: session('kode_department');
+        $deptCodes = $this->getDeptCodes($userDept);
 
         $query = SpPelanggaran::with(['employee', 'creator', 'dates'])
             ->orderBy('updated_at', 'desc');
 
-        $deptCodes = $this->getDeptCodes($userDept);
         if ($userRole === 'dept_head' && !empty($deptCodes)) {
             $query->whereHas('employee', function ($empQ) use ($deptCodes) {
                 $empQ->whereIn('kode_divisi', $deptCodes)
-                     ->orWhereIn('kode_bagian', $deptCodes);
+                    ->orWhereIn('kode_bagian', $deptCodes);
             });
         }
 
@@ -1000,15 +1001,19 @@ class SpPelanggaranController extends Controller
         $permissions = view()->shared('permissions') ?: [];
         $isIrRole = in_array('sp_pelanggaran_ir_staff', $permissions) || in_array('sp_pelanggaran_ir_head', $permissions);
         $userDept = ($user ? $user->dept_id : null) ?: session('kode_department');
+        $deptCodes = $this->getDeptCodes($userDept);
 
         $query = SpPelanggaran::with(['employee', 'creator', 'dates'])
+            ->where(function ($q) {
+                $q->where('sumber_data', 'PELANGGARAN')
+                    ->orWhereNull('sumber_data');
+            })
             ->orderBy('updated_at', 'desc');
 
-        $deptCodes = $this->getDeptCodes($userDept);
         if (!$isIrRole && !empty($deptCodes)) {
             $query->whereHas('employee', function ($empQ) use ($deptCodes) {
                 $empQ->whereIn('kode_divisi', $deptCodes)
-                     ->orWhereIn('kode_bagian', $deptCodes);
+                    ->orWhereIn('kode_bagian', $deptCodes);
             });
         }
 
@@ -1016,11 +1021,11 @@ class SpPelanggaranController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('no_sp', 'like', "%{$search}%")
-                  ->orWhere('nomor_sp_generated', 'like', "%{$search}%")
-                  ->orWhereHas('employee', function ($empQ) use ($search) {
-                      $empQ->where('nama', 'like', "%{$search}%")
-                           ->orWhere('nik', 'like', "%{$search}%");
-                  });
+                    ->orWhere('nomor_sp_generated', 'like', "%{$search}%")
+                    ->orWhereHas('employee', function ($empQ) use ($search) {
+                        $empQ->where('nama', 'like', "%{$search}%")
+                            ->orWhere('nik', 'like', "%{$search}%");
+                    });
             });
         }
 
@@ -1044,6 +1049,7 @@ class SpPelanggaranController extends Controller
         }
 
         $sps = $query->paginate(10);
+        // dd($sps);
         $spRecords = $sps;
 
         return view('sp_pelanggaran.trace', compact('sps', 'spRecords'));
@@ -1128,10 +1134,10 @@ class SpPelanggaranController extends Controller
             if ($kodeDept) {
                 // Cari HANYA Dept Head spesifik di departemen yang sama
                 $dhUser = User::where('dept_id', $kodeDept)
-                    ->where(function($q) {
-                        $q->whereHas('directPermissions', function($p) {
+                    ->where(function ($q) {
+                        $q->whereHas('directPermissions', function ($p) {
                             $p->whereIn('codename', ['sp_pelanggaran_dh', 'sp_pelanggaran_approval_dh']);
-                        })->orWhereHas('group.permissions', function($p) {
+                        })->orWhereHas('group.permissions', function ($p) {
                             $p->whereIn('codename', ['sp_pelanggaran_dh', 'sp_pelanggaran_approval_dh']);
                         });
                     })
@@ -1147,8 +1153,20 @@ class SpPelanggaranController extends Controller
         // 3. Email IR Staff yang memproses / meninjau SP ini
         if ($sp->irStaff && !empty($sp->irStaff->email)) {
             $recipients[] = trim($sp->irStaff->email);
-        } elseif (!empty($sp->email_dept_hr)) {
-            $recipients[] = trim($sp->email_dept_hr);
+        } else {
+            $irStaffUsers = User::where(function ($q) {
+                $q->whereHas('directPermissions', function ($permQ) {
+                    $permQ->where('codename', 'sp_pelanggaran_ir_staff');
+                })->orWhereHas('group.permissions', function ($permQ) {
+                    $permQ->where('codename', 'sp_pelanggaran_ir_staff');
+                });
+            })->whereNotNull('email')->where('email', '!=', '')->pluck('email')->toArray();
+
+            foreach ($irStaffUsers as $email) {
+                if (!empty($email)) {
+                    $recipients[] = trim($email);
+                }
+            }
         }
 
         // Unique & filter empty emails
@@ -1413,12 +1431,12 @@ class SpPelanggaranController extends Controller
 
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('kode', 'like', "%{$search}%")
-                  ->orWhere('nama_pelanggaran', 'like', "%{$search}%")
-                  ->orWhere('bentuk_pelanggaran', 'like', "%{$search}%")
-                  ->orWhere('dasar_pertimbangan', 'like', "%{$search}%")
-                  ->orWhere('jenis_sp', 'like', "%{$search}%");
+                    ->orWhere('nama_pelanggaran', 'like', "%{$search}%")
+                    ->orWhere('bentuk_pelanggaran', 'like', "%{$search}%")
+                    ->orWhere('dasar_pertimbangan', 'like', "%{$search}%")
+                    ->orWhere('jenis_sp', 'like', "%{$search}%");
             });
         }
 
@@ -1518,14 +1536,14 @@ class SpPelanggaranController extends Controller
         $permissions = view()->shared('permissions') ?: [];
         $isIrRole = in_array('sp_pelanggaran_ir_staff', $permissions) || in_array('sp_pelanggaran_ir_head', $permissions);
         $userDept = ($user ? $user->dept_id : null) ?: session('kode_department');
+        $deptCodes = $this->getDeptCodes($userDept);
 
         $query = SpPelanggaran::with(['employee', 'dates'])->orderBy('id', 'desc');
 
-        $deptCodes = $this->getDeptCodes($userDept);
         if (!$isIrRole && !empty($deptCodes)) {
             $query->whereHas('employee', function ($empQ) use ($deptCodes) {
                 $empQ->whereIn('kode_divisi', $deptCodes)
-                     ->orWhereIn('kode_bagian', $deptCodes);
+                    ->orWhereIn('kode_bagian', $deptCodes);
             });
         }
 
@@ -1539,15 +1557,15 @@ class SpPelanggaranController extends Controller
 
         // Filter Tanggal
         if ($request->filled('start_date')) {
-            $query->where(function($q) use ($request) {
-                $q->whereHas('dates', function($dq) use ($request) {
+            $query->where(function ($q) use ($request) {
+                $q->whereHas('dates', function ($dq) use ($request) {
                     $dq->whereDate('tanggal', '>=', $request->start_date);
                 })->orWhereDate('created_at', '>=', $request->start_date);
             });
         }
         if ($request->filled('end_date')) {
-            $query->where(function($q) use ($request) {
-                $q->whereHas('dates', function($dq) use ($request) {
+            $query->where(function ($q) use ($request) {
+                $q->whereHas('dates', function ($dq) use ($request) {
                     $dq->whereDate('tanggal', '<=', $request->end_date);
                 })->orWhereDate('created_at', '<=', $request->end_date);
             });
@@ -1920,7 +1938,6 @@ class SpPelanggaranController extends Controller
                 'status' => 'success',
                 'message' => "Import Master Kode SP Berhasil! Total Baru: {$importedCount}, Diperbarui: {$updatedCount}"
             ]);
-
         } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
@@ -1946,6 +1963,7 @@ class SpPelanggaranController extends Controller
         $isIrRole = in_array('sp_pelanggaran_ir_staff', $permissions) || in_array('sp_pelanggaran_ir_head', $permissions);
         $isAdminRole = in_array('sp_pelanggaran_admin', $permissions) || ($user && in_array($user->user_role, ['admin', 'superadmin']));
         $userDept = ($user ? $user->dept_id : null) ?: session('kode_department');
+        $deptCodes = $this->getDeptCodes($userDept);
 
         // Query SP yang sudah terbit (APPROVED) baik SP Pelanggaran maupun SP Mangkir
         $query = SpPelanggaran::with(['employee', 'creator', 'uploaderKonseling', 'dates'])
@@ -1953,11 +1971,10 @@ class SpPelanggaranController extends Controller
             ->orderBy('updated_at', 'desc');
 
         // Filter Dept Head (non-IR role)
-        $deptCodes = $this->getDeptCodes($userDept);
         if (!$isIrRole && !$isAdminRole && !empty($deptCodes)) {
             $query->whereHas('employee', function ($empQ) use ($deptCodes) {
                 $empQ->whereIn('kode_divisi', $deptCodes)
-                     ->orWhereIn('kode_bagian', $deptCodes);
+                    ->orWhereIn('kode_bagian', $deptCodes);
             });
         }
 
@@ -1966,13 +1983,13 @@ class SpPelanggaranController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('no_sp', 'like', "%{$search}%")
-                  ->orWhere('nomor_sp_generated', 'like', "%{$search}%")
-                  ->orWhere('kode_admin', 'like', "%{$search}%")
-                  ->orWhere('kode_ir', 'like', "%{$search}%")
-                  ->orWhereHas('employee', function ($empQ) use ($search) {
-                      $empQ->where('nama', 'like', "%{$search}%")
-                           ->orWhere('nik', 'like', "%{$search}%");
-                  });
+                    ->orWhere('nomor_sp_generated', 'like', "%{$search}%")
+                    ->orWhere('kode_admin', 'like', "%{$search}%")
+                    ->orWhere('kode_ir', 'like', "%{$search}%")
+                    ->orWhereHas('employee', function ($empQ) use ($search) {
+                        $empQ->where('nama', 'like', "%{$search}%")
+                            ->orWhere('nik', 'like', "%{$search}%");
+                    });
             });
         }
 
@@ -1980,9 +1997,9 @@ class SpPelanggaranController extends Controller
         if ($request->filled('sumber')) {
             $sumber = $request->sumber;
             if ($sumber === 'PELANGGARAN') {
-                $query->where(function($q) {
+                $query->where(function ($q) {
                     $q->where('sumber_data', 'PELANGGARAN')
-                      ->orWhereNull('sumber_data');
+                        ->orWhereNull('sumber_data');
                 });
             } elseif ($sumber === 'MANGKIR') {
                 $query->where('sumber_data', 'MANGKIR');
@@ -2010,7 +2027,11 @@ class SpPelanggaranController extends Controller
         $canUpload = $isAdminRole || in_array('sp_pelanggaran_admin', $permissions);
 
         return view('sp_pelanggaran.upload_konseling', compact(
-            'spRecords', 'totalTerbit', 'countSudah', 'countBelum', 'canUpload'
+            'spRecords',
+            'totalTerbit',
+            'countSudah',
+            'countBelum',
+            'canUpload'
         ));
     }
 
