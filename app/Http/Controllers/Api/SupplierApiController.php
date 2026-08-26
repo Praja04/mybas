@@ -17,31 +17,74 @@ class SupplierApiController extends Controller
     public function getSupplierData(Request $request)
     {
         try {
-            $query = DB::table('ga_visitor_transaction as v')
+            // visitor TRANSACTION
+            $transaction = DB::table('ga_visitor_transaction')
+                ->select([
+                    'trnvisitorid',
+                    'nopol',
+                    'namavisitor',
+                    'namacomp',
+                    'kartu_dikembalikan',
+                    DB::raw("'transaction' as source"),
+                    'created_at',
+                    'nohpdriver',
+                ])
+                ->where('keterangan', 'SUPIR')
+                ->where(function ($q) {
+                    $q->whereNull('kartu_dikembalikan')
+                      ->orWhere('kartu_dikembalikan', 0);
+                });
+
+            // visitor VENDOR
+            $vendor = DB::table('ga_visitor_vendor')
+                ->select([
+                    'trnvisitorid',
+                    'nopol',
+                    'namavisitor',
+                    'namacomp',
+                    'kartu_dikembalikan',
+                    DB::raw("'vendor' as source"),
+                    'created_at',
+                    'nohpdriver',
+                ])
+                ->whereNotNull('nopol')
+                ->where('nopol', '!=', '')
+                ->where(function ($q) {
+                    $q->whereNull('kartu_dikembalikan')
+                      ->orWhere('kartu_dikembalikan', 0);
+                })
+                ->whereNotExists(function ($query) {
+                    $query->select(DB::raw(1))
+                        ->from('ga_visitor_transaction')
+                        ->where('ga_visitor_transaction.keterangan', 'SUPIR')
+                        ->whereRaw("
+                            CONVERT(REPLACE(REPLACE(UPPER(ga_visitor_transaction.nopol), ' ', ''), '-', '') USING latin1)
+                            =
+                            CONVERT(REPLACE(REPLACE(UPPER(ga_visitor_vendor.nopol), ' ', ''), '-', '') USING latin1)
+                        ");
+                });
+
+            // UNION visitor
+            $visitors = DB::query()->fromSub(
+                $transaction->unionAll($vendor),
+                'v'
+            );
+
+            // LEFT JOIN cek kendaraan
+            $query = DB::query()
+                ->fromSub($visitors, 'v')
                 ->leftJoin('ga_cek_kendaraan as c', function ($join) {
                     $join->on(DB::raw('CONVERT(c.trnvisitorid USING latin1)'), '=', DB::raw('CONVERT(v.trnvisitorid USING latin1)'))
                         ->whereColumn('c.created_at', '>=', 'v.created_at');
                 })
-                ->where('v.keterangan', 'SUPIR')
-                // Active visits (still inside)
-                ->where(function ($q) {
-                    $q->whereNull('v.kartu_dikembalikan')
-                        ->orWhere('v.kartu_dikembalikan', 0);
-                })
-                ->whereNull('v.dateout')
-                // Vehicle checking checked_in_at and checked_out_at do not exist yet (null)
-                ->whereNull('c.checked_in_at')
-                ->whereNull('c.checked_out_at')
-                ->whereNotNull('v.nopol')
-                ->where('v.nopol', '!=', '')
+                ->whereNull('c.trncekid') // tampilkan yang belum cek sama sekali
                 ->select([
                     'v.trnvisitorid',
                     'v.nopol',
                     'v.namacomp as nama_perusahaan',
                     'v.namavisitor as nama_driver',
                     'v.nohpdriver as no_hp_driver'
-                ])
-                ->distinct();
+                ]);
 
             // Search by nopol or company name
             if ($request->filled('search')) {
