@@ -34,26 +34,13 @@ class SpMangkirController extends Controller
         $employeeQuery = HrKaryawan::where('active', 'Y');
 
         if (!$isIrRole && !empty($deptCodes)) {
-            $employeeQuery->where(function($q) use ($deptCodes) {
+            $employeeQuery->where(function ($q) use ($deptCodes) {
                 $q->whereIn('kode_divisi', $deptCodes)
-                  ->orWhereIn('kode_bagian', $deptCodes);
+                    ->orWhereIn('kode_bagian', $deptCodes);
             });
         }
 
         $employees = $employeeQuery->orderBy('nama', 'asc')->get();
-
-        if ($employees->isEmpty()) {
-            $userQuery = User::query();
-            if (!$isIrRole && $userDept) {
-                $userQuery->where('dept_id', $userDept);
-            }
-            $employees = $userQuery->orderBy('name', 'asc')->get()->map(function($u) {
-                $u->nama = $u->name;
-                $u->nik = $u->username;
-                $u->kode_divisi = $u->dept_id;
-                return $u;
-            });
-        }
 
         $query = SpPelanggaran::with(['employee', 'creator', 'dates'])
             ->where('sumber_data', 'MANGKIR')
@@ -62,7 +49,7 @@ class SpMangkirController extends Controller
         if (!$isIrRole && !empty($deptCodes)) {
             $query->whereHas('employee', function ($empQ) use ($deptCodes) {
                 $empQ->whereIn('kode_divisi', $deptCodes)
-                     ->orWhereIn('kode_bagian', $deptCodes);
+                    ->orWhereIn('kode_bagian', $deptCodes);
             });
         }
 
@@ -70,11 +57,11 @@ class SpMangkirController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('kode_admin', 'like', "%{$search}%")
-                  ->orWhere('kode_ir', 'like', "%{$search}%")
-                  ->orWhereHas('employee', function ($empQ) use ($search) {
-                      $empQ->where('nama', 'like', "%{$search}%")
-                           ->orWhere('nik', 'like', "%{$search}%");
-                  });
+                    ->orWhere('kode_ir', 'like', "%{$search}%")
+                    ->orWhereHas('employee', function ($empQ) use ($search) {
+                        $empQ->where('nama', 'like', "%{$search}%")
+                            ->orWhere('nik', 'like', "%{$search}%");
+                    });
             });
         }
 
@@ -93,17 +80,16 @@ class SpMangkirController extends Controller
         $permissions = view()->shared('permissions') ?: [];
         $isIrRole = in_array('sp_pelanggaran_ir_staff', $permissions) || in_array('sp_pelanggaran_ir_head', $permissions);
         $userDept = ($user ? $user->dept_id : null) ?: session('kode_department');
+        $deptCodes = $this->getDeptCodes($userDept);
 
         $query = SpPelanggaran::with(['employee', 'creator', 'dates'])
             ->where('sumber_data', 'MANGKIR')
             ->orderBy('created_at', 'desc');
 
-        $deptCodes = $this->getDeptCodes($userDept);
-
         if (!$isIrRole && !empty($deptCodes)) {
             $query->whereHas('employee', function ($empQ) use ($deptCodes) {
                 $empQ->whereIn('kode_divisi', $deptCodes)
-                     ->orWhereIn('kode_bagian', $deptCodes);
+                    ->orWhereIn('kode_bagian', $deptCodes);
             });
         }
 
@@ -111,13 +97,13 @@ class SpMangkirController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('no_sp', 'like', "%{$search}%")
-                  ->orWhere('nomor_sp_generated', 'like', "%{$search}%")
-                  ->orWhere('kode_admin', 'like', "%{$search}%")
-                  ->orWhere('kode_ir', 'like', "%{$search}%")
-                  ->orWhereHas('employee', function ($empQ) use ($search) {
-                      $empQ->where('nama', 'like', "%{$search}%")
-                           ->orWhere('nik', 'like', "%{$search}%");
-                  });
+                    ->orWhere('nomor_sp_generated', 'like', "%{$search}%")
+                    ->orWhere('kode_admin', 'like', "%{$search}%")
+                    ->orWhere('kode_ir', 'like', "%{$search}%")
+                    ->orWhereHas('employee', function ($empQ) use ($search) {
+                        $empQ->where('nama', 'like', "%{$search}%")
+                            ->orWhere('nik', 'like', "%{$search}%");
+                    });
             });
         }
 
@@ -126,19 +112,19 @@ class SpMangkirController extends Controller
             if ($status === 'AKTIF') {
                 $sixMonthsAgo = Carbon::now()->subMonths(6);
                 $query->where('current_status', SpPelanggaran::STATUS_APPROVED)
-                      ->where(function($q) use ($sixMonthsAgo) {
-                          $q->whereHas('dates', function($dq) use ($sixMonthsAgo) {
-                              $dq->where('tanggal', '>=', $sixMonthsAgo);
-                          })->orWhere('created_at', '>=', $sixMonthsAgo);
-                      });
+                    ->where(function ($q) use ($sixMonthsAgo) {
+                        $q->whereHas('dates', function ($dq) use ($sixMonthsAgo) {
+                            $dq->where('tanggal', '>=', $sixMonthsAgo);
+                        })->orWhere('created_at', '>=', $sixMonthsAgo);
+                    });
             } elseif ($status === 'EXPIRED') {
                 $sixMonthsAgo = Carbon::now()->subMonths(6);
                 $query->where('current_status', SpPelanggaran::STATUS_APPROVED)
-                      ->where(function($q) use ($sixMonthsAgo) {
-                          $q->whereDoesntHave('dates', function($dq) use ($sixMonthsAgo) {
-                              $dq->where('tanggal', '>=', $sixMonthsAgo);
-                          })->where('created_at', '<', $sixMonthsAgo);
-                      });
+                    ->where(function ($q) use ($sixMonthsAgo) {
+                        $q->whereDoesntHave('dates', function ($dq) use ($sixMonthsAgo) {
+                            $dq->where('tanggal', '>=', $sixMonthsAgo);
+                        })->where('created_at', '<', $sixMonthsAgo);
+                    });
             } elseif ($status === 'REJECTED') {
                 $query->where('current_status', SpPelanggaran::STATUS_REJECTED);
             } elseif ($status === 'CANCELLED') {
@@ -222,7 +208,7 @@ class SpMangkirController extends Controller
         // Check double submission on same date
         $duplicate = SpPelanggaran::where('employee_id', $empId)
             ->where('sumber_data', 'MANGKIR')
-            ->whereHas('dates', function($dq) use ($tanggal) {
+            ->whereHas('dates', function ($dq) use ($tanggal) {
                 $dq->whereDate('tanggal', $tanggal);
             })
             ->whereNotIn('current_status', [SpPelanggaran::STATUS_CANCELLED, SpPelanggaran::STATUS_REJECTED])
@@ -260,10 +246,10 @@ class SpMangkirController extends Controller
         // Step 1: User di dept yang sama punya permission Dept Head
         if ($kodeDept) {
             $deptHeadUser = User::where('dept_id', $kodeDept)
-                ->where(function($q) {
-                    $q->whereHas('directPermissions', function($p) {
+                ->where(function ($q) {
+                    $q->whereHas('directPermissions', function ($p) {
                         $p->whereIn('codename', ['sp_pelanggaran_dh', 'sp_pelanggaran_approval_dh']);
-                    })->orWhereHas('group.permissions', function($p) {
+                    })->orWhereHas('group.permissions', function ($p) {
                         $p->whereIn('codename', ['sp_pelanggaran_dh', 'sp_pelanggaran_approval_dh']);
                     });
                 })
@@ -273,10 +259,10 @@ class SpMangkirController extends Controller
 
         // Step 2: System-wide Dept Head user
         if (!$deptHeadUser) {
-            $deptHeadUser = User::where(function($q) {
-                $q->whereHas('directPermissions', function($p) {
+            $deptHeadUser = User::where(function ($q) {
+                $q->whereHas('directPermissions', function ($p) {
                     $p->whereIn('codename', ['sp_pelanggaran_dh', 'sp_pelanggaran_approval_dh']);
-                })->orWhereHas('group.permissions', function($p) {
+                })->orWhereHas('group.permissions', function ($p) {
                     $p->whereIn('codename', ['sp_pelanggaran_dh', 'sp_pelanggaran_approval_dh']);
                 });
             })->whereNotNull('email')->where('email', '!=', '')->first();
