@@ -81,42 +81,8 @@ class LocalAttachmentController extends Controller
             ]);
         }
 
-        // Jika file tidak ditemukan di server lokal, coba ambil dari server 172.21.5.105 (Proxy)
-        $fileName = $attachment->encode_file_name;
-        $fallbackUrls = [
-            'http://172.21.5.105/storage/' . $attachment->transaction_type . '/' . $fileName,
-            'http://172.21.5.105/attachment/download/' . $id
-        ];
-
-        foreach ($fallbackUrls as $url) {
-            try {
-                // Gunakan tanpa redirecting agar tidak mendownload halaman login secara tidak sengaja
-                $response = \Illuminate\Support\Facades\Http::timeout(10)
-                    ->withoutRedirecting()
-                    ->get($url);
-
-                if ($response->successful()) {
-                    $contentType = $response->header('Content-Type') ?: 'application/octet-stream';
-                    $body = $response->body();
-
-                    // Cek apakah response berupa halaman HTML (misalnya login page)
-                    if (strpos($contentType, 'text/html') !== false ||
-                        stripos($body, '<!DOCTYPE html>') !== false ||
-                        stripos($body, '<html') !== false) {
-                        continue;
-                    }
-
-                    return response($body, 200, [
-                        'Content-Type' => $contentType,
-                        'Content-Disposition' => 'attachment; filename="' . $fileName . '"'
-                    ]);
-                }
-            } catch (\Exception $e) {
-                \Illuminate\Support\Facades\Log::warning("Gagal fetch dari fallback URL ({$url}): " . $e->getMessage());
-            }
-        }
-
-        return response("File tidak ditemukan di server.", 404);
+        // Jika file tidak ditemukan di server lokal, alihkan browser ke server 172.21.5.105
+        return redirect('http://172.21.5.105/attachment/download/' . $id);
     }
 
 
