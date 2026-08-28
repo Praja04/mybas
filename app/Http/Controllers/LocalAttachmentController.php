@@ -64,7 +64,11 @@ class LocalAttachmentController extends Controller
             return response("File tidak ditemukan di database.", 404);
         }
 
-        $filePath = storage_path('app/public/' . $attachment->transaction_type . '/' . $attachment->encode_file_name);
+        $filePath = public_path(
+            'storage/' .
+                $attachment->transaction_type . '/' .
+                $attachment->encode_file_name
+        );
 
         if (file_exists($filePath)) {
             $typefile = mime_content_type($filePath);
@@ -74,10 +78,11 @@ class LocalAttachmentController extends Controller
                 'Content-Type' => $typefile,
                 'Content-Disposition' => 'attachment; filename="' . $originalFileName . '"'
             ]);
-        } else {
-            return response("File tidak ditemukan di server.", 404);
         }
+
+        return response("File tidak ditemukan di server.", 404);
     }
+
 
 
     public function delete($id)
