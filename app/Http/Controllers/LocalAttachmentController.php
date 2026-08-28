@@ -72,11 +72,11 @@ class LocalAttachmentController extends Controller
 
         if (file_exists($filePath)) {
             $typefile = mime_content_type($filePath);
-            $originalFileName = $attachment->original_file_name;
+            $fileName = $attachment->encode_file_name;
 
             return response()->file($filePath, [
                 'Content-Type' => $typefile,
-                'Content-Disposition' => 'attachment; filename="' . $originalFileName . '"'
+                'Content-Disposition' => 'attachment; filename="' . $fileName . '"'
             ]);
         }
 
@@ -87,11 +87,11 @@ class LocalAttachmentController extends Controller
 
             if ($response->successful()) {
                 $contentType = $response->header('Content-Type') ?: 'application/octet-stream';
-                $originalFileName = $attachment->original_file_name;
+                $fileName = $attachment->encode_file_name;
 
                 return response($response->body(), 200, [
                     'Content-Type' => $contentType,
-                    'Content-Disposition' => 'attachment; filename="' . $originalFileName . '"'
+                    'Content-Disposition' => 'attachment; filename="' . $fileName . '"'
                 ]);
             }
         } catch (\Exception $e) {
