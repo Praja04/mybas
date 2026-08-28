@@ -80,9 +80,26 @@ class LocalAttachmentController extends Controller
             ]);
         }
 
+        // Jika file tidak ditemukan di server lokal, coba ambil dari server 172.21.5.105 (Proxy)
+        try {
+            $fallbackUrl = 'http://172.21.5.105/attachment/download/' . $id;
+            $response = \Illuminate\Support\Facades\Http::timeout(15)->get($fallbackUrl);
+
+            if ($response->successful()) {
+                $contentType = $response->header('Content-Type') ?: 'application/octet-stream';
+                $originalFileName = $attachment->original_file_name;
+
+                return response($response->body(), 200, [
+                    'Content-Type' => $contentType,
+                    'Content-Disposition' => 'attachment; filename="' . $originalFileName . '"'
+                ]);
+            }
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Gagal mengambil file attachment dari backup server 172.21.5.105: ' . $e->getMessage());
+        }
+
         return response("File tidak ditemukan di server.", 404);
     }
-
 
 
     public function delete($id)
