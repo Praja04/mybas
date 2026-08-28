@@ -961,44 +961,7 @@
 
         function downloadAttachment(id) {
             const url = "{{ url('/attachment/download') }}/" + id;
-
-            $.ajax({
-                url: url,
-                method: 'GET',
-                xhrFields: {
-                    responseType: 'blob'
-                },
-                success: function(data, status, xhr) {
-                    // Ambil nama file dari header response
-                    let disposition = xhr.getResponseHeader('Content-Disposition');
-                    let filename = 'legalitas_attachment';
-                    if (disposition && disposition.indexOf('filename=') !== -1) {
-                        filename = disposition.split('filename=')[1].replace(/"/g, '');
-                    }
-
-                    // Buat link blob dan auto-download
-                    let blob = new Blob([data]);
-                    let link = document.createElement('a');
-                    link.href = window.URL.createObjectURL(blob);
-                    link.download = filename;
-                    link.click();
-                },
-                error: function(xhr) {
-                    if (xhr.status === 404) {
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'File tidak ditemukan',
-                            text: 'File mungkin sudah dihapus atau rusak.',
-                        });
-                    } else {
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Gagal mengunduh file',
-                            text: 'Terjadi kesalahan tak terduga. Coba lagi nanti.',
-                        });
-                    }
-                }
-            });
+            window.open(url, '_blank');
         }
 
         function deleteAttachment(id) {
