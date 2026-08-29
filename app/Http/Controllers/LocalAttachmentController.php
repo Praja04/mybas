@@ -81,7 +81,16 @@ class LocalAttachmentController extends Controller
             ]);
         }
 
-        // Jika file tidak ditemukan di server lokal, alihkan browser ke server 172.21.5.105
+        // Jika file tidak ditemukan di server lokal, alihkan browser ke server 172.21.5.105 menggunakan auto-login
+        $user = \Illuminate\Support\Facades\Auth::user();
+        if ($user && isset($user->username)) {
+            $token = \App\Http\Controllers\Auth\LoginController::generateSsoToken($user->username);
+            $redirectUrl = '/attachment/download/' . $id;
+            $autologinUrl = 'http://172.21.5.105/autologin?token=' . urlencode($token) . '&redirect=' . urlencode($redirectUrl);
+            
+            return redirect($autologinUrl);
+        }
+
         return redirect('http://172.21.5.105/attachment/download/' . $id);
     }
 
