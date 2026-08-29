@@ -68,7 +68,13 @@ class LoginController extends Controller
         $token = $request->query('token');
         $redirectUrl = $request->query('redirect', '/');
 
+        \Illuminate\Support\Facades\Log::info("AutoLogin request received.", [
+            'token_length' => strlen($token),
+            'redirect' => $redirectUrl
+        ]);
+
         if (!$token) {
+            \Illuminate\Support\Facades\Log::warning("AutoLogin failed: Token is empty.");
             return redirect('/login')->with('error', 'Token auto-login tidak ditemukan.');
         }
 
@@ -79,21 +85,47 @@ class LoginController extends Controller
                 list($encrypted_data, $base64_iv) = explode('::', $decoded, 2);
                 $iv = base64_decode($base64_iv);
                 $decrypted = openssl_decrypt($encrypted_data, 'aes-256-cbc', $secret, 0, $iv);
+                
+                \Illuminate\Support\Facades\Log::info("AutoLogin decrypted data.", [
+                    'decrypted_raw' => $decrypted
+                ]);
+
                 $data = json_decode($decrypted, true);
 
                 if ($data && isset($data['username']) && isset($data['expires_at'])) {
-                    // Cek kadaluwarsa token (misal: 5 menit)
-                    if (time() <= $data['expires_at']) {
+                    $time = time();
+                    \Illuminate\Support\Facades\Log::info("AutoLogin checking expiration.", [
+                        'current_time' => $time,
+                        'expires_at' => $data['expires_at'],
+                        'diff' => $data['expires_at'] - $time
+                    ]);
+
+                    if ($time <= $data['expires_at']) {
                         $user = \App\User::where('username', $data['username'])->where('status', '1')->first();
                         if ($user) {
+                            \Illuminate\Support\Facades\Log::info("AutoLogin logging in user.", [
+                                'username' => $data['username']
+                            ]);
                             Auth::login($user, true);
                             return redirect($redirectUrl);
+                        } else {
+                            \Illuminate\Support\Facades\Log::warning("AutoLogin failed: User not found or inactive.", [
+                                'username' => $data['username']
+                            ]);
                         }
+                    } else {
+                        \Illuminate\Support\Facades\Log::warning("AutoLogin failed: Token expired.");
                     }
+                } else {
+                    \Illuminate\Support\Facades\Log::warning("AutoLogin failed: Decrypted data structure invalid or null.");
                 }
+            } else {
+                \Illuminate\Support\Facades\Log::warning("AutoLogin failed: Delimiter '::' not found in decoded token.");
             }
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error("AutoLogin failed: " . $e->getMessage());
+            \Illuminate\Support\Facades\Log::error("AutoLogin exception: " . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
         }
 
         return redirect('/login')->with('error', 'Token auto-login tidak valid atau kadaluwarsa.');
@@ -104,7 +136,7 @@ class LoginController extends Controller
         $secret = env('SSO_SECRET_KEY', 'mybas_sso_secret_key_9988');
         $data = [
             'username' => $username,
-            'expires_at' => time() + 300 // 5 menit
+            'expires_at' => time() + 7200 // 2 jam untuk toleransi beda waktu server
         ];
         $plain = json_encode($data);
         $ivLength = openssl_cipher_iv_length('aes-256-cbc');
