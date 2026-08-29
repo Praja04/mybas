@@ -82,7 +82,7 @@ class LocalAttachmentController extends Controller
         }
 
         // Jika file tidak ditemukan di server lokal, lakukan proxy request ke server 172.21.5.105 agar user tidak perlu login di sana
-        $fallbackUrl = 'http://172.21.5.105/attachment/download/' . $id;
+        $fallbackUrl = 'http://172.21.5.105/storage/' . $attachment->transaction_type . '/' . $attachment->encode_file_name;
         try {
             $response = \Illuminate\Support\Facades\Http::timeout(30)->get($fallbackUrl);
             if ($response->successful()) {

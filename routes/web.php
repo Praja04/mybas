@@ -226,6 +226,7 @@ Route::group(['middleware' => ['auth', 'rules', 'access_log']], function () {
 
     // balikin ke attachmentcontroller kalo mau store ke google
     Route::post('/attachment/upload', 'LocalAttachmentController@upload')->name('attachment.upload');
+    Route::get('/attachment/download/{id}', 'LocalAttachmentController@download');
     Route::get('/attachment/generate', 'LocalAttachmentController@generateTransactionId')->name('attachment.generate-transaction-id');
     Route::delete('/attachment/delete/{id}', 'LocalAttachmentController@delete')->name('attachment.delete');
     Route::delete('/attachment/delete-all/{transactionId}', 'LocalAttachmentController@deleteAll')->name('attachment.delete-all');
@@ -834,8 +835,6 @@ Route::group(['middleware' => ['auth', 'rules']], function () {
     Route::delete('/ttd-digital/{id}', [App\Http\Controllers\DigitalSignatureController::class, 'destroy'])->name('ttd_digital.destroy');
     Route::get('/ttd-digital/preview', [App\Http\Controllers\DigitalSignatureController::class, 'preview'])->name('ttd_digital.preview');
 });
-
-Route::get('/attachment/download/{id}', 'LocalAttachmentController@download');
 
 Route::fallback(function () {
     abort(404);
