@@ -1086,8 +1086,11 @@
             });
             // perbaiki export sio dan implementasi sweet alert kedalam nya
             $('#sio_filter').append(
-                "<button id='btnExportSIO' class='btn btn-outline-success float-left btn-sm'>" +
+                "<button id='btnExportSIO' class='btn btn-outline-success float-left btn-sm mr-2'>" +
                 "<i class='la la-file-excel-o'></i> Export excel <i class='la la-download'></i>" +
+                "</button>" +
+                "<button id='btnDownloadAllAttachments' class='btn btn-outline-primary float-left btn-sm'>" +
+                "<i class='la la-file-archive-o'></i> Download All Attachments <i class='la la-download'></i>" +
                 "</button>"
             );
         }
@@ -1095,6 +1098,26 @@
         $(document).on('click', '#btnExportSIO', function() {
             exportExcel();
         });
+
+        $(document).on('click', '#btnDownloadAllAttachments', function() {
+            downloadAllAttachments();
+        });
+
+        function downloadAllAttachments() {
+            const $btn = $('#btnDownloadAllAttachments');
+            const originalHtml = $btn.html();
+
+            // disable btn
+            $btn.prop('disabled', true).html(
+                "<i class='fa fa-spin fa-spinner'></i> Downloading ZIP..."
+            );
+
+            window.location.href = "{{ route('sigra.sio.download-all') }}";
+
+            setTimeout(function() {
+                $btn.prop('disabled', false).html(originalHtml);
+            }, 5000);
+        }
 
 
         getPerizinansio();

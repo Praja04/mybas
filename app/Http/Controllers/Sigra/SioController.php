@@ -421,4 +421,97 @@ class SioController extends Controller
             abort(403, 'Readonly access');
         }
     }
+
+    public function downloadAllAttachments()
+    {
+        $sioList = SIO::with(['sertifikasi'])->where('status', '!=', 'deleted')->get();
+
+        $zip = new \ZipArchive;
+        $fileName = 'sio_attachments_' . time() . '.zip';
+        $tempDir = storage_path('app/public/temp');
+        if (!file_exists($tempDir)) {
+            mkdir($tempDir, 0755, true);
+        }
+        $zipPath = $tempDir . '/' . $fileName;
+
+        if ($zip->open($zipPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) === TRUE) {
+            $hasFiles = false;
+            $addedPaths = [];
+
+            foreach ($sioList as $sio) {
+                // Folder name: [Nama Karyawan] - [NIK]
+                $karyawanName = trim($sio->nama_karyawan ?? 'Karyawan_Tanpa_Nama');
+                $nik = trim($sio->nik_karyawan ?? '');
+                
+                $folderName = $karyawanName;
+                if ($nik !== '') {
+                    $folderName .= ' - ' . $nik;
+                }
+                
+                // Clean folder name from invalid characters
+                $folderName = preg_replace('/[\/\\\\\:\*\?\"\<\>\|]/', '_', $folderName);
+
+                // Get all sertifikasi for this SIO
+                foreach ($sio->sertifikasi as $sertifikasi) {
+                    // Get attachments
+                    $attachments = LocalAttachment::where('transaction_id', $sertifikasi->transaction_id)->get();
+
+                    foreach ($attachments as $attachment) {
+                        $filePath = storage_path('app/public/' . $attachment->transaction_type . '/' . $attachment->encode_file_name);
+                        
+                        $originalName = $attachment->original_file_name ?: $attachment->encode_file_name;
+                        // Clean filename
+                        $originalName = preg_replace('/[\/\\\\\:\*\?\"\<\>\|]/', '_', $originalName);
+
+                        $zipFilePath = $folderName . '/' . $originalName;
+
+                        // Handle duplicates within the same employee's folder
+                        $counter = 1;
+                        $pathInfo = pathinfo($originalName);
+                        $baseName = $pathInfo['filename'] ?? 'file';
+                        $extension = isset($pathInfo['extension']) ? '.' . $pathInfo['extension'] : '';
+
+                        while (in_array($zipFilePath, $addedPaths)) {
+                            $zipFilePath = $folderName . '/' . $baseName . '_' . $counter . $extension;
+                            $counter++;
+                        }
+
+                        $addedPaths[] = $zipFilePath;
+
+                        if (file_exists($filePath)) {
+                            // File exists locally
+                            $zip->addFile($filePath, $zipFilePath);
+                            $hasFiles = true;
+                        } else {
+                            // Fallback to 172.21.5.105
+                            $fallbackUrl = 'http://172.21.5.105/attachment/download/' . $attachment->id;
+                            try {
+                                $response = \Illuminate\Support\Facades\Http::timeout(10)->get($fallbackUrl);
+                                if ($response->successful()) {
+                                    $fileContents = $response->body();
+                                    $zip->addFromString($zipFilePath, $fileContents);
+                                    $hasFiles = true;
+                                }
+                            } catch (\Throwable $e) {
+                                \Illuminate\Support\Facades\Log::error("Failed to download fallback file for SIO attachment ID {$attachment->id}: " . $e->getMessage());
+                            }
+                        }
+                    }
+                }
+            }
+
+            $zip->close();
+
+            if (!$hasFiles) {
+                if (file_exists($zipPath)) {
+                    unlink($zipPath);
+                }
+                return back()->with('error', 'Tidak ada file attachment untuk diunduh.');
+            }
+
+            return response()->download($zipPath, 'sio_attachments_all.zip')->deleteFileAfterSend(true);
+        } else {
+            return back()->with('error', 'Gagal membuat file ZIP.');
+        }
+    }
 }

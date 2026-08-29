@@ -14,7 +14,7 @@ class LocalAttachmentController extends Controller
     {
         // dd($request->all());
         $file = $request->file('file');
-        $extension = $file->extension();
+        $extension = $file->getClientOriginalExtension();
         $encode_file_name = $this->generateUniqName() . '.' . $extension;
         $original_file_name = $file->getClientOriginalName();
         $transaction_type = $request->transaction_type;
