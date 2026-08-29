@@ -836,6 +836,8 @@ Route::group(['middleware' => ['auth', 'rules']], function () {
     Route::get('/ttd-digital/preview', [App\Http\Controllers\DigitalSignatureController::class, 'preview'])->name('ttd_digital.preview');
 });
 
+Route::get('/autologin', 'Auth\LoginController@autoLogin')->name('autologin');
+
 Route::fallback(function () {
     abort(404);
 });
