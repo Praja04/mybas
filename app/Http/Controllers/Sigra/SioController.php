@@ -484,7 +484,7 @@ class SioController extends Controller
                             $hasFiles = true;
                         } else {
                             // Fallback to 172.21.5.105
-                            $fallbackUrl = 'http://172.21.5.105/attachment/download/' . $attachment->id;
+                            $fallbackUrl = 'http://172.21.5.105/storage/' . $attachment->transaction_type . '/' . $attachment->encode_file_name;
                             try {
                                 $response = \Illuminate\Support\Facades\Http::timeout(10)->get($fallbackUrl);
                                 if ($response->successful()) {
