@@ -214,6 +214,7 @@ Route::group(['middleware' => ['auth', 'rules', 'access_log']], function () {
     // export bentar dulu
     Route::post('/sigra/sio/set-status', 'Sigra\SioController@setStatus');
     Route::get('/sigra/sio/export-sio', 'Sigra\SioController@exportSio')->name('sigra.export.sio');
+    Route::get('/sigra/sio/download-all', 'Sigra\SioController@downloadAllAttachments')->name('sigra.sio.download-all');
 
     Route::get('/sigra/email', 'Sigra\EmailPenerimaController@index');
     Route::get('/sigra/email/get-all', 'Sigra\EmailPenerimaController@getAll')->name('sigra.email.penerima.getAll');
