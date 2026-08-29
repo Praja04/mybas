@@ -1104,19 +1104,45 @@
         });
 
         function downloadAllAttachments() {
-            const $btn = $('#btnDownloadAllAttachments');
-            const originalHtml = $btn.html();
+            Swal.fire({
+                title: 'Menyiapkan Unduhan',
+                text: 'Sedang mengompresi dan menyiapkan berkas ZIP. Mohon tunggu...',
+                allowOutsideClick: false,
+                showConfirmButton: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
 
-            // disable btn
-            $btn.prop('disabled', true).html(
-                "<i class='fa fa-spin fa-spinner'></i> Downloading ZIP..."
-            );
-
-            window.location.href = "{{ route('sigra.sio.download-all') }}";
-
-            setTimeout(function() {
-                $btn.prop('disabled', false).html(originalHtml);
-            }, 5000);
+            fetch("{{ route('sigra.sio.download-all') }}")
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Gagal mengunduh berkas');
+                    }
+                    return response.blob();
+                })
+                .then(blob => {
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.style.display = 'none';
+                    a.href = url;
+                    a.download = 'sio_attachments_all.zip';
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                    
+                    Swal.close();
+                })
+                .catch(error => {
+                    console.error('Error downloading attachments:', error);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Gagal!',
+                        text: 'Terjadi kesalahan saat menyiapkan berkas ZIP.',
+                        confirmButtonText: 'OK'
+                    });
+                });
         }
 
 
