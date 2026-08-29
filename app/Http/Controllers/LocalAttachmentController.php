@@ -81,25 +81,8 @@ class LocalAttachmentController extends Controller
             ]);
         }
 
-        // Jika file tidak ditemukan di server lokal, lakukan proxy request ke server 172.21.5.105 agar user tidak perlu login di sana
-        $fallbackUrl = 'http://172.21.5.105/storage/' . $attachment->transaction_type . '/' . $attachment->encode_file_name;
-        try {
-            $response = \Illuminate\Support\Facades\Http::timeout(30)->get($fallbackUrl);
-            if ($response->successful()) {
-                $fileContents = $response->body();
-                $typefile = $response->header('Content-Type') ?: 'application/octet-stream';
-                $fileName = $attachment->original_file_name ?: $attachment->encode_file_name;
-
-                return response($fileContents, 200, [
-                    'Content-Type' => $typefile,
-                    'Content-Disposition' => 'attachment; filename="' . $fileName . '"'
-                ]);
-            }
-        } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error("Failed to proxy SIO single download from fallback: " . $e->getMessage());
-        }
-
-        return response("File tidak ditemukan secara lokal maupun di server fallback.", 404);
+        // Jika file tidak ditemukan di server lokal, alihkan browser ke server 172.21.5.105
+        return redirect('http://172.21.5.105/attachment/download/' . $id);
     }
 
 
