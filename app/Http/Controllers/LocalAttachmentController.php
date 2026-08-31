@@ -73,7 +73,7 @@ class LocalAttachmentController extends Controller
 
         if (file_exists($filePath)) {
             $typefile = mime_content_type($filePath);
-            $fileName = $attachment->encode_file_name ?: $attachment->original_file_name;
+            $fileName = $attachment->encode_file_name;
 
             return response()->file($filePath, [
                 'Content-Type' => $typefile,
