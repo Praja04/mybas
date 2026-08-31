@@ -442,12 +442,12 @@ class SioController extends Controller
                 // Folder name: [Nama Karyawan] - [NIK]
                 $karyawanName = trim($sio->nama_karyawan ?? 'Karyawan_Tanpa_Nama');
                 $nik = trim($sio->nik_karyawan ?? '');
-                
+
                 $folderName = $karyawanName;
                 if ($nik !== '') {
                     $folderName .= ' - ' . $nik;
                 }
-                
+
                 // Clean folder name from invalid characters
                 $folderName = preg_replace('/[\/\\\\\:\*\?\"\<\>\|]/', '_', $folderName);
 
@@ -458,7 +458,7 @@ class SioController extends Controller
 
                     foreach ($attachments as $attachment) {
                         $filePath = storage_path('app/public/' . $attachment->transaction_type . '/' . $attachment->encode_file_name);
-                        
+
                         $originalName = $attachment->original_file_name ?: $attachment->encode_file_name;
                         // Clean filename
                         $originalName = preg_replace('/[\/\\\\\:\*\?\"\<\>\|]/', '_', $originalName);
@@ -484,17 +484,17 @@ class SioController extends Controller
                             $hasFiles = true;
                         } else {
                             // Fallback to 172.21.5.105
-                            // $fallbackUrl = 'http://172.21.5.105/attachment/download/' . $attachment->id;
-                            // try {
-                            //     $response = \Illuminate\Support\Facades\Http::timeout(10)->get($fallbackUrl);
-                            //     if ($response->successful()) {
-                            //         $fileContents = $response->body();
-                            //         $zip->addFromString($zipFilePath, $fileContents);
-                            //         $hasFiles = true;
-                            //     }
-                            // } catch (\Throwable $e) {
-                            //     \Illuminate\Support\Facades\Log::error("Failed to download fallback file for SIO attachment ID {$attachment->id}: " . $e->getMessage());
-                            // }
+                            $fallbackUrl = 'http://172.21.5.105/attachment/download/' . $attachment->id;
+                            try {
+                                $response = \Illuminate\Support\Facades\Http::timeout(10)->get($fallbackUrl);
+                                if ($response->successful()) {
+                                    $fileContents = $response->body();
+                                    $zip->addFromString($zipFilePath, $fileContents);
+                                    $hasFiles = true;
+                                }
+                            } catch (\Throwable $e) {
+                                \Illuminate\Support\Facades\Log::error("Failed to download fallback file for SIO attachment ID {$attachment->id}: " . $e->getMessage());
+                            }
                         }
                     }
                 }

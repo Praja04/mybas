@@ -73,7 +73,7 @@ class LocalAttachmentController extends Controller
 
         if (file_exists($filePath)) {
             $typefile = mime_content_type($filePath);
-            $fileName = $attachment->encode_file_name;
+            $fileName = $attachment->original_file_name ?: $attachment->encode_file_name;
 
             return response()->file($filePath, [
                 'Content-Type' => $typefile,
@@ -82,8 +82,8 @@ class LocalAttachmentController extends Controller
         }
 
         // Jika file tidak ditemukan di server lokal, alihkan browser ke server 172.21.5.105
-        // return redirect('http://172.21.5.105/attachment/download/' . $id);
-        return response("File tidak ditemukan di server lokal.", 404);
+        return redirect('http://172.21.5.105/attachment/download/' . $id);
+        // return response("File tidak ditemukan di server lokal.", 404);
     }
 
 
