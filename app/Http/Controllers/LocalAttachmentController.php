@@ -82,7 +82,8 @@ class LocalAttachmentController extends Controller
         }
 
         // Jika file tidak ditemukan di server lokal, alihkan browser ke server 172.21.5.105
-        return redirect('http://172.21.5.105/attachment/download/' . $id);
+        // return redirect('http://172.21.5.105/attachment/download/' . $id);
+        return response("File tidak ditemukan di server lokal.", 404);
     }
 
 

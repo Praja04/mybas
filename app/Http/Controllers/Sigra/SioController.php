@@ -484,17 +484,17 @@ class SioController extends Controller
                             $hasFiles = true;
                         } else {
                             // Fallback to 172.21.5.105
-                            $fallbackUrl = 'http://172.21.5.105/attachment/download/' . $attachment->id;
-                            try {
-                                $response = \Illuminate\Support\Facades\Http::timeout(10)->get($fallbackUrl);
-                                if ($response->successful()) {
-                                    $fileContents = $response->body();
-                                    $zip->addFromString($zipFilePath, $fileContents);
-                                    $hasFiles = true;
-                                }
-                            } catch (\Throwable $e) {
-                                \Illuminate\Support\Facades\Log::error("Failed to download fallback file for SIO attachment ID {$attachment->id}: " . $e->getMessage());
-                            }
+                            // $fallbackUrl = 'http://172.21.5.105/attachment/download/' . $attachment->id;
+                            // try {
+                            //     $response = \Illuminate\Support\Facades\Http::timeout(10)->get($fallbackUrl);
+                            //     if ($response->successful()) {
+                            //         $fileContents = $response->body();
+                            //         $zip->addFromString($zipFilePath, $fileContents);
+                            //         $hasFiles = true;
+                            //     }
+                            // } catch (\Throwable $e) {
+                            //     \Illuminate\Support\Facades\Log::error("Failed to download fallback file for SIO attachment ID {$attachment->id}: " . $e->getMessage());
+                            // }
                         }
                     }
                 }
