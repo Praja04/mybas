@@ -35,7 +35,7 @@
     <div class="card-header bg-white py-3">
         <form method="GET" action="{{ route('sp_mangkir.trace') }}" class="row g-2 align-items-center">
             <div class="col-md-3">
-                <input type="text" name="search" class="form-control form-control-sm" placeholder="Cari NIK, Nama, No SP..." value="{{ request('search') }}">
+                <input type="text" name="search" class="form-control form-control-sm" placeholder="Cari NIK, Nama, No SP, Kode..." value="{{ request('search') }}">
             </div>
             <div class="col-md-3">
                 <select name="status" class="form-select form-select-sm">

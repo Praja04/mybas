@@ -96,8 +96,7 @@ class SpMangkirController extends Controller
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
-                $q->where('no_sp', 'like', "%{$search}%")
-                    ->orWhere('nomor_sp_generated', 'like', "%{$search}%")
+                $q->where('nomor_sp_generated', 'like', "%{$search}%")
                     ->orWhere('kode_admin', 'like', "%{$search}%")
                     ->orWhere('kode_ir', 'like', "%{$search}%")
                     ->orWhereHas('employee', function ($empQ) use ($search) {

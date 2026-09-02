@@ -46,7 +46,7 @@
             <form method="GET" action="{{ route('sp_pelanggaran.trace') }}" class="row g-2">
                 <div class="col-md-4">
                     <input type="text" name="search" class="form-control form-control-sm"
-                        placeholder="Cari NIK, Nama, No SP..." value="{{ request('search') }}">
+                        placeholder="Cari NIK, Nama, No SP, Kode Pelanggaran..." value="{{ request('search') }}">
                 </div>
                 <div class="col-md-5">
                     <select name="status" class="form-select form-select-sm">

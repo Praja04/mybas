@@ -13,7 +13,6 @@ class SpPelanggaran extends Model
         'employee_id',
         'kode_admin',
         'kode_ir',
-        'no_sp',
         'jenis_pelanggaran',
         'status',
         'alasan',
