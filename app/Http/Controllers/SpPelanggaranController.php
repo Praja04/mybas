@@ -1049,10 +1049,23 @@ class SpPelanggaranController extends Controller
             }
         }
 
-        $sps = $query->paginate(10);
-        // dd($sps);
-        $spRecords = $sps;
+        $sps = $query->paginate($request->input('per_page', 10));
 
+        if ($request->ajax() || $request->wantsJson()) {
+            $sps->getCollection()->transform(function ($sp) {
+                $sp->is_expired = $sp->isExpiredSp();
+                return $sp;
+            });
+
+            return response()->json([
+                'status' => 'success',
+                'data' => $sps,
+                'is_admin' => in_array('sp_pelanggaran_admin', $permissions),
+                'is_ir_role' => $isIrRole,
+            ]);
+        }
+
+        $spRecords = $sps;
         return view('sp_pelanggaran.trace', compact('sps', 'spRecords'));
     }
 

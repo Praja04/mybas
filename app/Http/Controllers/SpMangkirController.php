@@ -78,6 +78,7 @@ class SpMangkirController extends Controller
     {
         $user = Auth::user();
         $permissions = view()->shared('permissions') ?: [];
+        $isAdmin = in_array('sp_pelanggaran_admin', $permissions);
         $isIrRole = in_array('sp_pelanggaran_ir_staff', $permissions) || in_array('sp_pelanggaran_ir_head', $permissions);
         $userDept = ($user ? $user->dept_id : null) ?: session('kode_department');
         $deptCodes = $this->getDeptCodes($userDept);
@@ -139,7 +140,21 @@ class SpMangkirController extends Controller
             $query->where('bulan_mangkir', $request->bulan);
         }
 
-        $sps = $query->paginate(10);
+        $sps = $query->paginate($request->input('per_page', 10));
+
+        if ($request->ajax() || $request->wantsJson()) {
+            $sps->getCollection()->transform(function ($sp) {
+                $sp->is_expired = $sp->isExpiredSp();
+                return $sp;
+            });
+
+            return response()->json([
+                'status' => 'success',
+                'data' => $sps,
+                'is_admin' => $isAdmin,
+                'is_ir_role' => $isIrRole,
+            ]);
+        }
 
         return view('sp_mangkir.trace', compact('sps'));
     }
