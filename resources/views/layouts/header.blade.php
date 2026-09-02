@@ -825,15 +825,15 @@
                                             </li>
                                         @endif
                                         @if (in_array('sp_pelanggaran', $permissions ?? []) || in_array('hr', $permissions ?? []))
-                                             <li class="menu-item" aria-haspopup="true">
-                                                 <a href="{{ url('/sp-pelanggaran/trace') }}" class="menu-link">
-                                                     <i class="menu-bullet menu-bullet-line">
-                                                         <span></span>
-                                                     </i>
-                                                     <span class="menu-text">SP Pelanggaran</span>
-                                                 </a>
-                                             </li>
-                                         @endif
+                                            <li class="menu-item" aria-haspopup="true">
+                                                <a href="{{ url('/sp-pelanggaran/trace') }}" class="menu-link">
+                                                    <i class="menu-bullet menu-bullet-line">
+                                                        <span></span>
+                                                    </i>
+                                                    <span class="menu-text">SP Pelanggaran</span>
+                                                </a>
+                                            </li>
+                                        @endif
                                     </ul>
                                 </div>
                             </li>
@@ -1399,11 +1399,11 @@
                             </li>
                         @endif
                         {{-- HR Dashboard --}}
-                        @if (in_array('hr_dashboard_navbar', $permissions)
-                            || in_array('hr_upload_file_mp', $permissions)
-                            || in_array('hr_upload_working_time_and_overtime', $permissions)
-                            || in_array('hr_upload_file_izin_hrdash', $permissions)
-                            || in_array('hr_upload_file_mangkir_hrdash', $permissions))
+                        @if (in_array('hr_dashboard_navbar', $permissions) ||
+                                in_array('hr_upload_file_mp', $permissions) ||
+                                in_array('hr_upload_working_time_and_overtime', $permissions) ||
+                                in_array('hr_upload_file_izin_hrdash', $permissions) ||
+                                in_array('hr_upload_file_mangkir_hrdash', $permissions))
                             <li class="menu-item menu-item-submenu menu-item-rel" data-menu-toggle="click"
                                 aria-haspopup="true">
                                 <a href="javascript:" class="menu-link menu-toggle">
@@ -1414,7 +1414,8 @@
                                     <ul class="menu-subnav">
                                         @if (in_array('hr_dashboard_navbar', $permissions))
                                             <li class="menu-item" aria-haspopup="true">
-                                                <a href="{{ url('/hr/hrdashboard?type_karyawan=BAS') }}" class="menu-link">
+                                                <a href="{{ url('/hr/hrdashboard?type_karyawan=BAS') }}"
+                                                    class="menu-link">
                                                     <i class="menu-bullet menu-bullet-line">
                                                         <span></span>
                                                     </i>
@@ -1422,7 +1423,8 @@
                                                 </a>
                                             </li>
                                             <li class="menu-item" aria-haspopup="true">
-                                                <a href="{{ url('/hr/hrdashboard?type_karyawan=mitra_kerja') }}" class="menu-link">
+                                                <a href="{{ url('/hr/hrdashboard?type_karyawan=mitra_kerja') }}"
+                                                    class="menu-link">
                                                     <i class="menu-bullet menu-bullet-line">
                                                         <span></span>
                                                     </i>
@@ -1440,7 +1442,8 @@
                                                 </a>
                                             </li>
                                             <li class="menu-item" aria-haspopup="true">
-                                                <a href="{{ url('/hr/upload-file-mp?type_karyawan=mitra_kerja') }}" class="menu-link">
+                                                <a href="{{ url('/hr/upload-file-mp?type_karyawan=mitra_kerja') }}"
+                                                    class="menu-link">
                                                     <i class="menu-bullet menu-bullet-line">
                                                         <span></span>
                                                     </i>
@@ -1455,7 +1458,8 @@
                                                     <i class="menu-bullet menu-bullet-line">
                                                         <span></span>
                                                     </i>
-                                                    <span class="menu-text">Upload Working Time &amp; Overtime BAS</span>
+                                                    <span class="menu-text">Upload Working Time &amp; Overtime
+                                                        BAS</span>
                                                 </a>
                                             </li>
                                             <li class="menu-item" aria-haspopup="true">
@@ -1464,13 +1468,15 @@
                                                     <i class="menu-bullet menu-bullet-line">
                                                         <span></span>
                                                     </i>
-                                                    <span class="menu-text">Upload Working Time &amp; Overtime Mitra Kerja</span>
+                                                    <span class="menu-text">Upload Working Time &amp; Overtime Mitra
+                                                        Kerja</span>
                                                 </a>
                                             </li>
                                         @endif
                                         @if (in_array('hr_upload_file_izin_hrdash', $permissions))
                                             <li class="menu-item" aria-haspopup="true">
-                                                <a href="{{ url('/hr/upload-file-izin-hrdash') }}" class="menu-link">
+                                                <a href="{{ url('/hr/upload-file-izin-hrdash') }}"
+                                                    class="menu-link">
                                                     <i class="menu-bullet menu-bullet-line">
                                                         <span></span>
                                                     </i>
@@ -1478,7 +1484,8 @@
                                                 </a>
                                             </li>
                                             <li class="menu-item" aria-haspopup="true">
-                                                <a href="{{ url('/hr/upload-file-izin-hrdash?type_karyawan=mitra_kerja') }}" class="menu-link">
+                                                <a href="{{ url('/hr/upload-file-izin-hrdash?type_karyawan=mitra_kerja') }}"
+                                                    class="menu-link">
                                                     <i class="menu-bullet menu-bullet-line">
                                                         <span></span>
                                                     </i>
@@ -1488,7 +1495,8 @@
                                         @endif
                                         @if (in_array('hr_upload_file_mangkir_hrdash', $permissions))
                                             <li class="menu-item" aria-haspopup="true">
-                                                <a href="{{ url('/hr/upload-file-mangkir-hrdash') }}" class="menu-link">
+                                                <a href="{{ url('/hr/upload-file-mangkir-hrdash') }}"
+                                                    class="menu-link">
                                                     <i class="menu-bullet menu-bullet-line">
                                                         <span></span>
                                                     </i>
@@ -1496,11 +1504,13 @@
                                                 </a>
                                             </li>
                                             <li class="menu-item" aria-haspopup="true">
-                                                <a href="{{ url('/hr/upload-file-mangkir-hrdash?type_karyawan=mitra_kerja') }}" class="menu-link">
+                                                <a href="{{ url('/hr/upload-file-mangkir-hrdash?type_karyawan=mitra_kerja') }}"
+                                                    class="menu-link">
                                                     <i class="menu-bullet menu-bullet-line">
                                                         <span></span>
                                                     </i>
-                                                    <span class="menu-text">Upload File Mangkir HRDASH Mitra Kerja</span>
+                                                    <span class="menu-text">Upload File Mangkir HRDASH Mitra
+                                                        Kerja</span>
                                                 </a>
                                             </li>
                                         @endif
@@ -1582,7 +1592,8 @@
                                         @endif
                                         @if (in_array('hr_mhl_reporting', $permissions))
                                             <li class="menu-item" aria-haspopup="true">
-                                                <a href="{{ url('/masukharilibur/reporting') }}" class="menu-link">
+                                                <a href="{{ url('/masukharilibur/reporting') }}"
+                                                    class="menu-link">
                                                     <i class="menu-bullet menu-bullet-line">
                                                         <span></span>
                                                     </i>
@@ -1592,7 +1603,8 @@
                                         @endif
                                         @if (in_array('hr_mhl_reporting_hrd', $permissions))
                                             <li class="menu-item" aria-haspopup="true">
-                                                <a href="{{ url('/masukharilibur/reporting') }}" class="menu-link">
+                                                <a href="{{ url('/masukharilibur/reporting') }}"
+                                                    class="menu-link">
                                                     <i class="menu-bullet menu-bullet-line">
                                                         <span></span>
                                                     </i>

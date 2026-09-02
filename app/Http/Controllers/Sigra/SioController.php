@@ -60,15 +60,28 @@ class SioController extends Controller
         return response()->json(['success' => 1, 'message' => 'Berhasil membuat perizinan operasional']);
     }
 
-    public function getAll()
+    public function getAll(Request $request)
     {
         $flags = $this->sioAccessFlags();
 
+        $query = SIO::with(['department', 'perusahaan', 'sertifikasi'])->where('status', '!=', 'deleted');
+
+        if ($request->filled('dept_id')) {
+            $query->where('dept_id', $request->dept_id);
+        }
+
+        if ($request->filled('status')) {
+            $st = $request->status;
+            if ($st === 'active' || $st === 'inactive') {
+                $query->where('status', $st);
+            }
+        }
+
+        $sioList = $query->get();
         $sertifikasi_sio = [];
-        $sioList = SIO::with(['department', 'perusahaan', 'sertifikasi'])->where('status', '!=', 'deleted')->get();
+        $no = 1;
 
-
-        foreach ($sioList as $key => $sio) {
+        foreach ($sioList as $sio) {
             $label_status = $sio->status == 'inactive' ? 'secondary' : 'success';
 
             $sertifikasi = $sio->sertifikasi->sortByDesc('tanggal_habis')->first();
@@ -88,6 +101,50 @@ class SioController extends Controller
                 }
             }
 
+            // Filter status expired / masa berlaku
+            if ($request->filled('status')) {
+                $st = $request->status;
+                if ($st === 'aman' && $expired !== 'success') {
+                    continue;
+                }
+                if ($st === 'warning' && $expired !== 'warning') {
+                    continue;
+                }
+                if ($st === 'expired' && $expired !== 'danger') {
+                    continue;
+                }
+            }
+
+            // Filter range tanggal terbit
+            if ($sertifikasi && $sertifikasi->tanggal_terbit) {
+                $tglTerbit = date('Y-m-d', strtotime($sertifikasi->tanggal_terbit));
+                if ($request->filled('tgl_terbit_awal') && $tglTerbit < $request->tgl_terbit_awal) {
+                    continue;
+                }
+                if ($request->filled('tgl_terbit_akhir') && $tglTerbit > $request->tgl_terbit_akhir) {
+                    continue;
+                }
+            } else {
+                if ($request->filled('tgl_terbit_awal') || $request->filled('tgl_terbit_akhir')) {
+                    continue;
+                }
+            }
+
+            // Filter range tanggal expired / habis
+            if ($sertifikasi && $sertifikasi->tanggal_habis) {
+                $tglExpired = date('Y-m-d', strtotime($sertifikasi->tanggal_habis));
+                if ($request->filled('tgl_expired_awal') && $tglExpired < $request->tgl_expired_awal) {
+                    continue;
+                }
+                if ($request->filled('tgl_expired_akhir') && $tglExpired > $request->tgl_expired_akhir) {
+                    continue;
+                }
+            } else {
+                if ($request->filled('tgl_expired_awal') || $request->filled('tgl_expired_akhir')) {
+                    continue;
+                }
+            }
+
             $mulai = $sio->tanggal_mulai_ikatan_dinas ? date('Y', strtotime($sio->tanggal_mulai_ikatan_dinas)) : null;
             $selesai = $sio->tanggal_selesai_ikatan_dinas ? date('Y', strtotime($sio->tanggal_selesai_ikatan_dinas)) : null;
             $ikatan_dinas = $mulai && $selesai ? "$mulai - $selesai" : '-';
@@ -98,8 +155,8 @@ class SioController extends Controller
             }
 
             $array = [
-                $key + 1,
-                $sio->perusahaan->nama_perusahaan,
+                $no++,
+                $sio->perusahaan->nama_perusahaan ?? '-',
                 '<a class="text-hover-dark" href="javascript:" onClick="showSertifikasi(\'' . $sio->id . '\',\'' . $sio->nama_perizinan . '\', \'' . $sio->status . '\')">
                     <i class="fa fa-archive text-danger font-size-sm"></i>
                     ' . $sio->nama_perizinan . '
@@ -371,9 +428,9 @@ class SioController extends Controller
         return response()->json(['success' => 1, 'message' => 'Change status succeed']);
     }
 
-    public function exportSio()
+    public function exportSio(Request $request)
     {
-        return Excel::download(new SIOExport, 'SIO.xls');
+        return Excel::download(new SIOExport($request->all()), 'SIO.xls');
     }
 
     // Helper check permission

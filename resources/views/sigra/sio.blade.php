@@ -27,6 +27,85 @@
                         </div>
                     </div>
                     <div class="card-body">
+                        <!--begin::Filter Form-->
+                        <div class="card card-custom bg-light mb-6 border">
+                            <div class="card-body p-3">
+                                <form id="filter-form">
+                                    <div class="row">
+                                        <!-- Range Tanggal Terbit -->
+                                        <div class="col-md-3 col-12 mb-3">
+                                            <label class="font-weight-bold">Range Tanggal Terbit</label>
+                                            <div class="input-group input-group-sm">
+                                                <input type="date" class="form-control" id="filter_tgl_terbit_awal"
+                                                    name="tgl_terbit_awal" title="Tanggal Terbit Awal">
+                                                <div class="input-group-prepend input-group-append">
+                                                    <span class="input-group-text bg-white">s/d</span>
+                                                </div>
+                                                <input type="date" class="form-control" id="filter_tgl_terbit_akhir"
+                                                    name="tgl_terbit_akhir" title="Tanggal Terbit Akhir">
+                                            </div>
+                                        </div>
+
+                                        <!-- Range Tanggal Expired -->
+                                        <div class="col-md-3 col-12 mb-3">
+                                            <label class="font-weight-bold">Range Tanggal Expired</label>
+                                            <div class="input-group input-group-sm">
+                                                <input type="date" class="form-control" id="filter_tgl_expired_awal"
+                                                    name="tgl_expired_awal" title="Tanggal Expired Awal">
+                                                <div class="input-group-prepend input-group-append">
+                                                    <span class="input-group-text bg-white">s/d</span>
+                                                </div>
+                                                <input type="date" class="form-control" id="filter_tgl_expired_akhir"
+                                                    name="tgl_expired_akhir" title="Tanggal Expired Akhir">
+                                            </div>
+                                        </div>
+
+                                        <!-- Departemen -->
+                                        <div class="col-md-2 col-12 mb-3">
+                                            <label class="font-weight-bold">Departemen</label>
+                                            <select class="form-control form-control-sm" id="filter_dept_id" name="dept_id">
+                                                <option value="">-- All Dept --</option>
+                                                @foreach ($departments as $dept)
+                                                    <option value="{{ $dept->id }}">{{ $dept->name }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+
+                                        <!-- Status -->
+                                        <div class="col-md-2 col-12 mb-3">
+                                            <label class="font-weight-bold">Status</label>
+                                            <select class="form-control form-control-sm" id="filter_status" name="status">
+                                                <option value="">-- All Status --</option>
+                                                <optgroup label="Status Perizinan">
+                                                    <option value="active">Active</option>
+                                                    <option value="inactive">Inactive</option>
+                                                </optgroup>
+                                                <optgroup label="Status Masa Berlaku">
+                                                    <option value="aman">Masih berlaku (Aman)</option>
+                                                    <option value="warning">Akan expired (&le; 45 hari)</option>
+                                                    <option value="expired">Sudah expired</option>
+                                                </optgroup>
+                                            </select>
+                                        </div>
+
+                                        <!-- Action Buttons -->
+                                        <div
+                                            class="col-md-2 col-12 mb-3 d-flex align-items-end justify-content-lg-end justify-content-md-end justify-content-start">
+                                            <button type="button" id="btn-reset-filter"
+                                                class="btn btn-secondary btn-sm font-weight-bolder mr-2">
+                                                <i class="la la-sync"></i> Reset
+                                            </button>
+                                            <button type="submit" id="btn-apply-filter"
+                                                class="btn btn-primary btn-sm font-weight-bolder">
+                                                <i class="la la-filter"></i> Apply
+                                            </button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                        <!--end::Filter Form-->
+
                         <div class="pb-4">
                             <h6 class="card-label mb-2">Keterangan:</h6>
                             <div class="d-flex flex-column gap-2">
@@ -93,8 +172,8 @@
 
                         @if (!$sioFlags['readonly'])
                             <input id="perizinan-status" data-size="small" data-switch="true" type="checkbox"
-                                checked="checked" data-on-text="Active...." data-handle-width="50" data-off-text="Inactive"
-                                data-on-color="success" />
+                                checked="checked" data-on-text="Active...." data-handle-width="50"
+                                data-off-text="Inactive" data-on-color="success" />
                         @endif
 
                     </div>
@@ -104,8 +183,8 @@
                 </div>
                 <div class="modal-body">
                     @if (!$sioFlags['readonly'])
-                        <a href="javascript:" class="btn btn-primary font-weight-bolder" onClick="openCreateSertifikat()"><i
-                                class="fa fa-plus-circle"></i> Tambah SIO</a>
+                        <a href="javascript:" class="btn btn-primary font-weight-bolder"
+                            onClick="openCreateSertifikat()"><i class="fa fa-plus-circle"></i> Tambah SIO</a>
                         <hr>
                     @endif
                     <div id="container-create-sertifikat" class="hide">
@@ -1071,7 +1150,17 @@
 
         function getPerizinansio() {
             sio_table = $('#sio').DataTable({
-                "ajax": "{{ route('sigra.sio.get-all') }}",
+                "ajax": {
+                    "url": "{{ route('sigra.sio.get-all') }}",
+                    "data": function(d) {
+                        d.tgl_terbit_awal = $('#filter_tgl_terbit_awal').val();
+                        d.tgl_terbit_akhir = $('#filter_tgl_terbit_akhir').val();
+                        d.tgl_expired_awal = $('#filter_tgl_expired_awal').val();
+                        d.tgl_expired_akhir = $('#filter_tgl_expired_akhir').val();
+                        d.dept_id = $('#filter_dept_id').val();
+                        d.status = $('#filter_status').val();
+                    }
+                },
                 "paging": false,
                 "responsive": true,
                 "dom": '<"toolbar">frtip',
@@ -1094,6 +1183,16 @@
                 "</button>"
             );
         }
+
+        $('#filter-form').on('submit', function(e) {
+            e.preventDefault();
+            sio_table.ajax.reload();
+        });
+
+        $('#btn-reset-filter').on('click', function() {
+            $('#filter-form')[0].reset();
+            sio_table.ajax.reload();
+        });
 
         $(document).on('click', '#btnExportSIO', function() {
             exportExcel();
@@ -1131,7 +1230,7 @@
                     a.click();
                     window.URL.revokeObjectURL(url);
                     document.body.removeChild(a);
-                    
+
                     Swal.close();
                 })
                 .catch(error => {
@@ -1218,8 +1317,17 @@
                 "<i class='fa fa-spin fa-spinner'></i> Exporting..."
             );
 
+            const filterParams = $.param({
+                tgl_terbit_awal: $('#filter_tgl_terbit_awal').val(),
+                tgl_terbit_akhir: $('#filter_tgl_terbit_akhir').val(),
+                tgl_expired_awal: $('#filter_tgl_expired_awal').val(),
+                tgl_expired_akhir: $('#filter_tgl_expired_akhir').val(),
+                dept_id: $('#filter_dept_id').val(),
+                status: $('#filter_status').val()
+            });
+
             $.ajax({
-                url: "{{ route('sigra.export.sio') }}",
+                url: "{{ route('sigra.export.sio') }}?" + filterParams,
                 method: 'GET',
                 xhrFields: {
                     responseType: 'blob'

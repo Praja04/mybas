@@ -67,7 +67,7 @@ class SHBahanBakuController extends Controller
                 $sertifikat == null ? '-' : $sertifikat->produsen,
                 $sertifikat == null ? '-' : $sertifikat->pemasok,
                 $sertifikat == null ? '-' : $this->formatTanggal($sertifikat->tanggal_terbit),
-                $sertifikat == null ? '-' : $sertifikat->tanggal_expired == null ? '-' : '<span class="label label-inline label-outline-'.$expired.'">'.$this->formatTanggal($sertifikat->tanggal_expired).'</span>',
+                ($sertifikat == null || $sertifikat->tanggal_expired == null) ? '-' : '<span class="label label-inline label-outline-'.$expired.'">'.$this->formatTanggal($sertifikat->tanggal_expired).'</span>',
                 $sertifikat == null ? '-' : $sertifikat->masa_berlaku,
                 $sertifikat == null ? '-' : $sertifikat->keterangan,
                 '

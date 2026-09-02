@@ -78,14 +78,18 @@ class MasukHariLiburController extends Controller
             ->first();
         if ($data == null) {
             return response([
-                'success' => 0, 'message' => 'Data Belum Ada di List Kerja. Silahkan Menghubungi HRD', 'data' => $data_user,
+                'success' => 0,
+                'message' => 'Data Belum Ada di List Kerja. Silahkan Menghubungi HRD',
+                'data' => $data_user,
                 'status' => 0
             ]);
         }
         if ($data != null) {
             if ($data->status == 1) {
                 return response([
-                    'success' => 0, 'message' => 'Data Belum Diapprove. Silahkan Menghubungi HRD', 'data' => $data_user,
+                    'success' => 0,
+                    'message' => 'Data Belum Diapprove. Silahkan Menghubungi HRD',
+                    'data' => $data_user,
                     'status' => 1
                 ]);
             }
@@ -93,7 +97,9 @@ class MasukHariLiburController extends Controller
         if ($data != null) {
             if ($data->status == 2) {
                 return response([
-                    'success' => 0, 'message' => 'Data Direject. Silahkan Menghubungi HRD', 'data' => $data_user,
+                    'success' => 0,
+                    'message' => 'Data Direject. Silahkan Menghubungi HRD',
+                    'data' => $data_user,
                     'status' => 0
                 ]);
             }
@@ -137,7 +143,7 @@ class MasukHariLiburController extends Controller
             Session::flash('error', 'Data sudah diupload untuk tanggal ini silahkan ke menu reporting dan upload batch ulang.');
             return back();
         }
-        
+
         $id_mhl = $this->generateUniqName();
         $inserted = DB::table('hr_masuk_hari_libur')->insert([
             'tanggal' => $request->tanggal,
@@ -152,7 +158,7 @@ class MasukHariLiburController extends Controller
         try {
             Excel::import(new UploadMasukHariLiburImport($request->tanggal, $id_mhl), $excel);
             $count = UploadMasukHariLiburModel::where('id_mhl', $id_mhl)->count();
-            
+
             if ($count == 0) {
                 DB::table('hr_masuk_hari_libur')->where('id_mhl', $id_mhl)->delete();
             }
