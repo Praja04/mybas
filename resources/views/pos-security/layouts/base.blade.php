@@ -88,6 +88,12 @@ $menus = [
                 'permission' => 'pos-security_data_security',
                 'submenu' => [],
             ],
+            [
+                'path' => 'pos-security/master/kantong-parkir',
+                'label' => 'Kantong Parkir',
+                'icon' => 'mdi-parking',
+                'submenu' => [],
+            ],
 
             [
                 'path' => 'sidebarKartu',

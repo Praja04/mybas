@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\PosSecurityController;
+use App\Http\Controllers\PosSecurity\GaKantongParkirController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('pos-security')->group(function () {
@@ -32,6 +33,27 @@ Route::prefix('pos-security')->group(function () {
         Route::prefix('master')->group(function () {
             Route::prefix('security')->group(function () {
                 Route::get('/', [PosSecurityController::class, 'dataSecurity'])->name('pos-security.data.security');
+            });
+
+            Route::prefix('kantong-parkir')->group(function () {
+                Route::get('/', [GaKantongParkirController::class, 'index'])->name('pos-security.master.kantong-parkir.index');
+
+                // Zones API
+                Route::get('/zones', [GaKantongParkirController::class, 'getZones'])->name('pos-security.kantong-parkir.zones.get');
+                Route::post('/zones/store', [GaKantongParkirController::class, 'storeZone'])->name('pos-security.kantong-parkir.zones.store');
+                Route::get('/zones/show/{id}', [GaKantongParkirController::class, 'showZone'])->name('pos-security.kantong-parkir.zones.show');
+                Route::delete('/zones/destroy/{id}', [GaKantongParkirController::class, 'destroyZone'])->name('pos-security.kantong-parkir.zones.destroy');
+
+                // Slots API
+                Route::get('/slots', [GaKantongParkirController::class, 'getSlots'])->name('pos-security.kantong-parkir.slots.get');
+                Route::post('/slots/store', [GaKantongParkirController::class, 'storeSlot'])->name('pos-security.kantong-parkir.slots.store');
+                Route::post('/slots/generate', [GaKantongParkirController::class, 'generateSlots'])->name('pos-security.kantong-parkir.slots.generate');
+                Route::get('/slots/show/{id}', [GaKantongParkirController::class, 'showSlot'])->name('pos-security.kantong-parkir.slots.show');
+                Route::delete('/slots/destroy/{id}', [GaKantongParkirController::class, 'destroySlot'])->name('pos-security.kantong-parkir.slots.destroy');
+
+                // Assignment & Status History API
+                Route::post('/assignment/assign', [GaKantongParkirController::class, 'assignParking'])->name('pos-security.kantong-parkir.assignment.assign');
+                Route::post('/assignment/release/{id}', [GaKantongParkirController::class, 'releaseParking'])->name('pos-security.kantong-parkir.assignment.release');
             });
         });
     });
