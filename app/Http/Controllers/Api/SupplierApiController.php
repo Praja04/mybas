@@ -18,7 +18,7 @@ class SupplierApiController extends Controller
     {
         try {
             // Definisi helper raw agar rapi dan collation seragam
-            $collate = 'utf8mb4_unicode_ci'; // Sesuaikan jika database Anda menggunakan latin1_swedish_ci atau utf8mb4_general_ci
+            $collate = 'latin1_swedish_ci'; // Sesuaikan jika database Anda menggunakan latin1_swedish_ci atau utf8mb4_general_ci, utf8mb4_unicode_ci
 
             // visitor TRANSACTION
             $transaction = DB::table('ga_visitor_transaction')
