@@ -35,6 +35,6 @@ Route::get('/supplier-data', [SupplierApiController::class, 'getSupplierData']);
 Route::prefix('kantong-parkir')->group(function () {
     Route::get('/', [KantongParkirApiController::class, 'index']); // Get all master zones + slots + status kosong/terisi
     Route::get('/slots', [KantongParkirApiController::class, 'getSlots']); // Flat list of slots with vehicle details
-    Route::get('/zone/{id}', [KantongParkirApiController::class, 'showZone']); // Get specific zone detail
+    Route::get('/zone/{id}', [KantongParkirApiController::class, 'showZone']);
+    Route::post('/release', [KantongParkirApiController::class, 'releaseVehicle']); // Get specific zone detail
 });
-

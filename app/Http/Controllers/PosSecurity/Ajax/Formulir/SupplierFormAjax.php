@@ -10,6 +10,9 @@ use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use App\Models\PosSecurity\GaVisitorTransaction;
 use App\Models\PosSecurity\GaVisitorVendorTransaction;
+use App\Models\PosSecurity\KantongParkir\ParkingSlot;
+use App\Models\PosSecurity\KantongParkir\ParkingAssignment;
+use App\Models\PosSecurity\KantongParkir\ParkingSlotStatusHistory;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
@@ -540,6 +543,42 @@ class SupplierFormAjax extends Controller
                 ], 400);
             }
 
+            // Proses Plotting Area Parkir jika dipilih (hanya untuk Supir)
+            if ($request->filled('parking_slot_id') && strtolower($request->keterangan ?? '') === 'supir') {
+                try {
+                    $slot = ParkingSlot::find($request->parking_slot_id);
+                    if ($slot && $slot->status_slot === 'kosong') {
+                        $assignment = ParkingAssignment::create([
+                            'parking_zone_id'        => $slot->parking_zone_id,
+                            'parking_slot_id'        => $slot->id,
+                            'no_polisi'              => strtoupper(trim($request->nopol)),
+                            'jenis_kendaraan'        => strtoupper($request->keterangan ?? 'SUPIR'),
+                            'nama_driver'            => strtoupper($request->namavisitor),
+                            'no_hp_driver'           => $request->nohpdriver ?? null,
+                            'visitor_transaction_id' => null,
+                            'waktu_masuk'            => now(),
+                            'status_assignment'      => 'assigned',
+                            'catatan'                => 'Penugasan otomatis dari Form Transporter: ' . $trnVisitorId,
+                            'created_by'             => auth()->id() ?? null,
+                        ]);
+
+                        $oldStatus = $slot->status_slot;
+                        $slot->update(['status_slot' => 'terisi', 'updated_by' => auth()->id() ?? null]);
+
+                        ParkingSlotStatusHistory::create([
+                            'parking_slot_id'       => $slot->id,
+                            'parking_assignment_id' => $assignment->id,
+                            'status_sebelumnya'     => $oldStatus,
+                            'status_baru'           => 'terisi',
+                            'keterangan'            => 'Penugasan kendaraan ' . $assignment->no_polisi . ' (Transporter ID: ' . $trnVisitorId . ')',
+                            'created_by'            => auth()->id() ?? null,
+                        ]);
+                    }
+                } catch (\Exception $pe) {
+                    Log::warning('Error assigning parking slot: ' . $pe->getMessage());
+                }
+            }
+
             $message = 'Data Transporter tidak diubah.';
             if ($isNewRecord) {
                 $message = 'Data Transporter berhasil disimpan! ID: ' . $supplier_data['trnvisitorid'];
@@ -607,6 +646,41 @@ class SupplierFormAjax extends Controller
             }
 
             $visitor->save();
+
+            // Release parking assignment jika ada
+            try {
+                $nopol = $visitor->nopol;
+                if (!empty($nopol)) {
+                    $activeAssignments = ParkingAssignment::where('no_polisi', strtoupper(trim($nopol)))
+                        ->where('status_assignment', 'assigned')
+                        ->get();
+
+                    foreach ($activeAssignments as $assignment) {
+                        $assignment->update([
+                            'waktu_keluar'      => now(),
+                            'status_assignment' => 'completed',
+                            'updated_by'        => auth()->id() ?? null,
+                        ]);
+
+                        $slot = ParkingSlot::find($assignment->parking_slot_id);
+                        if ($slot) {
+                            $oldStatus = $slot->status_slot;
+                            $slot->update(['status_slot' => 'kosong', 'updated_by' => auth()->id() ?? null]);
+
+                            ParkingSlotStatusHistory::create([
+                                'parking_slot_id'       => $slot->id,
+                                'parking_assignment_id' => $assignment->id,
+                                'status_sebelumnya'     => $oldStatus,
+                                'status_baru'           => 'kosong',
+                                'keterangan'            => 'Kendaraan ' . $assignment->no_polisi . ' keluar / kartu dikembalikan (ID: ' . $visitor->trnvisitorid . ')',
+                                'created_by'            => auth()->id() ?? null,
+                            ]);
+                        }
+                    }
+                }
+            } catch (\Exception $pe) {
+                Log::warning('Error releasing parking assignment on return: ' . $pe->getMessage());
+            }
 
             return response()->json([
                 'success' => true,

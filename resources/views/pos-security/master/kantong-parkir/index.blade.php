@@ -1,6 +1,6 @@
 @extends('pos-security.layouts.base')
 
-@section('title', 'Master Kantong & Slot Parkir')
+@section('title', 'Master Kantong Parkir')
 
 @push('styles')
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -34,9 +34,9 @@
 
 @section('content')
     <div class="container-fluid">
-        {{-- NAV TABS --}}
-        <div class="row mb-3">
-            <div class="col-lg-12">
+        {{-- NAV TABS & VIEW DASHBOARD BUTTON --}}
+        <div class="row mb-3 align-items-center">
+            <div class="col-md-7 col-lg-8">
                 <ul class="nav nav-tabs nav-tabs-custom nav-success" role="tablist">
                     <li class="nav-item">
                         <a class="nav-link active" data-bs-toggle="tab" href="#tab-zones" role="tab"
@@ -50,6 +50,13 @@
                         </a>
                     </li>
                 </ul>
+            </div>
+            <div class="col-md-5 col-lg-4 text-md-end mt-2 mt-md-0">
+                <a href="{{ route('pos-security.kantong-parkir.monitoring') }}"
+                    class="btn btn-success d-inline-flex align-items-center gap-2 shadow-sm px-3 py-2">
+                    <i class="mdi mdi-monitor-dashboard fs-5"></i>
+                    <span class="fw-semibold">View Dashboard Kapasitas Parkir</span>
+                </a>
             </div>
         </div>
 
@@ -398,38 +405,80 @@
             <form id="formAssignParking">
                 @csrf
                 <input type="hidden" name="parking_slot_id" id="assign_slot_id">
+                <input type="hidden" name="trnvisitorid" id="assign_trnvisitorid">
+                <input type="hidden" name="visitor_transaction_id" id="assign_visitor_id">
+
                 <div class="modal-content">
                     <div class="modal-header bg-success text-white p-3">
-                        <h5 class="modal-title text-white" id="modalAssignTitle">Penugasan Parkir Kendaraan</h5>
+                        <h5 class="modal-title text-white" id="modalAssignTitle"><i
+                                class="mdi mdi-car-brake-parking me-1"></i>Penugasan Parkir Kendaraan</h5>
                         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">
-                        <div class="alert alert-info py-2" id="assignSlotInfo">
-                            <strong>Slot:</strong> <span id="assignSlotCode">-</span>
+                        <div class="alert alert-info py-2 d-flex align-items-center justify-content-between"
+                            id="assignSlotInfo">
+                            <div><strong>Target Slot:</strong> <span id="assignSlotCode"
+                                    class="badge bg-primary fs-14 ms-1">-</span></div>
+                            <span class="text-muted small">Status: Kosong</span>
                         </div>
+
+                        {{-- Quick Select dari Form In --}}
                         <div class="mb-3">
-                            <label class="form-label">Nomor Polisi <span class="text-danger">*</span></label>
-                            <input type="text" name="no_polisi" id="assign_nopol" class="form-control text-uppercase"
-                                placeholder="Contoh: B 1234 CD" required>
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <label class="form-label mb-0 fw-semibold">
+                                    <i class="mdi mdi-format-list-bulleted text-primary me-1"></i>Pilih Kendaraan Form In
+                                </label>
+                                <button type="button" class="btn btn-sm btn-link p-0 text-decoration-none"
+                                    onclick="loadActiveVehicles(true)" title="Muat ulang data Form In">
+                                    <i class="mdi mdi-refresh me-1"></i>Refresh
+                                </button>
+                            </div>
+                            <select id="select_active_vehicle" class="form-select">
+                                <option value="">-- Pilih Kendaraan Masuk (Form In) --</option>
+                            </select>
+                            <small class="text-muted fs-11">Pilih dari daftar kendaraan masuk yang belum mengembalikan
+                                kartu untuk auto-fill data supir & nopol.</small>
                         </div>
+
+                        <hr class="my-2 border-dashed">
+
                         <div class="mb-3">
-                            <label class="form-label">Jenis Kendaraan</label>
-                            <input type="text" name="jenis_kendaraan" id="assign_jk" class="form-control"
-                                placeholder="Contoh: Truk Tronton">
+                            <label class="form-label fw-semibold">Nomor Polisi <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light"><i class="mdi mdi-numeric"></i></span>
+                                <input type="text" name="no_polisi" id="assign_nopol" list="listActiveNopol"
+                                    class="form-control text-uppercase font-monospace fw-bold"
+                                    placeholder="Contoh: B 1234 CD" autocomplete="off" required>
+                                <button class="btn btn-outline-secondary" type="button" id="btnClearNopol"
+                                    title="Reset Nopol"><i class="mdi mdi-close"></i></button>
+                            </div>
+                            <datalist id="listActiveNopol"></datalist>
+                            <div id="nopolMatchBadge" class="mt-1" style="display: none;"></div>
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label">Nama Driver / Supir</label>
-                            <input type="text" name="nama_driver" id="assign_driver" class="form-control"
-                                placeholder="Nama Supir">
+
+                        <div class="row g-2 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Jenis Kendaraan</label>
+                                <input type="text" name="jenis_kendaraan" id="assign_jk" class="form-control"
+                                    placeholder="Contoh: Truk Tronton / Fuso">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Nama Driver / Supir</label>
+                                <input type="text" name="nama_driver" id="assign_driver" class="form-control"
+                                    placeholder="Nama Supir">
+                            </div>
                         </div>
+
                         <div class="mb-3">
                             <label class="form-label">No. HP Driver</label>
                             <input type="text" name="no_hp_driver" id="assign_nohp" class="form-control"
                                 placeholder="08xxxxxxxxxx">
                         </div>
+
                         <div class="mb-3">
                             <label class="form-label">Catatan</label>
-                            <textarea name="catatan" id="assign_catatan" class="form-control" rows="2" placeholder="Catatan tambahan..."></textarea>
+                            <textarea name="catatan" id="assign_catatan" class="form-control" rows="2"
+                                placeholder="Perusahaan / muatan / catatan tambahan..."></textarea>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -490,6 +539,7 @@
 
         const URL_ASSIGN = "{{ route('pos-security.kantong-parkir.assignment.assign') }}";
         const URL_RELEASE = "{{ url('/pos-security/master/kantong-parkir/assignment/release') }}";
+        const URL_ACTIVE_VEHICLES = "{{ route('pos-security.kantong-parkir.active-vehicles') }}";
 
         $(document).ready(function() {
             loadZones();
@@ -687,6 +737,37 @@
                         Swal.fire('Error', msg, 'error');
                     }
                 });
+            });
+
+            // Auto-fill listeners for Nopol & Form In Selector
+            $('#assign_nopol').on('input change', function() {
+                handleNopolAutoFill($(this).val());
+            });
+
+            $('#select_active_vehicle').on('change', function() {
+                let cleanNopol = $(this).val();
+                if (cleanNopol) {
+                    let match = activeFormInVehicles.find(function(v) {
+                        return v.clean_nopol === cleanNopol;
+                    });
+                    if (match) {
+                        $('#assign_nopol').val(match.nopol);
+                        handleNopolAutoFill(match.nopol);
+                    }
+                } else {
+                    $('#assign_nopol').val('');
+                    handleNopolAutoFill('');
+                }
+            });
+
+            $('#btnClearNopol').on('click', function() {
+                $('#assign_nopol').val('').focus();
+                handleNopolAutoFill('');
+                $('#assign_driver').val('');
+                $('#assign_nohp').val('');
+                $('#assign_jk').val('');
+                $('#assign_catatan').val('');
+                $('#select_active_vehicle').val('');
             });
         });
 
@@ -979,11 +1060,139 @@
             });
         }
 
+        let activeFormInVehicles = [];
+
+        function loadActiveVehicles(showLoadingNotice = false) {
+            let select = $('#select_active_vehicle');
+            let datalist = $('#listActiveNopol');
+
+            if (showLoadingNotice) {
+                select.html('<option value="">Memuat data Form In...</option>');
+            }
+
+            $.get(URL_ACTIVE_VEHICLES, function(res) {
+                if (res.status === 'success') {
+                    activeFormInVehicles = res.data || [];
+                    renderActiveVehiclesOptions();
+                }
+            }).fail(function() {
+                select.html('<option value="">Gagal memuat data Form In</option>');
+            });
+        }
+
+        function renderActiveVehiclesOptions() {
+            let select = $('#select_active_vehicle');
+            let datalist = $('#listActiveNopol');
+
+            select.empty();
+            datalist.empty();
+
+            select.append('<option value="">-- Pilih Kendaraan Masuk (Form In) --</option>');
+
+            let unparkedGroup = $('<optgroup label="Belum Parkir (Siap Ditugaskan)"></optgroup>');
+            let parkedGroup = $('<optgroup label="Sudah Terparkir di Slot Lain"></optgroup>');
+
+            if (activeFormInVehicles.length === 0) {
+                select.append('<option value="" disabled>Tidak ada kendaraan masuk aktif</option>');
+                return;
+            }
+
+            activeFormInVehicles.forEach(function(v) {
+                let label = `${v.nopol} - ${v.namavisitor || 'Tanpa Supir'} (${v.namacomp || v.source})`;
+                if (v.is_parked) {
+                    label += ` [Sudah di ${v.currently_parked_zone || ''} - ${v.currently_parked_slot || ''}]`;
+                }
+
+                // Datalist option for browser autocomplete
+                datalist.append(`<option value="${v.nopol}">${label}</option>`);
+
+                // Select option
+                let opt = `<option value="${v.clean_nopol}">${label}</option>`;
+                if (v.is_parked) {
+                    parkedGroup.append(opt);
+                } else {
+                    unparkedGroup.append(opt);
+                }
+            });
+
+            if (unparkedGroup.children().length > 0) {
+                select.append(unparkedGroup);
+            }
+            if (parkedGroup.children().length > 0) {
+                select.append(parkedGroup);
+            }
+        }
+
+        function handleNopolAutoFill(nopolInput) {
+            if (!nopolInput) {
+                $('#nopolMatchBadge').hide().empty();
+                $('#assign_trnvisitorid').val('');
+                $('#assign_visitor_id').val('');
+                return;
+            }
+
+            let cleanInput = nopolInput.replace(/[\s\-]/g, '').toUpperCase();
+
+            // Find match in activeFormInVehicles
+            let match = activeFormInVehicles.find(function(v) {
+                return v.clean_nopol === cleanInput || v.nopol.replace(/[\s\-]/g, '').toUpperCase() === cleanInput;
+            });
+
+            if (match) {
+                $('#assign_nopol').val(match.nopol);
+                $('#select_active_vehicle').val(match.clean_nopol);
+                $('#assign_driver').val(match.namavisitor || '');
+                $('#assign_nohp').val(match.nohpdriver || '');
+                $('#assign_jk').val(match.jenis_kendaraan || '');
+                $('#assign_trnvisitorid').val(match.trnvisitorid || '');
+                $('#assign_visitor_id').val(match.visitor_id || '');
+
+                let companyNote = match.namacomp ? `Perusahaan: ${match.namacomp}` : '';
+                let currentNotes = $('#assign_catatan').val();
+                if (!currentNotes || currentNotes.startsWith('Perusahaan:')) {
+                    $('#assign_catatan').val(companyNote);
+                }
+
+                let badgeHtml = `
+                    <div class="alert alert-success py-1 px-2 mb-0 d-flex align-items-center justify-content-between">
+                        <small>
+                            <i class="mdi mdi-check-circle me-1"></i>
+                            <strong>Terdeteksi di Form In:</strong> ${match.namavisitor || '-'} (${match.namacomp || match.source})
+                            ${match.is_parked ? `<span class="badge bg-danger ms-1">Sudah di Slot ${match.currently_parked_slot}</span>` : '<span class="badge bg-success ms-1">Belum Parkir</span>'}
+                        </small>
+                    </div>
+                `;
+                $('#nopolMatchBadge').html(badgeHtml).show();
+            } else {
+                $('#assign_trnvisitorid').val('');
+                $('#assign_visitor_id').val('');
+                $('#select_active_vehicle').val('');
+
+                if (cleanInput.length >= 3) {
+                    $('#nopolMatchBadge').html(`
+                        <div class="alert alert-light border py-1 px-2 mb-0 text-muted small">
+                            <i class="mdi mdi-information-outline me-1"></i>Tidak ditemukan di Form In aktif (bisa diisi manual).
+                        </div>
+                    `).show();
+                } else {
+                    $('#nopolMatchBadge').hide().empty();
+                }
+            }
+        }
+
         function openAssignModal(slotId, slotCode) {
             $('#formAssignParking')[0].reset();
             $('#assign_slot_id').val(slotId);
             $('#assignSlotCode').text(slotCode);
+            $('#nopolMatchBadge').hide().empty();
+            $('#assign_trnvisitorid').val('');
+            $('#assign_visitor_id').val('');
+            $('#select_active_vehicle').val('');
+            loadActiveVehicles();
             $('#modalAssignParking').modal('show');
+            setTimeout(function() {
+                $('#assign_nopol').focus();
+            }, 400);
         }
 
         function releaseParking(assignmentId) {

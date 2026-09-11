@@ -53,11 +53,42 @@ function updateRfidFieldMessage(allCompleted, hasKeterangan, hasNama, hasComp, h
 }
 
 // =====================================================
+// TOGGLE VISIBILITY AREA PARKIR
+// Hanya muncul jika Keterangan Pengunjung adalah 'supir'
+// =====================================================
+
+function toggleParkingSlot() {
+    const keterangan = document.querySelector('[name="keterangan"]');
+    const parkingContainer = document.getElementById("parkingSlotContainer");
+    const parkingSlotSelect = document.getElementById("parking_slot_id");
+
+    if (!parkingContainer) return;
+
+    if (keterangan && keterangan.value.toLowerCase() === "supir") {
+        $(parkingContainer).slideDown(200);
+    } else {
+        $(parkingContainer).slideUp(200);
+        if (parkingSlotSelect) {
+            parkingSlotSelect.value = "";
+        }
+        if (typeof clearParkingSlotSelection === "function") {
+            clearParkingSlotSelection();
+        }
+    }
+}
+
+// =====================================================
 // RESET FORM
 // =====================================================
 
 function resetForm() {
     $("#visitorForm")[0].reset();
+
+    // Reset visibility plotting area parkir & UI selection
+    if (typeof clearParkingSlotSelection === "function") {
+        clearParkingSlotSelection();
+    }
+    toggleParkingSlot();
 
     // Hapus pesan RFID jika ada
     const existingMessage = document.getElementById("rfidFieldMessage");
@@ -80,10 +111,15 @@ function resetForm() {
 }
 
 // =====================================================
-// INIT - pasang listener ke 5 field wajib
+// INIT - pasang listener ke 5 field wajib & keterangan
 // =====================================================
 
 document.addEventListener("DOMContentLoaded", function () {
+    const keteranganEl = document.querySelector('[name="keterangan"]');
+    if (keteranganEl) {
+        keteranganEl.addEventListener("change", toggleParkingSlot);
+    }
+
     const watchedInputs = [
         document.querySelector('[name="keterangan"]'),
         document.querySelector('[name="namavisitor"]'),
@@ -97,6 +133,7 @@ document.addEventListener("DOMContentLoaded", function () {
         input.addEventListener("change", checkAllRequiredElements);
     });
 
-    // Validasi awal saat halaman load
+    // Inisialisasi awal saat halaman load
+    toggleParkingSlot();
     checkAllRequiredElements();
 });

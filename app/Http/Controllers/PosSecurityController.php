@@ -15,7 +15,11 @@ class PosSecurityController extends Controller
 
     public function formSupplier()
     {
-        return view('pos-security.formulir.supplier.index');
+        $parkingZones = \App\Models\PosSecurity\KantongParkir\ParkingZone::with(['slots' => function ($q) {
+            $q->with('activeAssignment')->orderBy('kode_slot', 'asc');
+        }])->where('status', 'aktif')->orderBy('kode_zona', 'asc')->get();
+
+        return view('pos-security.formulir.supplier.index', compact('parkingZones'));
     }
 
     public function formTamu()
@@ -26,7 +30,11 @@ class PosSecurityController extends Controller
 
     public function formCekKendaraan()
     {
-        return view('pos-security.formulir.cek-kendaraan.index');
+        $parkingZones = \App\Models\PosSecurity\KantongParkir\ParkingZone::with(['slots' => function ($q) {
+            $q->with('activeAssignment')->orderBy('kode_slot', 'asc');
+        }])->where('status', 'aktif')->orderBy('kode_zona', 'asc')->get();
+
+        return view('pos-security.formulir.cek-kendaraan.index', compact('parkingZones'));
     }
 
     public function dashboard()

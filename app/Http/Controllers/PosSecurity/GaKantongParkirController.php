@@ -19,6 +19,48 @@ class GaKantongParkirController extends Controller
         return view('pos-security.master.kantong-parkir.index', compact('zones'));
     }
 
+    public function monitoring()
+    {
+        $zones = ParkingZone::with([
+            'slots' => function ($q) {
+                $q->with('activeAssignment')->orderBy('kode_slot', 'asc');
+            }
+        ])->where('status', 'aktif')->orderBy('kode_zona', 'asc')->get();
+
+        $totalSlots = 0;
+        $totalKosong = 0;
+        $totalTerisi = 0;
+        $totalReserved = 0;
+        $totalMaintenance = 0;
+
+        foreach ($zones as $zone) {
+            foreach ($zone->slots as $slot) {
+                $totalSlots++;
+                if ($slot->status_slot === 'kosong') {
+                    $totalKosong++;
+                } elseif ($slot->status_slot === 'terisi') {
+                    $totalTerisi++;
+                } elseif ($slot->status_slot === 'reserved') {
+                    $totalReserved++;
+                } else {
+                    $totalMaintenance++;
+                }
+            }
+        }
+
+        $occupancyRate = $totalSlots > 0 ? round(($totalTerisi / $totalSlots) * 100, 1) : 0;
+
+        return view('pos-security.master.kantong-parkir.monitoring', compact(
+            'zones',
+            'totalSlots',
+            'totalKosong',
+            'totalTerisi',
+            'totalReserved',
+            'totalMaintenance',
+            'occupancyRate'
+        ));
+    }
+
     // --- PARKING ZONES (UTAMA) ---
 
     public function getZones(Request $request)
@@ -349,6 +391,151 @@ class GaKantongParkirController extends Controller
 
     // --- PARKING ASSIGNMENT (PENUGASAN KENDARAAN REGISTRASI) ---
 
+    public function getActiveVehicles(Request $request)
+    {
+        try {
+            $search = $request->query('search');
+
+            // 1. Ambil dari ga_visitor_transaction (Supplier / Supir) yang belum mengembalikan kartu
+            $transaction = DB::table('ga_visitor_transaction as vt')
+                ->select([
+                    'vt.id as visitor_id',
+                    DB::raw("CAST(vt.trnvisitorid AS CHAR) as trnvisitorid"),
+                    DB::raw("CAST(vt.nopol AS CHAR) as nopol"),
+                    DB::raw("CAST(vt.namavisitor AS CHAR) as namavisitor"),
+                    DB::raw("CAST(vt.nohpdriver AS CHAR) as nohpdriver"),
+                    DB::raw("CAST(vt.namacomp AS CHAR) as namacomp"),
+                    DB::raw("CAST(vt.keterangan AS CHAR) as keterangan"),
+                    DB::raw("'supplier' as source"),
+                    'vt.created_at',
+                ])
+                ->whereNotNull('vt.nopol')
+                ->where('vt.nopol', '!=', '')
+                ->where(function ($q) {
+                    $q->whereNull('vt.kartu_dikembalikan')
+                        ->orWhere('vt.kartu_dikembalikan', 0);
+                })
+                ->whereNull('vt.dateout');
+
+            // 2. Ambil dari ga_visitor_vendor (Tamu / Vendor) yang memiliki nopol & belum mengembalikan kartu
+            $vendor = DB::table('ga_visitor_vendor as vv')
+                ->select([
+                    'vv.id as visitor_id',
+                    DB::raw("CAST(vv.trnvisitorid AS CHAR) as trnvisitorid"),
+                    DB::raw("CAST(vv.nopol AS CHAR) as nopol"),
+                    DB::raw("CAST(vv.namavisitor AS CHAR) as namavisitor"),
+                    DB::raw("CAST(vv.nohpdriver AS CHAR) as nohpdriver"),
+                    DB::raw("CAST(vv.namacomp AS CHAR) as namacomp"),
+                    DB::raw("CAST('VENDOR/TAMU' AS CHAR) as keterangan"),
+                    DB::raw("'vendor' as source"),
+                    'vv.created_at',
+                ])
+                ->whereNotNull('vv.nopol')
+                ->where('vv.nopol', '!=', '')
+                ->where(function ($q) {
+                    $q->whereNull('vv.kartu_dikembalikan')
+                        ->orWhere('vv.kartu_dikembalikan', 0);
+                })
+                ->whereNull('vv.dateout')
+                ->whereNotExists(function ($query) {
+                    $query->select(DB::raw(1))
+                        ->from('ga_visitor_transaction')
+                        ->whereRaw("
+                            REPLACE(REPLACE(UPPER(ga_visitor_transaction.nopol), ' ', ''), '-', '')
+                            =
+                            REPLACE(REPLACE(UPPER(vv.nopol), ' ', ''), '-', '')
+                        ")
+                        ->where(function ($q) {
+                            $q->whereNull('kartu_dikembalikan')
+                                ->orWhere('kartu_dikembalikan', 0);
+                        })
+                        ->whereNull('dateout');
+                });
+
+            $visitors = DB::query()->fromSub($transaction->unionAll($vendor), 'v');
+
+            $query = DB::query()
+                ->fromSub($visitors, 'v')
+                ->leftJoin('ga_cek_kendaraan as c', function ($join) {
+                    $join->on('c.trnvisitorid', '=', 'v.trnvisitorid')
+                        ->whereColumn('c.created_at', '>=', 'v.created_at');
+                })
+                ->leftJoin('parking_assignments as pa', function ($join) {
+                    $join->on(function ($q) {
+                        $q->whereRaw("pa.catatan LIKE CONCAT('%', v.trnvisitorid, '%')")
+                            ->orWhereRaw("REPLACE(REPLACE(UPPER(pa.no_polisi), ' ', ''), '-', '') = REPLACE(REPLACE(UPPER(v.nopol), ' ', ''), '-', '')");
+                    })
+                        ->whereIn('pa.status_assignment', ['assigned', 'parked'])
+                        ->whereNull('pa.deleted_at');
+                })
+                ->leftJoin('parking_slots as ps', 'ps.id', '=', 'pa.parking_slot_id')
+                ->leftJoin('parking_zones as pz', 'pz.id', '=', 'pa.parking_zone_id')
+                ->select([
+                    'v.visitor_id',
+                    'v.trnvisitorid',
+                    'v.nopol',
+                    'v.namavisitor',
+                    'v.nohpdriver',
+                    'v.namacomp',
+                    'v.keterangan',
+                    'v.source',
+                    'v.created_at',
+                    'c.truck_type',
+                    'c.truck_type_other',
+                    'pa.id as active_parking_assignment_id',
+                    'ps.kode_slot as currently_parked_slot',
+                    'pz.nama_zona as currently_parked_zone',
+                ]);
+
+            if (!empty($search)) {
+                $cleanSearch = strtoupper(str_replace([' ', '-'], '', $search));
+                $query->where(function ($q) use ($search, $cleanSearch) {
+                    $q->whereRaw("REPLACE(REPLACE(UPPER(v.nopol), ' ', ''), '-', '') LIKE ?", ["%{$cleanSearch}%"])
+                        ->orWhere('v.namavisitor', 'like', "%{$search}%")
+                        ->orWhere('v.namacomp', 'like', "%{$search}%")
+                        ->orWhere('v.trnvisitorid', 'like', "%{$search}%");
+                });
+            }
+
+            $list = $query->orderBy('v.created_at', 'desc')->limit(100)->get();
+
+            $formatted = $list->map(function ($item) {
+                $jenis = $item->truck_type;
+                if (empty($jenis) || $jenis === 'OTHER') {
+                    $jenis = $item->truck_type_other ?: ($item->keterangan ?: 'Truk / Kendaraan');
+                }
+
+                $isParked = !empty($item->active_parking_assignment_id);
+
+                return [
+                    'visitor_id' => $item->visitor_id,
+                    'trnvisitorid' => $item->trnvisitorid,
+                    'nopol' => strtoupper(trim($item->nopol)),
+                    'clean_nopol' => strtoupper(str_replace([' ', '-'], '', $item->nopol)),
+                    'namavisitor' => $item->namavisitor ? ucwords(strtolower(trim($item->namavisitor))) : '',
+                    'nohpdriver' => $item->nohpdriver ?: '',
+                    'namacomp' => $item->namacomp ?: '',
+                    'jenis_kendaraan' => $jenis,
+                    'source' => $item->source,
+                    'created_at' => $item->created_at,
+                    'is_parked' => $isParked,
+                    'currently_parked_slot' => $item->currently_parked_slot,
+                    'currently_parked_zone' => $item->currently_parked_zone,
+                ];
+            });
+
+            return response()->json([
+                'status' => 'success',
+                'data' => $formatted
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Gagal mengambil data kendaraan aktif: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
     public function assignParking(Request $request)
     {
         $request->validate([
@@ -371,17 +558,68 @@ class GaKantongParkirController extends Controller
                 ], 422);
             }
 
+            $cleanNopol = strtoupper(trim($request->no_polisi));
+            $catatan = $request->catatan ?: '';
+            if ($request->filled('trnvisitorid') && !str_contains($catatan, $request->trnvisitorid)) {
+                $catatan = trim($catatan . ' [ID Trx: ' . $request->trnvisitorid . ']');
+            }
+
+            // Cek apakah kendaraan ini sudah memiliki slot parkir aktif sebelumnya (relokasi / ganti slot)
+            $existing = ParkingAssignment::where(function ($q) use ($cleanNopol, $request) {
+                    $q->where('no_polisi', $cleanNopol);
+                    if ($request->filled('trnvisitorid')) {
+                        $q->orWhere('catatan', 'like', '%' . $request->trnvisitorid . '%');
+                    }
+                })
+                ->whereIn('status_assignment', ['assigned', 'parked'])
+                ->whereNull('deleted_at')
+                ->latest('id')
+                ->first();
+
+            if ($existing) {
+                if ($existing->parking_slot_id == $slot->id) {
+                    DB::commit();
+                    return response()->json([
+                        'status' => 'success',
+                        'message' => 'Kendaraan ' . $cleanNopol . ' sudah berada di slot ' . $slot->kode_slot,
+                        'data' => $existing
+                    ]);
+                }
+
+                // Lepas slot lama
+                $oldSlot = ParkingSlot::find($existing->parking_slot_id);
+                if ($oldSlot) {
+                    $oldStatus = $oldSlot->status_slot;
+                    $oldSlot->update(['status_slot' => 'kosong', 'updated_by' => Auth::id()]);
+
+                    ParkingSlotStatusHistory::create([
+                        'parking_slot_id' => $oldSlot->id,
+                        'parking_assignment_id' => $existing->id,
+                        'status_sebelumnya' => $oldStatus,
+                        'status_baru' => 'kosong',
+                        'keterangan' => 'Pindah ke slot ' . $slot->kode_slot . ' (' . $cleanNopol . ')',
+                        'created_by' => Auth::id()
+                    ]);
+                }
+
+                $existing->update([
+                    'waktu_keluar' => now(),
+                    'status_assignment' => 'completed',
+                    'updated_by' => Auth::id()
+                ]);
+            }
+
             $assignment = ParkingAssignment::create([
                 'parking_zone_id' => $slot->parking_zone_id,
                 'parking_slot_id' => $slot->id,
-                'no_polisi' => strtoupper(trim($request->no_polisi)),
+                'no_polisi' => $cleanNopol,
                 'jenis_kendaraan' => $request->jenis_kendaraan,
                 'nama_driver' => $request->nama_driver,
                 'no_hp_driver' => $request->no_hp_driver,
-                'visitor_transaction_id' => $request->visitor_transaction_id,
+                'visitor_transaction_id' => $request->visitor_transaction_id ?: null,
                 'waktu_masuk' => now(),
                 'status_assignment' => 'assigned',
-                'catatan' => $request->catatan,
+                'catatan' => $catatan ?: null,
                 'created_by' => Auth::id()
             ]);
 
@@ -402,7 +640,8 @@ class GaKantongParkirController extends Controller
             return response()->json([
                 'status' => 'success',
                 'message' => 'Kendaraan ' . $assignment->no_polisi . ' berhasil ditempatkan di slot ' . $slot->kode_slot,
-                'data' => $assignment
+                'data' => $assignment,
+                'slot' => $slot
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
@@ -418,7 +657,33 @@ class GaKantongParkirController extends Controller
         try {
             DB::beginTransaction();
 
-            $assignment = ParkingAssignment::findOrFail($id);
+            if ($id === 'by-vehicle') {
+                $nopol = strtoupper(trim(request('no_polisi')));
+                $trn = request('trnvisitorid');
+
+                $assignment = ParkingAssignment::where(function ($q) use ($nopol, $trn) {
+                        if ($trn) {
+                            $q->where('catatan', 'like', '%' . $trn . '%');
+                        }
+                        if ($nopol) {
+                            $q->orWhere('no_polisi', $nopol);
+                        }
+                    })
+                    ->whereIn('status_assignment', ['assigned', 'parked'])
+                    ->whereNull('deleted_at')
+                    ->latest('id')
+                    ->first();
+
+                if (!$assignment) {
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'Tidak ditemukan data parkir aktif untuk kendaraan ini.'
+                    ], 404);
+                }
+            } else {
+                $assignment = ParkingAssignment::findOrFail($id);
+            }
+
             $assignment->update([
                 'waktu_keluar' => now(),
                 'status_assignment' => 'completed',

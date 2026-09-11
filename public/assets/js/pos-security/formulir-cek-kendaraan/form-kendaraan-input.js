@@ -755,7 +755,15 @@
         nomor_polisi,
         nama_supir,
         company,
-        created_at
+        created_at,
+        lokasi_parkir,
+        area_tujuan = null,
+        no_antrian = null,
+        unloading_status = null,
+        warehouse_status = null,
+        finish_loading_time = null,
+        parking_slot_id = null,
+        parking_assignment_id = null
     ) {
         photoStore = {};
         tempPhotos = [];
@@ -792,6 +800,23 @@
         $("#card-waktu-lalu").text(
             created_at ? timeAgo(created_at) : ""
         );
+
+        // Update display card lokasi parkir & tombol aksi parkir
+        updateParkingCardDisplay(lokasi_parkir, parking_slot_id, parking_assignment_id);
+
+        // Render data warehouse awal dari data attribute
+        renderWarehouseInfoCards(
+            area_tujuan,
+            no_antrian,
+            unloading_status,
+            null,
+            null,
+            warehouse_status,
+            finish_loading_time
+        );
+
+        // Fetch status live terbaru dari API warehouse
+        fetchLiveWarehouseStatus(nomor_polisi);
 
         setStep("form");
         resetAlertFoto();
@@ -984,6 +1009,319 @@
         });
     }
 
+    function renderWarehouseInfoCards(areaTujuan, noAntrian, unloadingStatus, areaCode = null, queueTime = null, warehouseStatus = null, finishTime = null) {
+        // Area Tujuan
+        const areaText = areaTujuan && areaTujuan !== '-' ? areaTujuan : 'Belum Ditentukan';
+        $("#card-area-warehouse").text(areaText);
+        if (areaCode && areaCode !== '-') {
+            $("#badge-target-area-code").text(areaCode).show();
+        } else {
+            $("#badge-target-area-code").hide();
+        }
+
+        const isCompleted = (unloadingStatus === 'completed' || warehouseStatus === 'timbangan_out');
+        const isProcess = (unloadingStatus === 'process' || warehouseStatus === 'loading' || warehouseStatus === 'unloading');
+
+        // Antrian
+        let antrianHtml = '';
+        if (isCompleted) {
+            antrianHtml = `
+                <span class="badge bg-success fs-13 px-2 py-1 me-1">
+                    <i class="mdi mdi-check-circle-outline me-1"></i>Selesai Bongkar / Muat
+                </span>
+                <span class="badge bg-info text-white fs-11">
+                    <i class="mdi mdi-scale-balance me-1"></i>Ke Timbangan Out
+                </span>
+                ${finishTime ? `<small class="text-muted ms-1 fs-11" title="Waktu selesai bongkar/muat">${finishTime}</small>` : ''}
+            `;
+            $("#badge-unloading-status").text("SELESAI").removeClass().addClass("badge bg-soft-success text-success fs-11").show();
+        } else if (isProcess) {
+            antrianHtml = `
+                <span class="badge bg-primary fs-13 px-2 py-1 me-1">
+                    <i class="mdi mdi-progress-clock me-1"></i>Sedang Bongkar / Muat
+                </span>
+                ${noAntrian ? `<span class="badge bg-soft-primary text-primary fs-11">No. ${noAntrian}</span>` : ''}
+                ${queueTime ? `<small class="text-muted ms-1 fs-11" title="Waktu antri">${queueTime}</small>` : ''}
+            `;
+            $("#badge-unloading-status").text("PROSES").removeClass().addClass("badge bg-soft-primary text-primary fs-11").show();
+        } else if (noAntrian) {
+            let statusText = unloadingStatus ? unloadingStatus.toUpperCase() : 'ANTRI';
+            antrianHtml = `
+                <span class="badge bg-primary fs-13 px-2 py-1 me-1">
+                    <i class="mdi mdi-ticket me-1"></i>No. ${noAntrian}
+                </span>
+                <span class="badge bg-soft-info text-info fs-11">${statusText}</span>
+                ${queueTime ? `<small class="text-muted ms-1 fs-11" title="Waktu ambil antrian">${queueTime}</small>` : ''}
+            `;
+            $("#badge-unloading-status").text(statusText).removeClass().addClass("badge bg-soft-secondary text-dark fs-11").show();
+        } else {
+            antrianHtml = `
+                <span class="badge bg-soft-warning text-warning border border-warning-subtle fs-12 px-2 py-1">
+                    <i class="mdi mdi-clock-outline me-1"></i>Belum Antri
+                </span>
+            `;
+            $("#badge-unloading-status").hide();
+        }
+        $("#card-antrian-warehouse").html(antrianHtml);
+    }
+
+    function fetchLiveWarehouseStatus(nopol) {
+        if (!nopol) return;
+
+        $.ajax({
+            url: `/kendaraan/warehouse-status/${encodeURIComponent(nopol)}`,
+            method: 'GET',
+            success: function(res) {
+                if (res.status === 'success' && res.found && res.data) {
+                    const d = res.data;
+                    renderWarehouseInfoCards(
+                        d.target_area,
+                        d.no_antrian,
+                        d.unloading_status,
+                        d.target_area_code,
+                        d.queue_taken_human,
+                        d.status,
+                        d.finish_loading_time
+                    );
+                } else if (res.status === 'success' && !res.found) {
+                    $("#card-area-warehouse").text("Belum Terdaftar di Warehouse");
+                    $("#badge-target-area-code").hide();
+                    $("#card-antrian-warehouse").html(`
+                        <span class="badge bg-soft-secondary text-muted fs-12">
+                            <i class="mdi mdi-minus-circle-outline me-1"></i>Tidak Ada Antrian
+                        </span>
+                    `);
+                    $("#badge-unloading-status").hide();
+                }
+            },
+            error: function(err) {
+                console.warn("Gagal mengambil live status warehouse:", err);
+            }
+        });
+    }
+
+    // =====================================================
+    // MANAJEMEN SLOT PARKIR DI CEK KENDARAAN MASUK
+    // =====================================================
+    function updateParkingCardDisplay(lokasi_parkir, slot_id, assignment_id) {
+        $("#parking_slot_id").val(slot_id || "");
+        $("#parking_assignment_id").val(assignment_id || "");
+
+        const isParked = lokasi_parkir && lokasi_parkir.trim() !== "" && lokasi_parkir.trim() !== "-";
+
+        if (isParked) {
+            $("#card-lokasi-parkir").text(lokasi_parkir);
+            $("#badge-parking-status")
+                .removeClass("bg-soft-secondary text-muted")
+                .addClass("bg-success text-white")
+                .html('<i class="mdi mdi-check-circle me-1"></i>Sudah Parkir');
+
+            $("#btnParkirkanText").text("Ganti Slot");
+            $("#btnParkirkanKendaraan")
+                .removeClass("btn-primary")
+                .addClass("btn-outline-primary");
+            $("#btnReleaseParkir").show();
+        } else {
+            $("#card-lokasi-parkir").text("Belum Parkir / -");
+            $("#badge-parking-status")
+                .removeClass("bg-success text-white")
+                .addClass("bg-soft-secondary text-muted")
+                .html('<i class="mdi mdi-close-circle-outline me-1"></i>Belum Parkir');
+
+            $("#btnParkirkanText").text("Pilih Slot Parkir");
+            $("#btnParkirkanKendaraan")
+                .removeClass("btn-outline-primary")
+                .addClass("btn-primary");
+            $("#btnReleaseParkir").hide();
+        }
+    }
+
+    window.openParkingSlotModalForCekKendaraan = function () {
+        const nopol = $("#nomor-polisi").val();
+        if (!nopol) {
+            if (typeof Swal !== "undefined") {
+                Swal.fire({
+                    icon: "warning",
+                    title: "Perhatian",
+                    text: "Silakan pilih kendaraan terlebih dahulu.",
+                });
+            } else {
+                alert("Silakan pilih kendaraan terlebih dahulu.");
+            }
+            return;
+        }
+
+        // Set hook callback saat tombol "Gunakan Slot Ini" ditekan di modal
+        window.onParkingSlotConfirmed = function (selectedSlot) {
+            assignParkingSlotToVehicle(selectedSlot);
+        };
+
+        if (typeof openParkingSlotModal === "function") {
+            openParkingSlotModal();
+            if (typeof refreshParkingSlotsData === "function") {
+                refreshParkingSlotsData();
+            }
+        }
+    };
+
+    function assignParkingSlotToVehicle(selectedSlot) {
+        const nopol = $("#nomor-polisi").val();
+        const trnvisitorid = $("#trnvisitorid").val();
+        const nama_driver = $("#nama-supir").val();
+        const jenis_kendaraan = "SUPIR";
+
+        if (!selectedSlot || !selectedSlot.id) return;
+
+        if (typeof Swal !== "undefined") {
+            Swal.fire({
+                title: "Menempatkan Kendaraan...",
+                text: `Menugaskan ${nopol} ke Slot ${selectedSlot.code}`,
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                },
+            });
+        }
+
+        const targetAssignUrl = window.API_ASSIGN_PARKING || "/pos-security/master/kantong-parkir/assignment/assign";
+
+        $.ajax({
+            url: targetAssignUrl,
+            method: "POST",
+            data: {
+                _token: $('meta[name="csrf-token"]').attr("content") || $('input[name="_token"]').val(),
+                parking_slot_id: selectedSlot.id,
+                no_polisi: nopol,
+                trnvisitorid: trnvisitorid,
+                nama_driver: nama_driver,
+                jenis_kendaraan: jenis_kendaraan,
+                catatan: `Penugasan dari Form Cek Kendaraan Masuk: ${trnvisitorid}`
+            },
+            success: function (res) {
+                const modalEl = document.getElementById("modalParkingSlotPicker");
+                if (modalEl) {
+                    const modalInstance = bootstrap.Modal.getInstance(modalEl);
+                    if (modalInstance) modalInstance.hide();
+                }
+
+                const displayLokasi = `${selectedSlot.zoneName || "Zona"} - ${selectedSlot.code}`;
+                updateParkingCardDisplay(displayLokasi, selectedSlot.id, res.data ? res.data.id : null);
+
+                // Reload datatable di background jika ada
+                if (window.cekKendaraanInTable && typeof window.cekKendaraanInTable.reload === "function") {
+                    window.cekKendaraanInTable.reload(null, false);
+                }
+
+                if (typeof Swal !== "undefined") {
+                    Swal.fire({
+                        icon: "success",
+                        title: "Berhasil Diparkirkan!",
+                        text: `Kendaraan ${nopol} berhasil ditempatkan di Slot ${selectedSlot.code}.`,
+                        timer: 2000,
+                        showConfirmButton: false,
+                    });
+                }
+            },
+            error: function (xhr) {
+                const msg = xhr.responseJSON?.message || "Gagal menempatkan kendaraan ke slot parkir.";
+                if (typeof Swal !== "undefined") {
+                    Swal.fire({
+                        icon: "error",
+                        title: "Gagal Menempatkan Kendaraan",
+                        text: msg,
+                    });
+                } else {
+                    alert(msg);
+                }
+            }
+        });
+    }
+
+    window.releaseParkingForCekKendaraan = function () {
+        const nopol = $("#nomor-polisi").val();
+        const trnvisitorid = $("#trnvisitorid").val();
+        const assignmentId = $("#parking_assignment_id").val();
+
+        if (!nopol) return;
+
+        const executeRelease = () => {
+            if (typeof Swal !== "undefined") {
+                Swal.fire({
+                    title: "Memproses...",
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    },
+                });
+            }
+
+            const targetId = (assignmentId && assignmentId !== "") ? assignmentId : "by-vehicle";
+            const targetUrl = window.API_RELEASE_PARKING
+                ? window.API_RELEASE_PARKING.replace(':id', targetId)
+                : `/pos-security/master/kantong-parkir/assignment/release/${targetId}`;
+
+            $.ajax({
+                url: targetUrl,
+                method: "POST",
+                data: {
+                    _token: $('meta[name="csrf-token"]').attr("content") || $('input[name="_token"]').val(),
+                    no_polisi: nopol,
+                    trnvisitorid: trnvisitorid,
+                },
+                success: function (res) {
+                    updateParkingCardDisplay("-", null, null);
+
+                    if (window.cekKendaraanInTable && typeof window.cekKendaraanInTable.reload === "function") {
+                        window.cekKendaraanInTable.reload(null, false);
+                    }
+
+                    if (typeof Swal !== "undefined") {
+                        Swal.fire({
+                            icon: "success",
+                            title: "Slot Parkir Dilepas!",
+                            text: `Kendaraan ${nopol} telah dilepas dan slot parkir kembali kosong.`,
+                            timer: 2000,
+                            showConfirmButton: false,
+                        });
+                    }
+                },
+                error: function (xhr) {
+                    const msg = xhr.responseJSON?.message || "Gagal melepaskan slot parkir.";
+                    if (typeof Swal !== "undefined") {
+                        Swal.fire({
+                            icon: "error",
+                            title: "Gagal",
+                            text: msg,
+                        });
+                    } else {
+                        alert(msg);
+                    }
+                }
+            });
+        };
+
+        if (typeof Swal !== "undefined") {
+            Swal.fire({
+                title: "Lepas Penugasan Parkir?",
+                text: `Slot parkir kendaraan ${nopol} akan dikosongkan kembali.`,
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonColor: "#d33",
+                cancelButtonColor: "#6c757d",
+                confirmButtonText: "Ya, Lepas Parkir",
+                cancelButtonText: "Batal",
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    executeRelease();
+                }
+            });
+        } else {
+            if (confirm(`Lepas penugasan parkir kendaraan ${nopol}?`)) {
+                executeRelease();
+            }
+        }
+    };
+
     $(document).on("click", ".open-main-form", function () {
         const $btn = $(this);
 
@@ -992,7 +1330,15 @@
             $btn.data("nomorPolisi"),
             $btn.data("namaSupir"),
             $btn.data("company"),
-            $btn.data("createdAt")
+            $btn.data("createdAt"),
+            $btn.data("lokasiParkir"),
+            $btn.data("areaTujuan"),
+            $btn.data("noAntrian"),
+            $btn.data("unloadingStatus"),
+            $btn.data("warehouseStatus"),
+            $btn.data("finishLoadingTime"),
+            $btn.data("parkingSlotId"),
+            $btn.data("parkingAssignmentId")
         );
     });
     

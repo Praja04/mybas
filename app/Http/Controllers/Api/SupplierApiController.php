@@ -17,58 +17,58 @@ class SupplierApiController extends Controller
     public function getSupplierData(Request $request)
     {
         try {
+            // Definisi helper raw agar rapi dan collation seragam
+            $collate = 'utf8mb4_unicode_ci'; // Sesuaikan jika database Anda menggunakan latin1_swedish_ci atau utf8mb4_general_ci
+
             // visitor TRANSACTION
             $transaction = DB::table('ga_visitor_transaction')
                 ->select([
-                    'trnvisitorid',
-                    'nopol',
-                    'namavisitor',
-                    'namacomp',
+                    DB::raw("trnvisitorid COLLATE {$collate} as trnvisitorid"),
+                    DB::raw("nopol COLLATE {$collate} as nopol"),
+                    DB::raw("namavisitor COLLATE {$collate} as namavisitor"),
+                    DB::raw("namacomp COLLATE {$collate} as namacomp"),
                     'kartu_dikembalikan',
                     DB::raw("'transaction' as source"),
                     'created_at',
-                    'nohpdriver',
+                    DB::raw("nohpdriver COLLATE {$collate} as nohpdriver"),
                 ])
                 ->where('keterangan', 'SUPIR')
                 ->where(function ($q) {
                     $q->whereNull('kartu_dikembalikan')
-                      ->orWhere('kartu_dikembalikan', 0);
+                        ->orWhere('kartu_dikembalikan', 0);
                 });
 
             // visitor VENDOR
             $vendor = DB::table('ga_visitor_vendor')
                 ->select([
-                    'trnvisitorid',
-                    'nopol',
-                    'namavisitor',
-                    'namacomp',
+                    DB::raw("trnvisitorid COLLATE {$collate} as trnvisitorid"),
+                    DB::raw("nopol COLLATE {$collate} as nopol"),
+                    DB::raw("namavisitor COLLATE {$collate} as namavisitor"),
+                    DB::raw("namacomp COLLATE {$collate} as namacomp"),
                     'kartu_dikembalikan',
                     DB::raw("'vendor' as source"),
                     'created_at',
-                    'nohpdriver',
+                    DB::raw("nohpdriver COLLATE {$collate} as nohpdriver"),
                 ])
                 ->whereNotNull('nopol')
                 ->where('nopol', '!=', '')
                 ->where(function ($q) {
                     $q->whereNull('kartu_dikembalikan')
-                      ->orWhere('kartu_dikembalikan', 0);
+                        ->orWhere('kartu_dikembalikan', 0);
                 })
                 ->whereNotExists(function ($query) {
                     $query->select(DB::raw(1))
                         ->from('ga_visitor_transaction')
                         ->where('ga_visitor_transaction.keterangan', 'SUPIR')
                         ->whereRaw("
-                            CONVERT(REPLACE(REPLACE(UPPER(ga_visitor_transaction.nopol), ' ', ''), '-', '') USING latin1)
-                            =
-                            CONVERT(REPLACE(REPLACE(UPPER(ga_visitor_vendor.nopol), ' ', ''), '-', '') USING latin1)
-                        ");
+                    CONVERT(REPLACE(REPLACE(UPPER(ga_visitor_transaction.nopol), ' ', ''), '-', '') USING latin1)
+                    =
+                    CONVERT(REPLACE(REPLACE(UPPER(ga_visitor_vendor.nopol), ' ', ''), '-', '') USING latin1)
+                ");
                 });
 
             // UNION visitor
-            $visitors = DB::query()->fromSub(
-                $transaction->unionAll($vendor),
-                'v'
-            );
+            $visitors = $transaction->unionAll($vendor);
 
             // LEFT JOIN cek kendaraan
             $query = DB::query()
@@ -77,13 +77,13 @@ class SupplierApiController extends Controller
                     $join->on(DB::raw('CONVERT(c.trnvisitorid USING latin1)'), '=', DB::raw('CONVERT(v.trnvisitorid USING latin1)'))
                         ->whereColumn('c.created_at', '>=', 'v.created_at');
                 })
-                ->whereNull('c.trncekid') // tampilkan yang belum cek sama sekali
+                ->whereNull('c.trncekid')
                 ->select([
                     'v.trnvisitorid',
                     'v.nopol',
                     'v.namacomp as nama_perusahaan',
                     'v.namavisitor as nama_driver',
-                    'v.nohpdriver as no_hp_driver'
+                    'v.nohpdriver as no_hp_driver',
                 ]);
 
             // Search by nopol or company name
@@ -97,7 +97,6 @@ class SupplierApiController extends Controller
 
             // Limit results to avoid memory issues
             $limit = min((int) $request->input('limit', 100), 500);
-
             $query->orderBy('v.namacomp', 'asc')
                 ->orderBy('v.nopol', 'asc')
                 ->limit($limit);
@@ -108,12 +107,12 @@ class SupplierApiController extends Controller
                 'success' => true,
                 'message' => 'Data supplier yang belum pengecekan kendaraan berhasil diambil',
                 'count'   => $data->count(),
-                'data'    => $data
+                'data'    => $data,
             ], 200);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal mengambil data supplier: ' . $e->getMessage()
+                'message' => 'Gagal mengambil data supplier: ' . $e->getMessage(),
             ], 500);
         }
     }

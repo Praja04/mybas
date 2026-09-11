@@ -151,7 +151,10 @@
                         <h4 class="fs-18 lh-base mb-0">Formulir Data Supplier/Transporter
                         </h4>
                     </div>
-                    <div class="mt-3">
+                    <div class="mt-3 d-flex gap-2 flex-wrap">
+                        <a href="{{ route('pos-security.formulir') }}" class="btn btn-secondary">
+                            <i class="mdi mdi-arrow-left"></i> Kembali
+                        </a>
                         <a href="#!" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#panduanModal">
                             <i class="mdi mdi-information-outline"></i> Panduan Pengisian
                         </a>

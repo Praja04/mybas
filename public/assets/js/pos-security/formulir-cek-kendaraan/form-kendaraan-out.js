@@ -353,7 +353,13 @@
         muatan_type,
         truck_type,
         truck_type_other,
-        checked_in_at
+        checked_in_at,
+        lokasi_parkir = "-",
+        area_tujuan = null,
+        no_antrian = null,
+        unloading_status = null,
+        warehouse_status = null,
+        finish_loading_time = null
     ) {
         photoStore = {};
         tempPhotos = [];
@@ -417,6 +423,22 @@
                 truck_type + (truck_type_other ? ` (${truck_type_other})` : "")
             );
 
+            $("#card-lokasi-parkir-out").text(lokasi_parkir || "-");
+
+            // Render data warehouse awal dari data attribute
+            renderWarehouseInfoCardsOut(
+                area_tujuan,
+                no_antrian,
+                unloading_status,
+                null,
+                null,
+                warehouse_status,
+                finish_loading_time
+            );
+
+            // Fetch status live terbaru dari API warehouse
+            fetchLiveWarehouseStatusOut(nomor_polisi);
+
             setStepOut("form");
             renderFotoSectionOut(truck_type);
 
@@ -463,7 +485,13 @@
         photoStore = {};
         tempPhotos = [];
         activePhotoKey = null;
-        photoSessionId = trnvisitorid;
+        photoSessionId = null;
+
+        $("#card-lokasi-parkir-out").text("-");
+        $("#card-area-warehouse-out").text("Memuat info...");
+        $("#badge-target-area-code-out").hide();
+        $("#card-antrian-warehouse-out").html('<span class="text-muted fs-13">Memuat antrian...</span>');
+        $("#badge-unloading-status-out").hide();
 
         $("#formWrapperOut").hide();
         $("#headerFormOut").hide();
@@ -571,6 +599,97 @@
         });
     }
 
+    function renderWarehouseInfoCardsOut(areaTujuan, noAntrian, unloadingStatus, areaCode = null, queueTime = null, warehouseStatus = null, finishTime = null) {
+        // Area Tujuan
+        const areaText = areaTujuan && areaTujuan !== '-' ? areaTujuan : 'Belum Ditentukan';
+        $("#card-area-warehouse-out").text(areaText);
+        if (areaCode && areaCode !== '-') {
+            $("#badge-target-area-code-out").text(areaCode).show();
+        } else {
+            $("#badge-target-area-code-out").hide();
+        }
+
+        const isCompleted = (unloadingStatus === 'completed' || warehouseStatus === 'timbangan_out');
+        const isProcess = (unloadingStatus === 'process' || warehouseStatus === 'loading' || warehouseStatus === 'unloading');
+
+        // Antrian
+        let antrianHtml = '';
+        if (isCompleted) {
+            antrianHtml = `
+                <span class="badge bg-success fs-13 px-2 py-1 me-1">
+                    <i class="mdi mdi-check-circle-outline me-1"></i>Selesai Bongkar / Muat
+                </span>
+                <span class="badge bg-info text-white fs-11">
+                    <i class="mdi mdi-scale-balance me-1"></i>Ke Timbangan Out
+                </span>
+                ${finishTime ? `<small class="text-muted ms-1 fs-11" title="Waktu selesai bongkar/muat">${finishTime}</small>` : ''}
+            `;
+            $("#badge-unloading-status-out").text("SELESAI").removeClass().addClass("badge bg-soft-success text-success fs-11").show();
+        } else if (isProcess) {
+            antrianHtml = `
+                <span class="badge bg-primary fs-13 px-2 py-1 me-1">
+                    <i class="mdi mdi-progress-clock me-1"></i>Sedang Bongkar / Muat
+                </span>
+                ${noAntrian ? `<span class="badge bg-soft-primary text-primary fs-11">No. ${noAntrian}</span>` : ''}
+                ${queueTime ? `<small class="text-muted ms-1 fs-11" title="Waktu antri">${queueTime}</small>` : ''}
+            `;
+            $("#badge-unloading-status-out").text("PROSES").removeClass().addClass("badge bg-soft-primary text-primary fs-11").show();
+        } else if (noAntrian) {
+            let statusText = unloadingStatus ? unloadingStatus.toUpperCase() : 'ANTRI';
+            antrianHtml = `
+                <span class="badge bg-primary fs-13 px-2 py-1 me-1">
+                    <i class="mdi mdi-ticket me-1"></i>No. ${noAntrian}
+                </span>
+                <span class="badge bg-soft-info text-info fs-11">${statusText}</span>
+                ${queueTime ? `<small class="text-muted ms-1 fs-11" title="Waktu ambil antrian">${queueTime}</small>` : ''}
+            `;
+            $("#badge-unloading-status-out").text(statusText).removeClass().addClass("badge bg-soft-secondary text-dark fs-11").show();
+        } else {
+            antrianHtml = `
+                <span class="badge bg-soft-warning text-warning border border-warning-subtle fs-12 px-2 py-1">
+                    <i class="mdi mdi-clock-outline me-1"></i>Belum Antri
+                </span>
+            `;
+            $("#badge-unloading-status-out").hide();
+        }
+        $("#card-antrian-warehouse-out").html(antrianHtml);
+    }
+
+    function fetchLiveWarehouseStatusOut(nopol) {
+        if (!nopol) return;
+
+        $.ajax({
+            url: `/kendaraan/warehouse-status/${encodeURIComponent(nopol)}`,
+            method: 'GET',
+            success: function(res) {
+                if (res.status === 'success' && res.found && res.data) {
+                    const d = res.data;
+                    renderWarehouseInfoCardsOut(
+                        d.target_area,
+                        d.no_antrian,
+                        d.unloading_status,
+                        d.target_area_code,
+                        d.queue_taken_human,
+                        d.status,
+                        d.finish_loading_time
+                    );
+                } else if (res.status === 'success' && !res.found) {
+                    $("#card-area-warehouse-out").text("Belum Terdaftar di Warehouse");
+                    $("#badge-target-area-code-out").hide();
+                    $("#card-antrian-warehouse-out").html(`
+                        <span class="badge bg-soft-secondary text-muted fs-12">
+                            <i class="mdi mdi-minus-circle-outline me-1"></i>Tidak Ada Antrian
+                        </span>
+                    `);
+                    $("#badge-unloading-status-out").hide();
+                }
+            },
+            error: function(err) {
+                console.warn("Gagal mengambil live status warehouse out:", err);
+            }
+        });
+    }
+
     $(document).on("click", ".open-form-out", function () {
         const $btn = $(this);
 
@@ -583,7 +702,13 @@
             $btn.data("muatan-type"),
             $btn.data("truck-type"),
             $btn.data("truck-type-other"),
-            $btn.data("checked-in-at")
+            $btn.data("checked-in-at"),
+            $btn.data("lokasiParkir"),
+            $btn.data("areaTujuan"),
+            $btn.data("noAntrian"),
+            $btn.data("unloadingStatus"),
+            $btn.data("warehouseStatus"),
+            $btn.data("finishLoadingTime")
         );
     });
 })();

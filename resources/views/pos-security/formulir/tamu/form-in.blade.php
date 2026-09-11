@@ -258,6 +258,12 @@
 
                     {{-- Button --}}
                     <div class="d-flex flex-column flex-md-row gap-2 justify-content-start mb-4">
+                        <a href="{{ route('pos-security.formulir') }}"
+                            class="btn btn-outline-secondary px-4 py-2 d-flex align-items-center gap-2">
+                            <i class="mdi mdi-arrow-left"></i>
+                            <span>Kembali</span>
+                        </a>
+
                         <button type="button"
                             class="btn btn-outline-primary px-4 py-2 d-flex align-items-center gap-2"
                             onclick="location.reload()">

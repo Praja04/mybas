@@ -26,6 +26,9 @@
     var API_REPORT_LOST_CARD_SUPPLIER = '{{ route('ajax.pos-security.visitor-transaksi.reportLost') }}';
     var API_GET_VISITOR_DETAIL_VENDOR = '{{ route('ajax.pos-security.vendor-transaksi.detail') }}';
     var API_BLOCK_VENDOR = '{{ route('ajax.pos-security.vendor-transaksi.block') }}';
+
+    var API_ASSIGN_PARKING = '{{ route('pos-security.kantong-parkir.assignment.assign') }}';
+    var API_RELEASE_PARKING = '{{ route('pos-security.kantong-parkir.assignment.release', ':id') }}';
 </script>
 
 {{-- <script>
