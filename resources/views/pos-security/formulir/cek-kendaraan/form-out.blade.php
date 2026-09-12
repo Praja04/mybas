@@ -111,6 +111,12 @@
                         action="{{ route('ajax.pos-security.cek-kendaraan.checkout') }}">
                         @csrf
                         <input type="hidden" name="trncekid" id="trncekid">
+                        <input type="hidden" name="trnvisitorid" id="trnvisitorid-out">
+                        <input type="hidden" name="nama_supir" id="nama-supir-out">
+                        <input type="hidden" name="company" id="company-out">
+                        <input type="hidden" name="nomor_polisi" id="nomor-polisi-out">
+                        <input type="hidden" name="parking_slot_id" id="parking_slot_id-out">
+                        <input type="hidden" name="parking_assignment_id" id="parking_assignment_id-out">
 
                         {{-- Card Informasi Kendaraan OUT --}}
                         <div id="section-kendaraan-out" class="mb-4">
@@ -189,12 +195,35 @@
                                 {{-- Baris Info Lokasi Parkir & Warehouse --}}
                                 <div class="col-md-4 col-sm-12">
                                     <div class="card shadow-sm h-100 border-start border-4 border-info">
-                                        <div class="card-body p-3">
-                                            <small class="text-muted d-block mb-1"><i
-                                                    class="mdi mdi-parking me-1 text-info"></i>Lokasi Kantong
-                                                Parkir</small>
-                                            <h6 class="fw-bold text-dark mb-0 fs-14" id="card-lokasi-parkir-out">-
-                                            </h6>
+                                        <div class="card-body p-3 d-flex flex-column justify-content-between">
+                                            <div>
+                                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                                    <small class="text-muted"><i
+                                                            class="mdi mdi-parking me-1 text-info"></i>Lokasi Kantong
+                                                        Parkir</small>
+                                                    <span id="badge-parking-status-out"
+                                                        class="badge bg-soft-secondary text-muted fs-11">Belum Parkir</span>
+                                                </div>
+                                                <h6 class="fw-bold text-dark mb-1 fs-14" id="card-lokasi-parkir-out">-</h6>
+                                            </div>
+                                            <div class="d-flex align-items-center gap-2 mt-2 pt-2 border-top flex-wrap">
+                                                <button type="button"
+                                                    class="btn btn-sm btn-primary d-inline-flex align-items-center gap-1 fw-semibold"
+                                                    id="btnParkirkanKendaraanOut"
+                                                    onclick="openParkingSlotModalForCekKendaraanOut()">
+                                                    <i class="mdi mdi-car-parking-lot"></i>
+                                                    <span id="btnParkirkanTextOut">Pilih Slot Parkir</span>
+                                                </button>
+                                                <button type="button"
+                                                    class="btn btn-sm btn-outline-danger d-inline-flex align-items-center gap-1"
+                                                    id="btnReleaseParkirOut"
+                                                    onclick="releaseParkingForCekKendaraanOut()"
+                                                    style="display: none;"
+                                                    title="Lepas / batalkan penugasan slot parkir">
+                                                    <i class="mdi mdi-close"></i>
+                                                    <span>Lepas Parkir</span>
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>

@@ -83,13 +83,18 @@ class CekKendaraanFormAjax extends Controller
             ->whereIn('pa.status_assignment', ['assigned', 'parked'])
             ->whereNull('pa.deleted_at')
             ->select([
+                'ps.id as parking_slot_id',
+                'pa.id as parking_assignment_id',
                 'ps.kode_slot',
                 'pz.nama_zona',
-                DB::raw("CONCAT(pz.nama_zona, ps.kode_slot) as lokasi_parkir")
+                DB::raw("CONCAT(pz.nama_zona, ' - ', ps.kode_slot) as lokasi_parkir")
             ])
+            ->latest('pa.id')
             ->first();
 
         $visitor->lokasi_parkir = $parking ? $parking->lokasi_parkir : '-';
+        $visitor->parking_slot_id = $parking ? $parking->parking_slot_id : null;
+        $visitor->parking_assignment_id = $parking ? $parking->parking_assignment_id : null;
 
         // Ambil data status warehouse terkini
         $visitor->area_tujuan = '-';
@@ -106,15 +111,29 @@ class CekKendaraanFormAjax extends Controller
             $baseUrl = str_ends_with($rawUrl, '/api') ? $rawUrl : "{$rawUrl}/api";
             $timeout = (float) config('services.warehouse.timeout', 2.0);
             $whRes = Http::timeout($timeout)->get("{$baseUrl}/vehicle/transaction/" . urlencode($cleanNopol));
-            if ($whRes->successful() && !empty($whRes->json()['data'])) {
-                $wh = $whRes->json()['data'];
-                $visitor->area_tujuan = $wh['target_area'] ?? '-';
-                $visitor->target_area_code = $wh['target_area_code'] ?? '-';
-                $visitor->no_antrian = $wh['no_antrian'] ?? null;
-                $visitor->unloading_status = $wh['unloading_status'] ?? 'pending';
-                $visitor->queue_taken_human = $wh['queue_taken_human'] ?? null;
-                $visitor->warehouse_status = $wh['status'] ?? null;
-                $visitor->finish_loading_time = $wh['finish_loading_time'] ?? null;
+            if ($whRes->successful()) {
+                $resJson = $whRes->json();
+                $resData = $resJson['data'] ?? null;
+                $wh = null;
+                if (is_array($resData)) {
+                    if (isset($resData['data']) && is_array($resData['data'])) {
+                        $wh = $resData['data'][0] ?? null;
+                    } elseif (isset($resData[0]) && is_array($resData[0])) {
+                        $wh = $resData[0];
+                    } else {
+                        $wh = $resData;
+                    }
+                }
+
+                if ($wh && is_array($wh)) {
+                    $visitor->area_tujuan = $wh['target_location']['name'] ?? $wh['target_area'] ?? $wh['target_area_name'] ?? '-';
+                    $visitor->target_area_code = $wh['target_location']['s_loc'] ?? $wh['target_area_code'] ?? '-';
+                    $visitor->no_antrian = $wh['no_antrian'] ?? null;
+                    $visitor->unloading_status = $wh['unloading_status'] ?? 'pending';
+                    $visitor->queue_taken_human = $wh['queue_taken_human'] ?? (isset($wh['queue_taken_time']) ? Carbon::parse($wh['queue_taken_time'])->format('H:i') : null);
+                    $visitor->warehouse_status = $wh['status'] ?? null;
+                    $visitor->finish_loading_time = $wh['finish_loading_time'] ?? null;
+                }
             }
         } catch (\Throwable $e) {
             Log::warning("Gagal fetch data warehouse di searchIn CekKendaraan: " . $e->getMessage());
@@ -195,6 +214,8 @@ class CekKendaraanFormAjax extends Controller
             ->whereIn('pa.status_assignment', ['assigned', 'parked', 'completed'])
             ->whereNull('pa.deleted_at')
             ->select([
+                'ps.id as parking_slot_id',
+                'pa.id as parking_assignment_id',
                 'ps.kode_slot',
                 'pz.nama_zona',
                 DB::raw("CONCAT(pz.nama_zona, ' - ', ps.kode_slot) as lokasi_parkir")
@@ -203,6 +224,8 @@ class CekKendaraanFormAjax extends Controller
             ->first();
 
         $visitor->lokasi_parkir = $parking ? $parking->lokasi_parkir : '-';
+        $visitor->parking_slot_id = $parking ? $parking->parking_slot_id : null;
+        $visitor->parking_assignment_id = $parking ? $parking->parking_assignment_id : null;
 
         // Ambil data status warehouse terkini
         $visitor->area_tujuan = '-';
@@ -219,15 +242,29 @@ class CekKendaraanFormAjax extends Controller
             $baseUrl = str_ends_with($rawUrl, '/api') ? $rawUrl : "{$rawUrl}/api";
             $timeout = (float) config('services.warehouse.timeout', 2.0);
             $whRes = Http::timeout($timeout)->get("{$baseUrl}/vehicle/transaction/" . urlencode($cleanNopol));
-            if ($whRes->successful() && !empty($whRes->json()['data'])) {
-                $wh = $whRes->json()['data'];
-                $visitor->area_tujuan = $wh['target_area'] ?? '-';
-                $visitor->target_area_code = $wh['target_area_code'] ?? '-';
-                $visitor->no_antrian = $wh['no_antrian'] ?? null;
-                $visitor->unloading_status = $wh['unloading_status'] ?? 'pending';
-                $visitor->queue_taken_human = $wh['queue_taken_human'] ?? null;
-                $visitor->warehouse_status = $wh['status'] ?? null;
-                $visitor->finish_loading_time = $wh['finish_loading_time'] ?? null;
+            if ($whRes->successful()) {
+                $resJson = $whRes->json();
+                $resData = $resJson['data'] ?? null;
+                $wh = null;
+                if (is_array($resData)) {
+                    if (isset($resData['data']) && is_array($resData['data'])) {
+                        $wh = $resData['data'][0] ?? null;
+                    } elseif (isset($resData[0]) && is_array($resData[0])) {
+                        $wh = $resData[0];
+                    } else {
+                        $wh = $resData;
+                    }
+                }
+
+                if ($wh && is_array($wh)) {
+                    $visitor->area_tujuan = $wh['target_location']['name'] ?? $wh['target_area'] ?? $wh['target_area_name'] ?? '-';
+                    $visitor->target_area_code = $wh['target_location']['s_loc'] ?? $wh['target_area_code'] ?? '-';
+                    $visitor->no_antrian = $wh['no_antrian'] ?? null;
+                    $visitor->unloading_status = $wh['unloading_status'] ?? 'pending';
+                    $visitor->queue_taken_human = $wh['queue_taken_human'] ?? (isset($wh['queue_taken_time']) ? Carbon::parse($wh['queue_taken_time'])->format('H:i') : null);
+                    $visitor->warehouse_status = $wh['status'] ?? null;
+                    $visitor->finish_loading_time = $wh['finish_loading_time'] ?? null;
+                }
             }
         } catch (\Throwable $e) {
             Log::warning("Gagal fetch data warehouse di searchOut CekKendaraan: " . $e->getMessage());
@@ -601,7 +638,42 @@ class CekKendaraanFormAjax extends Controller
         try {
             $response = Http::timeout($timeout)->get("{$baseUrl}/vehicle/transaction/" . urlencode($cleanNopol));
             if ($response->successful()) {
-                return response()->json($response->json());
+                $resJson = $response->json();
+                $resData = $resJson['data'] ?? null;
+                $item = null;
+                if (is_array($resData)) {
+                    if (isset($resData['data']) && is_array($resData['data'])) {
+                        $item = $resData['data'][0] ?? null;
+                    } elseif (isset($resData[0]) && is_array($resData[0])) {
+                        $item = $resData[0];
+                    } else {
+                        $item = $resData;
+                    }
+                }
+
+                if ($item && is_array($item)) {
+                    $targetArea = $item['target_location']['name'] ?? $item['target_area'] ?? $item['target_area_name'] ?? null;
+                    $targetAreaCode = $item['target_location']['s_loc'] ?? $item['target_area_code'] ?? null;
+                    $queueTakenHuman = $item['queue_taken_human'] ?? (isset($item['queue_taken_time']) ? Carbon::parse($item['queue_taken_time'])->format('H:i') : null);
+
+                    return response()->json([
+                        'status' => 'success',
+                        'found'  => true,
+                        'data'   => array_merge($item, [
+                            'target_area'       => $targetArea,
+                            'target_area_code'  => $targetAreaCode,
+                            'target_location'   => $item['target_location'] ?? null,
+                            'queue_taken_human' => $queueTakenHuman,
+                        ])
+                    ]);
+                }
+
+                return response()->json([
+                    'status'  => 'success',
+                    'found'   => false,
+                    'message' => 'Data transaksi kendaraan belum ditemukan di warehouse.',
+                    'data'    => null,
+                ]);
             }
 
             return response()->json([

@@ -31,6 +31,7 @@ class SupplierApiController extends Controller
                     DB::raw("'transaction' as source"),
                     'created_at',
                     DB::raw("nohpdriver COLLATE {$collate} as nohpdriver"),
+                    DB::raw("COALESCE(CONCAT(datein, ' ', timein), CAST(created_at AS CHAR)) as checkin_pos1"),
                 ])
                 ->where('keterangan', 'SUPIR')
                 ->where(function ($q) {
@@ -49,6 +50,7 @@ class SupplierApiController extends Controller
                     DB::raw("'vendor' as source"),
                     'created_at',
                     DB::raw("nohpdriver COLLATE {$collate} as nohpdriver"),
+                    DB::raw("COALESCE(CONCAT(datein, ' ', timein), CAST(created_at AS CHAR)) as checkin"),
                 ])
                 ->whereNotNull('nopol')
                 ->where('nopol', '!=', '')
@@ -84,6 +86,7 @@ class SupplierApiController extends Controller
                     'v.namacomp as nama_perusahaan',
                     'v.namavisitor as nama_driver',
                     'v.nohpdriver as no_hp_driver',
+                    'v.checkin_pos1',
                 ]);
 
             // Search by nopol or company name

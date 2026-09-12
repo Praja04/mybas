@@ -45,9 +45,18 @@ class FormOutDatatable extends Controller
                     $resJson = $response->json();
                     if (!empty($resJson['data'])) {
                         foreach ($resJson['data'] as $cleanKey => $itemData) {
-                            $warehouseData[$cleanKey] = (object) [
-                                'target_area_name'    => $itemData['target_area'] ?? null,
-                                'target_area_code'    => $itemData['target_area_code'] ?? null,
+                            $key = $cleanKey;
+                            if (is_numeric($cleanKey) && isset($itemData['vehicle']['no_pol'])) {
+                                $key = strtoupper(str_replace([' ', '-'], '', $itemData['vehicle']['no_pol']));
+                            } elseif (is_numeric($cleanKey) && isset($itemData['nomor_polisi'])) {
+                                $key = strtoupper(str_replace([' ', '-'], '', $itemData['nomor_polisi']));
+                            }
+                            $targetAreaName = $itemData['target_location']['name'] ?? $itemData['target_area'] ?? $itemData['target_area_name'] ?? null;
+                            $targetAreaCode = $itemData['target_location']['s_loc'] ?? $itemData['target_area_code'] ?? null;
+
+                            $warehouseData[$key] = (object) [
+                                'target_area_name'    => $targetAreaName,
+                                'target_area_code'    => $targetAreaCode,
                                 'no_antrian'          => $itemData['no_antrian'] ?? null,
                                 'queue_taken_time'    => $itemData['queue_taken_time'] ?? null,
                                 'unloading_status'    => $itemData['unloading_status'] ?? null,
@@ -128,6 +137,8 @@ class FormOutDatatable extends Controller
                     data-truck-type-other="' . e($item->truck_type_other) . '"
                     data-checked-in-at="' . e($item->checked_in_at) . '"
                     data-lokasi-parkir="' . e($item->lokasi_parkir ?: '-') . '"
+                    data-parking-slot-id="' . e($item->parking_slot_id ?: '') . '"
+                    data-parking-assignment-id="' . e($item->parking_assignment_id ?: '') . '"
                     data-area-tujuan="' . e($areaTujuan) . '"
                     data-no-antrian="' . e($noAntrian ?: '') . '"
                     data-unloading-status="' . e($unloadingStatus) . '"
@@ -252,6 +263,8 @@ class FormOutDatatable extends Controller
                 'c.checked_out_at',
                 'c.created_at as cek_created_at',
 
+                'pa.id as parking_assignment_id',
+                'ps.id as parking_slot_id',
                 DB::raw("CASE WHEN ps.kode_slot IS NOT NULL THEN CONCAT(pz.nama_zona, ' - ', ps.kode_slot) ELSE '-' END as lokasi_parkir"),
             ])
             ->orderBy('c.checked_in_at', 'DESC')
