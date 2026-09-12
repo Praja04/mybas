@@ -45,9 +45,18 @@ class FormInDatatable extends Controller
                     $resJson = $response->json();
                     if (!empty($resJson['data'])) {
                         foreach ($resJson['data'] as $cleanKey => $itemData) {
-                            $warehouseData[$cleanKey] = (object) [
-                                'target_area_name'    => $itemData['target_area'] ?? null,
-                                'target_area_code'    => $itemData['target_area_code'] ?? null,
+                            $key = $cleanKey;
+                            if (is_numeric($cleanKey) && isset($itemData['vehicle']['no_pol'])) {
+                                $key = strtoupper(str_replace([' ', '-'], '', $itemData['vehicle']['no_pol']));
+                            } elseif (is_numeric($cleanKey) && isset($itemData['nomor_polisi'])) {
+                                $key = strtoupper(str_replace([' ', '-'], '', $itemData['nomor_polisi']));
+                            }
+                            $targetAreaName = $itemData['target_location']['name'] ?? $itemData['target_area'] ?? $itemData['target_area_name'] ?? null;
+                            $targetAreaCode = $itemData['target_location']['s_loc'] ?? $itemData['target_area_code'] ?? null;
+
+                            $warehouseData[$key] = (object) [
+                                'target_area_name'    => $targetAreaName,
+                                'target_area_code'    => $targetAreaCode,
                                 'no_antrian'          => $itemData['no_antrian'] ?? null,
                                 'queue_taken_time'    => $itemData['queue_taken_time'] ?? null,
                                 'unloading_status'    => $itemData['unloading_status'] ?? null,

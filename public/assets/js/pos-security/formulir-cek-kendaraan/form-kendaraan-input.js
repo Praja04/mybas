@@ -1072,13 +1072,20 @@
             url: `/kendaraan/warehouse-status/${encodeURIComponent(nopol)}`,
             method: 'GET',
             success: function(res) {
-                if (res.status === 'success' && res.found && res.data) {
+                if (res.status === 'success' && res.data) {
                     const d = res.data;
+                    const areaTujuan = (d.target_location && d.target_location.name)
+                        ? d.target_location.name
+                        : (d.target_area || '-');
+                    const areaCode = (d.target_location && d.target_location.s_loc)
+                        ? d.target_location.s_loc
+                        : (d.target_area_code || '-');
+
                     renderWarehouseInfoCards(
-                        d.target_area,
+                        areaTujuan,
                         d.no_antrian,
                         d.unloading_status,
-                        d.target_area_code,
+                        areaCode,
                         d.queue_taken_human,
                         d.status,
                         d.finish_loading_time
