@@ -635,15 +635,30 @@ class CekKendaraanFormAjax extends Controller
      */
     public function warehouseStatus(Request $request, $nopol)
     {
-        $cleanNopol = strtoupper(str_replace([' ', '-'], '', $nopol));
-        if (empty($cleanNopol)) {
+        $cleanParam = strtoupper(str_replace([' ', '-'], '', $nopol));
+        if (empty($cleanParam)) {
             return response()->json([
                 'status'  => 'error',
                 'found'   => false,
-                'message' => 'Nomor polisi tidak boleh kosong.',
+                'message' => 'Nomor polisi atau ID visitor tidak boleh kosong.',
                 'data'    => null,
             ], 400);
         }
+
+        // Cek apakah parameter berupa trnvisitorid di tabel visitor
+        $visitor = DB::table('ga_visitor_transaction')
+            ->whereRaw("REPLACE(UPPER(trnvisitorid),' ','') = ?", [$cleanParam])
+            ->first();
+
+        if (!$visitor) {
+            $visitor = DB::table('ga_visitor_vendor')
+                ->whereRaw("REPLACE(UPPER(trnvisitorid),' ','') = ?", [$cleanParam])
+                ->first();
+        }
+
+        $cleanNopol = ($visitor && !empty($visitor->nopol))
+            ? strtoupper(str_replace([' ', '-'], '', $visitor->nopol))
+            : $cleanParam;
 
         $rawUrl = rtrim(config('services.warehouse.api_url', 'http://10.11.10.130:8087/api'), '/');
         $baseUrl = str_ends_with($rawUrl, '/api') ? $rawUrl : "{$rawUrl}/api";
