@@ -61,6 +61,7 @@
             height: 100%;
             display: flex;
             flex-direction: column;
+            overflow-y: auto;
         }
 
         .text-red {
@@ -151,6 +152,16 @@
 
         .orange {
             background: linear-gradient(90deg, #ff9100, #ff6d00);
+            color: white;
+        }
+
+        .blue {
+            background: linear-gradient(90deg, #0288d1, #00b0ff);
+            color: white;
+        }
+
+        .red {
+            background: linear-gradient(90deg, #d32f2f, #f44336);
             color: white;
         }
 
@@ -290,6 +301,18 @@
                             <p class="label">Cek Kendaraan</p>
                             <span class="badge-status" id="cek-kendaraan-status">-</span>
                         </div>
+                        <div class="info-box border-start border-3 border-primary">
+                            <p class="label"><i class="mdi mdi-warehouse me-1 text-primary"></i>Tujuan Awal (Warehouse)</p>
+                            <div id="wh-tujuan"><span class="value text-muted">-</span></div>
+                        </div>
+                        <div class="info-box border-start border-3 border-success">
+                            <p class="label"><i class="mdi mdi-ticket-confirmation me-1 text-success"></i>Antrian Warehouse</p>
+                            <div id="wh-antrian"><span class="value text-muted">-</span></div>
+                        </div>
+                        <div class="info-box border-start border-3 border-info">
+                            <p class="label"><i class="mdi mdi-progress-clock me-1 text-info"></i>Status Saat Ini</p>
+                            <div id="wh-status"><span class="value text-muted">-</span></div>
+                        </div>
                         <div class="info-box full">
                             <p class="label">Keperluan Kunjungan</p>
                             <p class="value" id="keperluan">-</p>
@@ -417,6 +440,9 @@
                             document.getElementById('foto-diri').src = d.foto_url;
                         }
 
+                        // Update Info Warehouse
+                        updateWarehouseDisplay(d.warehouse, d.trnvisitorid, d.no_polisi);
+
                         // Tampilkan Swal sukses
                         // Swal.fire({
                         //     icon: 'success',
@@ -442,6 +468,8 @@
                     statusKartuEl.className = 'red';
                     statusKartuEl.textContent = 'ERROR';
 
+                    renderWarehouseInfo(null);
+
                     Swal.fire({
                         icon: 'error',
                         title: 'Gagal',
@@ -462,6 +490,97 @@
         function setText(id, text) {
             const el = document.getElementById(id);
             if (el) el.textContent = text;
+        }
+
+        // Render data warehouse ke dalam tampilan display
+        function renderWarehouseInfo(wh) {
+            const tujuanEl = document.getElementById('wh-tujuan');
+            const antrianEl = document.getElementById('wh-antrian');
+            const statusEl = document.getElementById('wh-status');
+
+            if (!wh || !wh.found) {
+                tujuanEl.innerHTML = '<span class="value text-muted">-</span>';
+                antrianEl.innerHTML = '<span class="badge-status" style="background:#e9ecef;color:#6c757d;">Belum Antri</span>';
+                statusEl.innerHTML = '<span class="badge-status" style="background:#e9ecef;color:#6c757d;">Belum Terdaftar</span>';
+                return;
+            }
+
+            // 1. Tujuan Awal
+            const area = wh.target_area || (wh.target_location && wh.target_location.name) || '-';
+            const code = wh.target_area_code || (wh.target_location && wh.target_location.s_loc) || '';
+            tujuanEl.innerHTML = `
+                <div class="d-flex align-items-center justify-content-center gap-1 flex-wrap">
+                    <span class="value">${area}</span>
+                    ${code && code !== '-' ? `<span class="badge bg-primary text-white" style="font-size: 0.75rem;">${code}</span>` : ''}
+                </div>
+            `;
+
+            // 2. Antrian
+            if (wh.no_antrian) {
+                const qTime = wh.queue_taken_human ? `<small class="text-muted d-block mt-1" style="font-size: 0.75rem;">Antri: <b>${wh.queue_taken_human}</b></small>` : '';
+                antrianEl.innerHTML = `
+                    <span class="badge-status green"><i class="mdi mdi-ticket me-1"></i>No. ${wh.no_antrian}</span>
+                    ${qTime}
+                `;
+            } else {
+                antrianEl.innerHTML = '<span class="badge-status orange">Belum Antri</span>';
+            }
+
+            // 3. Status Saat Ini
+            const uStatus = (wh.unloading_status || '').toLowerCase();
+            const wStatus = (wh.warehouse_status || wh.status || '').toLowerCase();
+            const currLoc = (wh.current_location && wh.current_location.name) ? wh.current_location.name : (wh.current_location || '');
+
+            let badgeHtml = '';
+            if (uStatus === 'completed' || wStatus === 'timbangan_out') {
+                badgeHtml = '<span class="badge-status green"><i class="mdi mdi-check-circle me-1"></i>SELESAI BONGKAR/MUAT</span>';
+            } else if (uStatus === 'process' || ['loading', 'unloading'].includes(wStatus)) {
+                badgeHtml = '<span class="badge-status blue"><i class="mdi mdi-progress-clock me-1"></i>SEDANG PROSES</span>';
+            } else if (uStatus === 'pending') {
+                badgeHtml = '<span class="badge-status orange"><i class="mdi mdi-clock-outline me-1"></i>MENUNGGU ANTRIAN</span>';
+            } else if (wh.status || wh.warehouse_status) {
+                badgeHtml = `<span class="badge-status blue">${(wh.status || wh.warehouse_status).toUpperCase()}</span>`;
+            } else {
+                badgeHtml = '<span class="badge-status" style="background:#e9ecef;color:#6c757d;">-</span>';
+            }
+
+            const locHtml = currLoc ? `<small class="text-muted d-block mt-1" style="font-size: 0.75rem;">Lokasi: <b>${currLoc}</b></small>` : '';
+            statusEl.innerHTML = `${badgeHtml}${locHtml}`;
+        }
+
+        // Update display warehouse dengan prioritas data payload atau live AJAX fallback
+        function updateWarehouseDisplay(wh, trnvisitorid, nopol) {
+            if (wh && wh.found) {
+                renderWarehouseInfo(wh);
+                return;
+            }
+
+            const identifier = (nopol && nopol !== '-') ? nopol : trnvisitorid;
+            if (identifier && identifier !== '-') {
+                document.getElementById('wh-tujuan').innerHTML = '<span class="text-muted" style="font-size: 0.8rem;">Memuat...</span>';
+                document.getElementById('wh-antrian').innerHTML = '<span class="text-muted" style="font-size: 0.8rem;">Memuat...</span>';
+                document.getElementById('wh-status').innerHTML = '<span class="text-muted" style="font-size: 0.8rem;">Memuat...</span>';
+
+                const url = window.API_CEK_KENDARAAN_WAREHOUSE_STATUS
+                    ? window.API_CEK_KENDARAAN_WAREHOUSE_STATUS.replace(':nopol', encodeURIComponent(identifier))
+                    : `/kendaraan/warehouse-status/${encodeURIComponent(identifier)}`;
+
+                fetch(url)
+                    .then(res => res.json())
+                    .then(res => {
+                        if (res.status === 'success' && res.found && res.data) {
+                            renderWarehouseInfo(res.data);
+                        } else {
+                            renderWarehouseInfo(null);
+                        }
+                    })
+                    .catch(err => {
+                        console.warn("[Display Warehouse] Gagal live fetch:", err);
+                        renderWarehouseInfo(null);
+                    });
+            } else {
+                renderWarehouseInfo(null);
+            }
         }
 
         // Auto refresh halaman setiap 10 menit

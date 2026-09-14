@@ -15,6 +15,7 @@ use App\Models\PosSecurity\GaVisitorVendorTransaction;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Http;
 
 class AbsensiRestLogAjax extends Controller
 {
@@ -1056,6 +1057,71 @@ class AbsensiRestLogAjax extends Controller
             'status_kartu' => $visitor->kartu_dikembalikan ? 'dikembalikan' : 'aktif',
             'status_display' => $visitor->kartu_dikembalikan ? 'Kartu Sudah Dikembalikan' : 'Kartu Aktif',
             'cek_kendaraan_status' => !empty($visitor->nopol) ? ($visitor->cekKendaraan ? 'SUDAH' : 'BELUM') : 'TIDAK ADA',
+            'warehouse' => $this->getWarehouseData($visitor),
         ];
+    }
+
+    protected function getWarehouseData($visitor)
+    {
+        $cleanNopol = !empty($visitor->nopol) ? strtoupper(str_replace([' ', '-'], '', $visitor->nopol)) : null;
+
+        if (empty($cleanNopol)) {
+            return null;
+        }
+
+        try {
+            $rawUrl = rtrim(config('services.warehouse.api_url', 'http://10.11.10.130:8087/api'), '/');
+            $baseUrl = str_ends_with($rawUrl, '/api') ? $rawUrl : "{$rawUrl}/api";
+            $timeout = (float) config('services.warehouse.timeout', 2.5);
+
+            $response = Http::timeout($timeout)->get("{$baseUrl}/vehicle/transaction/" . urlencode($cleanNopol));
+            if ($response->successful()) {
+                $resJson = $response->json();
+                $resData = $resJson['data'] ?? null;
+                $item = null;
+                if (is_array($resData)) {
+                    if (isset($resData['data']) && is_array($resData['data'])) {
+                        $item = $resData['data'][0] ?? null;
+                    } elseif (isset($resData[0]) && is_array($resData[0])) {
+                        $item = $resData[0];
+                    } else {
+                        $item = $resData;
+                    }
+                }
+
+                if ($item && is_array($item)) {
+                    $targetArea = $item['target_location']['name'] ?? $item['target_area'] ?? $item['target_area_name'] ?? null;
+                    $targetAreaCode = $item['target_location']['s_loc'] ?? $item['target_area_code'] ?? null;
+                    $queueTakenHuman = $item['queue_taken_human'] ?? (isset($item['queue_taken_time']) ? Carbon::parse($item['queue_taken_time'])->format('H:i') : null);
+
+                    Log::info("Warehouse API berhasil diambil pada Display Absensi untuk nopol [{$cleanNopol}].", [
+                        'nopol'            => $cleanNopol,
+                        'target_area'      => $targetArea,
+                        'target_area_code' => $targetAreaCode,
+                        'no_antrian'       => $item['no_antrian'] ?? null,
+                        'unloading_status' => $item['unloading_status'] ?? null,
+                        'warehouse_status' => $item['status'] ?? null,
+                    ]);
+
+                    return [
+                        'found'                 => true,
+                        'no_pol'                => $item['no_pol'] ?? $cleanNopol,
+                        'target_area'           => $targetArea,
+                        'target_area_code'      => $targetAreaCode,
+                        'no_antrian'            => $item['no_antrian'] ?? null,
+                        'queue_taken_human'     => $queueTakenHuman,
+                        'queue_taken_time'      => $item['queue_taken_time'] ?? null,
+                        'unloading_status'      => $item['unloading_status'] ?? null,
+                        'warehouse_status'      => $item['status'] ?? null,
+                        'current_location'      => $item['current_location']['name'] ?? null,
+                        'current_location_code' => $item['current_location']['s_loc'] ?? null,
+                    ];
+                }
+            }
+        } catch (\Throwable $e) {
+            Log::warning("Gagal fetch data warehouse di AbsensiRestLog: " . $e->getMessage());
+        }
+
+        return null;
     }
 }
