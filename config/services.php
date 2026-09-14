@@ -31,7 +31,7 @@ return [
     ],
 
     'warehouse' => [
-        'api_url' => env('WAREHOUSE_API_URL', 'http://127.0.0.1:8000'),
+        'api_url' => env('WAREHOUSE_API_URL', 'http://10.11.10.130:8087/api'),
         'timeout' => env('WAREHOUSE_API_TIMEOUT', 3),
     ],
 

@@ -33,9 +33,9 @@ class FormOutDatatable extends Controller
 
         if (!empty($nopols)) {
             try {
-                $rawUrl = rtrim(config('services.warehouse.api_url', 'http://127.0.0.1:8000'), '/');
+                $rawUrl = rtrim(config('services.warehouse.api_url', 'http://10.11.10.130:8087/api'), '/');
                 $baseUrl = str_ends_with($rawUrl, '/api') ? $rawUrl : "{$rawUrl}/api";
-                $timeout = (float) config('services.warehouse.timeout', 2.0);
+                $timeout = (float) config('services.warehouse.timeout', 2.5);
 
                 $response = Http::timeout($timeout)->post("{$baseUrl}/vehicle/transactions/batch", [
                     'nopols' => $nopols,
@@ -45,26 +45,37 @@ class FormOutDatatable extends Controller
                     $resJson = $response->json();
                     if (!empty($resJson['data'])) {
                         foreach ($resJson['data'] as $cleanKey => $itemData) {
-                            $key = $cleanKey;
-                            if (is_numeric($cleanKey) && isset($itemData['vehicle']['no_pol'])) {
-                                $key = strtoupper(str_replace([' ', '-'], '', $itemData['vehicle']['no_pol']));
-                            } elseif (is_numeric($cleanKey) && isset($itemData['nomor_polisi'])) {
-                                $key = strtoupper(str_replace([' ', '-'], '', $itemData['nomor_polisi']));
-                            }
+                            $itemNopol = $itemData['no_pol'] ?? $itemData['nomor_polisi'] ?? ($itemData['vehicle']['no_pol'] ?? null);
                             $targetAreaName = $itemData['target_location']['name'] ?? $itemData['target_area'] ?? $itemData['target_area_name'] ?? null;
                             $targetAreaCode = $itemData['target_location']['s_loc'] ?? $itemData['target_area_code'] ?? null;
+                            $queueTakenHuman = $itemData['queue_taken_human'] ?? (isset($itemData['queue_taken_time']) ? Carbon::parse($itemData['queue_taken_time'])->format('H:i') : null);
 
-                            $warehouseData[$key] = (object) [
+                            $val = (object) [
                                 'target_area_name'    => $targetAreaName,
                                 'target_area_code'    => $targetAreaCode,
                                 'no_antrian'          => $itemData['no_antrian'] ?? null,
                                 'queue_taken_time'    => $itemData['queue_taken_time'] ?? null,
+                                'queue_taken_human'   => $queueTakenHuman,
                                 'unloading_status'    => $itemData['unloading_status'] ?? null,
                                 'warehouse_status'    => $itemData['status'] ?? null,
                                 'finish_loading_time' => $itemData['finish_loading_time'] ?? null,
                             ];
+
+                            if ($itemNopol) {
+                                $warehouseData[strtoupper(str_replace([' ', '-'], '', $itemNopol))] = $val;
+                            }
+                            $warehouseData[strtoupper(str_replace([' ', '-'], '', $cleanKey))] = $val;
                         }
                     }
+
+                    Log::info("Warehouse API vehicle/transactions/batch (FormOut) berhasil dipanggil.", [
+                        'requested_nopols' => $nopols,
+                        'matched_count'    => count($warehouseData),
+                    ]);
+                } else {
+                    Log::warning("Warehouse API batch (FormOut) gagal: HTTP " . $response->status(), [
+                        'body' => $response->body()
+                    ]);
                 }
             } catch (\Throwable $e) {
                 // Fallback gracefully jika koneksi warehouse API terkendala atau offline
@@ -140,7 +151,10 @@ class FormOutDatatable extends Controller
                     data-parking-slot-id="' . e($item->parking_slot_id ?: '') . '"
                     data-parking-assignment-id="' . e($item->parking_assignment_id ?: '') . '"
                     data-area-tujuan="' . e($areaTujuan) . '"
+                    data-target-area-code="' . e($wh->target_area_code ?? '') . '"
                     data-no-antrian="' . e($noAntrian ?: '') . '"
+                    data-queue-taken-human="' . e($wh->queue_taken_human ?? '') . '"
+                    data-queue-taken-time="' . e($wh->queue_taken_time ?? '') . '"
                     data-unloading-status="' . e($unloadingStatus) . '"
                     data-warehouse-status="' . e($warehouseStatus ?: '') . '"
                     data-finish-loading-time="' . e($finishLoadingTime ?: '') . '"

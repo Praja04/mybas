@@ -107,9 +107,9 @@ class CekKendaraanFormAjax extends Controller
 
         try {
             $cleanNopol = strtoupper(str_replace([' ', '-'], '', $visitor->nopol));
-            $rawUrl = rtrim(config('services.warehouse.api_url', 'http://127.0.0.1:8000'), '/');
+            $rawUrl = rtrim(config('services.warehouse.api_url', 'http://10.11.10.130:8087/api'), '/');
             $baseUrl = str_ends_with($rawUrl, '/api') ? $rawUrl : "{$rawUrl}/api";
-            $timeout = (float) config('services.warehouse.timeout', 2.0);
+            $timeout = (float) config('services.warehouse.timeout', 2.5);
             $whRes = Http::timeout($timeout)->get("{$baseUrl}/vehicle/transaction/" . urlencode($cleanNopol));
             if ($whRes->successful()) {
                 $resJson = $whRes->json();
@@ -133,6 +133,13 @@ class CekKendaraanFormAjax extends Controller
                     $visitor->queue_taken_human = $wh['queue_taken_human'] ?? (isset($wh['queue_taken_time']) ? Carbon::parse($wh['queue_taken_time'])->format('H:i') : null);
                     $visitor->warehouse_status = $wh['status'] ?? null;
                     $visitor->finish_loading_time = $wh['finish_loading_time'] ?? null;
+
+                    Log::info("Warehouse API searchIn berhasil dipanggil untuk nopol [{$cleanNopol}].", [
+                        'nopol' => $cleanNopol,
+                        'area_tujuan' => $visitor->area_tujuan,
+                        'no_antrian' => $visitor->no_antrian,
+                        'unloading_status' => $visitor->unloading_status,
+                    ]);
                 }
             }
         } catch (\Throwable $e) {
@@ -238,9 +245,9 @@ class CekKendaraanFormAjax extends Controller
 
         try {
             $cleanNopol = strtoupper(str_replace([' ', '-'], '', $visitor->nopol));
-            $rawUrl = rtrim(config('services.warehouse.api_url', 'http://127.0.0.1:8000'), '/');
+            $rawUrl = rtrim(config('services.warehouse.api_url', 'http://10.11.10.130:8087/api'), '/');
             $baseUrl = str_ends_with($rawUrl, '/api') ? $rawUrl : "{$rawUrl}/api";
-            $timeout = (float) config('services.warehouse.timeout', 2.0);
+            $timeout = (float) config('services.warehouse.timeout', 2.5);
             $whRes = Http::timeout($timeout)->get("{$baseUrl}/vehicle/transaction/" . urlencode($cleanNopol));
             if ($whRes->successful()) {
                 $resJson = $whRes->json();
@@ -264,6 +271,13 @@ class CekKendaraanFormAjax extends Controller
                     $visitor->queue_taken_human = $wh['queue_taken_human'] ?? (isset($wh['queue_taken_time']) ? Carbon::parse($wh['queue_taken_time'])->format('H:i') : null);
                     $visitor->warehouse_status = $wh['status'] ?? null;
                     $visitor->finish_loading_time = $wh['finish_loading_time'] ?? null;
+
+                    Log::info("Warehouse API searchOut berhasil dipanggil untuk nopol [{$cleanNopol}].", [
+                        'nopol' => $cleanNopol,
+                        'area_tujuan' => $visitor->area_tujuan,
+                        'no_antrian' => $visitor->no_antrian,
+                        'unloading_status' => $visitor->unloading_status,
+                    ]);
                 }
             }
         } catch (\Throwable $e) {
@@ -631,7 +645,7 @@ class CekKendaraanFormAjax extends Controller
             ], 400);
         }
 
-        $rawUrl = rtrim(config('services.warehouse.api_url', 'http://127.0.0.1:8000'), '/');
+        $rawUrl = rtrim(config('services.warehouse.api_url', 'http://10.11.10.130:8087/api'), '/');
         $baseUrl = str_ends_with($rawUrl, '/api') ? $rawUrl : "{$rawUrl}/api";
         $timeout = (float) config('services.warehouse.timeout', 2.5);
 
@@ -656,17 +670,35 @@ class CekKendaraanFormAjax extends Controller
                     $targetAreaCode = $item['target_location']['s_loc'] ?? $item['target_area_code'] ?? null;
                     $queueTakenHuman = $item['queue_taken_human'] ?? (isset($item['queue_taken_time']) ? Carbon::parse($item['queue_taken_time'])->format('H:i') : null);
 
+                    $payload = array_merge($item, [
+                        'target_area'       => $targetArea,
+                        'target_area_code'  => $targetAreaCode,
+                        'target_location'   => $item['target_location'] ?? null,
+                        'queue_taken_human' => $queueTakenHuman,
+                    ]);
+
+                    Log::info("Warehouse API vehicle/transaction berhasil dipanggil untuk nopol [{$cleanNopol}].", [
+                        'nopol'            => $cleanNopol,
+                        'url'              => "{$baseUrl}/vehicle/transaction/{$cleanNopol}",
+                        'status'           => $response->status(),
+                        'target_area'      => $targetArea,
+                        'target_area_code' => $targetAreaCode,
+                        'no_antrian'       => $item['no_antrian'] ?? null,
+                        'unloading_status' => $item['unloading_status'] ?? null,
+                        'warehouse_status' => $item['status'] ?? null,
+                    ]);
+
                     return response()->json([
                         'status' => 'success',
                         'found'  => true,
-                        'data'   => array_merge($item, [
-                            'target_area'       => $targetArea,
-                            'target_area_code'  => $targetAreaCode,
-                            'target_location'   => $item['target_location'] ?? null,
-                            'queue_taken_human' => $queueTakenHuman,
-                        ])
+                        'data'   => $payload
                     ]);
                 }
+
+                Log::info("Warehouse API vehicle/transaction dipanggil untuk nopol [{$cleanNopol}], transaksi tidak ditemukan.", [
+                    'url'      => "{$baseUrl}/vehicle/transaction/{$cleanNopol}",
+                    'response' => $resJson,
+                ]);
 
                 return response()->json([
                     'status'  => 'success',
@@ -676,6 +708,11 @@ class CekKendaraanFormAjax extends Controller
                 ]);
             }
 
+            Log::warning("Warehouse API respons gagal untuk nopol [{$cleanNopol}]: HTTP " . $response->status(), [
+                'url'  => "{$baseUrl}/vehicle/transaction/{$cleanNopol}",
+                'body' => $response->body(),
+            ]);
+
             return response()->json([
                 'status'  => 'error',
                 'found'   => false,
@@ -683,11 +720,14 @@ class CekKendaraanFormAjax extends Controller
                 'data'    => null,
             ], $response->status());
         } catch (\Throwable $e) {
-            Log::warning("Warehouse API unreachable in CekKendaraanFormAjax: " . $e->getMessage());
+            Log::warning("Warehouse API unreachable in CekKendaraanFormAjax: " . $e->getMessage(), [
+                'url'   => "{$baseUrl}/vehicle/transaction/{$cleanNopol}",
+                'error' => $e->getMessage(),
+            ]);
             return response()->json([
                 'status'  => 'error',
                 'found'   => false,
-                'message' => 'Warehouse API tidak dapat dihubungi.',
+                'message' => 'Warehouse API tidak dapat dihubungi: ' . $e->getMessage(),
                 'data'    => null,
             ], 503);
         }

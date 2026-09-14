@@ -763,7 +763,9 @@
         warehouse_status = null,
         finish_loading_time = null,
         parking_slot_id = null,
-        parking_assignment_id = null
+        parking_assignment_id = null,
+        target_area_code = null,
+        queue_taken_time = null
     ) {
         photoStore = {};
         tempPhotos = [];
@@ -809,8 +811,8 @@
             area_tujuan,
             no_antrian,
             unloading_status,
-            null,
-            null,
+            target_area_code,
+            queue_taken_time,
             warehouse_status,
             finish_loading_time
         );
@@ -1068,10 +1070,17 @@
     function fetchLiveWarehouseStatus(nopol) {
         if (!nopol) return;
 
+        const url = window.API_CEK_KENDARAAN_WAREHOUSE_STATUS
+            ? window.API_CEK_KENDARAAN_WAREHOUSE_STATUS.replace(':nopol', encodeURIComponent(nopol))
+            : `/kendaraan/warehouse-status/${encodeURIComponent(nopol)}`;
+
+        console.log(`[Warehouse API In] Memanggil status warehouse untuk nopol: ${nopol} via ${url}`);
+
         $.ajax({
-            url: `/kendaraan/warehouse-status/${encodeURIComponent(nopol)}`,
+            url: url,
             method: 'GET',
             success: function(res) {
+                console.log(`[Warehouse API In] Respon diterima untuk nopol ${nopol}:`, res);
                 if (res.status === 'success' && res.data) {
                     const d = res.data;
                     const areaTujuan = (d.target_location && d.target_location.name)
@@ -1091,6 +1100,7 @@
                         d.finish_loading_time
                     );
                 } else if (res.status === 'success' && !res.found) {
+                    console.log(`[Warehouse API In] Nopol ${nopol} belum terdaftar di warehouse.`);
                     $("#card-area-warehouse").text("Belum Terdaftar di Warehouse");
                     $("#badge-target-area-code").hide();
                     $("#card-antrian-warehouse").html(`
@@ -1102,7 +1112,7 @@
                 }
             },
             error: function(err) {
-                console.warn("Gagal mengambil live status warehouse:", err);
+                console.warn(`[Warehouse API In] Gagal mengambil live status warehouse untuk nopol ${nopol}:`, err);
             }
         });
     }
@@ -1345,7 +1355,9 @@
             $btn.data("warehouseStatus"),
             $btn.data("finishLoadingTime"),
             $btn.data("parkingSlotId"),
-            $btn.data("parkingAssignmentId")
+            $btn.data("parkingAssignmentId"),
+            $btn.data("targetAreaCode"),
+            $btn.data("queueTakenHuman") || $btn.data("queueTakenTime")
         );
     });
     
