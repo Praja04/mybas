@@ -21,7 +21,7 @@
                 </div>
                 <form action="{{url('/PostEditObat')}}" method="POST" id="edit">
                     @csrf
-                    <input type="hidden" name="id" class="form-control"value="{{$master->id}}">
+                    <input type="hidden" name="id" class="form-control" value="{{$master->id}}">
                     <div class="card-body">
                         <div class="form-group">
                             <label for="exampleSelectl">OBAT</label>
@@ -29,11 +29,11 @@
                         </div>
                         <div class="form-group">
                             <label for="exampleSelectl">HARGA</label>
-                            <input type="text" name="harga" class="form-control"value="{{$master->harga,2,',','.'}}">
+                            <input type="text" name="harga" class="form-control" value="{{ number_format($master->harga, 2, ',', '.') }}">
                         </div>
                         <div class="form-group">
                             <label for="exampleSelectl">SATUAN</label>
-                            <input type="text" name="satuan" class="form-control"value="{{$master->satuan}}">
+                            <input type="text" name="satuan" class="form-control" value="{{$master->satuan}}">
                         </div>
                         <div class="float-right">
                            <button type="submit" class="btn btn-primary btn-sm BtnUpdateFile" onclick = "return confirm('Apakah Anda Yakin Akan Merubah Data Ini?');" style="border-radius: 13px;"><i class="fas fa-save"></i> Update</button>

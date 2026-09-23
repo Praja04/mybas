@@ -25,7 +25,7 @@
     <div class="row mb-3">
         <div class="col-12">
             <div class="page-title-box d-flex align-items-center justify-content-between">
-                <h4 class="mb-0 text-primary"><i class="ri-user-unfollow-line me-2"></i> Trace & Tracking SP Mangkir Karyawan
+                <h4 class="mb-0 text-primary"><i class="ri-user-unfollow-line me-2"></i> Trace &amp; Tracking SP Mangkir Karyawan
                 </h4>
                 <div>
                     <button class="btn btn-sm btn-success me-1 shadow-sm" data-bs-toggle="modal"

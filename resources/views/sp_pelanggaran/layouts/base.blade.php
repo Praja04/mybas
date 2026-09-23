@@ -27,6 +27,14 @@ if ($hasAnyPerm(['sp_pelanggaran', 'sp_pelanggaran_admin', 'sp_pelanggaran_dh', 
         'submenu' => [],
     ];
 }
+if ($hasAnyPerm(['sp_pelanggaran_ir_staff', 'sp_pelanggaran_ir_head', 'sp_pelanggaran_dh', 'sp_pelanggaran_approval_dh'])) {
+    $monitoringItems[] = [
+        'path' => 'sp-mangkir/audit',
+        'label' => 'Audit Mangkir',
+        'icon' => 'mdi-magnify-scan',
+        'submenu' => [],
+    ];
+}
 if ($hasAnyPerm(['sp_pelanggaran_ir_staff', 'sp_pelanggaran_ir_head'])) {
     $monitoringItems[] = [
         'path' => 'sp-pelanggaran/dashboard',

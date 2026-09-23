@@ -18,9 +18,8 @@
     @php
         $userPermissions = view()->shared('permissions') ?: [];
         $isAdmin = in_array('sp_pelanggaran_admin', $userPermissions);
-        $isIrRole =
-            in_array('sp_pelanggaran_ir_staff', $userPermissions) ||
-            in_array('sp_pelanggaran_ir_head', $userPermissions);
+        $isIrStaff = in_array('sp_pelanggaran_ir_staff', $userPermissions);
+        $isIrRole = $isIrStaff || in_array('sp_pelanggaran_ir_head', $userPermissions);
     @endphp
     <div class="row mb-3">
         <div class="col-12">
@@ -31,6 +30,12 @@
                         data-bs-target="#modalExportSp">
                         <i class="ri-file-excel-2-line me-1"></i> Export Data SP
                     </button>
+                    @if ($isIrStaff)
+                        <button class="btn btn-sm btn-outline-success me-1 shadow-sm" data-bs-toggle="modal"
+                            data-bs-target="#modalImportSpAktif">
+                            <i class="ri-file-upload-line me-1"></i> Upload Excel SP Aktif
+                        </button>
+                    @endif
                     @if ($isAdmin)
                         <a href="{{ route('sp_pelanggaran.index') }}" class="btn btn-sm btn-primary">
                             <i class="ri-add-circle-line me-1"></i> Input SP Baru
@@ -100,7 +105,7 @@
             <div id="tracePaginationInfo" class="text-muted small">Memuat informasi data...</div>
             <div id="tracePaginationLinks"></div>
         </div>
-    </div>div>
+    </div>
     </div>
 
     <!-- Modal Detail SP -->
@@ -209,6 +214,47 @@
             </div>
         </div>
     </div>
+
+    <!-- Modal Import Excel Data SP Aktif -->
+    <div class="modal fade" id="modalImportSpAktif" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form id="formImportSpAktif" enctype="multipart/form-data">
+                    @csrf
+                    <div class="modal-header bg-success text-white py-2">
+                        <h5 class="modal-title fs-6 fw-bold"><i class="ri-file-excel-2-line me-1"></i> Upload Data SP Aktif (Excel)</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="alert alert-info py-2 small mb-3">
+                            <i class="ri-information-line me-1"></i> Fitur ini digunakan untuk mengimpor <strong>Data SP yang sedang AKTIF/Berjalan</strong> secara langsung ke sistem (berstatus APPROVED).
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">1. Unduh Template Excel:</label>
+                            <div>
+                                <a href="{{ route('sp_pelanggaran.template_sp_aktif') }}" class="btn btn-sm btn-outline-primary w-100">
+                                    <i class="ri-download-line me-1"></i> Download Template Excel SP Aktif (.xlsx)
+                                </a>
+                            </div>
+                            <div class="form-text small mt-1">Gunakan template resmi agar format data (NIK, Jenis SP, Tanggal Terbit) sesuai.</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">2. Pilih File Excel Yang Sudah Diisi: <span class="text-danger">*</span></label>
+                            <input type="file" id="fileImportSpAktif" name="file" class="form-control" accept=".xlsx, .xls" required>
+                            <div class="form-text small">Format yang didukung: .xlsx, .xls (Maksimal 5MB).</div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-success" id="btnSubmitImportSpAktif">
+                            <i class="ri-upload-2-line me-1"></i> Process Upload
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
 @endsection
 
 @push('scripts')
@@ -683,10 +729,61 @@
                         $('#modalDetailContent').html(html);
                     }
                 }).fail(function() {
-                    $('#modalDetailContent').html(
-                        '<div class="alert alert-danger">Gagal mengambil detail SP.</div>');
+                    $('#modalDetailContent').html('<div class="alert alert-danger p-3 mb-0">Gagal memuat detail data SP. Silakan coba lagi.</div>');
+                });
+            });
+
+            // Handler Submit Import Excel SP Aktif
+            $('#formImportSpAktif').on('submit', function(e) {
+
+                e.preventDefault();
+                let fileInput = $('#fileImportSpAktif')[0];
+                if (!fileInput || fileInput.files.length === 0) {
+                    Swal.fire('Peringatan!', 'Silakan pilih file Excel terlebih dahulu.', 'warning');
+                    return;
+                }
+
+                let formData = new FormData(this);
+                let $btn = $('#btnSubmitImportSpAktif');
+                $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1" role="status"></span> Memproses Upload...');
+
+                $.ajax({
+                    url: '{{ route("sp_pelanggaran.import_sp_aktif") }}',
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function(res) {
+                        $btn.prop('disabled', false).html('<i class="ri-upload-2-line me-1"></i> Process Upload');
+                        if (res.status === 'success') {
+                            let modalEl = document.getElementById('modalImportSpAktif');
+                            let modalInst = bootstrap.Modal.getInstance(modalEl);
+                            if (modalInst) modalInst.hide();
+
+                            let skippedInfo = '';
+                            if (res.skipped_rows && res.skipped_rows.length > 0) {
+                                skippedInfo = '<br><hr><strong class="text-warning">Baris dilewati/invalid:</strong><ul class="text-start small mb-0 mt-1" style="max-height:150px; overflow-y:auto;">' +
+                                    res.skipped_rows.map(s => `<li>${s}</li>`).join('') + '</ul>';
+                            }
+
+                            Swal.fire({
+                                title: 'Impor Berhasil!',
+                                html: res.message + skippedInfo,
+                                icon: 'success'
+                            }).then(() => {
+                                $('#formImportSpAktif')[0].reset();
+                                loadTraceData(1);
+                            });
+                        }
+                    },
+                    error: function(xhr) {
+                        $btn.prop('disabled', false).html('<i class="ri-upload-2-line me-1"></i> Process Upload');
+                        let err = xhr.responseJSON ? xhr.responseJSON.message : 'Gagal mengimpor file Excel SP Aktif.';
+                        Swal.fire('Gagal Impor!', err, 'error');
+                    }
                 });
             });
         });
     </script>
 @endpush
+

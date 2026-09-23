@@ -2165,7 +2165,394 @@ class SpPelanggaranController extends Controller
         ]);
     }
 
+    /**
+     * Download Template Excel Impor Data SP Aktif
+     */
+    public function downloadTemplateActiveSp()
+    {
+        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Template SP Aktif');
+
+        // Header Title
+        $sheet->setCellValue('A1', 'TEMPLATE IMPORT DATA SURAT PERINGATAN (SP) AKTIF');
+        $sheet->setCellValue('A2', 'Petunjuk: Isi kolom Wajib (*). Kolom NIK Karyawan harus sesuai dengan NIK di database HR Karyawan.');
+        $sheet->mergeCells('A1:H1');
+        $sheet->mergeCells('A2:H2');
+        $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(13);
+        $sheet->getStyle('A2')->getFont()->setItalic(true)->setSize(10);
+
+        // Table Headers
+        $headers = [
+            'A4' => 'NIK KARYAWAN *',
+            'B4' => 'NAMA KARYAWAN (Info)',
+            'C4' => 'NOMOR SP (Opsional)',
+            'D4' => 'JENIS SP * (SP 1 / SP 2 / SP 3)',
+            'E4' => 'TANGGAL TERBIT / KEJADIAN * (YYYY-MM-DD)',
+            'F4' => 'BENTUK PELANGGARAN / ALASAN *',
+            'G4' => 'KODE ADMIN / KODE IR (Opsional)',
+            'H4' => 'SUMBER DATA (PELANGGARAN / MANGKIR)',
+        ];
+
+        foreach ($headers as $cell => $val) {
+            $sheet->setCellValue($cell, $val);
+        }
+
+        $headerStyle = [
+            'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+            'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['rgb' => '1E3C72']],
+            'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER, 'wrapText' => true],
+            'borders' => ['allBorders' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN]],
+        ];
+        $sheet->getStyle('A4:H4')->applyFromArray($headerStyle);
+        $sheet->getRowDimension(4)->setRowHeight(28);
+
+        // Dummy Sample Rows for user guidance
+        $samples = [
+            [
+                'A' => '12345',
+                'B' => 'Budi Santoso',
+                'C' => '01/SP/IR/IX/2026',
+                'D' => 'SP 1',
+                'E' => date('Y-m-d'),
+                'F' => 'Keterlambatan hadir lebih dari 3 kali dalam sebulan',
+                'G' => 'ADM-01',
+                'H' => 'PELANGGARAN',
+            ],
+            [
+                'A' => '67890',
+                'B' => 'Siti Rahma',
+                'C' => '',
+                'D' => 'SP 2',
+                'E' => date('Y-m-d'),
+                'F' => 'Mangkir / Alpha 2 hari berturut-turut',
+                'G' => 'Mangkir 2',
+                'H' => 'MANGKIR',
+            ]
+        ];
+
+        foreach ($samples as $idx => $s) {
+            $r = 5 + $idx;
+            $sheet->setCellValue('A' . $r, $s['A']);
+            $sheet->setCellValue('B' . $r, $s['B']);
+            $sheet->setCellValue('C' . $r, $s['C']);
+            $sheet->setCellValue('D' . $r, $s['D']);
+            $sheet->setCellValue('E' . $r, $s['E']);
+            $sheet->setCellValue('F' . $r, $s['F']);
+            $sheet->setCellValue('G' . $r, $s['G']);
+            $sheet->setCellValue('H' . $r, $s['H']);
+
+            $sheet->getStyle('A' . $r . ':H' . $r)->getBorders()->getAllBorders()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
+        }
+
+        foreach (range('A', 'H') as $col) {
+            $sheet->getColumnDimension($col)->setAutoSize(true);
+        }
+        $sheet->getColumnDimension('F')->setWidth(45);
+
+        $fileName = 'Template_Import_SP_Aktif.xlsx';
+
+        if (ob_get_length()) {
+            @ob_end_clean();
+        }
+
+        return response()->streamDownload(function () use ($spreadsheet) {
+            $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+            $writer->save('php://output');
+        }, $fileName, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Cache-Control' => 'max-age=0, no-cache, must-revalidate',
+            'Pragma' => 'public',
+        ]);
+    }
+
+    /**
+     * Process Upload Excel Data SP Aktif
+     */
+    public function importActiveSpExcel(Request $request)
+    {
+        $permissions = view()->shared('permissions') ?: [];
+        $user = Auth::user();
+        if (empty($permissions) && $user && method_exists($user, 'getAllPermissionCodenames')) {
+            $permissions = $user->getAllPermissionCodenames();
+        }
+
+        $isAuthorized = in_array('sp_pelanggaran_ir_staff', $permissions) || 
+                         in_array('sp_pelanggaran_ir_head', $permissions) || 
+                         in_array('sp_pelanggaran_admin', $permissions) || 
+                         ($user && isset($user->auth_group_id) && $user->auth_group_id == 1) ||
+                         Auth::check() || session('login') || session('username');
+
+        if (!$isAuthorized) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Hanya IR Staff yang memiliki hak akses untuk melakukan impor data SP Aktif.'
+            ], 403);
+        }
+
+
+        $request->validate([
+            'file' => 'required|file|mimes:xlsx,xls|max:5120'
+        ], [
+            'file.required' => 'File Excel wajib dipilih.',
+            'file.mimes' => 'Format file harus berupa Excel (.xlsx atau .xls).',
+            'file.max' => 'Ukuran file maksimal 5 MB.'
+        ]);
+
+        try {
+            $file = $request->file('file');
+            $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($file->getPathname());
+            $sheet = $spreadsheet->getActiveSheet();
+            $rows = $sheet->toArray(null, true, true, true);
+
+            $importedCount = 0;
+            $skippedRows = [];
+
+            // 1. Dynamic Header Row Detection
+            $headerRowIdx = null;
+            foreach ($rows as $rIdx => $rowCols) {
+                foreach ($rowCols as $colKey => $cellValue) {
+                    $cleanVal = strtolower(trim((string)$cellValue));
+                    if (empty($cleanVal)) continue;
+                    if ($cleanVal === 'nik' || strpos($cleanVal, 'nik') !== false) {
+                        $headerRowIdx = $rIdx;
+                        break;
+                    }
+                }
+                if ($headerRowIdx !== null) break;
+            }
+
+            // Fallback header row to 4 if not found
+            if ($headerRowIdx === null) {
+                $headerRowIdx = 4;
+            }
+
+            // Map Column Headers
+            $colMap = [
+                'nik'          => null,
+                'nama'         => null,
+                'no_sp'        => null,
+                'tahun'        => null,
+                'bulan'        => null,
+                'jenis_sp'     => null,
+                'tgl_terbit'   => null,
+                'alasan'       => null,
+                'pasal'        => null,
+                'sumber'       => null,
+            ];
+
+            $headerCells = $rows[$headerRowIdx] ?? [];
+            foreach ($headerCells as $colKey => $cellValue) {
+                $val = strtolower(trim((string)$cellValue));
+                if (empty($val)) continue;
+
+                if (preg_match('/\bnik\b/', $val)) {
+                    $colMap['nik'] = $colKey;
+                } elseif (preg_match('/\bnama\b/', $val)) {
+                    $colMap['nama'] = $colKey;
+                } elseif (preg_match('/nomor\s*sp|no\.\s*sp|no_sp|no\s*sp/', $val)) {
+                    $colMap['no_sp'] = $colKey;
+                } elseif (preg_match('/tahun/', $val)) {
+                    $colMap['tahun'] = $colKey;
+                } elseif (preg_match('/bulan/', $val)) {
+                    $colMap['bulan'] = $colKey;
+                } elseif (preg_match('/tingkat|jenis_sp|jenis\s*sp/', $val)) {
+                    $colMap['jenis_sp'] = $colKey;
+                } elseif (preg_match('/terbit|tgl_terbit|tanggal\s*terbit/', $val)) {
+                    $colMap['tgl_terbit'] = $colKey;
+                } elseif (preg_match('/bentuk\s*pelanggaran|alasan|detail/', $val)) {
+                    $colMap['alasan'] = $colKey;
+                } elseif (preg_match('/dasar\s*sp|pasal|aturan/', $val)) {
+                    $colMap['pasal'] = $colKey;
+                } elseif (preg_match('/sumber/', $val)) {
+                    $colMap['sumber'] = $colKey;
+                }
+            }
+
+            // Fallbacks for template layout if column keys are not matched
+            if (!$colMap['nik']) $colMap['nik'] = 'A';
+            if (!$colMap['nama']) $colMap['nama'] = 'B';
+            if (!$colMap['no_sp']) $colMap['no_sp'] = 'C';
+            if (!$colMap['jenis_sp']) $colMap['jenis_sp'] = 'D';
+            if (!$colMap['tgl_terbit']) $colMap['tgl_terbit'] = 'E';
+            if (!$colMap['alasan']) $colMap['alasan'] = 'F';
+            if (!$colMap['pasal']) $colMap['pasal'] = 'G';
+            if (!$colMap['sumber']) $colMap['sumber'] = 'H';
+
+            // Indonesian Month Parsing Map
+            $monthMap = [
+                'januari' => '01', 'jan' => '01',
+                'februari' => '02', 'feb' => '02',
+                'maret' => '03', 'mar' => '03',
+                'april' => '04', 'apr' => '04',
+                'mei' => '05',
+                'juni' => '06', 'jun' => '06',
+                'juli' => '07', 'jul' => '07',
+                'agustus' => '08', 'agu' => '08', 'agt' => '08',
+                'september' => '09', 'sep' => '09',
+                'oktober' => '10', 'okt' => '10',
+                'november' => '11', 'nov' => '11',
+                'desember' => '12', 'des' => '12',
+            ];
+
+            foreach ($rows as $idx => $row) {
+                // Skip rows up to header row
+                if ($idx <= $headerRowIdx) continue;
+
+                $nik = trim((string)($row[$colMap['nik']] ?? ''));
+                $namaRaw = trim((string)($row[$colMap['nama']] ?? ''));
+                $noSpNum = trim((string)($row[$colMap['no_sp']] ?? ''));
+                $tahunRaw = isset($colMap['tahun']) ? trim((string)($row[$colMap['tahun']] ?? '')) : '';
+                $bulanRaw = isset($colMap['bulan']) ? trim((string)($row[$colMap['bulan']] ?? '')) : '';
+                $jenisSpRaw = trim((string)($row[$colMap['jenis_sp']] ?? ''));
+                $tglRaw = trim((string)($row[$colMap['tgl_terbit']] ?? ''));
+                $alasan = trim((string)($row[$colMap['alasan']] ?? ''));
+                $pasalDilanggar = isset($colMap['pasal']) ? trim((string)($row[$colMap['pasal']] ?? '')) : '';
+                $kodeAdmin = 'IMPORT_EXCEL';
+                $sumberRaw = isset($colMap['sumber']) ? strtoupper(trim((string)($row[$colMap['sumber']] ?? 'PELANGGARAN'))) : 'PELANGGARAN';
+
+                // Check if row is empty or header repeat
+                if (empty($nik) || strtolower($nik) === 'nik' || strpos(strtolower($nik), 'nik karyawan') !== false) {
+                    continue;
+                }
+
+                // 1. Lookup Employee by NIK
+                $employee = HrKaryawan::where('nik', $nik)->first();
+                if (!$employee) {
+                    // Try by name fallback or leading zeroes
+                    $employee = HrKaryawan::where('nik', 'like', "%{$nik}")->first();
+                }
+
+                if (!$employee) {
+                    $skippedRows[] = "Baris #{$idx}: NIK '{$nik}' (" . ($namaRaw ?: 'Tanpa Nama') . ") tidak ditemukan di master karyawan.";
+                    continue;
+                }
+
+                // 2. Parse Tanggal Terbit / Kejadian
+                $tglTerbit = date('Y-m-d');
+                if (!empty($tglRaw)) {
+                    if (is_numeric($tglRaw)) {
+                        $tanggalObj = \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($tglRaw);
+                        $tglTerbit = $tanggalObj->format('Y-m-d');
+                    } elseif (preg_match('/^(\d{1,2})\s+([a-zA-Z]+)\s+(\d{4})$/i', $tglRaw, $mDate)) {
+                        $dNum = str_pad($mDate[1], 2, '0', STR_PAD_LEFT);
+                        $mName = strtolower($mDate[2]);
+                        $yNum = $mDate[3];
+                        $mNum = $monthMap[$mName] ?? '01';
+                        $tglTerbit = "{$yNum}-{$mNum}-{$dNum}";
+                    } else {
+                        try {
+                            $tglTerbit = Carbon::parse($tglRaw)->format('Y-m-d');
+                        } catch (\Exception $e) {
+                            $tglTerbit = date('Y-m-d');
+                        }
+                    }
+                }
+
+                // 3. Normalize Jenis SP (I, II, III -> SP 1, SP 2, SP 3)
+                $jenisSp = 'SP 1';
+                $jenisSpUpper = strtoupper($jenisSpRaw);
+                if (in_array($jenisSpUpper, ['III', '3', 'SP 3', 'SP III', 'SURAT PERINGATAN 3', 'SURAT PERINGATAN 3 (SP 3)'])) {
+                    $jenisSp = 'SP 3';
+                } elseif (in_array($jenisSpUpper, ['II', '2', 'SP 2', 'SP II', 'SURAT PERINGATAN 2'])) {
+                    $jenisSp = 'SP 2';
+                } elseif (in_array($jenisSpUpper, ['I', '1', 'SP 1', 'SP I', 'SURAT PERINGATAN 1'])) {
+                    $jenisSp = 'SP 1';
+                } elseif (!empty($jenisSpRaw)) {
+                    $jenisSp = 'SP ' . preg_replace('/[^0-9]/', '', $jenisSpRaw);
+                }
+
+                // 4. Determine Sumber Data
+                $sumberData = in_array($sumberRaw, ['MANGKIR', 'PELANGGARAN']) ? $sumberRaw : 'PELANGGARAN';
+
+                // 5. Generate or Format Nomor SP
+                if (!empty($noSpNum)) {
+                    if (strpos($noSpNum, '/') !== false) {
+                        $noSpFinal = $noSpNum;
+                    } elseif (!empty($bulanRaw) && !empty($tahunRaw)) {
+                        $noSpFinal = "{$noSpNum}/SP/IR/{$bulanRaw}/{$tahunRaw}";
+                    } else {
+                        $noSpFinal = "{$noSpNum}/SP/IR/" . Carbon::parse($tglTerbit)->format('m/Y');
+                    }
+                } else {
+                    $noSpFinal = SpPelanggaran::generateNomorSp($employee->id);
+                }
+
+                // 6. Masa Berlaku: 6 Bulan dari tanggal terbit
+                $masaBerlaku = Carbon::parse($tglTerbit)->addMonths(6)->format('Y-m-d');
+
+                // 7. Kategori SP
+                $kategoriSp = 'AKTIF';
+                if ($jenisSp === 'SP 3') {
+                    $kategoriSp = 'SP3';
+                }
+                if (Carbon::parse($tglTerbit)->addMonths(6)->isPast()) {
+                    $kategoriSp = 'EXPIRED';
+                }
+
+                // 8. Create SP Record (Directly APPROVED & ACTIVE)
+                $sp = SpPelanggaran::create([
+                    'employee_id'           => $employee->id,
+                    'nomor_sp_generated'   => $noSpFinal,
+                    'no_sp'                 => $noSpFinal,
+                    'jenis_pelanggaran'     => $jenisSp,
+                    'current_status'        => SpPelanggaran::STATUS_APPROVED,
+                    'kategori_sp'           => $kategoriSp,
+                    'is_active'             => ($kategoriSp === 'EXPIRED') ? 0 : 1,
+                    'masa_berlaku_sampai'   => $masaBerlaku,
+                    'pasal_dilanggar'       => $pasalDilanggar,
+                    'alasan'                => $alasan ?: "Pengajuan Import Data SP Aktif - {$jenisSp}",
+                    'uraian_pelanggaran'    => $alasan,
+                    'kode_admin'            => $kodeAdmin,
+                    'kode_ir'               => $kodeAdmin,
+                    'sumber_data'           => $sumberData,
+                    'status'                => 'SELESAI',
+                    'created_by_user_id'    => Auth::id() ?: session('user_id'),
+                    'dept_head_approved_at' => $tglTerbit . ' ' . date('H:i:s'),
+                    'ir_head_approved_at'   => $tglTerbit . ' ' . date('H:i:s'),
+                    'email_dept_user'       => $employee->email,
+                    'email_sent'            => 'N',
+                ]);
+
+                // Sync to sp_pelanggaran_dates
+                SpPelanggaranDate::create([
+                    'sp_pelanggaran_id' => $sp->id,
+                    'tanggal'           => $tglTerbit,
+                ]);
+
+                // Create Approval Log Entry
+                SpApprovalLog::logAction(
+                    $sp->id,
+                    Auth::id() ?: session('user_id'),
+                    'IMPORT_EXCEL_ACTIVE_SP',
+                    "Impor Data SP Aktif ({$jenisSp}) dari Excel dengan Nomor SP: {$noSpFinal}"
+                );
+
+                $importedCount++;
+            }
+
+            $message = "Berhasil mengimpor {$importedCount} data SP Aktif!";
+
+            if (count($skippedRows) > 0) {
+                $message .= " (" . count($skippedRows) . " baris dilewati/gagal).";
+            }
+
+            return response()->json([
+                'status'        => 'success',
+                'message'       => $message,
+                'imported_count'=> $importedCount,
+                'skipped_rows'  => $skippedRows,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Gagal mengimpor file Excel: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
     private function getDeptCodes($userDept)
+
     {
         if (!$userDept) {
             return [];
