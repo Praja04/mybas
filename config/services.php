@@ -30,4 +30,9 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    'warehouse' => [
+        'api_url' => env('WAREHOUSE_API_URL', 'http://10.11.10.130:8087/api'),
+        'timeout' => env('WAREHOUSE_API_TIMEOUT', 3),
+    ],
+
 ];

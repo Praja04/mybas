@@ -38,10 +38,10 @@ class HistoryCekKendaraanDatatable extends Controller
         // visitor TRANSACTION
         $transaction = DB::table('ga_visitor_transaction')
             ->select([
-                'trnvisitorid',
-                'nopol',
-                'namavisitor',
-                'namacomp',
+                DB::raw('CAST(trnvisitorid AS CHAR) COLLATE utf8mb4_unicode_ci as trnvisitorid'),
+                DB::raw('CAST(nopol AS CHAR) COLLATE utf8mb4_unicode_ci as nopol'),
+                DB::raw('CAST(namavisitor AS CHAR) COLLATE utf8mb4_unicode_ci as namavisitor'),
+                DB::raw('CAST(namacomp AS CHAR) COLLATE utf8mb4_unicode_ci as namacomp'),
                 'kartu_dikembalikan',
                 DB::raw("'transaction' as source"),
                 'created_at',
@@ -52,10 +52,10 @@ class HistoryCekKendaraanDatatable extends Controller
         // visitor VENDOR
         $vendor = DB::table('ga_visitor_vendor')
             ->select([
-                'trnvisitorid',
-                'nopol',
-                'namavisitor',
-                'namacomp',
+                DB::raw('CAST(trnvisitorid AS CHAR) COLLATE utf8mb4_unicode_ci as trnvisitorid'),
+                DB::raw('CAST(nopol AS CHAR) COLLATE utf8mb4_unicode_ci as nopol'),
+                DB::raw('CAST(namavisitor AS CHAR) COLLATE utf8mb4_unicode_ci as namavisitor'),
+                DB::raw('CAST(namacomp AS CHAR) COLLATE utf8mb4_unicode_ci as namacomp'),
                 'kartu_dikembalikan',
                 DB::raw("'vendor' as source"),
                 'created_at',
@@ -68,10 +68,10 @@ class HistoryCekKendaraanDatatable extends Controller
                     ->from('ga_visitor_transaction')
                     ->where('ga_visitor_transaction.keterangan', 'SUPIR')
                     ->whereRaw("
-                CONVERT(REPLACE(REPLACE(UPPER(ga_visitor_transaction.nopol), ' ', ''), '-', '') USING latin1)
-                =
-                CONVERT(REPLACE(REPLACE(UPPER(ga_visitor_vendor.nopol), ' ', ''), '-', '') USING latin1)
-            ");
+                        REPLACE(REPLACE(UPPER(ga_visitor_transaction.nopol), ' ', ''), '-', '')
+                        =
+                        REPLACE(REPLACE(UPPER(ga_visitor_vendor.nopol), ' ', ''), '-', '')
+                    ");
             });
 
 
@@ -85,7 +85,7 @@ class HistoryCekKendaraanDatatable extends Controller
         return DB::query()
             ->fromSub($visitors, 'v')
             ->leftJoin('ga_cek_kendaraan as c', function ($join) {
-                $join->on(DB::raw('CONVERT(c.trnvisitorid USING latin1)'), '=', DB::raw('CONVERT(v.trnvisitorid USING latin1)'))
+                $join->on('c.trnvisitorid', '=', 'v.trnvisitorid')
                     ->whereColumn('c.created_at', '>=', 'v.created_at');
             })
             ->select([

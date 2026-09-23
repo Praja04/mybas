@@ -11,6 +11,9 @@ export class ContentDatatable {
     initialize() {
         // Expose instance globally for reloads or other triggers
         window.cekKendaraanInTable = this;
+        this.ajax = {
+            reload: (callback, resetPaging) => this.reload(callback, resetPaging)
+        };
 
         // Bind DOM events
         $('#perPageSelectIn').on('change', (e) => {
@@ -84,7 +87,7 @@ export class ContentDatatable {
         // Render rows
         data.forEach((row) => {
             const tr = $('<tr></tr>');
-            
+
             // Format status with draft badge if applicable
             let statusBadge = row.status_html;
             if (window.getStatusWithDraft) {
@@ -109,7 +112,7 @@ export class ContentDatatable {
         paginationList.empty();
 
         const lastPage = response.last_page || 1;
-        
+
         // Prev button
         const prevClass = this.currentPage === 1 ? 'disabled' : '';
         const prevBtn = $(`<li class="page-item ${prevClass}"><a class="page-link" href="#" data-page="${this.currentPage - 1}">←</a></li>`);
@@ -162,7 +165,7 @@ async function preloadDraftCache() {
         window.draftCache[d.sessionId] = true;
     });
 
-    console.log("Draft cache loaded:", window.draftCache);
+    // console.log("Draft cache loaded:", window.draftCache);
 }
 
 const contentDatatable = new ContentDatatable();
@@ -184,8 +187,8 @@ const contentDatatable = new ContentDatatable();
 window.getStatusWithDraft = function (row) {
     const trnId = row.trnvisitorid;
 
-    console.log("DraftCache:", window.draftCache);
-    console.log("Row trnvisitorid:", row.trnvisitorid);
+    // console.log("DraftCache:", window.draftCache);
+    // console.log("Row trnvisitorid:", row.trnvisitorid);
 
     // kalau ada draft
     if (window.draftCache[trnId]) {

@@ -9,6 +9,9 @@ export class ContentDatatableOut {
     initialize() {
         // Expose instance globally for reloads or other triggers
         window.cekKendaraanOutTable = this;
+        this.ajax = {
+            reload: (callback, resetPaging) => this.reload(callback, resetPaging)
+        };
 
         // Bind DOM events
         $('#perPageSelectOut').on('change', (e) => {

@@ -106,7 +106,6 @@
             <div id="tracePaginationLinks"></div>
         </div>
     </div>
-    </div>
 
     <!-- Modal Detail SP -->
     <div class="modal fade" id="modalDetailSp" tabindex="-1" aria-hidden="true">
@@ -277,7 +276,7 @@
             `);
 
             $.ajax({
-                url: '{{ route("sp_pelanggaran.trace") }}',
+                url: '{{ route('sp_pelanggaran.trace') }}',
                 type: 'GET',
                 data: {
                     page: page,
@@ -330,32 +329,42 @@
                     let d = new Date(sp.tanggal_pelanggaran);
                     if (!isNaN(d.getTime())) {
                         let day = String(d.getDate()).padStart(2, '0');
-                        let months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+                        let months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov',
+                            'Des'
+                        ];
                         dateDisplay = `${day} ${months[d.getMonth()]} ${d.getFullYear()}`;
                     }
                 }
                 if (sp.dates && sp.dates.length > 1) {
-                    dateDisplay += `<br><small class="text-primary fw-bold"><i class="ri-calendar-event-line"></i> +${sp.dates.length - 1} tgl</small>`;
+                    dateDisplay +=
+                        `<br><small class="text-primary fw-bold"><i class="ri-calendar-event-line"></i> +${sp.dates.length - 1} tgl</small>`;
                 }
 
                 // Status Badge
                 let statusBadge = '';
                 if (cs === 'CANCELLED') {
-                    statusBadge = '<span class="badge bg-secondary sp-badge"><i class="ri-ban-line me-1"></i> CANCEL (DIBATALKAN)</span>';
+                    statusBadge =
+                        '<span class="badge bg-secondary sp-badge"><i class="ri-ban-line me-1"></i> CANCEL (DIBATALKAN)</span>';
                 } else if (['CANCEL_PENDING_DH', 'CANCEL_PENDING_IR', 'CANCEL_PENDING_IR_HEAD'].includes(cs)) {
-                    statusBadge = `<span class="badge bg-warning text-dark sp-badge"><i class="ri-alert-line me-1"></i> PROSES CANCEL (${cs})</span>`;
+                    statusBadge =
+                        `<span class="badge bg-warning text-dark sp-badge"><i class="ri-alert-line me-1"></i> PROSES CANCEL (${cs})</span>`;
                 } else if (cs === 'REJECTED') {
-                    statusBadge = '<span class="badge bg-danger sp-badge"><i class="ri-close-circle-line me-1"></i> DITOLAK</span>';
+                    statusBadge =
+                        '<span class="badge bg-danger sp-badge"><i class="ri-close-circle-line me-1"></i> DITOLAK</span>';
                 } else if (cs === 'APPROVED') {
                     if (isExpired) {
-                        statusBadge = '<span class="badge bg-dark sp-badge" title="Masa berlaku 6 bulan telah habis"><i class="ri-history-line me-1"></i> TIDAK AKTIF (EXPIRED > 6 Bln)</span>';
+                        statusBadge =
+                            '<span class="badge bg-dark sp-badge" title="Masa berlaku 6 bulan telah habis"><i class="ri-history-line me-1"></i> TIDAK AKTIF (EXPIRED > 6 Bln)</span>';
                     } else if (['SP 3', 'Surat Peringatan 3 (SP 3)'].includes(sp.jenis_pelanggaran)) {
-                        statusBadge = '<span class="badge bg-danger sp-badge"><i class="ri-alert-line me-1"></i> SP+3 (BERAT)</span>';
+                        statusBadge =
+                            '<span class="badge bg-danger sp-badge"><i class="ri-alert-line me-1"></i> SP+3 (BERAT)</span>';
                     } else {
-                        statusBadge = '<span class="badge bg-success sp-badge"><i class="ri-checkbox-circle-line me-1"></i> AKTIF (Berlaku 6 Bln)</span>';
+                        statusBadge =
+                            '<span class="badge bg-success sp-badge"><i class="ri-checkbox-circle-line me-1"></i> AKTIF (Berlaku 6 Bln)</span>';
                     }
                 } else {
-                    statusBadge = `<span class="badge bg-warning text-dark sp-badge"><i class="ri-time-line me-1"></i> PROSES (${cs})</span>`;
+                    statusBadge =
+                        `<span class="badge bg-warning text-dark sp-badge"><i class="ri-time-line me-1"></i> PROSES (${cs})</span>`;
                 }
 
                 // Actions
@@ -371,7 +380,9 @@
                     `;
                 }
 
-                if (cs !== 'APPROVED' && !['CANCELLED', 'CANCEL_PENDING_DH', 'CANCEL_PENDING_IR', 'CANCEL_PENDING_IR_HEAD'].includes(cs)) {
+                if (cs !== 'APPROVED' && !['CANCELLED', 'CANCEL_PENDING_DH', 'CANCEL_PENDING_IR',
+                        'CANCEL_PENDING_IR_HEAD'
+                    ].includes(cs)) {
                     if (isIrRole || (isAdmin && ['DRAFT', 'PENDING_DH'].includes(cs))) {
                         actions += `
                             <button class="btn btn-sm btn-outline-danger btnDeleteSp py-1 px-2 text-nowrap" data-id="${sp.id}" title="Hapus Data SP">
@@ -442,7 +453,8 @@
 
             // Previous
             if (current > 1) {
-                linksHtml += `<li class="page-item"><a class="page-link" href="javascript:void(0)" onclick="loadTraceData(${current - 1})">&laquo;</a></li>`;
+                linksHtml +=
+                    `<li class="page-item"><a class="page-link" href="javascript:void(0)" onclick="loadTraceData(${current - 1})">&laquo;</a></li>`;
             } else {
                 linksHtml += `<li class="page-item disabled"><span class="page-link">&laquo;</span></li>`;
             }
@@ -452,7 +464,8 @@
             let endPage = Math.min(lastPage, current + 2);
 
             if (startPage > 1) {
-                linksHtml += `<li class="page-item"><a class="page-link" href="javascript:void(0)" onclick="loadTraceData(1)">1</a></li>`;
+                linksHtml +=
+                    `<li class="page-item"><a class="page-link" href="javascript:void(0)" onclick="loadTraceData(1)">1</a></li>`;
                 if (startPage > 2) linksHtml += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
             }
 
@@ -460,18 +473,22 @@
                 if (i === current) {
                     linksHtml += `<li class="page-item active"><span class="page-link">${i}</span></li>`;
                 } else {
-                    linksHtml += `<li class="page-item"><a class="page-link" href="javascript:void(0)" onclick="loadTraceData(${i})">${i}</a></li>`;
+                    linksHtml +=
+                        `<li class="page-item"><a class="page-link" href="javascript:void(0)" onclick="loadTraceData(${i})">${i}</a></li>`;
                 }
             }
 
             if (endPage < lastPage) {
-                if (endPage < lastPage - 1) linksHtml += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
-                linksHtml += `<li class="page-item"><a class="page-link" href="javascript:void(0)" onclick="loadTraceData(${lastPage})">${lastPage}</a></li>`;
+                if (endPage < lastPage - 1) linksHtml +=
+                    `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+                linksHtml +=
+                    `<li class="page-item"><a class="page-link" href="javascript:void(0)" onclick="loadTraceData(${lastPage})">${lastPage}</a></li>`;
             }
 
             // Next
             if (current < lastPage) {
-                linksHtml += `<li class="page-item"><a class="page-link" href="javascript:void(0)" onclick="loadTraceData(${current + 1})">&raquo;</a></li>`;
+                linksHtml +=
+                    `<li class="page-item"><a class="page-link" href="javascript:void(0)" onclick="loadTraceData(${current + 1})">&raquo;</a></li>`;
             } else {
                 linksHtml += `<li class="page-item disabled"><span class="page-link">&raquo;</span></li>`;
             }
@@ -518,7 +535,8 @@
                         $.post('/sp-pelanggaran/' + id + '/submit-to-depthead', {
                             _token: '{{ csrf_token() }}'
                         }, function(res) {
-                            Swal.fire('Berhasil!', res.message, 'success').then(() => loadTraceData(currentTracePage));
+                            Swal.fire('Berhasil!', res.message, 'success').then(() =>
+                                loadTraceData(currentTracePage));
                         }).fail(function(xhr) {
                             let err = xhr.responseJSON ? xhr.responseJSON.message :
                                 'Gagal mengirim ke Dept Head.';
@@ -549,7 +567,8 @@
                                 _token: '{{ csrf_token() }}'
                             },
                             success: function(res) {
-                                Swal.fire('Berhasil!', res.message, 'success').then(() => loadTraceData(currentTracePage));
+                                Swal.fire('Berhasil!', res.message, 'success').then(
+                                    () => loadTraceData(currentTracePage));
                             },
                             error: function(xhr) {
                                 let err = xhr.responseJSON ? xhr.responseJSON.message :
@@ -602,7 +621,8 @@
                         let modalInst = bootstrap.Modal.getInstance(modalEl);
                         if (modalInst) modalInst.hide();
 
-                        Swal.fire('Berhasil!', res.message, 'success').then(() => loadTraceData(currentTracePage));
+                        Swal.fire('Berhasil!', res.message, 'success').then(() => loadTraceData(
+                            currentTracePage));
                         $btn.prop('disabled', false).text('Batalkan Sekarang (Cancel)');
                     },
                     error: function(xhr) {

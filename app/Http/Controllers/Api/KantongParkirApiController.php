@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\PosSecurity\KantongParkir\ParkingZone;
 use App\Models\PosSecurity\KantongParkir\ParkingSlot;
 use App\Models\PosSecurity\KantongParkir\ParkingAssignment;
+use App\Models\PosSecurity\KantongParkir\ParkingSlotStatusHistory;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -40,8 +41,8 @@ class KantongParkirApiController extends Controller
                 $search = $request->search;
                 $query->where(function ($q) use ($search) {
                     $q->where('kode_zona', 'like', "%{$search}%")
-                      ->orWhere('nama_zona', 'like', "%{$search}%")
-                      ->orWhere('keterangan', 'like', "%{$search}%");
+                        ->orWhere('nama_zona', 'like', "%{$search}%")
+                        ->orWhere('keterangan', 'like', "%{$search}%");
                 });
             }
 
@@ -64,7 +65,7 @@ class KantongParkirApiController extends Controller
                     }
 
                     $slotQuery->orderBy('kode_slot', 'asc')
-                              ->with(['activeAssignment']);
+                        ->with(['activeAssignment']);
                 }
             ]);
 
@@ -96,14 +97,15 @@ class KantongParkirApiController extends Controller
                     $activeAssignment = null;
                     if ($slot->activeAssignment) {
                         $assign = $slot->activeAssignment;
-                        $waktuMasuk = $assign->waktu_masuk ? Carbon::parse($assign->waktu_masuk) : null;
+                        $waktuMasuk = $assign->waktu_masuk ? Carbon::parse($assign->waktu_masuk)->timezone(config('app.timezone', 'Asia/Jakarta')) : null;
                         $activeAssignment = [
                             'id' => $assign->id,
                             'no_polisi' => $assign->no_polisi,
                             'jenis_kendaraan' => $assign->jenis_kendaraan,
                             'nama_driver' => $assign->nama_driver,
                             'no_hp_driver' => $assign->no_hp_driver,
-                            'waktu_masuk' => $assign->waktu_masuk,
+                            'waktu_masuk' => $waktuMasuk ? $waktuMasuk->translatedFormat('d-m-Y H:i:s') . ' WIB' : '-',
+                            'waktu_masuk_raw' => $assign->waktu_masuk ? $assign->waktu_masuk->toIso8601String() : null,
                             'durasi_parkir' => $waktuMasuk ? $waktuMasuk->diffForHumans(null, true) : null,
                             'durasi_parkir_menit' => $waktuMasuk ? (int) $waktuMasuk->diffInMinutes(now()) : null,
                             'status_assignment' => $assign->status_assignment,
@@ -166,7 +168,6 @@ class KantongParkirApiController extends Controller
                 ],
                 'data' => $formattedZones
             ], 200);
-
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -202,34 +203,34 @@ class KantongParkirApiController extends Controller
                 $search = $request->search;
                 $query->where(function ($q) use ($search) {
                     $q->where('kode_slot', 'like', "%{$search}%")
-                      ->orWhere('jenis_kendaraan', 'like', "%{$search}%")
-                      ->orWhereHas('zone', function ($zq) use ($search) {
-                          $zq->where('nama_zona', 'like', "%{$search}%")
-                             ->orWhere('kode_zona', 'like', "%{$search}%");
-                      })
-                      ->orWhereHas('activeAssignment', function ($aq) use ($search) {
-                          $aq->where('no_polisi', 'like', "%{$search}%")
-                             ->orWhere('nama_driver', 'like', "%{$search}%");
-                      });
+                        ->orWhere('jenis_kendaraan', 'like', "%{$search}%")
+                        ->orWhereHas('zone', function ($zq) use ($search) {
+                            $zq->where('nama_zona', 'like', "%{$search}%")
+                                ->orWhere('kode_zona', 'like', "%{$search}%");
+                        })
+                        ->orWhereHas('activeAssignment', function ($aq) use ($search) {
+                            $aq->where('no_polisi', 'like', "%{$search}%")
+                                ->orWhere('nama_driver', 'like', "%{$search}%");
+                        });
                 });
             }
 
             $slots = $query->orderBy('parking_zone_id', 'asc')
-                           ->orderBy('kode_slot', 'asc')
-                           ->get();
+                ->orderBy('kode_slot', 'asc')
+                ->get();
 
             $data = $slots->map(function ($slot) {
                 $activeAssignment = null;
                 if ($slot->activeAssignment) {
                     $assign = $slot->activeAssignment;
-                    $waktuMasuk = $assign->waktu_masuk ? Carbon::parse($assign->waktu_masuk) : null;
+                    $waktuMasuk = $assign->waktu_masuk ? Carbon::parse($assign->waktu_masuk)->timezone(config('app.timezone', 'Asia/Jakarta')) : null;
                     $activeAssignment = [
                         'id' => $assign->id,
                         'no_polisi' => $assign->no_polisi,
                         'jenis_kendaraan' => $assign->jenis_kendaraan,
                         'nama_driver' => $assign->nama_driver,
                         'no_hp_driver' => $assign->no_hp_driver,
-                        'waktu_masuk' => $assign->waktu_masuk,
+                        'waktu_masuk' => $waktuMasuk ? $waktuMasuk->translatedFormat('d-m-Y H:i:s') . ' WIB' : '-',
                         'durasi_parkir' => $waktuMasuk ? $waktuMasuk->diffForHumans(null, true) : null,
                         'durasi_parkir_menit' => $waktuMasuk ? (int) $waktuMasuk->diffInMinutes(now()) : null,
                         'catatan' => $assign->catatan,
@@ -264,7 +265,6 @@ class KantongParkirApiController extends Controller
                 ],
                 'data' => $data
             ], 200);
-
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -296,14 +296,14 @@ class KantongParkirApiController extends Controller
                 $activeAssignment = null;
                 if ($slot->activeAssignment) {
                     $assign = $slot->activeAssignment;
-                    $waktuMasuk = $assign->waktu_masuk ? Carbon::parse($assign->waktu_masuk) : null;
+                    $waktuMasuk = $assign->waktu_masuk ? Carbon::parse($assign->waktu_masuk)->timezone(config('app.timezone', 'Asia/Jakarta')) : null;
                     $activeAssignment = [
                         'id' => $assign->id,
                         'no_polisi' => $assign->no_polisi,
                         'jenis_kendaraan' => $assign->jenis_kendaraan,
                         'nama_driver' => $assign->nama_driver,
                         'no_hp_driver' => $assign->no_hp_driver,
-                        'waktu_masuk' => $assign->waktu_masuk,
+                        'waktu_masuk' => $waktuMasuk ? $waktuMasuk->translatedFormat('d-m-Y H:i:s') . ' WIB' : '-',
                         'durasi_parkir' => $waktuMasuk ? $waktuMasuk->diffForHumans(null, true) : null,
                         'status_assignment' => $assign->status_assignment,
                     ];
@@ -339,6 +339,114 @@ class KantongParkirApiController extends Controller
                 'success' => false,
                 'message' => 'Zona parkir tidak ditemukan atau terjadi kesalahan: ' . $e->getMessage()
             ], 404);
+        }
+    }
+
+    /**
+     * Release vehicle from parking slot by plate number or slot id.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function releaseVehicle(Request $request)
+    {
+        $rawNopol = $request->input('no_polisi') ?? $request->input('nopol') ?? $request->input('no_pol');
+        $slotId = $request->input('slot_id');
+        $keterangan = $request->input('keterangan') ?? 'Pindah ke dock antrian warehouse';
+
+        if (!$rawNopol && !$slotId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Harap sertakan no_polisi atau slot_id yang akan di-release.'
+            ], 422);
+        }
+
+        try {
+            DB::beginTransaction();
+
+            $query = ParkingAssignment::whereIn('status_assignment', ['assigned', 'parked']);
+
+            if ($rawNopol) {
+                $cleanNopol = strtoupper(str_replace(' ', '', $rawNopol));
+                $query->where(function ($q) use ($cleanNopol) {
+                    $q->where(DB::raw("REPLACE(UPPER(no_polisi), ' ', '')"), $cleanNopol);
+                });
+            } elseif ($slotId) {
+                $query->where('parking_slot_id', $slotId);
+            }
+
+            $activeAssignments = $query->get();
+
+            if ($activeAssignments->isEmpty()) {
+                if ($slotId) {
+                    $slot = ParkingSlot::find($slotId);
+                    if ($slot && $slot->status_slot === 'terisi') {
+                        $oldStatus = $slot->status_slot;
+                        $slot->update(['status_slot' => 'kosong']);
+                        ParkingSlotStatusHistory::create([
+                            'parking_slot_id' => $slot->id,
+                            'status_sebelumnya' => $oldStatus,
+                            'status_baru' => 'kosong',
+                            'keterangan' => 'Release otomatis slot: ' . $keterangan,
+                        ]);
+                        DB::commit();
+                        return response()->json([
+                            'success' => true,
+                            'message' => 'Slot ' . $slot->kode_slot . ' berhasil di-release.',
+                            'released_count' => 1
+                        ]);
+                    }
+                }
+
+                DB::commit();
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Kendaraan tidak sedang aktif di slot parkir manapun.',
+                    'released_count' => 0
+                ]);
+            }
+
+            $releasedCount = 0;
+            foreach ($activeAssignments as $assignment) {
+                $assignment->update([
+                    'waktu_keluar' => now(),
+                    'status_assignment' => 'completed',
+                    'catatan' => ($assignment->catatan ? $assignment->catatan . ' | ' : '') . $keterangan,
+                ]);
+
+                if ($assignment->parking_slot_id) {
+                    $slot = ParkingSlot::find($assignment->parking_slot_id);
+                    if ($slot) {
+                        $oldStatus = $slot->status_slot;
+                        $slot->update([
+                            'status_slot' => 'kosong',
+                        ]);
+
+                        ParkingSlotStatusHistory::create([
+                            'parking_slot_id' => $slot->id,
+                            'parking_assignment_id' => $assignment->id,
+                            'status_sebelumnya' => $oldStatus,
+                            'status_baru' => 'kosong',
+                            'keterangan' => 'Release otomatis: Truk ' . $assignment->no_polisi . ' (' . $keterangan . ')',
+                        ]);
+                    }
+                }
+                $releasedCount++;
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Berhasil me-release ' . $releasedCount . ' penugasan parkir.',
+                'released_count' => $releasedCount
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal release kantong parkir: ' . $e->getMessage()
+            ], 500);
         }
     }
 }

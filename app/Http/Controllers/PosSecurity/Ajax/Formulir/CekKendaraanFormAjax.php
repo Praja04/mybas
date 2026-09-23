@@ -11,6 +11,7 @@ use App\Http\Controllers\Controller;
 use App\Models\PosSecurity\GaCekKendaraan;
 use App\Models\PosSecurity\GaVisitorTransaction;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
@@ -69,6 +70,80 @@ class CekKendaraanFormAjax extends Controller
                 'success' => false,
                 'message' => 'Kendaraan ini sudah melakukan cek kendaraan pada kedatangan ini.'
             ], 409);
+        }
+
+        // cari lokasi parkir jika ada
+        $parking = DB::table('parking_assignments as pa')
+            ->leftJoin('parking_slots as ps', 'ps.id', '=', 'pa.parking_slot_id')
+            ->leftJoin('parking_zones as pz', 'pz.id', '=', 'pa.parking_zone_id')
+            ->where(function ($q) use ($visitor) {
+                $q->where('pa.catatan', 'like', '%' . $visitor->trnvisitorid . '%')
+                    ->orWhereRaw("REPLACE(REPLACE(UPPER(pa.no_polisi), ' ', ''), '-', '') = ?", [strtoupper(str_replace([' ', '-'], '', $visitor->nopol))]);
+            })
+            ->whereIn('pa.status_assignment', ['assigned', 'parked'])
+            ->whereNull('pa.deleted_at')
+            ->select([
+                'ps.id as parking_slot_id',
+                'pa.id as parking_assignment_id',
+                'ps.kode_slot',
+                'pz.nama_zona',
+                DB::raw("CONCAT(pz.nama_zona, ' - ', ps.kode_slot) as lokasi_parkir")
+            ])
+            ->latest('pa.id')
+            ->first();
+
+        $visitor->lokasi_parkir = $parking ? $parking->lokasi_parkir : '-';
+        $visitor->parking_slot_id = $parking ? $parking->parking_slot_id : null;
+        $visitor->parking_assignment_id = $parking ? $parking->parking_assignment_id : null;
+
+        // Ambil data status warehouse terkini
+        $visitor->area_tujuan = '-';
+        $visitor->target_area_code = '-';
+        $visitor->no_antrian = null;
+        $visitor->unloading_status = 'pending';
+        $visitor->queue_taken_human = null;
+        $visitor->warehouse_status = null;
+        $visitor->finish_loading_time = null;
+
+        try {
+            $cleanNopol = strtoupper(str_replace([' ', '-'], '', $visitor->nopol));
+            $rawUrl = rtrim(config('services.warehouse.api_url', 'http://10.11.10.130:8087/api'), '/');
+            $baseUrl = str_ends_with($rawUrl, '/api') ? $rawUrl : "{$rawUrl}/api";
+            $timeout = (float) config('services.warehouse.timeout', 2.5);
+            $whRes = Http::timeout($timeout)->get("{$baseUrl}/vehicle/transaction/" . urlencode($cleanNopol));
+            if ($whRes->successful()) {
+                $resJson = $whRes->json();
+                $resData = $resJson['data'] ?? null;
+                $wh = null;
+                if (is_array($resData)) {
+                    if (isset($resData['data']) && is_array($resData['data'])) {
+                        $wh = $resData['data'][0] ?? null;
+                    } elseif (isset($resData[0]) && is_array($resData[0])) {
+                        $wh = $resData[0];
+                    } else {
+                        $wh = $resData;
+                    }
+                }
+
+                if ($wh && is_array($wh)) {
+                    $visitor->area_tujuan = $wh['target_location']['name'] ?? $wh['target_area'] ?? $wh['target_area_name'] ?? '-';
+                    $visitor->target_area_code = $wh['target_location']['s_loc'] ?? $wh['target_area_code'] ?? '-';
+                    $visitor->no_antrian = $wh['no_antrian'] ?? null;
+                    $visitor->unloading_status = $wh['unloading_status'] ?? 'pending';
+                    $visitor->queue_taken_human = $wh['queue_taken_human'] ?? (isset($wh['queue_taken_time']) ? Carbon::parse($wh['queue_taken_time'])->format('H:i') : null);
+                    $visitor->warehouse_status = $wh['status'] ?? null;
+                    $visitor->finish_loading_time = $wh['finish_loading_time'] ?? null;
+
+                    Log::info("Warehouse API searchIn berhasil dipanggil untuk nopol [{$cleanNopol}].", [
+                        'nopol' => $cleanNopol,
+                        'area_tujuan' => $visitor->area_tujuan,
+                        'no_antrian' => $visitor->no_antrian,
+                        'unloading_status' => $visitor->unloading_status,
+                    ]);
+                }
+            }
+        } catch (\Throwable $e) {
+            Log::warning("Gagal fetch data warehouse di searchIn CekKendaraan: " . $e->getMessage());
         }
 
         return response()->json([
@@ -135,6 +210,80 @@ class CekKendaraanFormAjax extends Controller
             ], 409);
         }
 
+        // cari lokasi parkir jika ada
+        $parking = DB::table('parking_assignments as pa')
+            ->leftJoin('parking_slots as ps', 'ps.id', '=', 'pa.parking_slot_id')
+            ->leftJoin('parking_zones as pz', 'pz.id', '=', 'pa.parking_zone_id')
+            ->where(function ($q) use ($visitor) {
+                $q->where('pa.catatan', 'like', '%' . $visitor->trnvisitorid . '%')
+                    ->orWhereRaw("REPLACE(REPLACE(UPPER(pa.no_polisi), ' ', ''), '-', '') = ?", [strtoupper(str_replace([' ', '-'], '', $visitor->nopol))]);
+            })
+            ->whereIn('pa.status_assignment', ['assigned', 'parked', 'completed'])
+            ->whereNull('pa.deleted_at')
+            ->select([
+                'ps.id as parking_slot_id',
+                'pa.id as parking_assignment_id',
+                'ps.kode_slot',
+                'pz.nama_zona',
+                DB::raw("CONCAT(pz.nama_zona, ' - ', ps.kode_slot) as lokasi_parkir")
+            ])
+            ->latest('pa.id')
+            ->first();
+
+        $visitor->lokasi_parkir = $parking ? $parking->lokasi_parkir : '-';
+        $visitor->parking_slot_id = $parking ? $parking->parking_slot_id : null;
+        $visitor->parking_assignment_id = $parking ? $parking->parking_assignment_id : null;
+
+        // Ambil data status warehouse terkini
+        $visitor->area_tujuan = '-';
+        $visitor->target_area_code = '-';
+        $visitor->no_antrian = null;
+        $visitor->unloading_status = 'pending';
+        $visitor->queue_taken_human = null;
+        $visitor->warehouse_status = null;
+        $visitor->finish_loading_time = null;
+
+        try {
+            $cleanNopol = strtoupper(str_replace([' ', '-'], '', $visitor->nopol));
+            $rawUrl = rtrim(config('services.warehouse.api_url', 'http://10.11.10.130:8087/api'), '/');
+            $baseUrl = str_ends_with($rawUrl, '/api') ? $rawUrl : "{$rawUrl}/api";
+            $timeout = (float) config('services.warehouse.timeout', 2.5);
+            $whRes = Http::timeout($timeout)->get("{$baseUrl}/vehicle/transaction/" . urlencode($cleanNopol));
+            if ($whRes->successful()) {
+                $resJson = $whRes->json();
+                $resData = $resJson['data'] ?? null;
+                $wh = null;
+                if (is_array($resData)) {
+                    if (isset($resData['data']) && is_array($resData['data'])) {
+                        $wh = $resData['data'][0] ?? null;
+                    } elseif (isset($resData[0]) && is_array($resData[0])) {
+                        $wh = $resData[0];
+                    } else {
+                        $wh = $resData;
+                    }
+                }
+
+                if ($wh && is_array($wh)) {
+                    $visitor->area_tujuan = $wh['target_location']['name'] ?? $wh['target_area'] ?? $wh['target_area_name'] ?? '-';
+                    $visitor->target_area_code = $wh['target_location']['s_loc'] ?? $wh['target_area_code'] ?? '-';
+                    $visitor->no_antrian = $wh['no_antrian'] ?? null;
+                    $visitor->unloading_status = $wh['unloading_status'] ?? 'pending';
+                    $visitor->queue_taken_human = $wh['queue_taken_human'] ?? (isset($wh['queue_taken_time']) ? Carbon::parse($wh['queue_taken_time'])->format('H:i') : null);
+                    $visitor->warehouse_status = $wh['status'] ?? null;
+                    $visitor->finish_loading_time = $wh['finish_loading_time'] ?? null;
+
+                    Log::info("Warehouse API searchOut berhasil dipanggil untuk nopol [{$cleanNopol}].", [
+                        'nopol' => $cleanNopol,
+                        'area_tujuan' => $visitor->area_tujuan,
+                        'no_antrian' => $visitor->no_antrian,
+                        'unloading_status' => $visitor->unloading_status,
+                    ]);
+                }
+            }
+        } catch (\Throwable $e) {
+            Log::warning("Gagal fetch data warehouse di searchOut CekKendaraan: " . $e->getMessage());
+        }
+
         return response()->json([
             'success' => true,
             'data' => [
@@ -180,7 +329,7 @@ class CekKendaraanFormAjax extends Controller
 
         try {
             $alreadyChecked = DB::table('ga_cek_kendaraan')
-            ->where('trnvisitorid', $request->trnvisitorid)
+                ->where('trnvisitorid', $request->trnvisitorid)
                 ->whereNotNull('checked_in_at')
                 ->exists();
 
@@ -262,7 +411,7 @@ class CekKendaraanFormAjax extends Controller
             if (!empty($selfPaths)) {
                 // foto menyimpan JSON array full URL (konsisten dengan store visitor asli)
                 $visitorUpdate['foto'] = json_encode(
-                    array_map(fn ($p) => asset($p), $selfPaths)
+                    array_map(fn($p) => asset($p), $selfPaths)
                 );
             }
 
@@ -479,5 +628,123 @@ class CekKendaraanFormAjax extends Controller
         }
 
         return $photoPaths;
+    }
+
+    /**
+     * Get live warehouse transaction status for vehicle by license plate (nopol) from project_warehouse API.
+     */
+    public function warehouseStatus(Request $request, $nopol)
+    {
+        $cleanParam = strtoupper(str_replace([' ', '-'], '', $nopol));
+        if (empty($cleanParam)) {
+            return response()->json([
+                'status'  => 'error',
+                'found'   => false,
+                'message' => 'Nomor polisi atau ID visitor tidak boleh kosong.',
+                'data'    => null,
+            ], 400);
+        }
+
+        // Cek apakah parameter berupa trnvisitorid di tabel visitor
+        $visitor = DB::table('ga_visitor_transaction')
+            ->whereRaw("REPLACE(UPPER(trnvisitorid),' ','') = ?", [$cleanParam])
+            ->first();
+
+        if (!$visitor) {
+            $visitor = DB::table('ga_visitor_vendor')
+                ->whereRaw("REPLACE(UPPER(trnvisitorid),' ','') = ?", [$cleanParam])
+                ->first();
+        }
+
+        $cleanNopol = ($visitor && !empty($visitor->nopol))
+            ? strtoupper(str_replace([' ', '-'], '', $visitor->nopol))
+            : $cleanParam;
+
+        $rawUrl = rtrim(config('services.warehouse.api_url', 'http://10.11.10.130:8087/api'), '/');
+        $baseUrl = str_ends_with($rawUrl, '/api') ? $rawUrl : "{$rawUrl}/api";
+        $timeout = (float) config('services.warehouse.timeout', 2.5);
+
+        try {
+            $response = Http::timeout($timeout)->get("{$baseUrl}/vehicle/transaction/" . urlencode($cleanNopol));
+            if ($response->successful()) {
+                $resJson = $response->json();
+                $resData = $resJson['data'] ?? null;
+                $item = null;
+                if (is_array($resData)) {
+                    if (isset($resData['data']) && is_array($resData['data'])) {
+                        $item = $resData['data'][0] ?? null;
+                    } elseif (isset($resData[0]) && is_array($resData[0])) {
+                        $item = $resData[0];
+                    } else {
+                        $item = $resData;
+                    }
+                }
+
+                if ($item && is_array($item)) {
+                    $targetArea = $item['target_location']['name'] ?? $item['target_area'] ?? $item['target_area_name'] ?? null;
+                    $targetAreaCode = $item['target_location']['s_loc'] ?? $item['target_area_code'] ?? null;
+                    $queueTakenHuman = $item['queue_taken_human'] ?? (isset($item['queue_taken_time']) ? Carbon::parse($item['queue_taken_time'])->format('H:i') : null);
+
+                    $payload = array_merge($item, [
+                        'target_area'       => $targetArea,
+                        'target_area_code'  => $targetAreaCode,
+                        'target_location'   => $item['target_location'] ?? null,
+                        'queue_taken_human' => $queueTakenHuman,
+                    ]);
+
+                    Log::info("Warehouse API vehicle/transaction berhasil dipanggil untuk nopol [{$cleanNopol}].", [
+                        'nopol'            => $cleanNopol,
+                        'url'              => "{$baseUrl}/vehicle/transaction/{$cleanNopol}",
+                        'status'           => $response->status(),
+                        'target_area'      => $targetArea,
+                        'target_area_code' => $targetAreaCode,
+                        'no_antrian'       => $item['no_antrian'] ?? null,
+                        'unloading_status' => $item['unloading_status'] ?? null,
+                        'warehouse_status' => $item['status'] ?? null,
+                    ]);
+
+                    return response()->json([
+                        'status' => 'success',
+                        'found'  => true,
+                        'data'   => $payload
+                    ]);
+                }
+
+                Log::info("Warehouse API vehicle/transaction dipanggil untuk nopol [{$cleanNopol}], transaksi tidak ditemukan.", [
+                    'url'      => "{$baseUrl}/vehicle/transaction/{$cleanNopol}",
+                    'response' => $resJson,
+                ]);
+
+                return response()->json([
+                    'status'  => 'success',
+                    'found'   => false,
+                    'message' => 'Data transaksi kendaraan belum ditemukan di warehouse.',
+                    'data'    => null,
+                ]);
+            }
+
+            Log::warning("Warehouse API respons gagal untuk nopol [{$cleanNopol}]: HTTP " . $response->status(), [
+                'url'  => "{$baseUrl}/vehicle/transaction/{$cleanNopol}",
+                'body' => $response->body(),
+            ]);
+
+            return response()->json([
+                'status'  => 'error',
+                'found'   => false,
+                'message' => 'Warehouse API status: ' . $response->status(),
+                'data'    => null,
+            ], $response->status());
+        } catch (\Throwable $e) {
+            Log::warning("Warehouse API unreachable in CekKendaraanFormAjax: " . $e->getMessage(), [
+                'url'   => "{$baseUrl}/vehicle/transaction/{$cleanNopol}",
+                'error' => $e->getMessage(),
+            ]);
+            return response()->json([
+                'status'  => 'error',
+                'found'   => false,
+                'message' => 'Warehouse API tidak dapat dihubungi: ' . $e->getMessage(),
+                'data'    => null,
+            ], 503);
+        }
     }
 }

@@ -34,6 +34,7 @@ Route::group(
         Route::get('/search-kendaraan-in', [CekKendaraanFormAjax::class, 'searchIn'])->name("ajax.pos-security.cek-kendaraan.search-in");
         Route::get('/search-kendaraan-out', [CekKendaraanFormAjax::class, 'searchOut'])->name("ajax.pos-security.cek-kendaraan.search-out");
         Route::get('/kendaraan/show', [CekKendaraanFormAjax::class, 'show'])->name("ajax.pos-security.cek-kendaraan.show");
+        Route::get('/kendaraan/warehouse-status/{nopol}', [CekKendaraanFormAjax::class, 'warehouseStatus'])->name("ajax.pos-security.cek-kendaraan.warehouse-status");
 
         Route::post('/absensi-rest-log', [AbsensiRestLogAjax::class, 'search'])->name("ajax.pos-security.absensirestlog.search");
         Route::get('/blacklist/show', [BlacklistAjax::class, 'show'])->name('ajax.pos-security.blacklist.show');

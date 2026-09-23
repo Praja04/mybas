@@ -111,6 +111,10 @@ $(document).ready(function () {
                     checkAllRequiredElements();
                 }
 
+                if (typeof toggleParkingSlot === "function") {
+                    toggleParkingSlot();
+                }
+
                 // Reset tombol dan status
                 $("#submitBtn")
                     .prop("disabled", false)

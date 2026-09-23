@@ -30,6 +30,12 @@ Route::prefix('pos-security')->group(function () {
             return response()->json(['status' => 'alive', 'timestamp' => now()]);
         })->name('pos-security.session-keeper');
 
+        // Direct alias for kantong-parkir assignment & release
+        Route::prefix('kantong-parkir')->group(function () {
+            Route::post('/assignment/assign', [GaKantongParkirController::class, 'assignParking']);
+            Route::post('/assignment/release/{id}', [GaKantongParkirController::class, 'releaseParking']);
+        });
+
         Route::prefix('master')->group(function () {
             Route::prefix('security')->group(function () {
                 Route::get('/', [PosSecurityController::class, 'dataSecurity'])->name('pos-security.data.security');
@@ -37,6 +43,7 @@ Route::prefix('pos-security')->group(function () {
 
             Route::prefix('kantong-parkir')->group(function () {
                 Route::get('/', [GaKantongParkirController::class, 'index'])->name('pos-security.master.kantong-parkir.index');
+                Route::get('/monitoring', [GaKantongParkirController::class, 'monitoring'])->name('pos-security.kantong-parkir.monitoring');
 
                 // Zones API
                 Route::get('/zones', [GaKantongParkirController::class, 'getZones'])->name('pos-security.kantong-parkir.zones.get');
@@ -52,6 +59,7 @@ Route::prefix('pos-security')->group(function () {
                 Route::delete('/slots/destroy/{id}', [GaKantongParkirController::class, 'destroySlot'])->name('pos-security.kantong-parkir.slots.destroy');
 
                 // Assignment & Status History API
+                Route::get('/active-vehicles', [GaKantongParkirController::class, 'getActiveVehicles'])->name('pos-security.kantong-parkir.active-vehicles');
                 Route::post('/assignment/assign', [GaKantongParkirController::class, 'assignParking'])->name('pos-security.kantong-parkir.assignment.assign');
                 Route::post('/assignment/release/{id}', [GaKantongParkirController::class, 'releaseParking'])->name('pos-security.kantong-parkir.assignment.release');
             });

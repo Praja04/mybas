@@ -114,6 +114,8 @@
                         <input type="hidden" name="nama_supir" id="nama-supir">
                         <input type="hidden" name="company" id="company">
                         <input type="hidden" name="nomor_polisi" id="nomor-polisi">
+                        <input type="hidden" name="parking_slot_id" id="parking_slot_id">
+                        <input type="hidden" name="parking_assignment_id" id="parking_assignment_id">
 
                         {{-- Card Informasi Kendaraan --}}
                         <div id="section-kendaraan">
@@ -124,43 +126,121 @@
                             </div>
 
                             <div class="row g-3">
-                                <div class="col-lg-3 col-md-4 col-sm-6">
-                                    <div class="card shadow-sm h-100">
-                                        <div class="card-body">
-                                            <small class="text-muted">Nomor Polisi</small>
-                                            <h6 class="fw-bold mb-0" id="card-nopol">-</h6>
+                                <div class="col-md-3 col-sm-6">
+                                    <div class="card shadow-sm h-100 border-0 bg-light-subtle">
+                                        <div class="card-body p-3">
+                                            <small class="text-muted d-block mb-1"><i
+                                                    class="mdi mdi-car me-1 text-primary"></i>Nomor Polisi</small>
+                                            <h6 class="fw-bold mb-0 font-monospace fs-15 text-dark" id="card-nopol">-
+                                            </h6>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div class="col-lg-3 col-md-4 col-sm-6">
-                                    <div class="card shadow-sm h-100">
-                                        <div class="card-body">
-                                            <small class="text-muted">Nama Supir</small>
-                                            <h6 class="fw-bold mb-0" id="card-nama-supir">-</h6>
+                                <div class="col-md-3 col-sm-6">
+                                    <div class="card shadow-sm h-100 border-0 bg-light-subtle">
+                                        <div class="card-body p-3">
+                                            <small class="text-muted d-block mb-1"><i
+                                                    class="mdi mdi-account me-1 text-primary"></i>Nama Supir</small>
+                                            <h6 class="fw-bold mb-0 text-dark" id="card-nama-supir">-</h6>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div class="col-lg-3 col-md-4 col-sm-6">
-                                    <div class="card shadow-sm h-100">
-                                        <div class="card-body">
-                                            <small class="text-muted">Nama Perusahaan</small>
-                                            <h6 class="fw-bold mb-0" id="card-perusahaan">-</h6>
+                                <div class="col-md-3 col-sm-6">
+                                    <div class="card shadow-sm h-100 border-0 bg-light-subtle">
+                                        <div class="card-body p-3">
+                                            <small class="text-muted d-block mb-1"><i
+                                                    class="mdi mdi-domain me-1 text-primary"></i>Nama
+                                                Perusahaan</small>
+                                            <h6 class="fw-bold mb-0 text-dark text-truncate" id="card-perusahaan">-
+                                            </h6>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div class="col-lg-3 col-md-4 col-sm-6">
-                                    <div class="card shadow-sm h-100">
-                                        <div class="card-body">
-                                            <small class="text-muted">Waktu Masuk POS 1</small>
-                                            <h6 class="fw-bold mb-0" id="card-waktu-daftar">-</h6>
-                                            <small class="text-muted" id="card-waktu-lalu"></small>
+                                <div class="col-md-3 col-sm-6">
+                                    <div class="card shadow-sm h-100 border-0 bg-light-subtle">
+                                        <div class="card-body p-3">
+                                            <small class="text-muted d-block mb-1"><i
+                                                    class="mdi mdi-clock-outline me-1 text-primary"></i>Waktu Masuk POS
+                                                1</small>
+                                            <h6 class="fw-bold mb-0 text-dark" id="card-waktu-daftar">-</h6>
+                                            <small class="text-muted fs-11" id="card-waktu-lalu"></small>
                                         </div>
                                     </div>
                                 </div>
 
+                                {{-- Baris Info Lokasi Parkir & Warehouse --}}
+                                <div class="col-md-4 col-sm-12">
+                                    <div class="card shadow-sm h-100 border-start border-4 border-info">
+                                        <div class="card-body p-3 d-flex flex-column justify-content-between">
+                                            <div>
+                                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                                    <small class="text-muted"><i
+                                                            class="mdi mdi-parking me-1 text-info"></i>Lokasi Kantong
+                                                        Parkir</small>
+                                                    <span id="badge-parking-status"
+                                                        class="badge bg-soft-secondary text-muted fs-11">Belum Parkir</span>
+                                                </div>
+                                                <h6 class="fw-bold text-dark mb-1 fs-14" id="card-lokasi-parkir">-</h6>
+                                            </div>
+                                            <div class="d-flex align-items-center gap-2 mt-2 pt-2 border-top flex-wrap">
+                                                <button type="button"
+                                                    class="btn btn-sm btn-primary d-inline-flex align-items-center gap-1 fw-semibold"
+                                                    id="btnParkirkanKendaraan"
+                                                    onclick="openParkingSlotModalForCekKendaraan()">
+                                                    <i class="mdi mdi-car-parking-lot"></i>
+                                                    <span id="btnParkirkanText">Pilih Slot Parkir</span>
+                                                </button>
+                                                <button type="button"
+                                                    class="btn btn-sm btn-outline-danger d-inline-flex align-items-center gap-1"
+                                                    id="btnReleaseParkir"
+                                                    onclick="releaseParkingForCekKendaraan()"
+                                                    style="display: none;"
+                                                    title="Lepas / batalkan penugasan slot parkir">
+                                                    <i class="mdi mdi-close"></i>
+                                                    <span>Lepas Parkir</span>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-4 col-sm-6">
+                                    <div class="card shadow-sm h-100 border-start border-4 border-primary">
+                                        <div class="card-body p-3">
+                                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                                <small class="text-muted"><i
+                                                        class="mdi mdi-warehouse me-1 text-primary"></i>Area Tujuan
+                                                    (Warehouse)</small>
+                                                <span id="badge-target-area-code"
+                                                    class="badge bg-soft-primary text-primary"
+                                                    style="display:none;"></span>
+                                            </div>
+                                            <h6 class="fw-bold text-dark mb-0 fs-14" id="card-area-warehouse">Memuat
+                                                info...</h6>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-4 col-sm-6">
+                                    <div class="card shadow-sm h-100 border-start border-4 border-success">
+                                        <div class="card-body p-3">
+                                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                                <small class="text-muted"><i
+                                                        class="mdi mdi-ticket-confirmation me-1 text-success"></i>Antrian
+                                                    Bongkar / Muat</small>
+                                                <span id="badge-unloading-status"
+                                                    class="badge bg-soft-secondary text-dark"
+                                                    style="display:none;"></span>
+                                            </div>
+                                            <div id="card-antrian-warehouse" class="d-flex align-items-center gap-1">
+                                                <span class="text-muted fs-13">Memuat antrian...</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
 
                             </div>
                         </div>
@@ -368,6 +448,9 @@
     </div>
 </div>
 
+{{-- Modal Pilih Slot Parkir --}}
+@include('pos-security.formulir.supplier.modal-parking-slot')
+
 @push('scripts')
     <script src="{{ asset('assets/js/pos-security/formulir-cek-kendaraan/indexeddb-helper.js') }}"></script>
     <script type="module" src="{{ asset('assets/js/pos-security/formulir-cek-kendaraan/cek-kendaraan-in-table.js') }}">
@@ -392,18 +475,22 @@
 
             if (inTabButton) {
                 inTabButton.addEventListener("shown.bs.tab", function() {
-                    console.log("TAB IN dibuka");
+                    // console.log("TAB IN dibuka");
 
                     // belum pernah init
                     if (!window.cekKendaraanInTable) {
-                        console.log("INIT DATATABLE IN");
+                        // console.log("INIT DATATABLE IN");
                         new window.ContentDatatableIn().initialize();
                         return;
                     }
 
                     // sudah init → reload
-                    console.log("RELOAD DATATABLE IN");
-                    window.cekKendaraanInTable.ajax.reload(null, false);
+                    // console.log("RELOAD DATATABLE IN");
+                    if (typeof window.cekKendaraanInTable.reload === 'function') {
+                        window.cekKendaraanInTable.reload(null, false);
+                    } else if (window.cekKendaraanInTable.ajax) {
+                        window.cekKendaraanInTable.ajax.reload(null, false);
+                    }
                 });
             }
         });

@@ -90,7 +90,7 @@ $menus = [
             ],
             [
                 'path' => 'pos-security/master/kantong-parkir',
-                'label' => 'Kantong Parkir',
+                'label' => 'Manajemen Parkir',
                 'icon' => 'mdi-parking',
                 'submenu' => [],
             ],
@@ -157,7 +157,7 @@ $menus = [
                     .then(response => response.json())
                     .then(data => console.log('Session Keeper: ' + data.status))
                     .catch(error => console.log('Session Keeper Error'));
-            }, 5 * 60 * 1000); 
+            }, 5 * 60 * 1000);
         </script>
     </x-slot>
 </x-templates.velzon-hs.base>
