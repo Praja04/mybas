@@ -1000,6 +1000,7 @@ class SpPelanggaranController extends Controller
         $user = Auth::user();
         $permissions = view()->shared('permissions') ?: [];
         $isIrRole = in_array('sp_pelanggaran_ir_staff', $permissions) || in_array('sp_pelanggaran_ir_head', $permissions);
+        $isUnrestricted = $isIrRole || ($user && $user->user_role === 'superadmin');
         $userDept = ($user ? $user->dept_id : null) ?: session('kode_department');
         $deptCodes = $this->getDeptCodes($userDept);
 
@@ -1010,7 +1011,7 @@ class SpPelanggaranController extends Controller
             })
             ->orderBy('updated_at', 'desc');
 
-        if (!$isIrRole && !empty($deptCodes)) {
+        if (!$isUnrestricted && !empty($deptCodes)) {
             $query->whereHas('employee', function ($empQ) use ($deptCodes) {
                 $empQ->whereIn('kode_divisi', $deptCodes)
                     ->orWhereIn('kode_bagian', $deptCodes);
@@ -1549,12 +1550,13 @@ class SpPelanggaranController extends Controller
         $user = Auth::user();
         $permissions = view()->shared('permissions') ?: [];
         $isIrRole = in_array('sp_pelanggaran_ir_staff', $permissions) || in_array('sp_pelanggaran_ir_head', $permissions);
+        $isUnrestricted = $isIrRole || ($user && $user->user_role === 'superadmin');
         $userDept = ($user ? $user->dept_id : null) ?: session('kode_department');
         $deptCodes = $this->getDeptCodes($userDept);
 
         $query = SpPelanggaran::with(['employee', 'dates'])->orderBy('id', 'desc');
 
-        if (!$isIrRole && !empty($deptCodes)) {
+        if (!$isUnrestricted && !empty($deptCodes)) {
             $query->whereHas('employee', function ($empQ) use ($deptCodes) {
                 $empQ->whereIn('kode_divisi', $deptCodes)
                     ->orWhereIn('kode_bagian', $deptCodes);
@@ -1564,7 +1566,14 @@ class SpPelanggaranController extends Controller
         // Filter Klasifikasi
         $kategori = $request->get('kategori', 'ALL');
         if ($kategori !== 'ALL') {
-            if (in_array($kategori, ['AKTIF', 'EXPIRED', 'SP3', 'DITOLAK', 'CANCEL', 'PROSES'])) {
+            if ($kategori === 'PROSES') {
+                $query->whereIn('current_status', [
+                    SpPelanggaran::STATUS_DRAFT,
+                    SpPelanggaran::STATUS_PENDING_DH,
+                    SpPelanggaran::STATUS_PENDING_IR,
+                    SpPelanggaran::STATUS_PENDING_IR_HEAD
+                ]);
+            } elseif (in_array($kategori, ['AKTIF', 'EXPIRED', 'SP3', 'DITOLAK', 'CANCEL'])) {
                 $query->where('kategori_sp', $kategori);
             }
         }
@@ -1975,7 +1984,7 @@ class SpPelanggaranController extends Controller
         $user = Auth::user();
         $permissions = view()->shared('permissions') ?: [];
         $isIrRole = in_array('sp_pelanggaran_ir_staff', $permissions) || in_array('sp_pelanggaran_ir_head', $permissions);
-        $isAdminRole = in_array('sp_pelanggaran_admin', $permissions) || ($user && in_array($user->user_role, ['admin', 'superadmin']));
+        $isUnrestricted = $isIrRole || ($user && $user->user_role === 'superadmin');
         $userDept = ($user ? $user->dept_id : null) ?: session('kode_department');
         $deptCodes = $this->getDeptCodes($userDept);
 
@@ -1984,8 +1993,8 @@ class SpPelanggaranController extends Controller
             ->where('current_status', SpPelanggaran::STATUS_APPROVED)
             ->orderBy('updated_at', 'desc');
 
-        // Filter Dept Head (non-IR role)
-        if (!$isIrRole && !$isAdminRole && !empty($deptCodes)) {
+        // Filter Non-IR / Admin Dept (hanya tampilkan departemen masing-masing)
+        if (!$isUnrestricted && !empty($deptCodes)) {
             $query->whereHas('employee', function ($empQ) use ($deptCodes) {
                 $empQ->whereIn('kode_divisi', $deptCodes)
                     ->orWhereIn('kode_bagian', $deptCodes);
@@ -2037,7 +2046,7 @@ class SpPelanggaranController extends Controller
         $spRecords = $query->paginate(10)->appends($request->query());
 
         // Hak akses upload hanya untuk Admin
-        $canUpload = $isAdminRole || in_array('sp_pelanggaran_admin', $permissions);
+        $canUpload = in_array('sp_pelanggaran_admin', $permissions) || ($user && in_array($user->user_role, ['admin', 'superadmin']));
 
         return view('sp_pelanggaran.upload_konseling', compact(
             'spRecords',
