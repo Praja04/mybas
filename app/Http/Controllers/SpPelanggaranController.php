@@ -1006,7 +1006,7 @@ class SpPelanggaranController extends Controller
 
         $query = SpPelanggaran::with(['employee', 'creator', 'dates'])
             ->where(function ($q) {
-                $q->where('sumber_data', 'PELANGGARAN')
+                $q->where('sumber_data', '!=', 'MANGKIR')
                     ->orWhereNull('sumber_data');
             })
             ->orderBy('updated_at', 'desc');
@@ -1554,7 +1554,12 @@ class SpPelanggaranController extends Controller
         $userDept = ($user ? $user->dept_id : null) ?: session('kode_department');
         $deptCodes = $this->getDeptCodes($userDept);
 
-        $query = SpPelanggaran::with(['employee', 'dates'])->orderBy('id', 'desc');
+        $query = SpPelanggaran::with(['employee', 'dates'])
+            ->where(function ($q) {
+                $q->where('sumber_data', '!=', 'MANGKIR')
+                    ->orWhereNull('sumber_data');
+            })
+            ->orderBy('id', 'desc');
 
         if (!$isUnrestricted && !empty($deptCodes)) {
             $query->whereHas('employee', function ($empQ) use ($deptCodes) {
