@@ -241,31 +241,8 @@ class SpPelanggaranController extends Controller
 
         // Auto Lookup Dept Head & Emails
         $employee = HrKaryawan::find($request->employee_id);
-        $deptHeadUser = null;
-        if ($employee) {
-            $kodeDept = $employee->kode_divisi ?: $employee->kode_bagian;
-            if ($kodeDept) {
-                $deptHeadUser = User::where('dept_id', $kodeDept)
-                    ->where(function ($q) {
-                        $q->whereHas('directPermissions', function ($p) {
-                            $p->whereIn('codename', ['sp_pelanggaran_dh', 'sp_pelanggaran_approval_dh']);
-                        })->orWhereHas('group.permissions', function ($p) {
-                            $p->whereIn('codename', ['sp_pelanggaran_dh', 'sp_pelanggaran_approval_dh']);
-                        });
-                    })
-                    ->whereNotNull('email')->where('email', '!=', '')
-                    ->first();
-            }
-            if (!$deptHeadUser) {
-                $deptHeadUser = User::where(function ($q) {
-                    $q->whereHas('directPermissions', function ($p) {
-                        $p->whereIn('codename', ['sp_pelanggaran_dh', 'sp_pelanggaran_approval_dh']);
-                    })->orWhereHas('group.permissions', function ($p) {
-                        $p->whereIn('codename', ['sp_pelanggaran_dh', 'sp_pelanggaran_approval_dh']);
-                    });
-                })->whereNotNull('email')->where('email', '!=', '')->first();
-            }
-        }
+        $kodeDept = $employee ? ($employee->kode_divisi ?: $employee->kode_bagian) : null;
+        $deptHeadUser = $this->findDeptHeadUser($kodeDept);
 
         $data['assigned_dept_head_id'] = $deptHeadUser ? $deptHeadUser->id : null;
         $data['email_dept_head'] = $deptHeadUser ? $deptHeadUser->email : null;
@@ -543,39 +520,7 @@ class SpPelanggaranController extends Controller
         }
 
         $kodeDept = $sp->employee->kode_divisi ?? $sp->employee->kode_bagian ?? null;
-
-        // 1. Search user with Dept Head permission in employee's department
-        $deptHead = User::where(function ($q) use ($kodeDept) {
-            if ($kodeDept) {
-                $q->where('dept_id', $kodeDept);
-            }
-        })->where(function ($q) {
-            $q->whereHas('directPermissions', function ($permQ) {
-                $permQ->whereIn('codename', ['sp_pelanggaran_dh', 'sp_pelanggaran_approval_dh']);
-            })->orWhereHas('group.permissions', function ($permQ) {
-                $permQ->whereIn('codename', ['sp_pelanggaran_dh', 'sp_pelanggaran_approval_dh']);
-            });
-        })->whereNotNull('email')->where('email', '!=', '')->first();
-
-        // 2. Search any user with Dept Head permission in system with valid email
-        if (!$deptHead) {
-            $deptHead = User::where(function ($q) {
-                $q->whereHas('directPermissions', function ($permQ) {
-                    $permQ->whereIn('codename', ['sp_pelanggaran_dh', 'sp_pelanggaran_approval_dh']);
-                })->orWhereHas('group.permissions', function ($permQ) {
-                    $permQ->whereIn('codename', ['sp_pelanggaran_dh', 'sp_pelanggaran_approval_dh']);
-                });
-            })->whereNotNull('email')->where('email', '!=', '')->first();
-        }
-
-        // 3. Fallback: Search user in employee's department with non-empty email
-        if (!$deptHead && $kodeDept) {
-            $deptHead = User::where('dept_id', $kodeDept)
-                ->where('id', '!=', $sp->employee_id)
-                ->whereNotNull('email')
-                ->where('email', '!=', '')
-                ->first();
-        }
+        $deptHead = $this->findDeptHeadUser($kodeDept);
 
         $sp->update([
             'current_status' => SpPelanggaran::STATUS_PENDING_DH,
@@ -2563,6 +2508,77 @@ class SpPelanggaranController extends Controller
                 'message' => 'Gagal mengimpor file Excel: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Lookup Dept Head user berdasarkan kode_divisi karyawan.
+     * Resolve kode_divisi (string) → dept numeric ID via tabel departments,
+     * lalu cari user di dept tersebut yang punya permission sp_pelanggaran_dh.
+     *
+     * Mapping khusus untuk dept tanpa DH sendiri:
+     *   HSE, ITE → Factory Manager (Sutopo Sejati)
+     *   XPE (Expedisi) → WRH Dept Head
+     */
+    public function findDeptHeadUser($kodeDept)
+    {
+        if (empty($kodeDept)) {
+            return null;
+        }
+
+        // Mapping dept tanpa DH sendiri ke dept induk/atasan
+        $deptMapping = [
+            'HSE' => 'ENG',   // HSE → Factory Manager (Sutopo Sejati, di ENG)
+            'ITE' => 'ENG',   // ITE → Factory Manager (Sutopo Sejati, di ENG)
+            'XPE' => 'WRH',   // Expedisi → WRH Dept Head
+        ];
+
+        // Resolve kode_divisi string → numeric dept ID via departments table
+        $deptObj = DB::table('departments')->whereRaw('UPPER(TRIM(name)) = ?', [strtoupper(trim($kodeDept))])->first();
+        $deptId = $deptObj ? $deptObj->id : null;
+
+        // Step 1: Cari user di departemen karyawan yang punya permission DH & email valid
+        if ($deptId) {
+            $deptHeadUser = User::where('dept_id', $deptId)
+                ->where(function ($q) {
+                    $q->whereHas('directPermissions', function ($p) {
+                        $p->whereIn('codename', ['sp_pelanggaran_dh', 'sp_pelanggaran_approval_dh']);
+                    })->orWhereHas('group.permissions', function ($p) {
+                        $p->whereIn('codename', ['sp_pelanggaran_dh', 'sp_pelanggaran_approval_dh']);
+                    });
+                })
+                ->whereNotNull('email')->where('email', '!=', '')
+                ->first();
+
+            if ($deptHeadUser) {
+                return $deptHeadUser;
+            }
+        }
+
+        // Step 2: Cek mapping dept induk (HSE→ENG, ITE→ENG, XPE→WRH)
+        $upperKode = strtoupper(trim($kodeDept));
+        if (isset($deptMapping[$upperKode])) {
+            $parentDeptCode = $deptMapping[$upperKode];
+            $parentDeptObj = DB::table('departments')->whereRaw('UPPER(TRIM(name)) = ?', [strtoupper($parentDeptCode)])->first();
+            if ($parentDeptObj) {
+                $deptHeadUser = User::where('dept_id', $parentDeptObj->id)
+                    ->where(function ($q) {
+                        $q->whereHas('directPermissions', function ($p) {
+                            $p->whereIn('codename', ['sp_pelanggaran_dh', 'sp_pelanggaran_approval_dh']);
+                        })->orWhereHas('group.permissions', function ($p) {
+                            $p->whereIn('codename', ['sp_pelanggaran_dh', 'sp_pelanggaran_approval_dh']);
+                        });
+                    })
+                    ->whereNotNull('email')->where('email', '!=', '')
+                    ->first();
+
+                if ($deptHeadUser) {
+                    return $deptHeadUser;
+                }
+            }
+        }
+
+        // Step 3: Tidak ditemukan — return null (JANGAN fallback ke sembarang user)
+        return null;
     }
 
     private function getDeptCodes($userDept)

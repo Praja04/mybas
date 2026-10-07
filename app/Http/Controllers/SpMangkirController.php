@@ -255,41 +255,8 @@ class SpMangkirController extends Controller
         $isSubmitDirect = $request->boolean('submit_direct', false);
         $initialStatus = $isSubmitDirect ? SpPelanggaran::STATUS_PENDING_DH : SpPelanggaran::STATUS_DRAFT;
 
-        // Find Dept Head User
-        $deptHeadUser = null;
-
-        // Step 1: User di dept yang sama punya permission Dept Head
-        if ($kodeDept) {
-            $deptHeadUser = User::where('dept_id', $kodeDept)
-                ->where(function ($q) {
-                    $q->whereHas('directPermissions', function ($p) {
-                        $p->whereIn('codename', ['sp_pelanggaran_dh', 'sp_pelanggaran_approval_dh']);
-                    })->orWhereHas('group.permissions', function ($p) {
-                        $p->whereIn('codename', ['sp_pelanggaran_dh', 'sp_pelanggaran_approval_dh']);
-                    });
-                })
-                ->whereNotNull('email')->where('email', '!=', '')
-                ->first();
-        }
-
-        // Step 2: System-wide Dept Head user
-        if (!$deptHeadUser) {
-            $deptHeadUser = User::where(function ($q) {
-                $q->whereHas('directPermissions', function ($p) {
-                    $p->whereIn('codename', ['sp_pelanggaran_dh', 'sp_pelanggaran_approval_dh']);
-                })->orWhereHas('group.permissions', function ($p) {
-                    $p->whereIn('codename', ['sp_pelanggaran_dh', 'sp_pelanggaran_approval_dh']);
-                });
-            })->whereNotNull('email')->where('email', '!=', '')->first();
-        }
-
-        // Step 3: Fallback — user lain di dept yang punya email
-        if (!$deptHeadUser && $kodeDept) {
-            $deptHeadUser = User::where('dept_id', $kodeDept)
-                ->where('id', '!=', $employee->id)
-                ->whereNotNull('email')->where('email', '!=', '')
-                ->first();
-        }
+        // Find Dept Head User via centralized helper
+        $deptHeadUser = app(SpPelanggaranController::class)->findDeptHeadUser($kodeDept);
 
         $spMangkir = SpPelanggaran::create([
             'sumber_data' => 'MANGKIR',
@@ -625,30 +592,8 @@ class SpMangkirController extends Controller
                 $kodeDept = $employee->kode_divisi ?? $employee->kode_bagian ?? null;
                 $initialStatus = $isSubmitDirect ? SpPelanggaran::STATUS_PENDING_DH : SpPelanggaran::STATUS_DRAFT;
 
-                // Find Dept Head
-                $deptHeadUser = null;
-                if ($kodeDept) {
-                    $deptHeadUser = User::where('dept_id', $kodeDept)
-                        ->where(function ($q) {
-                            $q->whereHas('directPermissions', function ($p) {
-                                $p->whereIn('codename', ['sp_pelanggaran_dh', 'sp_pelanggaran_approval_dh']);
-                            })->orWhereHas('group.permissions', function ($p) {
-                                $p->whereIn('codename', ['sp_pelanggaran_dh', 'sp_pelanggaran_approval_dh']);
-                            });
-                        })
-                        ->whereNotNull('email')->where('email', '!=', '')
-                        ->first();
-                }
-
-                if (!$deptHeadUser) {
-                    $deptHeadUser = User::where(function ($q) {
-                        $q->whereHas('directPermissions', function ($p) {
-                            $p->whereIn('codename', ['sp_pelanggaran_dh', 'sp_pelanggaran_approval_dh']);
-                        })->orWhereHas('group.permissions', function ($p) {
-                            $p->whereIn('codename', ['sp_pelanggaran_dh', 'sp_pelanggaran_approval_dh']);
-                        });
-                    })->whereNotNull('email')->where('email', '!=', '')->first();
-                }
+                // Find Dept Head via centralized helper
+                $deptHeadUser = app(SpPelanggaranController::class)->findDeptHeadUser($kodeDept);
 
                 $spMangkir = SpPelanggaran::create([
                     'sumber_data' => 'MANGKIR',
