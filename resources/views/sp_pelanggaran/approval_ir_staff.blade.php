@@ -467,7 +467,7 @@ $(document).ready(function() {
                 $select.append(
                     $('<option></option>')
                         .val(item.kode)
-                        .text(item.kode + ' [' + (item.jenis_sp || '-') + ']')
+                        .text(item.kode + ' [' + item.nama_pelanggran + ']' )
                         .data('jenis', item.jenis_sp)
                         .data('dasar', item.dasar_pertimbangan || item.pasal_dilanggar)
                         .data('bentuk', item.bentuk_pelanggaran || item.deskripsi)
