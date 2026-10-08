@@ -464,10 +464,15 @@ $(document).ready(function() {
             let $select = $('#select_kode_ir');
             $select.empty().append('<option value="">-- Pilih / Ketik Kode Pelanggaran --</option>');
             $.each(kodeList, function(i, item) {
+                let namaPelanggaran = (item.nama_pelanggaran && item.nama_pelanggaran !== item.kode) 
+                    ? item.nama_pelanggaran 
+                    : (item.bentuk_pelanggaran || item.deskripsi || '');
+                let displayText = item.kode + (namaPelanggaran ? ' - ' + namaPelanggaran : '') + ' [' + (item.jenis_sp || '-') + ']';
+
                 $select.append(
                     $('<option></option>')
                         .val(item.kode)
-                        .text(item.kode + ' [' + item.nama_pelanggran + ']' )
+                        .text(displayText)
                         .data('jenis', item.jenis_sp)
                         .data('dasar', item.dasar_pertimbangan || item.pasal_dilanggar)
                         .data('bentuk', item.bentuk_pelanggaran || item.deskripsi)
