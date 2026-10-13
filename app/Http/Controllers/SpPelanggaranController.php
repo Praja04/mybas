@@ -525,6 +525,7 @@ class SpPelanggaranController extends Controller
         $sp->update([
             'current_status' => SpPelanggaran::STATUS_PENDING_DH,
             'assigned_dept_head_id' => $deptHead ? $deptHead->id : null,
+            'email_dept_head' => $deptHead ? $deptHead->email : null,
         ]);
 
         SpApprovalLog::logAction(
@@ -1037,30 +1038,57 @@ class SpPelanggaranController extends Controller
 
         // Hanya SP yang sudah APPROVED yang bisa di-download PDF-nya
         if ($sp->current_status !== SpPelanggaran::STATUS_APPROVED) {
-            return redirect()->back()->with('error', 'PDF hanya tersedia untuk SP yang sudah disetujui (APPROVED).');
+            if (request()->ajax() || request()->wantsJson()) {
+                return response()->json([
+                    'status'  => 'error',
+                    'message' => 'PDF hanya tersedia untuk SP yang sudah disetujui (APPROVED). Status saat ini: ' . $sp->current_status
+                ], 422);
+            }
+            return redirect()->back()->with('error', 'PDF hanya tersedia untuk SP yang sudah disetujui (APPROVED). Status saat ini: ' . $sp->current_status);
         }
 
-        $htmlContent = view('emails.sp_template_official', ['sp' => $sp])->render();
+        try {
+            $htmlContent = view('emails.sp_template_official', ['sp' => $sp])->render();
 
-        $pdf = \Barryvdh\DomPDF\Facade::loadHTML($htmlContent);
-        $pdf->setPaper('a4', 'portrait');
+            // Gunakan alias PDF facade yang terdaftar di config/app.php
+            $pdf = \PDF::loadHTML($htmlContent);
+            $pdf->setPaper('a4', 'portrait');
 
-        $spNum = $sp->nomor_sp_generated ?: 'DRAFT';
-        $pdfFileName = 'Surat_Peringatan_' . str_replace(['/', '\\', ' '], '_', $spNum) . '.pdf';
+            $spNum = $sp->nomor_sp_generated ?: 'DRAFT';
+            $pdfFileName = 'Surat_Peringatan_' . str_replace(['/', '\\', ' '], '_', $spNum) . '.pdf';
 
-        return $pdf->download($pdfFileName);
+            return $pdf->download($pdfFileName);
+        } catch (\Exception $e) {
+            \Log::error('Export SP PDF Error ID #' . $id . ': ' . $e->getMessage());
+            if (request()->ajax() || request()->wantsJson()) {
+                return response()->json([
+                    'status'  => 'error',
+                    'message' => 'Gagal generate PDF: ' . $e->getMessage()
+                ], 500);
+            }
+            return redirect()->back()->with('error', 'Gagal generate PDF Surat Peringatan: ' . $e->getMessage());
+        }
     }
 
     private function sendApprovalNotification($sp, $user, $type)
     {
-        if (!$user || !$user->email) {
+        $email = null;
+        if (is_object($user)) {
+            $email = $user->email ?? null;
+        } elseif (is_string($user)) {
+            $email = $user;
+        }
+
+        if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            logger()->warning("sendApprovalNotification SP #{$sp->id} dilewati: format email tidak valid atau kosong ({$email})");
             return;
         }
 
         try {
-            Mail::to($user->email)->send(new SpNotification($sp, $type));
+            Mail::to($email)->send(new SpNotification($sp, $type));
+            logger()->info("Email notifikasi ({$type}) SP #{$sp->id} berhasil dikirim ke: {$email}");
         } catch (\Exception $e) {
-            logger()->error('Gagal mengirim email notifikasi SP: ' . $e->getMessage());
+            logger()->error("Gagal mengirim email notifikasi ({$type}) SP #{$sp->id} ke {$email}: " . $e->getMessage());
         }
     }
 
@@ -1077,55 +1105,44 @@ class SpPelanggaranController extends Controller
 
         $recipients = [];
 
-        // 1. Email Karyawan yang kena SP (murni dari hr_karyawan)
+        // 1. Email Karyawan yang kena SP (murni dari tabel hr_karyawan)
+        $employeeEmail = null;
         if ($sp->employee && !empty($sp->employee->email)) {
-            $recipients[] = trim($sp->employee->email);
+            $employeeEmail = trim($sp->employee->email);
         } elseif (!empty($sp->email_dept_user)) {
-            $recipients[] = trim($sp->email_dept_user);
+            $employeeEmail = trim($sp->email_dept_user);
         }
 
-        // 2. Email Dept Head berwenang yang menyetujui / menangani SP ini
-        if ($sp->deptHead && !empty($sp->deptHead->email)) {
-            $recipients[] = trim($sp->deptHead->email);
-        } elseif (!empty($sp->email_dept_head)) {
-            $recipients[] = trim($sp->email_dept_head);
-        } elseif ($sp->employee) {
-            $kodeDept = $sp->employee->kode_divisi ?: $sp->employee->kode_bagian;
-            if ($kodeDept) {
-                // Cari HANYA Dept Head spesifik di departemen yang sama
-                $dhUser = User::where('dept_id', $kodeDept)
-                    ->where(function ($q) {
-                        $q->whereHas('directPermissions', function ($p) {
-                            $p->whereIn('codename', ['sp_pelanggaran_dh', 'sp_pelanggaran_approval_dh']);
-                        })->orWhereHas('group.permissions', function ($p) {
-                            $p->whereIn('codename', ['sp_pelanggaran_dh', 'sp_pelanggaran_approval_dh']);
-                        });
-                    })
-                    ->whereNotNull('email')->where('email', '!=', '')
-                    ->first();
-
-                if ($dhUser && !empty($dhUser->email)) {
-                    $recipients[] = trim($dhUser->email);
-                }
-            }
-        }
-
-        // 3. Email IR Staff yang memproses / meninjau SP ini
-        if ($sp->irStaff && !empty($sp->irStaff->email)) {
-            $recipients[] = trim($sp->irStaff->email);
+        if (!empty($employeeEmail) && filter_var($employeeEmail, FILTER_VALIDATE_EMAIL)) {
+            $recipients[] = $employeeEmail;
         } else {
-            $irStaffUsers = User::where(function ($q) {
-                $q->whereHas('directPermissions', function ($permQ) {
-                    $permQ->where('codename', 'sp_pelanggaran_ir_staff');
-                })->orWhereHas('group.permissions', function ($permQ) {
-                    $permQ->where('codename', 'sp_pelanggaran_ir_staff');
-                });
-            })->whereNotNull('email')->where('email', '!=', '')->pluck('email')->toArray();
+            logger()->info("Email karyawan SP #{$sp->id} kosong atau tidak valid di tabel hr_karyawan. Dilewati (skip).");
+        }
 
-            foreach ($irStaffUsers as $email) {
-                if (!empty($email)) {
-                    $recipients[] = trim($email);
-                }
+        // 2. Email Dept Head (dari hardcoded mapping per departemen karyawan di config/sp_mail.php)
+        $kodeDept = $sp->employee ? ($sp->employee->kode_divisi ?: $sp->employee->kode_bagian) : null;
+        $dhEmail = self::getDeptHeadEmail($kodeDept);
+        if (empty($dhEmail) && !empty($sp->email_dept_head)) {
+            $dhEmail = trim($sp->email_dept_head);
+        } elseif (empty($dhEmail) && $sp->deptHead && !empty($sp->deptHead->email)) {
+            $dhEmail = trim($sp->deptHead->email);
+        }
+
+        if (!empty($dhEmail) && filter_var($dhEmail, FILTER_VALIDATE_EMAIL)) {
+            $recipients[] = $dhEmail;
+        } else {
+            logger()->warning("Email Dept Head untuk departemen '{$kodeDept}' pada SP #{$sp->id} tidak ditemukan di config/sp_mail.php.");
+        }
+
+        // 3. Email IR Staff (dari hardcoded config/sp_mail.php)
+        $irStaffEmails = config('sp_mail.ir_staff', []);
+        if (is_string($irStaffEmails)) {
+            $irStaffEmails = explode(',', $irStaffEmails);
+        }
+        foreach ((array)$irStaffEmails as $irEmail) {
+            $irEmail = trim($irEmail);
+            if (!empty($irEmail) && filter_var($irEmail, FILTER_VALIDATE_EMAIL)) {
+                $recipients[] = $irEmail;
             }
         }
 
@@ -1137,16 +1154,10 @@ class SpPelanggaranController extends Controller
             return;
         }
 
-        logger()->info("Pengiriman Email Final SP #{$sp->id} ditujukan ke (" . count($recipients) . " penerima khusus): " . implode(', ', $recipients));
+        logger()->info("Pengiriman Email Final SP #{$sp->id} ditujukan ke (" . count($recipients) . " penerima): " . implode(', ', $recipients));
 
         $sentCount = 0;
         foreach ($recipients as $recipientEmail) {
-            // Validasi format sintaks email (mencegah typo fatal)
-            if (!filter_var($recipientEmail, FILTER_VALIDATE_EMAIL)) {
-                logger()->warning("Format email tidak valid (diabaikan): {$recipientEmail} untuk SP #{$sp->id}");
-                continue;
-            }
-
             try {
                 Mail::to($recipientEmail)->send(new SpNotification($sp, 'final'));
                 $sentCount++;
@@ -2519,65 +2530,86 @@ class SpPelanggaranController extends Controller
      *   HSE, ITE → Factory Manager (Sutopo Sejati)
      *   XPE (Expedisi) → WRH Dept Head
      */
+    /**
+     * Ambil email Dept Head berdasarkan kode divisi atau bagian (hardcoded mapping).
+     */
+    public static function getDeptHeadEmail($kodeDept)
+    {
+        if (empty($kodeDept)) {
+            return null;
+        }
+
+        $code = strtoupper(trim($kodeDept));
+        $deptHeads = config('sp_mail.dept_heads', []);
+
+        // 1. Cek langsung di mapping dept_heads
+        if (isset($deptHeads[$code]) && !empty($deptHeads[$code])) {
+            return trim($deptHeads[$code]);
+        }
+
+        // 2. Cek apakah kode_bagian (section) dipetakan ke divisi induk
+        $sectionMap = config('sp_mail.section_to_division_mapping', []);
+        if (isset($sectionMap[$code])) {
+            $parentDiv = $sectionMap[$code];
+            if (isset($deptHeads[$parentDiv]) && !empty($deptHeads[$parentDiv])) {
+                return trim($deptHeads[$parentDiv]);
+            }
+        }
+
+        // 3. Cek jika kodeDept berupa ID departemen numerik
+        if (is_numeric($kodeDept)) {
+            $deptRow = DB::table('departments')->where('id', $kodeDept)->first();
+            if ($deptRow && !empty($deptRow->name)) {
+                $deptName = strtoupper(trim($deptRow->name));
+                if (isset($deptHeads[$deptName]) && !empty($deptHeads[$deptName])) {
+                    return trim($deptHeads[$deptName]);
+                }
+            }
+        }
+
+        return null;
+    }
+
     public function findDeptHeadUser($kodeDept)
     {
         if (empty($kodeDept)) {
             return null;
         }
 
-        // Mapping dept tanpa DH sendiri ke dept induk/atasan
-        $deptMapping = [
-            'HSE' => 'ENG',   // HSE → Factory Manager (Sutopo Sejati, di ENG)
-            'ITE' => 'ENG',   // ITE → Factory Manager (Sutopo Sejati, di ENG)
-            'XPE' => 'WRH',   // Expedisi → WRH Dept Head
-        ];
+        $hardcodedEmail = self::getDeptHeadEmail($kodeDept);
 
-        // Resolve kode_divisi string → numeric dept ID via departments table
-        $deptObj = DB::table('departments')->whereRaw('UPPER(TRIM(name)) = ?', [strtoupper(trim($kodeDept))])->first();
-        $deptId = $deptObj ? $deptObj->id : null;
+        // 1. Cari user di database yang email-nya cocok dengan hardcoded email
+        if ($hardcodedEmail) {
+            $userByEmail = User::where('email', $hardcodedEmail)->first();
+            if ($userByEmail) {
+                return $userByEmail;
+            }
+        }
 
-        // Step 1: Cari user di departemen karyawan yang punya permission DH & email valid
-        if ($deptId) {
-            $deptHeadUser = User::where('dept_id', $deptId)
-                ->where(function ($q) {
-                    $q->whereHas('directPermissions', function ($p) {
-                        $p->whereIn('codename', ['sp_pelanggaran_dh', 'sp_pelanggaran_approval_dh']);
-                    })->orWhereHas('group.permissions', function ($p) {
-                        $p->whereIn('codename', ['sp_pelanggaran_dh', 'sp_pelanggaran_approval_dh']);
-                    });
-                })
+        // 2. Cari user berdasarkan departemen jika ada di database
+        $cleanKode = strtoupper(trim($kodeDept));
+        $deptObj = DB::table('departments')->whereRaw('UPPER(TRIM(name)) = ?', [$cleanKode])->first();
+        if ($deptObj) {
+            $user = User::where('dept_id', $deptObj->id)
                 ->whereNotNull('email')->where('email', '!=', '')
                 ->first();
-
-            if ($deptHeadUser) {
-                return $deptHeadUser;
-            }
-        }
-
-        // Step 2: Cek mapping dept induk (HSE→ENG, ITE→ENG, XPE→WRH)
-        $upperKode = strtoupper(trim($kodeDept));
-        if (isset($deptMapping[$upperKode])) {
-            $parentDeptCode = $deptMapping[$upperKode];
-            $parentDeptObj = DB::table('departments')->whereRaw('UPPER(TRIM(name)) = ?', [strtoupper($parentDeptCode)])->first();
-            if ($parentDeptObj) {
-                $deptHeadUser = User::where('dept_id', $parentDeptObj->id)
-                    ->where(function ($q) {
-                        $q->whereHas('directPermissions', function ($p) {
-                            $p->whereIn('codename', ['sp_pelanggaran_dh', 'sp_pelanggaran_approval_dh']);
-                        })->orWhereHas('group.permissions', function ($p) {
-                            $p->whereIn('codename', ['sp_pelanggaran_dh', 'sp_pelanggaran_approval_dh']);
-                        });
-                    })
-                    ->whereNotNull('email')->where('email', '!=', '')
-                    ->first();
-
-                if ($deptHeadUser) {
-                    return $deptHeadUser;
+            if ($user) {
+                if ($hardcodedEmail) {
+                    $user->email = $hardcodedEmail;
                 }
+                return $user;
             }
         }
 
-        // Step 3: Tidak ditemukan — return null (JANGAN fallback ke sembarang user)
+        // 3. Buat virtual User object jika ada hardcoded email agar pemanggil tidak null/crash
+        if ($hardcodedEmail) {
+            $virtualUser = new User();
+            $virtualUser->id = null;
+            $virtualUser->name = 'Dept Head ' . $cleanKode;
+            $virtualUser->email = $hardcodedEmail;
+            return $virtualUser;
+        }
+
         return null;
     }
 

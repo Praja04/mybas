@@ -293,9 +293,10 @@ class SpMangkirController extends Controller
         ]);
 
         // Send email if submitted direct to Dept Head
-        if ($isSubmitDirect && $deptHeadUser && $deptHeadUser->email) {
+        if ($isSubmitDirect && $deptHeadUser && !empty($deptHeadUser->email) && filter_var($deptHeadUser->email, FILTER_VALIDATE_EMAIL)) {
             try {
                 Mail::to($deptHeadUser->email)->send(new SpNotification($spMangkir, 'SUBMIT_DEPT_HEAD'));
+                logger()->info("Email notifikasi SP Mangkir #{$spMangkir->id} berhasil dikirim ke Dept Head: {$deptHeadUser->email}");
             } catch (\Exception $e) {
                 logger()->error('Gagal mengirim email notifikasi SP Mangkir ke Dept Head: ' . $e->getMessage());
             }
@@ -625,9 +626,10 @@ class SpMangkirController extends Controller
                     'notes' => 'Input SP Mangkir ke-' . $mangkirKe . ' dari Audit Excel',
                 ]);
 
-                if ($isSubmitDirect && $deptHeadUser && $deptHeadUser->email) {
+                if ($isSubmitDirect && $deptHeadUser && !empty($deptHeadUser->email) && filter_var($deptHeadUser->email, FILTER_VALIDATE_EMAIL)) {
                     try {
                         Mail::to($deptHeadUser->email)->send(new SpNotification($spMangkir, 'SUBMIT_DEPT_HEAD'));
+                        logger()->info("Email audit SP Mangkir #{$spMangkir->id} berhasil dikirim ke Dept Head: {$deptHeadUser->email}");
                     } catch (\Exception $e) {
                         logger()->error('Gagal mengirim email audit SP Mangkir: ' . $e->getMessage());
                     }

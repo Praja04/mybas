@@ -301,17 +301,16 @@ class SpPelanggaran extends Model
 
     public static function getIrTeamEmails()
     {
-        return User::whereIn('user_role', ['ir_staff', 'ir_head'])
-            ->whereNotNull('email')
-            ->pluck('email')
-            ->toArray();
+        $irEmails = config('sp_mail.ir_staff', []);
+        if (is_string($irEmails)) {
+            $irEmails = explode(',', $irEmails);
+        }
+        return array_values(array_unique(array_filter(array_map('trim', (array)$irEmails))));
     }
 
     public static function getDeptHeadEmails()
     {
-        return User::where('user_role', 'dept_head')
-            ->whereNotNull('email')
-            ->pluck('email')
-            ->toArray();
+        $emails = config('sp_mail.dept_heads', []);
+        return array_values(array_unique(array_filter($emails)));
     }
 }

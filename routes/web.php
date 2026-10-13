@@ -808,7 +808,9 @@ Route::group(['middleware' => ['auth', 'rules']], function () {
     Route::post('/sp-pelanggaran/{id}/irhead-approve-cancel', [App\Http\Controllers\SpPelanggaranController::class, 'irHeadApproveCancel'])->name('sp_pelanggaran.irhead_approve_cancel');
     Route::get('/sp-pelanggaran/export', [App\Http\Controllers\SpPelanggaranController::class, 'exportData'])->name('sp_pelanggaran.export');
     Route::get('/sp-pelanggaran/{id}/export-pdf', [App\Http\Controllers\SpPelanggaranController::class, 'exportSpPdf'])->name('sp_pelanggaran.export_sp_pdf');
+    Route::get('/sp-pelanggaran/export-sp-pdf/{id}', [App\Http\Controllers\SpPelanggaranController::class, 'exportSpPdf']); // alias URL lama (dipakai di view trace)
     Route::post('/sp-pelanggaran/import-sp-aktif', [App\Http\Controllers\SpPelanggaranController::class, 'importActiveSpExcel'])->name('sp_pelanggaran.import_sp_aktif');
+
     Route::get('/sp-pelanggaran/template-sp-aktif', [App\Http\Controllers\SpPelanggaranController::class, 'downloadTemplateActiveSp'])->name('sp_pelanggaran.template_sp_aktif');
 
     // Upload & View PDF Konseling Hasil SP (Pelanggaran & Mangkir)
