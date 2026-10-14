@@ -1510,12 +1510,19 @@ class SpPelanggaranController extends Controller
         $userDept = ($user ? $user->dept_id : null) ?: session('kode_department');
         $deptCodes = $this->getDeptCodes($userDept);
 
-        $query = SpPelanggaran::with(['employee', 'dates'])
-            ->where(function ($q) {
+        $sumberData = strtoupper($request->get('sumber_data', ''));
+
+        $query = SpPelanggaran::with(['employee', 'dates', 'approvalLogs'])
+            ->orderBy('id', 'desc');
+
+        if ($sumberData === 'MANGKIR') {
+            $query->where('sumber_data', 'MANGKIR');
+        } else {
+            $query->where(function ($q) {
                 $q->where('sumber_data', '!=', 'MANGKIR')
                     ->orWhereNull('sumber_data');
-            })
-            ->orderBy('id', 'desc');
+            });
+        }
 
         if (!$isUnrestricted && !empty($deptCodes)) {
             $query->whereHas('employee', function ($empQ) use ($deptCodes) {
@@ -1558,6 +1565,12 @@ class SpPelanggaranController extends Controller
         $sps = $query->get();
         $format = strtolower($request->get('format', 'excel'));
 
+        $reportTitle = $sumberData === 'MANGKIR'
+            ? 'LAPORAN REKAPITULASI & RIWAYAT SURAT PERINGATAN (SP) MANGKIR KARYAWAN'
+            : 'LAPORAN REKAPITULASI & RIWAYAT SURAT PERINGATAN (SP) KARYAWAN';
+
+        $filePrefix = $sumberData === 'MANGKIR' ? 'Rekapitulasi_SP_Mangkir_' : 'Rekapitulasi_SP_';
+
         $kategoriLabelMap = [
             'ALL' => 'Semua Klasifikasi (Aktif, Expired, SP3, Ditolak, Cancel)',
             'AKTIF' => 'SP Aktif (<= 6 Bulan)',
@@ -1570,9 +1583,9 @@ class SpPelanggaranController extends Controller
         $kategoriLabel = $kategoriLabelMap[$kategori] ?? 'Semua Data';
 
         if ($format === 'pdf') {
-            $pdf = \Barryvdh\DomPDF\Facade::loadHTML(view('sp_pelanggaran.export_pdf', compact('sps', 'kategoriLabel', 'kategori'))->render());
+            $pdf = \Barryvdh\DomPDF\Facade::loadHTML(view('sp_pelanggaran.export_pdf', compact('sps', 'kategoriLabel', 'kategori', 'reportTitle', 'sumberData'))->render());
             $pdf->setPaper('a4', 'landscape');
-            $fileName = 'Rekapitulasi_SP_' . $kategori . '_' . date('Ymd_His') . '.pdf';
+            $fileName = $filePrefix . $kategori . '_' . date('Ymd_His') . '.pdf';
             return $pdf->download($fileName);
         }
 
@@ -1583,7 +1596,7 @@ class SpPelanggaranController extends Controller
 
         // ── Header Title ────────────────────────────────────────────────────────
         $sheet->setCellValue('A1', 'PT. BUMI ALAM SEGAR');
-        $sheet->setCellValue('A2', 'LAPORAN REKAPITULASI & RIWAYAT SURAT PERINGATAN (SP) KARYAWAN');
+        $sheet->setCellValue('A2', $reportTitle);
         $sheet->setCellValue('A3', 'Filter: ' . $kategoriLabel . ' | Tanggal Cetak: ' . date('d/m/Y H:i'));
 
         $sheet->mergeCells('A1:P1');
@@ -1626,26 +1639,6 @@ class SpPelanggaranController extends Controller
         $sheet->getStyle('A5:P5')->applyFromArray($headerStyle);
         $sheet->getRowDimension(5)->setRowHeight(30);
 
-        // ── Status Label Maps ───────────────────────────────────────────────────
-        $statusDhMap = [
-            'PENDING_DH'       => 'Menunggu Persetujuan',
-            'APPROVED_BY_DH'   => 'Disetujui',
-            'APPROVED'         => 'Disetujui',
-            'REJECTED'         => 'Ditolak',
-            'CANCELLED'        => 'Dibatalkan',
-        ];
-        $statusIrStaffMap = [
-            'PENDING_IR'       => 'Menunggu Review',
-            'PENDING_IR_HEAD'  => 'Diteruskan ke IR Head',
-            'APPROVED'         => 'Disetujui',
-            'REJECTED'         => 'Ditolak',
-        ];
-        $statusIrHeadMap = [
-            'PENDING_IR_HEAD'  => 'Menunggu Persetujuan',
-            'APPROVED'         => 'Disetujui',
-            'REJECTED'         => 'Ditolak',
-        ];
-
         // ── Data Rows ───────────────────────────────────────────────────────────
         $row = 6;
         foreach ($sps as $idx => $sp) {
@@ -1672,9 +1665,12 @@ class SpPelanggaranController extends Controller
             // Dept Head status
             if (in_array($currentStatus, ['DRAFT', 'PENDING_DH'])) {
                 $statusDh = $currentStatus === 'PENDING_DH' ? 'Menunggu Persetujuan' : 'Belum Diajukan';
-            } elseif (in_array($currentStatus, ['REJECTED', 'CANCELLED'])) {
-                // Check at which level it was rejected from approval logs
-                $dhLog = $sp->approvalLogs->where('action', 'REJECT')->first();
+            } elseif ($currentStatus === 'CANCEL_PENDING_DH') {
+                $statusDh = 'Menunggu Cancel DH';
+            } elseif (in_array($currentStatus, ['CANCEL_PENDING_IR', 'CANCEL_PENDING_IR_HEAD', 'CANCELLED'])) {
+                $statusDh = 'Disetujui Cancel';
+            } elseif ($currentStatus === 'REJECTED') {
+                $dhLog = $sp->approvalLogs ? $sp->approvalLogs->where('action', 'REJECT')->first() : null;
                 $statusDh = $dhLog ? 'Ditolak' : 'Telah Diproses';
             } else {
                 $statusDh = 'Disetujui ✓';
@@ -1689,10 +1685,14 @@ class SpPelanggaranController extends Controller
                 $statusIrStaff = 'Belum Sampai';
             } elseif ($currentStatus === 'PENDING_IR') {
                 $statusIrStaff = 'Sedang Direview';
+            } elseif ($currentStatus === 'CANCEL_PENDING_IR') {
+                $statusIrStaff = 'Review Cancel';
+            } elseif (in_array($currentStatus, ['CANCEL_PENDING_IR_HEAD', 'CANCELLED'])) {
+                $statusIrStaff = 'Review Cancel ✓';
             } elseif (in_array($currentStatus, ['PENDING_IR_HEAD', 'APPROVED'])) {
                 $statusIrStaff = 'Selesai Review ✓';
             } elseif ($currentStatus === 'REJECTED') {
-                $irStaffRejectLog = $sp->approvalLogs->where('action', 'REJECT')->first();
+                $irStaffRejectLog = $sp->approvalLogs ? $sp->approvalLogs->where('action', 'REJECT')->first() : null;
                 $statusIrStaff = $irStaffRejectLog ? 'Ditolak' : 'Belum Sampai';
             } else {
                 $statusIrStaff = '-';
@@ -1703,8 +1703,12 @@ class SpPelanggaranController extends Controller
                 $statusIrHead = 'Disetujui ✓';
             } elseif ($currentStatus === 'PENDING_IR_HEAD') {
                 $statusIrHead = 'Menunggu Persetujuan';
+            } elseif ($currentStatus === 'CANCEL_PENDING_IR_HEAD') {
+                $statusIrHead = 'Menunggu Approve Cancel';
+            } elseif ($currentStatus === 'CANCELLED') {
+                $statusIrHead = 'Dibatalkan (Cancel)';
             } elseif ($currentStatus === 'REJECTED') {
-                $irHeadLog = $sp->approvalLogs->where('action', 'REJECT')->where('role', 'ir_head')->first();
+                $irHeadLog = $sp->approvalLogs ? $sp->approvalLogs->where('action', 'REJECT')->where('role', 'ir_head')->first() : null;
                 $statusIrHead = $irHeadLog ? 'Ditolak' : 'Belum Sampai';
             } elseif (in_array($currentStatus, ['DRAFT', 'PENDING_DH', 'PENDING_IR'])) {
                 $statusIrHead = 'Belum Sampai';
@@ -1736,9 +1740,13 @@ class SpPelanggaranController extends Controller
 
             // Format H: Tgl Kejadian
             if ($sp->tanggal_pelanggaran) {
-                $dtH = \Carbon\Carbon::parse($sp->tanggal_pelanggaran);
-                $sheet->setCellValue('H' . $row, \PhpOffice\PhpSpreadsheet\Shared\Date::PHPToExcel($dtH));
-                $sheet->getStyle('H' . $row)->getNumberFormat()->setFormatCode('[$-id-ID]d/mmmm/yyyy');
+                try {
+                    $dtH = \Carbon\Carbon::parse($sp->tanggal_pelanggaran);
+                    $sheet->setCellValue('H' . $row, \PhpOffice\PhpSpreadsheet\Shared\Date::PHPToExcel($dtH));
+                    $sheet->getStyle('H' . $row)->getNumberFormat()->setFormatCode('dd/mm/yyyy');
+                } catch (\Exception $e) {
+                    $sheet->setCellValue('H' . $row, $sp->tanggal_pelanggaran);
+                }
             } else {
                 $sheet->setCellValue('H' . $row, '-');
             }
@@ -1748,9 +1756,13 @@ class SpPelanggaranController extends Controller
 
             // Format K: Tgl Approve DH
             if ($sp->dept_head_approved_at) {
-                $dtK = \Carbon\Carbon::parse($sp->dept_head_approved_at);
-                $sheet->setCellValue('K' . $row, \PhpOffice\PhpSpreadsheet\Shared\Date::PHPToExcel($dtK));
-                $sheet->getStyle('K' . $row)->getNumberFormat()->setFormatCode('[$-id-ID]d/mmmm/yyyy');
+                try {
+                    $dtK = \Carbon\Carbon::parse($sp->dept_head_approved_at);
+                    $sheet->setCellValue('K' . $row, \PhpOffice\PhpSpreadsheet\Shared\Date::PHPToExcel($dtK));
+                    $sheet->getStyle('K' . $row)->getNumberFormat()->setFormatCode('dd/mm/yyyy');
+                } catch (\Exception $e) {
+                    $sheet->setCellValue('K' . $row, $sp->dept_head_approved_at);
+                }
             } else {
                 $sheet->setCellValue('K' . $row, '-');
             }
@@ -1760,18 +1772,26 @@ class SpPelanggaranController extends Controller
 
             // Format N: Tgl Terbit (IR Head)
             if ($sp->ir_head_approved_at) {
-                $dtN = \Carbon\Carbon::parse($sp->ir_head_approved_at);
-                $sheet->setCellValue('N' . $row, \PhpOffice\PhpSpreadsheet\Shared\Date::PHPToExcel($dtN));
-                $sheet->getStyle('N' . $row)->getNumberFormat()->setFormatCode('[$-id-ID]d/mmmm/yyyy');
+                try {
+                    $dtN = \Carbon\Carbon::parse($sp->ir_head_approved_at);
+                    $sheet->setCellValue('N' . $row, \PhpOffice\PhpSpreadsheet\Shared\Date::PHPToExcel($dtN));
+                    $sheet->getStyle('N' . $row)->getNumberFormat()->setFormatCode('dd/mm/yyyy');
+                } catch (\Exception $e) {
+                    $sheet->setCellValue('N' . $row, $sp->ir_head_approved_at);
+                }
             } else {
                 $sheet->setCellValue('N' . $row, '-');
             }
 
             // Format O: Berlaku Sampai
             if ($sp->masa_berlaku_sampai) {
-                $dtO = \Carbon\Carbon::parse($sp->masa_berlaku_sampai);
-                $sheet->setCellValue('O' . $row, \PhpOffice\PhpSpreadsheet\Shared\Date::PHPToExcel($dtO));
-                $sheet->getStyle('O' . $row)->getNumberFormat()->setFormatCode('[$-id-ID]d/mmmm/yyyy');
+                try {
+                    $dtO = \Carbon\Carbon::parse($sp->masa_berlaku_sampai);
+                    $sheet->setCellValue('O' . $row, \PhpOffice\PhpSpreadsheet\Shared\Date::PHPToExcel($dtO));
+                    $sheet->getStyle('O' . $row)->getNumberFormat()->setFormatCode('dd/mm/yyyy');
+                } catch (\Exception $e) {
+                    $sheet->setCellValue('O' . $row, $sp->masa_berlaku_sampai);
+                }
             } else {
                 $sheet->setCellValue('O' . $row, '-');
             }
@@ -1794,7 +1814,7 @@ class SpPelanggaranController extends Controller
                 $bgColor = 'DCFCE7'; // hijau muda
             } elseif ($sp->kategori_sp === 'EXPIRED') {
                 $bgColor = 'F1F5F9'; // abu muda
-            } elseif (in_array($sp->current_status, ['CANCELLED', 'REJECTED'])) {
+            } elseif (in_array($sp->current_status, ['CANCELLED', 'REJECTED']) || in_array($sp->kategori_sp, ['CANCEL', 'PROSES_CANCEL', 'DITOLAK'])) {
                 $bgColor = 'FEF3C7'; // kuning muda
             }
             if ($bgColor) {
@@ -1836,7 +1856,7 @@ class SpPelanggaranController extends Controller
                 ->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
         }
 
-        $fileName = 'Rekapitulasi_SP_' . $kategori . '_' . date('Ymd_His') . '.xlsx';
+        $fileName = $filePrefix . $kategori . '_' . date('Ymd_His') . '.xlsx';
 
         if (ob_get_length()) {
             @ob_end_clean();

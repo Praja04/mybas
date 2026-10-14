@@ -20,7 +20,7 @@ class DigitalSignatureController extends Controller
     private const ROLE_LABELS = [
         'dept_head' => 'Dept Head / Manager',
         'ir_staff'  => 'IR Staff',
-        'ir_head'   => 'IR Head',
+        'ir_head'   => 'IR & ER Dept. Head',
     ];
 
     /**

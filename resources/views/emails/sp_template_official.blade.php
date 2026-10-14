@@ -243,8 +243,8 @@
             ->first();
     }
 
-    $irHeadName    = $ttdIrHead ? ($ttdIrHead->user->name ?? 'IR & ER Dept. Head') : 'Fransiscus Xaverius WH';
-    $irHeadJabatan = $ttdIrHead ? ($ttdIrHead->nama_jabatan ?: 'IR & ER Dept. Head') : 'IR & ER Dept. Head';
+    $irHeadName    = $ttdIrHead && $ttdIrHead->user ? $ttdIrHead->user->name : 'Fransiscus Xaverius WH';
+    $irHeadJabatan = 'IR & ER Dept. Head';
     $dhName        = $sp->deptHead ? $sp->deptHead->name : ($ttdDeptHead && $ttdDeptHead->user ? $ttdDeptHead->user->name : 'Dept. Head');
     $dhJabatan     = $ttdDeptHead ? ($ttdDeptHead->nama_jabatan ?: ($divisiName ?: 'Dept. Head') . ' Dept. Head') : (($divisiName ?: 'Produksi') . ' Dept. Head');
 @endphp

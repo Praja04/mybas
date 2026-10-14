@@ -86,7 +86,7 @@
 
     <div class="header">
         <div class="header-title">PT. BUMI ALAM SEGAR</div>
-        <div class="header-subtitle">LAPORAN REKAPITULASI & RIWAYAT SURAT PERINGATAN (SP) KARYAWAN</div>
+        <div class="header-subtitle">{{ $reportTitle ?? 'LAPORAN REKAPITULASI & RIWAYAT SURAT PERINGATAN (SP) KARYAWAN' }}</div>
     </div>
 
     <table class="meta-table">
@@ -100,7 +100,7 @@
             <td><strong>Total Data</strong></td>
             <td>: {{ count($sps) }} Dokumen SP</td>
             <td><strong>Dicetak Oleh</strong></td>
-            <td>: {{ auth()->user()->name ?? 'Administrator' }}</td>
+            <td>: {{ optional(auth()->user())->name ?? session('username') ?? 'Administrator' }}</td>
         </tr>
     </table>
 
@@ -108,13 +108,13 @@
         <thead>
             <tr>
                 <th width="3%">No</th>
-                <th width="11%">Nomor SP</th>
+                <th width="9%">Nomor SP</th>
                 <th width="6%">NIK</th>
-                <th width="11%">Nama Karyawan</th>
-                <th width="9%">Dept/Bagian</th>
+                <th width="10%">Nama Karyawan</th>
+                <th width="8%">Dept/Bagian</th>
                 <th width="5%">Group</th>
-                <th width="7%">Jenis SP</th>
-                <th width="7%">Tgl Kejadian</th>
+                <th width="6%">Jenis SP</th>
+                <th width="6%">Tgl Kejadian</th>
                 <th width="11%">Bentuk Pelanggaran</th>
                 <th width="6%">Dept Head</th>
                 <th width="6%">Tgl DH</th>
@@ -122,6 +122,7 @@
                 <th width="6%">IR Head</th>
                 <th width="6%">Tgl Terbit</th>
                 <th width="6%">Berlaku Sampai</th>
+                <th width="7%">Klasifikasi</th>
             </tr>
         </thead>
         <tbody>
@@ -149,7 +150,11 @@
                 // Dept Head status
                 if (in_array($currentStatus, ['DRAFT', 'PENDING_DH'])) {
                     $statusDh = $currentStatus === 'PENDING_DH' ? 'Pending' : 'Draft';
-                } elseif (in_array($currentStatus, ['REJECTED', 'CANCELLED'])) {
+                } elseif ($currentStatus === 'CANCEL_PENDING_DH') {
+                    $statusDh = 'Cancel Req';
+                } elseif (in_array($currentStatus, ['CANCEL_PENDING_IR', 'CANCEL_PENDING_IR_HEAD', 'CANCELLED'])) {
+                    $statusDh = 'Cancel ACC';
+                } elseif ($currentStatus === 'REJECTED') {
                     $dhLog = $sp->approvalLogs ? $sp->approvalLogs->where('action', 'REJECT')->first() : null;
                     $statusDh = $dhLog ? 'Ditolak' : 'OK';
                 } else {
@@ -165,6 +170,10 @@
                     $statusIrStaff = '-';
                 } elseif ($currentStatus === 'PENDING_IR') {
                     $statusIrStaff = 'Review';
+                } elseif ($currentStatus === 'CANCEL_PENDING_IR') {
+                    $statusIrStaff = 'Review Cnl';
+                } elseif (in_array($currentStatus, ['CANCEL_PENDING_IR_HEAD', 'CANCELLED'])) {
+                    $statusIrStaff = 'Cnl OK';
                 } elseif (in_array($currentStatus, ['PENDING_IR_HEAD', 'APPROVED'])) {
                     $statusIrStaff = 'OK';
                 } elseif ($currentStatus === 'REJECTED') {
@@ -178,6 +187,10 @@
                     $statusIrHead = 'ACC';
                 } elseif ($currentStatus === 'PENDING_IR_HEAD') {
                     $statusIrHead = 'Pending';
+                } elseif ($currentStatus === 'CANCEL_PENDING_IR_HEAD') {
+                    $statusIrHead = 'Pending Cnl';
+                } elseif ($currentStatus === 'CANCELLED') {
+                    $statusIrHead = 'Cancel';
                 } elseif ($currentStatus === 'REJECTED') {
                     $statusIrHead = 'Ditolak';
                 } else {
@@ -191,6 +204,21 @@
                 $berlakuSampai = $sp->masa_berlaku_sampai
                     ? \Carbon\Carbon::parse($sp->masa_berlaku_sampai)->format('d/m/Y')
                     : '-';
+
+                // Klasifikasi badge
+                $klasifikasi = $sp->kategori_sp ?: $sp->current_status;
+                $badgeClass = 'badge-proses';
+                if ($sp->kategori_sp === 'AKTIF') {
+                    $badgeClass = 'badge-aktif';
+                } elseif ($sp->kategori_sp === 'EXPIRED') {
+                    $badgeClass = 'badge-expired';
+                } elseif ($sp->kategori_sp === 'SP3') {
+                    $badgeClass = 'badge-sp3';
+                } elseif ($sp->kategori_sp === 'DITOLAK') {
+                    $badgeClass = 'badge-ditolak';
+                } elseif (in_array($sp->kategori_sp, ['CANCEL', 'PROSES_CANCEL'])) {
+                    $badgeClass = 'badge-cancel';
+                }
             @endphp
             <tr>
                 <td style="text-align: center;">{{ $index + 1 }}</td>
@@ -208,10 +236,13 @@
                 <td style="text-align: center;">{{ $statusIrHead }}</td>
                 <td style="text-align: center;">{{ $tglTerbit }}</td>
                 <td style="text-align: center;">{{ $berlakuSampai }}</td>
+                <td style="text-align: center;">
+                    <span class="badge {{ $badgeClass }}">{{ $klasifikasi }}</span>
+                </td>
             </tr>
             @empty
             <tr>
-                <td colspan="15" style="text-align: center; padding: 15px; color: #888;">Tidak ada data SP yang sesuai dengan filter yang dipilih.</td>
+                <td colspan="16" style="text-align: center; padding: 15px; color: #888;">Tidak ada data SP yang sesuai dengan filter yang dipilih.</td>
             </tr>
             @endforelse
         </tbody>
