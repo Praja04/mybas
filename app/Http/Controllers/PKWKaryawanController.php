@@ -120,15 +120,22 @@ class PKWKaryawanController extends Controller
                 ], 404);
             }
 
-            \Log::info("=== [uploadSecureAccess] Update FOTOBLOB ke MSIDCARD... ===");
+            \Log::info("=== [uploadSecureAccess] Update FOTOBLOB ke MSIDCARD (EMPCARDID: {$data->EMPCARDID}, size: " . strlen($image) . " bytes)... ===");
 
-            DB::connection('smu')
-                ->table('MSIDCARD')
-                ->where('EMPCARDID', $data->EMPCARDID)
-                ->update([
-                    'FOTOTYPE' => 'image/jpg',
-                    'FOTOBLOB' => $image
-                ]);
+            try {
+                DB::connection('smu')->statement("SET innodb_lock_wait_timeout = 10");
+            } catch (\Throwable $e) {
+                // ignore
+            }
+
+            $pdo = DB::connection('smu')->getPdo();
+            $stmt = $pdo->prepare("UPDATE MSIDCARD SET FOTOTYPE = ?, FOTOBLOB = ? WHERE EMPCARDID = ?");
+            $fototype = 'image/jpg';
+            $empcardid = (int) $data->EMPCARDID;
+            $stmt->bindParam(1, $fototype, \PDO::PARAM_STR);
+            $stmt->bindParam(2, $image, \PDO::PARAM_LOB);
+            $stmt->bindParam(3, $empcardid, \PDO::PARAM_INT);
+            $stmt->execute();
 
             \Log::info("=== [uploadSecureAccess] Update FOTOBLOB selesai ===");
 

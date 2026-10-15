@@ -303,7 +303,15 @@
         }
 
         function uploadToSecureAccess(id) {
-            // alert(nik);
+            Swal.fire({
+                title: 'Mengupload Foto...',
+                text: 'Sedang menyinkronkan foto ke Secure Access, mohon tunggu...',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
             $.ajax({
                 url: "{{ url('pkw/karyawan/upload-secure-access') }}",
                 type: "POST",
@@ -312,12 +320,35 @@
                     id: id
                 },
                 success: function(response) {
+                    Swal.close();
                     if (response.success == 1) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Berhasil',
+                            text: response.message || 'Foto berhasil diupload ke Secure Access',
+                            timer: 2000,
+                            showConfirmButton: false
+                        });
                         datatable.reload();
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Gagal',
+                            text: response.message || 'Gagal upload ke Secure Access'
+                        });
                     }
                 },
-                error: function(error) {
-                    console.log(error);
+                error: function(xhr) {
+                    Swal.close();
+                    let msg = 'Terjadi kesalahan saat upload ke Secure Access';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        msg = xhr.responseJSON.message;
+                    }
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: msg
+                    });
                 }
             });
         }
