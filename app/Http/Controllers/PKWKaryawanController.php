@@ -75,7 +75,7 @@ class PKWKaryawanController extends Controller
                 ], 404);
             }
 
-            $data = DB::connection('192.168.178.44-admin')
+            $data = DB::connection('smu')
                 ->table('MSIDCARD')
                 ->select('EMPCARDID')
                 ->where(DB::raw('CAST(BARCODE AS SIGNED)'), $nik)
@@ -89,7 +89,7 @@ class PKWKaryawanController extends Controller
                 ], 404);
             }
 
-            DB::connection('192.168.178.44-admin')
+            DB::connection('smu')
                 ->table('MSIDCARD')
                 ->where('EMPCARDID', $data->EMPCARDID)
                 ->update([
