@@ -78,9 +78,18 @@ class PKWKaryawanController extends Controller
             $data = DB::connection('smu')
                 ->table('MSIDCARD')
                 ->select('EMPCARDID')
-                ->where(DB::raw('CAST(BARCODE AS SIGNED)'), $nik)
+                ->where('BARCODE', (string) $nik)
                 ->orderBy('CREATEDON', 'desc')
                 ->first();
+
+            if (!$data) {
+                $data = DB::connection('smu')
+                    ->table('MSIDCARD')
+                    ->select('EMPCARDID')
+                    ->where('NIK', (string) $nik)
+                    ->orderBy('CREATEDON', 'desc')
+                    ->first();
+            }
 
             if (!$data) {
                 return response()->json([
