@@ -18,8 +18,9 @@
     @php
         $userPermissions = view()->shared('permissions') ?: [];
         $isAdmin = in_array('sp_pelanggaran_admin', $userPermissions);
-        $isIrStaff = in_array('sp_pelanggaran_ir_staff', $userPermissions);
-        $isIrRole = $isIrStaff || in_array('sp_pelanggaran_ir_head', $userPermissions);
+        $isIrRole =
+            in_array('sp_pelanggaran_ir_staff', $userPermissions) ||
+            in_array('sp_pelanggaran_ir_head', $userPermissions);
     @endphp
     <div class="row mb-3">
         <div class="col-12">
@@ -30,12 +31,6 @@
                         data-bs-target="#modalExportSp">
                         <i class="ri-file-excel-2-line me-1"></i> Export Data SP
                     </button>
-                    @if ($isIrStaff)
-                        <button class="btn btn-sm btn-outline-success me-1 shadow-sm" data-bs-toggle="modal"
-                            data-bs-target="#modalImportSpAktif">
-                            <i class="ri-file-upload-line me-1"></i> Upload Excel SP Aktif
-                        </button>
-                    @endif
                     @if ($isAdmin)
                         <a href="{{ route('sp_pelanggaran.index') }}" class="btn btn-sm btn-primary">
                             <i class="ri-add-circle-line me-1"></i> Input SP Baru
@@ -48,29 +43,37 @@
 
     <div class="card shadow-sm border-0">
         <div class="card-header bg-white py-3">
-            <form id="filterTraceForm" class="row g-2" onsubmit="event.preventDefault(); loadTraceData(1);">
-                <div class="col-md-4">
-                    <input type="text" id="traceSearchInput" name="search" class="form-control form-control-sm"
-                        placeholder="Cari NIK, Nama, No SP, Kode Pelanggaran...">
-                </div>
-                <div class="col-md-5">
-                    <select id="traceStatusSelect" name="status" class="form-select form-select-sm">
-                        <option value="">-- Semua Status --</option>
-                        <option value="AKTIF">🟢 SP Aktif (<= 6 Bln)</option>
-                        <option value="EXPIRED">⚪ Tidak Aktif (> 6 Bln)</option>
-                        <option value="SP3">🔴 SP+3 (SP Berat)</option>
-                        <option value="REJECTED">⛔ SP Ditolak</option>
-                        <option value="CANCELLED">⚠️ SP Cancel / Dibatalkan</option>
-                        <option value="PROSES_CANCEL">⏳ Dalam Pengajuan Cancel</option>
-                        <option value="PENDING_DH">Pending Dept Head</option>
-                        <option value="PENDING_IR">Pending IR Staff</option>
-                        <option value="PENDING_IR_HEAD">Pending IR Head</option>
-                    </select>
+            <form method="GET" action="{{ route('sp_pelanggaran.trace') }}" class="row g-2">
+                <div class="col-md-3">
+                    <input type="text" name="search" class="form-control form-control-sm"
+                        placeholder="Cari NIK, Nama, No SP..." value="{{ request('search') }}">
                 </div>
                 <div class="col-md-3">
-                    <button type="submit" class="btn btn-sm btn-secondary w-100">
-                        <i class="ri-search-line me-1"></i> Filter
-                    </button>
+                    <select name="status" class="form-select form-select-sm">
+                        <option value="">-- Semua Status --</option>
+                        <option value="AKTIF" {{ request('status') === 'AKTIF' ? 'selected' : '' }}>🟢 SP Aktif (<= 6
+                                Bln)</option>
+                        <option value="EXPIRED" {{ request('status') === 'EXPIRED' ? 'selected' : '' }}>⚪ tidak Aktif (> 6
+                            Bln)</option>
+                        <option value="SP3" {{ request('status') === 'SP3' ? 'selected' : '' }}>🔴 SP+3 (SP Berat)
+                        </option>
+                        <option value="REJECTED" {{ request('status') === 'REJECTED' ? 'selected' : '' }}>⛔ SP Ditolak
+                        </option>
+                        <option value="CANCELLED" {{ request('status') === 'CANCELLED' ? 'selected' : '' }}>⚠️ SP Cancel /
+                            Dibatalkan</option>
+                        <option value="PROSES_CANCEL" {{ request('status') === 'PROSES_CANCEL' ? 'selected' : '' }}>⏳ Dalam
+                            Pengajuan Cancel</option>
+                        <option value="PENDING_DH" {{ request('status') === 'PENDING_DH' ? 'selected' : '' }}>Pending Dept
+                            Head</option>
+                        <option value="PENDING_IR" {{ request('status') === 'PENDING_IR' ? 'selected' : '' }}>Pending IR
+                            Staff</option>
+                        <option value="PENDING_IR_HEAD" {{ request('status') === 'PENDING_IR_HEAD' ? 'selected' : '' }}>
+                            Pending IR Head</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-sm btn-secondary w-100"><i class="ri-search-line me-1"></i>
+                        Filter</button>
                 </div>
             </form>
         </div>
@@ -90,20 +93,132 @@
                             <th class="text-center">Aksi</th>
                         </tr>
                     </thead>
-                    <tbody id="traceTableBody">
-                        <tr>
-                            <td colspan="9" class="text-center py-5 text-muted">
-                                <div class="spinner-border text-primary spinner-border-sm me-2" role="status"></div>
-                                Memuat data SP...
-                            </td>
-                        </tr>
+                    <tbody>
+                        @forelse($sps as $index => $sp)
+                            <tr>
+                                <td>{{ ($sps->currentPage() - 1) * $sps->perPage() + $index + 1 }}</td>
+                                <td><strong
+                                        class="text-primary">{{ $sp->nomor_sp_generated ?: ($sp->no_sp ?: 'DRAFT') }}</strong>
+                                </td>
+                                <td>
+                                    {{ \Carbon\Carbon::parse($sp->tanggal_pelanggaran)->format('d M Y') }}
+                                    @if ($sp->dates && $sp->dates->count() > 1)
+                                        <br><small class="text-primary fw-bold"><i class="ri-calendar-event-line"></i>
+                                            +{{ $sp->dates->count() - 1 }} tgl</small>
+                                    @endif
+                                </td>
+                                <td><strong>{{ $sp->employee->nama ?? '-' }}</strong></td>
+                                <td><code>{{ $sp->employee->nik ?? '-' }}</code></td>
+                                <td>
+                                    @if ($sp->kode_admin || $sp->kode_ir)
+                                        <span class="badge bg-info text-dark sp-badge" title="Kode Pelanggaran">
+                                            {{ $sp->kode_admin ?: $sp->kode_ir }}
+                                        </span>
+                                    @else
+                                        <span class="text-muted fw-bold">-</span>
+                                    @endif
+                                </td>
+                                <td>
+                                    @if ($sp->jenis_pelanggaran)
+                                        <span class="badge bg-danger sp-badge">
+                                            {{ $sp->jenis_pelanggaran }}
+                                        </span>
+                                    @else
+                                        <span class="text-muted fw-bold">-</span>
+                                    @endif
+                                </td>
+                                <td>
+                                    @php
+                                        $cs = $sp->current_status ?? 'DRAFT';
+                                        $isExpired = $sp->isExpiredSp();
+                                    @endphp
+
+                                    @if ($cs === 'CANCELLED')
+                                        <span class="badge bg-secondary sp-badge"><i class="ri-ban-line me-1"></i> CANCEL
+                                            (DIBATALKAN)</span>
+                                    @elseif(in_array($cs, ['CANCEL_PENDING_DH', 'CANCEL_PENDING_IR', 'CANCEL_PENDING_IR_HEAD']))
+                                        <span class="badge bg-warning text-dark sp-badge"><i class="ri-alert-line me-1"></i>
+                                            PROSES CANCEL ({{ $cs }})</span>
+                                    @elseif($cs === 'REJECTED')
+                                        <span class="badge bg-danger sp-badge"><i class="ri-close-circle-line me-1"></i>
+                                            DITOLAK</span>
+                                    @elseif($cs === 'APPROVED')
+                                        @if ($isExpired)
+                                            <span class="badge bg-dark sp-badge" title="Masa berlaku 6 bulan telah habis"><i
+                                                    class="ri-history-line me-1"></i> TIDAK AKTIF (EXPIRED > 6 Bln)</span>
+                                        @elseif(in_array($sp->jenis_pelanggaran, ['SP 3', 'Surat Peringatan 3 (SP 3)']))
+                                            <span class="badge bg-danger sp-badge"><i class="ri-alert-line me-1"></i> SP+3
+                                                (BERAT)</span>
+                                        @else
+                                            <span class="badge bg-success sp-badge"><i
+                                                    class="ri-checkbox-circle-line me-1"></i> AKTIF (Berlaku 6 Bln)</span>
+                                        @endif
+                                    @else
+                                        <span class="badge bg-warning text-dark sp-badge"><i class="ri-time-line me-1"></i>
+                                            PROSES ({{ $cs }})</span>
+                                    @endif
+                                </td>
+                                <td class="text-center">
+                                    <div class="d-flex align-items-center justify-content-center gap-1 flex-nowrap">
+                                        @if ($isAdmin && $cs === 'DRAFT')
+                                            <button class="btn btn-sm btn-success btnSubmitDh py-1 px-2 text-nowrap"
+                                                data-id="{{ $sp->id }}" title="Submit ke Dept Head">
+                                                <i class="ri-send-plane-fill me-1"></i> Submit
+                                            </button>
+                                            <a href="{{ route('sp_pelanggaran.index', ['edit' => $sp->id]) }}"
+                                                class="btn btn-sm btn-warning text-dark py-1 px-2" title="Edit Draf SP">
+                                                <i class="ri-pencil-line"></i> Edit
+                                            </a>
+                                        @elseif($isAdmin && $cs === 'REJECTED')
+                                            <a href="{{ route('sp_pelanggaran.index', ['edit' => $sp->id]) }}"
+                                                class="btn btn-sm btn-warning text-dark py-1 px-2 text-nowrap"
+                                                title="Edit & Perbaiki Data SP Yang Ditolak">
+                                                <i class="ri-pencil-line me-1"></i> Edit & Perbaiki
+                                            </a>
+                                        @endif
+
+                                        {{-- Tombol Hapus: Untuk DRAFT / PENDING_DH oleh Admin, atau IR Role --}}
+                                        @if (
+                                            $cs !== 'APPROVED' &&
+                                                !in_array($cs, ['CANCELLED', 'CANCEL_PENDING_DH', 'CANCEL_PENDING_IR', 'CANCEL_PENDING_IR_HEAD']))
+                                            @if ($isIrRole || ($isAdmin && in_array($cs, ['DRAFT', 'PENDING_DH'])))
+                                                <button
+                                                    class="btn btn-sm btn-outline-danger btnDeleteSp py-1 px-2 text-nowrap"
+                                                    data-id="{{ $sp->id }}" title="Hapus Data SP">
+                                                    <i class="ri-delete-bin-line me-1"></i> Hapus
+                                                </button>
+                                            @endif
+                                        @endif
+
+                                        {{-- Tombol Cancel: HANYA untuk SP yang sudah TERBIT (APPROVED) --}}
+                                        @if ($cs === 'APPROVED')
+                                            <button class="btn btn-sm btn-outline-warning btnCancelSp py-1 px-2 text-nowrap"
+                                                data-id="{{ $sp->id }}" title="Ajukan Pembatalan (Cancel SP)">
+                                                <i class="ri-ban-line me-1"></i> Ajukan Cancel
+                                            </button>
+                                        @endif
+
+                                        <button class="btn btn-sm btn-outline-primary btnDetailSp py-1 px-2 text-nowrap"
+                                            data-id="{{ $sp->id }}" title="Lihat Detail & Tracking">
+                                            <i class="ri-information-line me-1"></i> Detail
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="9" class="text-center py-4 text-muted">Belum ada data SP yang ditemukan.
+                                </td>
+                            </tr>
+                        @endforelse
                     </tbody>
                 </table>
             </div>
         </div>
         <div class="card-footer bg-white d-flex justify-content-between align-items-center">
-            <div id="tracePaginationInfo" class="text-muted small">Memuat informasi data...</div>
-            <div id="tracePaginationLinks"></div>
+            <div>Menampilkan {{ $sps->firstItem() ?? 0 }} - {{ $sps->lastItem() ?? 0 }} dari {{ $sps->total() }} data
+            </div>
+            <div>{{ $sps->withQueryString()->links() }}</div>
         </div>
     </div>
 
@@ -147,8 +262,7 @@
                             Cancel (Opsional):</label>
                         <input type="file" id="cancelLampiranFile" class="form-control"
                             accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
-                        <div class="form-text small">Upload file bukti pendukung pembatalan (Max 5MB: PDF, JPG, PNG,
-                            DOCX).
+                        <div class="form-text small">Upload file bukti pendukung pembatalan (Max 5MB: PDF, JPG, PNG, DOCX).
                         </div>
                     </div>
                 </div>
@@ -213,309 +327,13 @@
             </div>
         </div>
     </div>
-
-    <!-- Modal Import Excel Data SP Aktif -->
-    <div class="modal fade" id="modalImportSpAktif" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <form id="formImportSpAktif" enctype="multipart/form-data">
-                    @csrf
-                    <div class="modal-header bg-success text-white py-2">
-                        <h5 class="modal-title fs-6 fw-bold"><i class="ri-file-excel-2-line me-1"></i> Upload Data SP Aktif (Excel)</h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="alert alert-info py-2 small mb-3">
-                            <i class="ri-information-line me-1"></i> Fitur ini digunakan untuk mengimpor <strong>Data SP yang sedang AKTIF/Berjalan</strong> secara langsung ke sistem (berstatus APPROVED).
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">1. Unduh Template Excel:</label>
-                            <div>
-                                <a href="{{ route('sp_pelanggaran.template_sp_aktif') }}" class="btn btn-sm btn-outline-primary w-100">
-                                    <i class="ri-download-line me-1"></i> Download Template Excel SP Aktif (.xlsx)
-                                </a>
-                            </div>
-                            <div class="form-text small mt-1">Gunakan template resmi agar format data (NIK, Jenis SP, Tanggal Terbit) sesuai.</div>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">2. Pilih File Excel Yang Sudah Diisi: <span class="text-danger">*</span></label>
-                            <input type="file" id="fileImportSpAktif" name="file" class="form-control" accept=".xlsx, .xls" required>
-                            <div class="form-text small">Format yang didukung: .xlsx, .xls (Maksimal 5MB).</div>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                        <button type="submit" class="btn btn-success" id="btnSubmitImportSpAktif">
-                            <i class="ri-upload-2-line me-1"></i> Process Upload
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
 @endsection
 
 @push('scripts')
     <script>
-        let currentTracePage = 1;
-        let traceSearchTimer = null;
-
-        function loadTraceData(page = 1) {
-            currentTracePage = page;
-            let search = $('#traceSearchInput').val();
-            let status = $('#traceStatusSelect').val();
-
-            $('#traceTableBody').html(`
-                <tr>
-                    <td colspan="9" class="text-center py-5 text-muted">
-                        <div class="spinner-border text-primary spinner-border-sm me-2" role="status"></div>
-                        Memuat data SP...
-                    </td>
-                </tr>
-            `);
-
-            $.ajax({
-                url: '{{ route('sp_pelanggaran.trace') }}',
-                type: 'GET',
-                data: {
-                    page: page,
-                    search: search,
-                    status: status
-                },
-                dataType: 'json',
-                success: function(res) {
-                    if (res.status === 'success') {
-                        renderTable(res.data, res.is_admin, res.is_ir_role);
-                        renderPagination(res.data);
-                    }
-                },
-                error: function(xhr) {
-                    $('#traceTableBody').html(`
-                        <tr>
-                            <td colspan="9" class="text-center py-4 text-danger">
-                                <i class="ri-error-warning-line me-1"></i> Gagal memuat data SP. Silakan coba lagi.
-                            </td>
-                        </tr>
-                    `);
-                }
-            });
-        }
-
-        function renderTable(paginator, isAdmin, isIrRole) {
-            let list = paginator.data || [];
-            if (list.length === 0) {
-                $('#traceTableBody').html(`
-                    <tr>
-                        <td colspan="9" class="text-center py-5 text-muted">
-                            <i class="ri-search-eye-line fs-3 d-block mb-1 text-secondary"></i>
-                            Belum ada data SP yang ditemukan.
-                        </td>
-                    </tr>
-                `);
-                return;
-            }
-
-            let html = '';
-            list.forEach((sp, index) => {
-                let no = (paginator.current_page - 1) * paginator.per_page + index + 1;
-                let emp = sp.employee || {};
-                let cs = sp.current_status || 'DRAFT';
-                let isExpired = sp.is_expired;
-
-                // Date formatting
-                let dateDisplay = '-';
-                if (sp.tanggal_pelanggaran) {
-                    let d = new Date(sp.tanggal_pelanggaran);
-                    if (!isNaN(d.getTime())) {
-                        let day = String(d.getDate()).padStart(2, '0');
-                        let months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov',
-                            'Des'
-                        ];
-                        dateDisplay = `${day} ${months[d.getMonth()]} ${d.getFullYear()}`;
-                    }
-                }
-                if (sp.dates && sp.dates.length > 1) {
-                    dateDisplay +=
-                        `<br><small class="text-primary fw-bold"><i class="ri-calendar-event-line"></i> +${sp.dates.length - 1} tgl</small>`;
-                }
-
-                // Status Badge
-                let statusBadge = '';
-                if (cs === 'CANCELLED') {
-                    statusBadge =
-                        '<span class="badge bg-secondary sp-badge"><i class="ri-ban-line me-1"></i> CANCEL (DIBATALKAN)</span>';
-                } else if (['CANCEL_PENDING_DH', 'CANCEL_PENDING_IR', 'CANCEL_PENDING_IR_HEAD'].includes(cs)) {
-                    statusBadge =
-                        `<span class="badge bg-warning text-dark sp-badge"><i class="ri-alert-line me-1"></i> PROSES CANCEL (${cs})</span>`;
-                } else if (cs === 'REJECTED') {
-                    statusBadge =
-                        '<span class="badge bg-danger sp-badge"><i class="ri-close-circle-line me-1"></i> DITOLAK</span>';
-                } else if (cs === 'APPROVED') {
-                    if (isExpired) {
-                        statusBadge =
-                            '<span class="badge bg-dark sp-badge" title="Masa berlaku 6 bulan telah habis"><i class="ri-history-line me-1"></i> TIDAK AKTIF (EXPIRED > 6 Bln)</span>';
-                    } else if (['SP 3', 'Surat Peringatan 3 (SP 3)'].includes(sp.jenis_pelanggaran)) {
-                        statusBadge =
-                            '<span class="badge bg-danger sp-badge"><i class="ri-alert-line me-1"></i> SP+3 (BERAT)</span>';
-                    } else {
-                        statusBadge =
-                            '<span class="badge bg-success sp-badge"><i class="ri-checkbox-circle-line me-1"></i> AKTIF (Berlaku 6 Bln)</span>';
-                    }
-                } else {
-                    statusBadge =
-                        `<span class="badge bg-warning text-dark sp-badge"><i class="ri-time-line me-1"></i> PROSES (${cs})</span>`;
-                }
-
-                // Actions
-                let actions = '<div class="d-flex align-items-center justify-content-center gap-1 flex-nowrap">';
-                if (isAdmin && cs === 'DRAFT') {
-                    actions += `
-                        <button class="btn btn-sm btn-success btnSubmitDh py-1 px-2 text-nowrap" data-id="${sp.id}" title="Submit ke Dept Head">
-                            <i class="ri-send-plane-fill me-1"></i> Submit
-                        </button>
-                        <a href="/sp-pelanggaran?edit=${sp.id}" class="btn btn-sm btn-warning text-dark py-1 px-2" title="Edit Draf SP">
-                            <i class="ri-pencil-line"></i> Edit
-                        </a>
-                    `;
-                }
-
-                if (cs !== 'APPROVED' && !['CANCELLED', 'CANCEL_PENDING_DH', 'CANCEL_PENDING_IR',
-                        'CANCEL_PENDING_IR_HEAD'
-                    ].includes(cs)) {
-                    if (isIrRole || (isAdmin && ['DRAFT', 'PENDING_DH'].includes(cs))) {
-                        actions += `
-                            <button class="btn btn-sm btn-outline-danger btnDeleteSp py-1 px-2 text-nowrap" data-id="${sp.id}" title="Hapus Data SP">
-                                <i class="ri-delete-bin-line me-1"></i> Hapus
-                            </button>
-                        `;
-                    }
-                }
-
-                if (cs === 'APPROVED') {
-                    actions += `
-                        <button class="btn btn-sm btn-outline-warning btnCancelSp py-1 px-2 text-nowrap" data-id="${sp.id}" title="Ajukan Pembatalan (Cancel SP)">
-                            <i class="ri-ban-line me-1"></i> Ajukan Cancel
-                        </button>
-                        <a href="/sp-pelanggaran/export-sp-pdf/${sp.id}" class="btn btn-sm btn-outline-danger py-1 px-2 text-nowrap" title="Download Surat Peringatan (PDF)" target="_blank">
-                            <i class="ri-file-pdf-line me-1"></i> PDF
-                        </a>
-                    `;
-                }
-
-                actions += `
-                    <button class="btn btn-sm btn-outline-primary btnDetailSp py-1 px-2 text-nowrap" data-id="${sp.id}" title="Lihat Detail & Tracking">
-                        <i class="ri-information-line me-1"></i> Detail
-                    </button>
-                </div>`;
-
-                let kodeBadge = (sp.kode_admin || sp.kode_ir) ?
-                    `<span class="badge bg-info text-dark sp-badge" title="Kode Pelanggaran">${sp.kode_admin || sp.kode_ir}</span>` :
-                    '<span class="text-muted fw-bold">-</span>';
-
-                let jenisBadge = sp.jenis_pelanggaran ?
-                    `<span class="badge bg-danger sp-badge">${sp.jenis_pelanggaran}</span>` :
-                    '<span class="text-muted fw-bold">-</span>';
-
-                html += `
-                    <tr>
-                        <td>${no}</td>
-                        <td><strong class="text-primary">${sp.nomor_sp_generated || 'DRAFT'}</strong></td>
-                        <td>${dateDisplay}</td>
-                        <td><strong>${emp.nama || '-'}</strong></td>
-                        <td><code>${emp.nik || '-'}</code></td>
-                        <td>${kodeBadge}</td>
-                        <td>${jenisBadge}</td>
-                        <td>${statusBadge}</td>
-                        <td class="text-center">${actions}</td>
-                    </tr>
-                `;
-            });
-
-            $('#traceTableBody').html(html);
-        }
-
-        function renderPagination(paginator) {
-            let from = paginator.from || 0;
-            let to = paginator.to || 0;
-            let total = paginator.total || 0;
-            let lastPage = paginator.last_page || 1;
-            let current = paginator.current_page || 1;
-
-            $('#tracePaginationInfo').html(`Menampilkan ${from} - ${to} dari ${total} data`);
-
-            if (lastPage <= 1) {
-                $('#tracePaginationLinks').html('');
-                return;
-            }
-
-            let linksHtml = '<ul class="pagination pagination-sm mb-0">';
-
-            // Previous
-            if (current > 1) {
-                linksHtml +=
-                    `<li class="page-item"><a class="page-link" href="javascript:void(0)" onclick="loadTraceData(${current - 1})">&laquo;</a></li>`;
-            } else {
-                linksHtml += `<li class="page-item disabled"><span class="page-link">&laquo;</span></li>`;
-            }
-
-            // Page numbers
-            let startPage = Math.max(1, current - 2);
-            let endPage = Math.min(lastPage, current + 2);
-
-            if (startPage > 1) {
-                linksHtml +=
-                    `<li class="page-item"><a class="page-link" href="javascript:void(0)" onclick="loadTraceData(1)">1</a></li>`;
-                if (startPage > 2) linksHtml += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
-            }
-
-            for (let i = startPage; i <= endPage; i++) {
-                if (i === current) {
-                    linksHtml += `<li class="page-item active"><span class="page-link">${i}</span></li>`;
-                } else {
-                    linksHtml +=
-                        `<li class="page-item"><a class="page-link" href="javascript:void(0)" onclick="loadTraceData(${i})">${i}</a></li>`;
-                }
-            }
-
-            if (endPage < lastPage) {
-                if (endPage < lastPage - 1) linksHtml +=
-                    `<li class="page-item disabled"><span class="page-link">...</span></li>`;
-                linksHtml +=
-                    `<li class="page-item"><a class="page-link" href="javascript:void(0)" onclick="loadTraceData(${lastPage})">${lastPage}</a></li>`;
-            }
-
-            // Next
-            if (current < lastPage) {
-                linksHtml +=
-                    `<li class="page-item"><a class="page-link" href="javascript:void(0)" onclick="loadTraceData(${current + 1})">&raquo;</a></li>`;
-            } else {
-                linksHtml += `<li class="page-item disabled"><span class="page-link">&raquo;</span></li>`;
-            }
-
-            linksHtml += '</ul>';
-            $('#tracePaginationLinks').html(linksHtml);
-        }
-
         $(document).ready(function() {
-            // Initial load
-            loadTraceData(1);
-
-            // Live Search Debounce
-            $('#traceSearchInput').on('keyup', function() {
-                clearTimeout(traceSearchTimer);
-                traceSearchTimer = setTimeout(function() {
-                    loadTraceData(1);
-                }, 300);
-            });
-
-            // Filter Status Change
-            $('#traceStatusSelect').on('change', function() {
-                loadTraceData(1);
-            });
-
             // Handler Submit ke Dept Head
-            $(document).on('click', '.btnSubmitDh', function() {
+            $('.btnSubmitDh').click(function() {
                 let id = $(this).data('id');
                 Swal.fire({
                     title: 'Submit ke Dept Head?',
@@ -536,7 +354,7 @@
                             _token: '{{ csrf_token() }}'
                         }, function(res) {
                             Swal.fire('Berhasil!', res.message, 'success').then(() =>
-                                loadTraceData(currentTracePage));
+                                location.reload());
                         }).fail(function(xhr) {
                             let err = xhr.responseJSON ? xhr.responseJSON.message :
                                 'Gagal mengirim ke Dept Head.';
@@ -568,7 +386,7 @@
                             },
                             success: function(res) {
                                 Swal.fire('Berhasil!', res.message, 'success').then(
-                                    () => loadTraceData(currentTracePage));
+                                () => location.reload());
                             },
                             error: function(xhr) {
                                 let err = xhr.responseJSON ? xhr.responseJSON.message :
@@ -617,13 +435,8 @@
                     processData: false,
                     contentType: false,
                     success: function(res) {
-                        let modalEl = document.getElementById('modalCancelSp');
-                        let modalInst = bootstrap.Modal.getInstance(modalEl);
-                        if (modalInst) modalInst.hide();
-
-                        Swal.fire('Berhasil!', res.message, 'success').then(() => loadTraceData(
-                            currentTracePage));
-                        $btn.prop('disabled', false).text('Batalkan Sekarang (Cancel)');
+                        Swal.fire('Berhasil!', res.message, 'success').then(() => location
+                            .reload());
                     },
                     error: function(xhr) {
                         let err = xhr.responseJSON ? xhr.responseJSON.message :
@@ -749,61 +562,10 @@
                         $('#modalDetailContent').html(html);
                     }
                 }).fail(function() {
-                    $('#modalDetailContent').html('<div class="alert alert-danger p-3 mb-0">Gagal memuat detail data SP. Silakan coba lagi.</div>');
-                });
-            });
-
-            // Handler Submit Import Excel SP Aktif
-            $('#formImportSpAktif').on('submit', function(e) {
-
-                e.preventDefault();
-                let fileInput = $('#fileImportSpAktif')[0];
-                if (!fileInput || fileInput.files.length === 0) {
-                    Swal.fire('Peringatan!', 'Silakan pilih file Excel terlebih dahulu.', 'warning');
-                    return;
-                }
-
-                let formData = new FormData(this);
-                let $btn = $('#btnSubmitImportSpAktif');
-                $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1" role="status"></span> Memproses Upload...');
-
-                $.ajax({
-                    url: '{{ route("sp_pelanggaran.import_sp_aktif") }}',
-                    type: 'POST',
-                    data: formData,
-                    processData: false,
-                    contentType: false,
-                    success: function(res) {
-                        $btn.prop('disabled', false).html('<i class="ri-upload-2-line me-1"></i> Process Upload');
-                        if (res.status === 'success') {
-                            let modalEl = document.getElementById('modalImportSpAktif');
-                            let modalInst = bootstrap.Modal.getInstance(modalEl);
-                            if (modalInst) modalInst.hide();
-
-                            let skippedInfo = '';
-                            if (res.skipped_rows && res.skipped_rows.length > 0) {
-                                skippedInfo = '<br><hr><strong class="text-warning">Baris dilewati/invalid:</strong><ul class="text-start small mb-0 mt-1" style="max-height:150px; overflow-y:auto;">' +
-                                    res.skipped_rows.map(s => `<li>${s}</li>`).join('') + '</ul>';
-                            }
-
-                            Swal.fire({
-                                title: 'Impor Berhasil!',
-                                html: res.message + skippedInfo,
-                                icon: 'success'
-                            }).then(() => {
-                                $('#formImportSpAktif')[0].reset();
-                                loadTraceData(1);
-                            });
-                        }
-                    },
-                    error: function(xhr) {
-                        $btn.prop('disabled', false).html('<i class="ri-upload-2-line me-1"></i> Process Upload');
-                        let err = xhr.responseJSON ? xhr.responseJSON.message : 'Gagal mengimpor file Excel SP Aktif.';
-                        Swal.fire('Gagal Impor!', err, 'error');
-                    }
+                    $('#modalDetailContent').html(
+                        '<div class="alert alert-danger">Gagal mengambil detail SP.</div>');
                 });
             });
         });
     </script>
 @endpush
-

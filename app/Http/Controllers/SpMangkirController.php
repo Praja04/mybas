@@ -460,10 +460,19 @@ class SpMangkirController extends Controller
         }
 
         return view('sp_mangkir.audit', compact(
-            'canInput', 'isIrStaff', 'isIrHead', 'isDeptHead',
-            'availablePeriods', 'selectedPeriod', 'filterStatus', 'search',
-            'kpiData', 'auditRecordsPaginated', 'periodLabel',
-            'auditFilename', 'auditUploadedAt'
+            'canInput',
+            'isIrStaff',
+            'isIrHead',
+            'isDeptHead',
+            'availablePeriods',
+            'selectedPeriod',
+            'filterStatus',
+            'search',
+            'kpiData',
+            'auditRecordsPaginated',
+            'periodLabel',
+            'auditFilename',
+            'auditUploadedAt'
         ));
     }
 
