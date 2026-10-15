@@ -2267,11 +2267,11 @@ class SpPelanggaranController extends Controller
             $permissions = $user->getAllPermissionCodenames();
         }
 
-        $isAuthorized = in_array('sp_pelanggaran_ir_staff', $permissions) || 
-                         in_array('sp_pelanggaran_ir_head', $permissions) || 
-                         in_array('sp_pelanggaran_admin', $permissions) || 
-                         ($user && isset($user->auth_group_id) && $user->auth_group_id == 1) ||
-                         Auth::check() || session('login') || session('username');
+        $isAuthorized = in_array('sp_pelanggaran_ir_staff', $permissions) ||
+            in_array('sp_pelanggaran_ir_head', $permissions) ||
+            in_array('sp_pelanggaran_admin', $permissions) ||
+            ($user && isset($user->auth_group_id) && $user->auth_group_id == 1) ||
+            Auth::check() || session('login') || session('username');
 
         if (!$isAuthorized) {
             return response()->json([
@@ -2371,18 +2371,30 @@ class SpPelanggaranController extends Controller
 
             // Indonesian Month Parsing Map
             $monthMap = [
-                'januari' => '01', 'jan' => '01',
-                'februari' => '02', 'feb' => '02',
-                'maret' => '03', 'mar' => '03',
-                'april' => '04', 'apr' => '04',
+                'januari' => '01',
+                'jan' => '01',
+                'februari' => '02',
+                'feb' => '02',
+                'maret' => '03',
+                'mar' => '03',
+                'april' => '04',
+                'apr' => '04',
                 'mei' => '05',
-                'juni' => '06', 'jun' => '06',
-                'juli' => '07', 'jul' => '07',
-                'agustus' => '08', 'agu' => '08', 'agt' => '08',
-                'september' => '09', 'sep' => '09',
-                'oktober' => '10', 'okt' => '10',
-                'november' => '11', 'nov' => '11',
-                'desember' => '12', 'des' => '12',
+                'juni' => '06',
+                'jun' => '06',
+                'juli' => '07',
+                'jul' => '07',
+                'agustus' => '08',
+                'agu' => '08',
+                'agt' => '08',
+                'september' => '09',
+                'sep' => '09',
+                'oktober' => '10',
+                'okt' => '10',
+                'november' => '11',
+                'nov' => '11',
+                'desember' => '12',
+                'des' => '12',
             ];
 
             foreach ($rows as $idx => $row) {
@@ -2530,7 +2542,7 @@ class SpPelanggaranController extends Controller
             return response()->json([
                 'status'        => 'success',
                 'message'       => $message,
-                'imported_count'=> $importedCount,
+                'imported_count' => $importedCount,
                 'skipped_rows'  => $skippedRows,
             ]);
         } catch (\Exception $e) {
