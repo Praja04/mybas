@@ -37,6 +37,9 @@ class PKWKaryawanController extends Controller
 
     public function uploadSecureAccess(Request $request)
     {
+        $t0 = microtime(true);
+        \Log::info("=== [uploadSecureAccess] START (ID: {$request->id}) ===");
+
         try {
             $karyawan = PKWKaryawan::find($request->id);
             if (!$karyawan) {
@@ -59,13 +62,28 @@ class PKWKaryawanController extends Controller
             $image = null;
             $localPath = public_path('images/foto/' . $foto_name);
 
+            \Log::info("=== [uploadSecureAccess] Cek foto local: {$localPath} ===");
+
             if (file_exists($localPath)) {
                 $image = file_get_contents($localPath);
+                \Log::info("=== [uploadSecureAccess] Foto lokal ditemukan (" . strlen($image) . " bytes) ===");
             } else {
-                // Fallback ke server 172.21.5.105 jika foto belum ada di server lokal
+                \Log::info("=== [uploadSecureAccess] Foto lokal TIDAK ADA, coba fallback 172.21.5.105 ===");
+                // Fallback ke server 172.21.5.105 dengan timeout ketat agar tidak hang
                 $url = 'http://172.21.5.105/images/foto/' . $foto_name;
-                $ctx = stream_context_create(['http' => ['timeout' => 5]]);
-                $image = @file_get_contents($url, false, $ctx);
+                $ch = curl_init();
+                curl_setopt($ch, CURLOPT_URL, $url);
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+                curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 3);
+                curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+                $image = curl_exec($ch);
+                $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                curl_close($ch);
+
+                if ($httpCode !== 200 || empty($image)) {
+                    $image = null;
+                }
+                \Log::info("=== [uploadSecureAccess] Fallback HTTP code: {$httpCode}, size: " . strlen($image ?? '') . " bytes ===");
             }
 
             if (!$image) {
@@ -74,6 +92,8 @@ class PKWKaryawanController extends Controller
                     'message' => 'File foto karyawan tidak ditemukan di server lokal maupun server 172.21.5.105.'
                 ], 404);
             }
+
+            \Log::info("=== [uploadSecureAccess] Query DB SMU untuk NIK: {$nik} ===");
 
             $data = DB::connection('smu')
                 ->table('MSIDCARD')
@@ -91,12 +111,16 @@ class PKWKaryawanController extends Controller
                     ->first();
             }
 
+            \Log::info("=== [uploadSecureAccess] Query DB SMU selesai, EMPCARDID: " . ($data->EMPCARDID ?? 'null') . " ===");
+
             if (!$data) {
                 return response()->json([
                     'success' => 0,
                     'message' => 'Data NIK ' . $nik . ' tidak ditemukan di database Secure Access (MSIDCARD).'
                 ], 404);
             }
+
+            \Log::info("=== [uploadSecureAccess] Update FOTOBLOB ke MSIDCARD... ===");
 
             DB::connection('smu')
                 ->table('MSIDCARD')
@@ -106,15 +130,21 @@ class PKWKaryawanController extends Controller
                     'FOTOBLOB' => $image
                 ]);
 
+            \Log::info("=== [uploadSecureAccess] Update FOTOBLOB selesai ===");
+
             $karyawan->upload_secure_access = 'sudah';
             $karyawan->upload_secure_access_time = date('Y-m-d H:i:s');
             $karyawan->save();
 
+            $elapsed = round(microtime(true) - $t0, 2);
+            \Log::info("=== [uploadSecureAccess] SELESAI SUKSES dalam {$elapsed} detik ===");
+
             return response()->json([
                 'success' => 1,
-                'message' => 'Upload image to secure access succeed'
+                'message' => "Upload image to secure access succeed ({$elapsed}s)"
             ]);
         } catch (\Throwable $th) {
+            \Log::error("=== [uploadSecureAccess] ERROR: " . $th->getMessage() . " ===");
             return response()->json([
                 'success' => 0,
                 'message' => 'Gagal upload ke secure access: ' . $th->getMessage()
