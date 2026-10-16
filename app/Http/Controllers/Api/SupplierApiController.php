@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -24,6 +25,7 @@ class SupplierApiController extends Controller
                     'namacomp as nama_perusahaan',
                     'namavisitor as nama_driver',
                     'nohpdriver as no_hp_driver',
+                    'created_at',
                     DB::raw("COALESCE(CONCAT(datein, ' ', timein), CAST(created_at AS CHAR)) as checkin_pos1"),
                 ])
                 ->where('keterangan', 'SUPIR')
@@ -32,7 +34,8 @@ class SupplierApiController extends Controller
                 ->where(function ($q) {
                     $q->whereNull('kartu_dikembalikan')
                         ->orWhere('kartu_dikembalikan', 0);
-                });
+                })
+                ->where('created_at', '>=', Carbon::now()->subDays(3)->startOfDay());
 
             // Search by nopol or company name
             if ($request->filled('search')) {
