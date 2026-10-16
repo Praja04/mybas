@@ -17,98 +17,43 @@ class SupplierApiController extends Controller
     public function getSupplierData(Request $request)
     {
         try {
-            // Definisi helper raw agar rapi dan collation seragam
-            $collate = 'latin1_swedish_ci'; // Sesuaikan jika database Anda menggunakan latin1_swedish_ci atau utf8mb4_general_ci, utf8mb4_unicode_ci
-
-            // visitor TRANSACTION
-            $transaction = DB::table('ga_visitor_transaction')
+            $query = DB::table('ga_visitor_transaction')
                 ->select([
-                    DB::raw("trnvisitorid COLLATE {$collate} as trnvisitorid"),
-                    DB::raw("nopol COLLATE {$collate} as nopol"),
-                    DB::raw("namavisitor COLLATE {$collate} as namavisitor"),
-                    DB::raw("namacomp COLLATE {$collate} as namacomp"),
-                    'kartu_dikembalikan',
-                    DB::raw("'transaction' as source"),
-                    'created_at',
-                    DB::raw("nohpdriver COLLATE {$collate} as nohpdriver"),
+                    'trnvisitorid',
+                    'nopol',
+                    'namacomp as nama_perusahaan',
+                    'namavisitor as nama_driver',
+                    'nohpdriver as no_hp_driver',
                     DB::raw("COALESCE(CONCAT(datein, ' ', timein), CAST(created_at AS CHAR)) as checkin_pos1"),
                 ])
                 ->where('keterangan', 'SUPIR')
-                ->where(function ($q) {
-                    $q->whereNull('kartu_dikembalikan')
-                        ->orWhere('kartu_dikembalikan', 0);
-                });
-
-            // visitor VENDOR
-            $vendor = DB::table('ga_visitor_vendor')
-                ->select([
-                    DB::raw("trnvisitorid COLLATE {$collate} as trnvisitorid"),
-                    DB::raw("nopol COLLATE {$collate} as nopol"),
-                    DB::raw("namavisitor COLLATE {$collate} as namavisitor"),
-                    DB::raw("namacomp COLLATE {$collate} as namacomp"),
-                    'kartu_dikembalikan',
-                    DB::raw("'vendor' as source"),
-                    'created_at',
-                    DB::raw("nohpdriver COLLATE {$collate} as nohpdriver"),
-                    DB::raw("COALESCE(CONCAT(datein, ' ', timein), CAST(created_at AS CHAR)) as checkin"),
-                ])
                 ->whereNotNull('nopol')
                 ->where('nopol', '!=', '')
                 ->where(function ($q) {
                     $q->whereNull('kartu_dikembalikan')
                         ->orWhere('kartu_dikembalikan', 0);
-                })
-                ->whereNotExists(function ($query) {
-                    $query->select(DB::raw(1))
-                        ->from('ga_visitor_transaction')
-                        ->where('ga_visitor_transaction.keterangan', 'SUPIR')
-                        ->whereRaw("
-                    CONVERT(REPLACE(REPLACE(UPPER(ga_visitor_transaction.nopol), ' ', ''), '-', '') USING latin1)
-                    =
-                    CONVERT(REPLACE(REPLACE(UPPER(ga_visitor_vendor.nopol), ' ', ''), '-', '') USING latin1)
-                ");
                 });
-
-            // UNION visitor
-            $visitors = $transaction->unionAll($vendor);
-
-            // LEFT JOIN cek kendaraan
-            $query = DB::query()
-                ->fromSub($visitors, 'v')
-                ->leftJoin('ga_cek_kendaraan as c', function ($join) {
-                    $join->on(DB::raw('CONVERT(c.trnvisitorid USING latin1)'), '=', DB::raw('CONVERT(v.trnvisitorid USING latin1)'))
-                        ->whereColumn('c.created_at', '>=', 'v.created_at');
-                })
-                ->whereNull('c.trncekid')
-                ->select([
-                    'v.trnvisitorid',
-                    'v.nopol',
-                    'v.namacomp as nama_perusahaan',
-                    'v.namavisitor as nama_driver',
-                    'v.nohpdriver as no_hp_driver',
-                    'v.checkin_pos1',
-                ]);
 
             // Search by nopol or company name
             if ($request->filled('search')) {
                 $search = $request->input('search');
                 $query->where(function ($q) use ($search) {
-                    $q->where('v.nopol', 'like', '%' . $search . '%')
-                        ->orWhere('v.namacomp', 'like', '%' . $search . '%');
+                    $q->where('nopol', 'like', '%' . $search . '%')
+                        ->orWhere('namacomp', 'like', '%' . $search . '%');
                 });
             }
 
             // Limit results to avoid memory issues
             $limit = min((int) $request->input('limit', 100), 500);
-            $query->orderBy('v.namacomp', 'asc')
-                ->orderBy('v.nopol', 'asc')
+            $query->orderBy('namacomp', 'asc')
+                ->orderBy('nopol', 'asc')
                 ->limit($limit);
 
             $data = $query->get();
 
             return response()->json([
                 'success' => true,
-                'message' => 'Data supplier yang belum pengecekan kendaraan berhasil diambil',
+                'message' => 'Data supplier yang belum kembalikan kartu berhasil diambil',
                 'count'   => $data->count(),
                 'data'    => $data,
             ], 200);
