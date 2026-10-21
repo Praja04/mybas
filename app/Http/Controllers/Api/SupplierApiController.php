@@ -35,7 +35,7 @@ class SupplierApiController extends Controller
                     $q->whereNull('kartu_dikembalikan')
                         ->orWhere('kartu_dikembalikan', 0);
                 })
-                ->where('created_at', '>=', Carbon::now()->subDays(3)->startOfDay());
+                ->where('created_at', '>=', Carbon::now()->subDays(15)->startOfDay());
 
             // Search by nopol or company name
             if ($request->filled('search')) {
