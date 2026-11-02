@@ -55,6 +55,11 @@ class PoolQccAdminController extends Controller
      */
     public function index()
     {
+        return view('pool_qcc.admin.dashboard');
+    }
+
+    public function getDashboardData()
+    {
         $totalBooths = PoolBooth::count();
         $totalQuestions = PoolQuestion::count();
         $totalParticipants = PoolParticipant::count();
@@ -62,43 +67,54 @@ class PoolQccAdminController extends Controller
         $correctVotes = PoolVote::where('is_correct', true)->count();
         $accuracyRate = $totalVotes > 0 ? round(($correctVotes / $totalVotes) * 100, 1) : 0;
 
-        // Leaderboard Booth berdasarkan total points
         $topBooths = PoolBooth::orderBy('total_points', 'desc')
             ->orderBy('total_voters', 'desc')
             ->take(5)
             ->get();
 
-        // Leaderboard Peserta berdasarkan score tertinggi
         $topParticipants = PoolParticipant::orderBy('total_score', 'desc')
             ->orderBy('updated_at', 'desc')
             ->take(5)
             ->get();
 
-        // 10 Aktivitas Vote Terbaru
         $recentVotes = PoolVote::with(['participant', 'booth', 'question'])
             ->latest()
             ->take(10)
-            ->get();
+            ->get()
+            ->map(function ($v) {
+                return [
+                    'id' => $v->id,
+                    'created_at_formatted' => $v->created_at ? $v->created_at->format('H:i:s d/m/Y') : '-',
+                    'participant_name' => $v->participant ? $v->participant->name : '-',
+                    'booth_name' => $v->booth ? $v->booth->name : '-',
+                    'booth_code' => $v->booth ? $v->booth->code : '',
+                    'participant_answer' => $v->participant_answer,
+                    'is_correct' => (bool) $v->is_correct,
+                    'points_awarded' => (int) $v->points_awarded,
+                ];
+            });
 
-        // Booth yang belum memenuhi minimal 5 soal
         $incompleteBooths = PoolBooth::withCount(['activeQuestions' => function ($q) {
             $q->where('is_active', true);
         }])
             ->having('active_questions_count', '<', 5)
             ->get();
 
-        return view('pool_qcc.admin.dashboard', compact(
-            'totalBooths',
-            'totalQuestions',
-            'totalParticipants',
-            'totalVotes',
-            'correctVotes',
-            'accuracyRate',
-            'topBooths',
-            'topParticipants',
-            'recentVotes',
-            'incompleteBooths'
-        ));
+        return response()->json([
+            'status' => 'success',
+            'data' => [
+                'totalBooths' => $totalBooths,
+                'totalQuestions' => $totalQuestions,
+                'totalParticipants' => $totalParticipants,
+                'totalVotes' => $totalVotes,
+                'correctVotes' => $correctVotes,
+                'accuracyRate' => $accuracyRate,
+                'topBooths' => $topBooths,
+                'topParticipants' => $topParticipants,
+                'recentVotes' => $recentVotes,
+                'incompleteBooths' => $incompleteBooths,
+            ]
+        ]);
     }
 
     /**
@@ -106,14 +122,23 @@ class PoolQccAdminController extends Controller
      */
     public function booths()
     {
+        $departments = self::$departments;
+        $nextCode = $this->generateBoothCode();
+
+        return view('pool_qcc.admin.booths', compact('departments', 'nextCode'));
+    }
+
+    public function getBoothsData(Request $request)
+    {
         $booths = PoolBooth::withCount(['questions', 'activeQuestions'])
             ->orderBy('code', 'asc')
             ->get();
 
-        $departments = self::$departments;
-        $nextCode = $this->generateBoothCode();
-
-        return view('pool_qcc.admin.booths', compact('booths', 'departments', 'nextCode'));
+        return response()->json([
+            'status' => 'success',
+            'total' => $booths->count(),
+            'data' => $booths
+        ]);
     }
 
     public function storeBooth(Request $request)
@@ -261,14 +286,36 @@ class PoolQccAdminController extends Controller
         $booths = PoolBooth::orderBy('name', 'asc')->get();
         $selectedBoothId = $request->get('booth_id');
 
+        return view('pool_qcc.admin.questions', compact('booths', 'selectedBoothId'));
+    }
+
+    public function getQuestionsData(Request $request)
+    {
+        $selectedBoothId = $request->get('booth_id');
+        $perPage = (int) $request->get('per_page', 10);
+        if ($perPage < 1) {
+            $perPage = 10;
+        }
+
         $query = PoolQuestion::with('booth')->latest();
-        if ($selectedBoothId) {
+        if (!empty($selectedBoothId)) {
             $query->where('booth_id', $selectedBoothId);
         }
 
-        $questions = $query->paginate(15);
+        $paginated = $query->paginate($perPage);
 
-        return view('pool_qcc.admin.questions', compact('questions', 'booths', 'selectedBoothId'));
+        return response()->json([
+            'status' => 'success',
+            'data' => $paginated->items(),
+            'pagination' => [
+                'current_page' => $paginated->currentPage(),
+                'last_page' => $paginated->lastPage(),
+                'per_page' => $paginated->perPage(),
+                'total' => $paginated->total(),
+                'from' => $paginated->firstItem(),
+                'to' => $paginated->lastItem(),
+            ]
+        ]);
     }
 
     public function storeQuestion(Request $request)
@@ -447,14 +494,82 @@ class PoolQccAdminController extends Controller
      */
     public function participants()
     {
-        $participants = PoolParticipant::with(['votes.booth'])
-            ->latest('last_activity_at')
-            ->paginate(20);
+        return view('pool_qcc.admin.participants');
+    }
 
-        return view('pool_qcc.admin.participants', compact('participants'));
+    public function getParticipantsData(Request $request)
+    {
+        $query = PoolParticipant::with(['votes.booth'])->latest('last_activity_at');
+
+        if ($request->filled('search')) {
+            $search = trim($request->search);
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('nik', 'like', "%{$search}%")
+                    ->orWhere('rfid', 'like', "%{$search}%")
+                    ->orWhere('department', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('status')) {
+            if ($request->status === 'completed') {
+                $query->where('booths_voted_count', '>=', 3);
+            } elseif ($request->status === 'in_progress') {
+                $query->where('booths_voted_count', '<', 3);
+            }
+        }
+
+        $perPage = (int) $request->get('per_page', 15);
+        if ($perPage < 1) $perPage = 20;
+
+        $paginated = $query->paginate($perPage);
+
+        $items = collect($paginated->items())->map(function ($p) {
+            $votes = $p->votes->map(function ($v) {
+                return [
+                    'id' => $v->id,
+                    'booth_code' => $v->booth ? $v->booth->code : 'B',
+                    'is_correct' => (bool) $v->is_correct,
+                    'points_awarded' => (int) $v->points_awarded,
+                ];
+            });
+
+            return [
+                'id' => $p->id,
+                'name' => $p->name,
+                'nik' => $p->nik,
+                'rfid' => $p->rfid,
+                'department' => $p->department,
+                'photo' => $p->photo,
+                'booths_voted_count' => (int) $p->booths_voted_count,
+                'total_score' => (int) $p->total_score,
+                'votes' => $votes,
+                'initials' => strtoupper(substr($p->name ?? 'P', 0, 2)),
+            ];
+        });
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $items,
+            'pagination' => [
+                'current_page' => $paginated->currentPage(),
+                'last_page' => $paginated->lastPage(),
+                'per_page' => $paginated->perPage(),
+                'total' => $paginated->total(),
+                'from' => $paginated->firstItem(),
+                'to' => $paginated->lastItem(),
+            ]
+        ]);
     }
 
     public function votes(Request $request)
+    {
+        $booths = PoolBooth::orderBy('name', 'asc')->get();
+
+        return view('pool_qcc.admin.votes', compact('booths'));
+    }
+
+    public function getVotesData(Request $request)
     {
         $query = PoolVote::with(['participant', 'booth', 'question'])->latest();
 
@@ -465,13 +580,45 @@ class PoolQccAdminController extends Controller
             $query->where('is_correct', $request->status == 'correct');
         }
 
-        $votes = $query->paginate(25);
-        $booths = PoolBooth::orderBy('name', 'asc')->get();
+        $perPage = (int) $request->get('per_page', 15);
+        if ($perPage < 1) {
+            $perPage = 25;
+        }
 
-        return view('pool_qcc.admin.votes', compact('votes', 'booths'));
+        $paginated = $query->paginate($perPage);
+
+        $items = collect($paginated->items())->map(function ($v) {
+            return [
+                'id' => $v->id,
+                'created_at_time' => $v->created_at ? $v->created_at->format('H:i:s') : '-',
+                'created_at_date' => $v->created_at ? $v->created_at->format('d/m/Y') : '',
+                'participant_name' => $v->participant ? $v->participant->name : 'N/A',
+                'participant_nik' => $v->participant ? $v->participant->nik : '-',
+                'booth_code' => $v->booth ? $v->booth->code : 'N/A',
+                'booth_name' => $v->booth ? $v->booth->name : '-',
+                'question_text' => $v->question ? $v->question->question_text : 'Soal telah dihapus',
+                'participant_answer' => $v->participant_answer,
+                'correct_answer' => $v->question ? $v->question->correct_answer : '-',
+                'is_correct' => (bool) $v->is_correct,
+                'points_awarded' => (int) $v->points_awarded,
+            ];
+        });
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $items,
+            'pagination' => [
+                'current_page' => $paginated->currentPage(),
+                'last_page' => $paginated->lastPage(),
+                'per_page' => $paginated->perPage(),
+                'total' => $paginated->total(),
+                'from' => $paginated->firstItem(),
+                'to' => $paginated->lastItem(),
+            ]
+        ]);
     }
 
-    public function resetParticipantVotes($id)
+    public function resetParticipantVotes(Request $request, $id)
     {
         $participant = PoolParticipant::findOrFail($id);
 

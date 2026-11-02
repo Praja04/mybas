@@ -111,7 +111,7 @@
 
                         <!-- 3D Shield Badge #1 (With Laurel) -->
                         <div class="shield-3d-1 w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center font-black text-amber-950 text-sm sm:text-base -mb-3.5 z-10 anim-coin gap-0.5 shadow-sm">
-                            <i class="fa-solid fa-trophy text-amber-950"></i> 1
+                            <i class="fa-solid fa-trophy text-slate-950 text-xs sm:text-sm drop-shadow-xs"></i> <span class="text-slate-950 font-black">1</span>
                         </div>
 
                         <!-- 3D Pedestal Body (Gold, Taller) -->
@@ -358,7 +358,7 @@
 
                         <!-- 3D Shield Badge #1 -->
                         <div class="shield-3d-1 w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center font-black text-amber-950 text-sm sm:text-base -mb-3.5 z-10 anim-coin gap-0.5 shadow-sm">
-                            <i class="fa-solid fa-trophy text-amber-950"></i> 1
+                            <i class="fa-solid fa-trophy text-slate-950 text-xs sm:text-sm drop-shadow-xs"></i> <span class="text-slate-950 font-black">1</span>
                         </div>
 
                         <!-- 3D Pedestal Body (Gold, Taller) -->
