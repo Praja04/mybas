@@ -30,22 +30,27 @@ Route::group(['prefix' => 'pool-qcc', 'as' => 'pool-qcc.'], function () {
         // Admin Management (Booth & Soal & Peserta)
         Route::group(['prefix' => 'admin', 'as' => 'admin.'], function () {
             Route::get('/', 'PoolQcc\PoolQccAdminController@index')->name('dashboard');
+            Route::get('/api/dashboard', 'PoolQcc\PoolQccAdminController@getDashboardData')->name('api.dashboard');
 
             // Booths
+            Route::get('/api/booths', 'PoolQcc\PoolQccAdminController@getBoothsData')->name('api.booths');
             Route::get('/booths', 'PoolQcc\PoolQccAdminController@booths')->name('booths');
             Route::post('/booths', 'PoolQcc\PoolQccAdminController@storeBooth')->name('booths.store');
             Route::put('/booths/{id}', 'PoolQcc\PoolQccAdminController@updateBooth')->name('booths.update');
             Route::delete('/booths/{id}', 'PoolQcc\PoolQccAdminController@destroyBooth')->name('booths.destroy');
 
             // Questions
+            Route::get('/api/questions', 'PoolQcc\PoolQccAdminController@getQuestionsData')->name('api.questions');
             Route::get('/questions', 'PoolQcc\PoolQccAdminController@questions')->name('questions');
             Route::post('/questions', 'PoolQcc\PoolQccAdminController@storeQuestion')->name('questions.store');
             Route::put('/questions/{id}', 'PoolQcc\PoolQccAdminController@updateQuestion')->name('questions.update');
             Route::delete('/questions/{id}', 'PoolQcc\PoolQccAdminController@destroyQuestion')->name('questions.destroy');
 
             // Participants & Votes Log
+            Route::get('/api/participants', 'PoolQcc\PoolQccAdminController@getParticipantsData')->name('api.participants');
             Route::get('/participants', 'PoolQcc\PoolQccAdminController@participants')->name('participants');
             Route::post('/participants/{id}/reset', 'PoolQcc\PoolQccAdminController@resetParticipantVotes')->name('participants.reset');
+            Route::get('/api/votes', 'PoolQcc\PoolQccAdminController@getVotesData')->name('api.votes');
             Route::get('/votes', 'PoolQcc\PoolQccAdminController@votes')->name('votes');
         });
     });

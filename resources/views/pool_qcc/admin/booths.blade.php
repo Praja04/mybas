@@ -20,7 +20,7 @@
             </div>
             <div class="mt-4 sm:mt-0 flex items-center space-x-3">
                 <button onclick="$('#modalAddBooth').removeClass('hidden')"
-                    class="px-4 py-2.5 rounded-xl text-sm font-bold bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-600/20 transition flex items-center space-x-2">
+                    class="px-4 py-2.5 rounded-xl text-sm font-bold bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-600/20 transition flex items-center space-x-2 cursor-pointer">
                     <i class="fa-solid fa-plus text-xs"></i>
                     <span>Tambah Booth Baru</span>
                 </button>
@@ -35,127 +35,13 @@
                 <span><strong>Ketentuan:</strong> Setiap booth harus memiliki <strong>minimal 5 pertanyaan aktif</strong>
                     agar dapat dipilih dan di-randomize saat peserta melakukan pooling.</span>
             </div>
-            <span
-                class="px-3 py-1 rounded-xl bg-indigo-100 text-indigo-800 dark:bg-indigo-500/20 dark:text-indigo-300 font-bold">Total:
-                {{ $booths->count() }} Booth</span>
+            <span id="totalBoothBadge"
+                class="px-3 py-1 rounded-xl bg-indigo-100 text-indigo-800 dark:bg-indigo-500/20 dark:text-indigo-300 font-bold">Total: Memuat...</span>
         </div>
 
-        <!-- Booths Grid -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            @forelse($booths as $b)
-                <div
-                    class="glass-card rounded-2xl overflow-hidden flex flex-col justify-between border {{ $b->active_questions_count >= 5 ? 'border-slate-200 dark:border-slate-800' : 'border-amber-400 dark:border-amber-500/50' }}">
-                    <!-- Card Header / Image -->
-                    <div class="relative h-44 bg-slate-100 dark:bg-slate-900 overflow-hidden">
-                        @if ($b->image)
-                            <img src="{{ asset($b->image) }}" alt="{{ $b->name }}" class="w-full h-full object-cover">
-                        @else
-                            <div
-                                class="w-full h-full flex flex-col items-center justify-center bg-gradient-to-tr from-slate-100 to-indigo-50 dark:from-slate-900 dark:to-indigo-950/60 text-slate-400">
-                                <i class="fa-solid fa-store text-5xl mb-2 text-indigo-400/50"></i>
-                                <span class="text-xs text-slate-500 font-medium">Belum ada foto booth</span>
-                            </div>
-                        @endif
-                        <!-- Code Badge -->
-                        <div class="absolute top-3 left-3">
-                            <span
-                                class="px-3 py-1 rounded-xl text-xs font-black bg-slate-900/90 text-white backdrop-blur shadow-sm tracking-wider">
-                                {{ $b->code }}
-                            </span>
-                        </div>
-                        <!-- Status Badge -->
-                        <div class="absolute top-3 right-3 flex items-center space-x-1">
-                            @if ($b->active_questions_count >= 5)
-                                <span
-                                    class="px-2.5 py-1 rounded-xl text-xs font-bold bg-emerald-600 text-white shadow-md flex items-center space-x-1">
-                                    <i class="fa-solid fa-circle-check text-[10px]"></i>
-                                    <span>{{ $b->active_questions_count }} Soal</span>
-                                </span>
-                            @else
-                                <span
-                                    class="px-2.5 py-1 rounded-xl text-xs font-bold bg-amber-500 text-slate-950 shadow-md flex items-center space-x-1">
-                                    <i class="fa-solid fa-triangle-exclamation text-[10px]"></i>
-                                    <span>{{ $b->active_questions_count }}/5 Soal</span>
-                                </span>
-                            @endif
-                        </div>
-                        <!-- Category overlay -->
-                        <div class="absolute bottom-3 left-3">
-                            <span
-                                class="text-xs px-2.5 py-0.5 rounded-lg bg-indigo-600 text-white font-bold shadow-sm backdrop-blur">
-                                {{ $b->category ?? 'General' }}
-                            </span>
-                        </div>
-                    </div>
-
-                    <!-- Card Body -->
-                    <div class="p-5 flex-1 flex flex-col justify-between">
-                        <div>
-                            <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-1.5 leading-snug">
-                                {{ $b->name }}</h3>
-                            <p class="text-xs text-slate-600 dark:text-slate-400 line-clamp-2 mb-4">
-                                {{ $b->description ?? 'Tidak ada deskripsi booth.' }}
-                            </p>
-
-                            <div
-                                class="text-xs text-slate-700 dark:text-slate-300 py-2 border-y border-slate-100 dark:border-slate-800 mb-4 flex items-center justify-between">
-                                <span class="text-slate-500 text-xs">PIC Booth:</span>
-                                <span class="font-bold text-slate-800 dark:text-slate-200">{{ $b->pic_name ?? '-' }}</span>
-                            </div>
-
-                            <!-- Scores & Voters -->
-                            <div
-                                class="flex items-center justify-between text-xs mb-4 bg-slate-50 dark:bg-slate-900/60 p-3 rounded-xl border border-slate-200 dark:border-slate-800">
-                                <div>
-                                    <span class="text-slate-500 block text-[11px] font-medium">Total Skor Poin:</span>
-                                    <span
-                                        class="text-base font-black text-emerald-600 dark:text-emerald-400">{{ number_format($b->total_points) }}
-                                        Pts</span>
-                                </div>
-                                <div class="text-right">
-                                    <span class="text-slate-500 block text-[11px] font-medium">Total Peserta Pool:</span>
-                                    <span
-                                        class="text-base font-black text-indigo-600 dark:text-indigo-400">{{ $b->total_voters }}
-                                        Peserta</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Actions -->
-                        <div class="flex items-center space-x-2 pt-2">
-                            <a href="{{ route('pool-qcc.admin.questions', ['booth_id' => $b->id]) }}"
-                                class="flex-1 py-2 px-3 rounded-xl text-xs font-bold text-center bg-indigo-600 hover:bg-indigo-500 text-white transition flex items-center justify-center space-x-1 shadow-sm">
-                                <i class="fa-solid fa-clipboard-question mr-1"></i>
-                                <span>Kelola Soal ({{ $b->active_questions_count }})</span>
-                            </a>
-                            <button id="btn-edit-booth-{{ $b->id }}" onclick="editBooth({{ json_encode($b) }})"
-                                class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-300 dark:hover:text-white border border-slate-200 dark:border-slate-700 transition cursor-pointer"
-                                title="Edit Booth">
-                                <i class="fa-solid fa-pen-to-square text-xs"></i>
-                            </button>
-                            <form id="delete-booth-{{ $b->id }}"
-                                action="{{ route('pool-qcc.admin.booths.destroy', $b->id) }}" method="POST"
-                                class="inline">
-                                @csrf
-                                @method('DELETE')
-                                <button type="button"
-                                    onclick="confirmDeleteBooth('{{ $b->id }}', '{{ addslashes($b->name) }}')"
-                                    class="p-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 dark:bg-rose-500/10 dark:hover:bg-rose-500/20 dark:text-rose-400 border border-rose-200 dark:border-rose-500/30 transition cursor-pointer"
-                                    title="Hapus Booth">
-                                    <i class="fa-solid fa-trash-can text-xs"></i>
-                                </button>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-            @empty
-                <div class="col-span-full py-16 text-center glass-panel rounded-2xl">
-                    <i class="fa-solid fa-store-slash text-5xl text-slate-400 mb-3 block"></i>
-                    <h3 class="text-lg font-bold text-slate-800 dark:text-white">Belum Ada Booth Terdaftar</h3>
-                    <p class="text-sm text-slate-500 mt-1 max-w-md mx-auto">Klik tombol "Tambah Booth Baru" di atas untuk
-                        mendaftarkan booth QCC dan mulai mengisi 5 pertanyaan bank soal.</p>
-                </div>
-            @endforelse
+        <!-- Booths Grid Container (Pure Client-side rendered via jQuery) -->
+        <div id="boothsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Loading Skeletons will appear here on initial load -->
         </div>
     </div>
 @endsection
@@ -363,8 +249,206 @@
 
 @section('scripts')
 <script>
-function editBooth(booth) {
-    // Reset previous errors in form
+let boothsCache = [];
+
+function escapeHtml(str) {
+    if (!str) return '';
+    return $('<div>').text(str).html();
+}
+
+function escapeAttr(str) {
+    if (!str) return '';
+    return String(str).replace(/'/g, "\\'").replace(/"/g, '&quot;');
+}
+
+const assetBaseUrl = "{{ asset('') }}";
+function getImageUrl(path) {
+    if (!path) return '';
+    if (path.startsWith('http://') || path.startsWith('https://')) return path;
+    return assetBaseUrl + path.replace(/^\/+/, '');
+}
+
+function renderSkeleton() {
+    let skeletons = '';
+    for (let i = 0; i < 6; i++) {
+        skeletons += `
+            <div class="glass-card rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 animate-pulse">
+                <div class="h-44 bg-slate-200 dark:bg-slate-800"></div>
+                <div class="p-5 space-y-3">
+                    <div class="h-5 bg-slate-200 dark:bg-slate-800 rounded w-3/4"></div>
+                    <div class="h-3 bg-slate-200 dark:bg-slate-800 rounded w-full"></div>
+                    <div class="h-3 bg-slate-200 dark:bg-slate-800 rounded w-1/2"></div>
+                    <div class="h-10 bg-slate-200 dark:bg-slate-800 rounded mt-4"></div>
+                </div>
+            </div>
+        `;
+    }
+    $('#boothsGrid').html(skeletons);
+}
+
+function loadBoothsData() {
+    renderSkeleton();
+
+    $.ajax({
+        url: "{{ route('pool-qcc.admin.api.booths') }}",
+        type: 'GET',
+        dataType: 'json',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+        },
+        success: function(response) {
+            boothsCache = response.data || [];
+            const total = response.total !== undefined ? response.total : boothsCache.length;
+            $('#totalBoothBadge').text('Total: ' + total + ' Booth');
+
+            if (boothsCache.length === 0) {
+                $('#boothsGrid').html(`
+                    <div class="col-span-full py-16 text-center glass-panel rounded-2xl">
+                        <i class="fa-solid fa-store-slash text-5xl text-slate-400 mb-3 block"></i>
+                        <h3 class="text-lg font-bold text-slate-800 dark:text-white">Belum Ada Booth Terdaftar</h3>
+                        <p class="text-sm text-slate-500 mt-1 max-w-md mx-auto">Klik tombol "Tambah Booth Baru" di atas untuk mendaftarkan booth QCC dan mulai mengisi 5 pertanyaan bank soal.</p>
+                    </div>
+                `);
+                return;
+            }
+
+            let cardsHtml = '';
+            boothsCache.forEach(function(b) {
+                const activeCount = b.active_questions_count !== undefined ? parseInt(b.active_questions_count) : 0;
+                const isComplete = activeCount >= 5;
+                const borderClass = isComplete ? 'border-slate-200 dark:border-slate-800' : 'border-amber-400 dark:border-amber-500/50';
+
+                let imgHtml = '';
+                if (b.image) {
+                    const imgUrl = getImageUrl(b.image);
+                    imgHtml = `<img src="${imgUrl}" alt="${escapeAttr(b.name)}" class="w-full h-full object-cover">`;
+                } else {
+                    imgHtml = `
+                        <div class="w-full h-full flex flex-col items-center justify-center bg-gradient-to-tr from-slate-100 to-indigo-50 dark:from-slate-900 dark:to-indigo-950/60 text-slate-400">
+                            <i class="fa-solid fa-store text-5xl mb-2 text-indigo-400/50"></i>
+                            <span class="text-xs text-slate-500 font-medium">Belum ada foto booth</span>
+                        </div>
+                    `;
+                }
+
+                let statusBadgeHtml = '';
+                if (isComplete) {
+                    statusBadgeHtml = `
+                        <span class="px-2.5 py-1 rounded-xl text-xs font-bold bg-emerald-600 text-white shadow-md flex items-center space-x-1">
+                            <i class="fa-solid fa-circle-check text-[10px]"></i>
+                            <span>${activeCount} Soal</span>
+                        </span>
+                    `;
+                } else {
+                    statusBadgeHtml = `
+                        <span class="px-2.5 py-1 rounded-xl text-xs font-bold bg-amber-500 text-slate-950 shadow-md flex items-center space-x-1">
+                            <i class="fa-solid fa-triangle-exclamation text-[10px]"></i>
+                            <span>${activeCount}/5 Soal</span>
+                        </span>
+                    `;
+                }
+
+                const totalPoints = Number(b.total_points || 0).toLocaleString();
+                const totalVoters = Number(b.total_voters || 0).toLocaleString();
+                const category = escapeHtml(b.category || 'General');
+                const name = escapeHtml(b.name);
+                const desc = escapeHtml(b.description || 'Tidak ada deskripsi booth.');
+                const pic = escapeHtml(b.pic_name || '-');
+                const questionsUrl = `{{ url('/pool-qcc/admin/questions') }}?booth_id=${b.id}`;
+
+                cardsHtml += `
+                    <div class="glass-card rounded-2xl overflow-hidden flex flex-col justify-between border ${borderClass}">
+                        <!-- Card Header / Image -->
+                        <div class="relative h-44 bg-slate-100 dark:bg-slate-900 overflow-hidden">
+                            ${imgHtml}
+                            <!-- Code Badge -->
+                            <div class="absolute top-3 left-3">
+                                <span class="px-3 py-1 rounded-xl text-xs font-black bg-slate-900/90 text-white backdrop-blur shadow-sm tracking-wider">
+                                    ${escapeHtml(b.code)}
+                                </span>
+                            </div>
+                            <!-- Status Badge -->
+                            <div class="absolute top-3 right-3 flex items-center space-x-1">
+                                ${statusBadgeHtml}
+                            </div>
+                            <!-- Category overlay -->
+                            <div class="absolute bottom-3 left-3">
+                                <span class="text-xs px-2.5 py-0.5 rounded-lg bg-indigo-600 text-white font-bold shadow-sm backdrop-blur">
+                                    ${category}
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Card Body -->
+                        <div class="p-5 flex-1 flex flex-col justify-between">
+                            <div>
+                                <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-1.5 leading-snug">
+                                    ${name}
+                                </h3>
+                                <p class="text-xs text-slate-600 dark:text-slate-400 line-clamp-2 mb-4">
+                                    ${desc}
+                                </p>
+
+                                <div class="text-xs text-slate-700 dark:text-slate-300 py-2 border-y border-slate-100 dark:border-slate-800 mb-4 flex items-center justify-between">
+                                    <span class="text-slate-500 text-xs">PIC Booth:</span>
+                                    <span class="font-bold text-slate-800 dark:text-slate-200">${pic}</span>
+                                </div>
+
+                                <!-- Scores & Voters -->
+                                <div class="flex items-center justify-between text-xs mb-4 bg-slate-50 dark:bg-slate-900/60 p-3 rounded-xl border border-slate-200 dark:border-slate-800">
+                                    <div>
+                                        <span class="text-slate-500 block text-[11px] font-medium">Total Skor Poin:</span>
+                                        <span class="text-base font-black text-emerald-600 dark:text-emerald-400">${totalPoints} Pts</span>
+                                    </div>
+                                    <div class="text-right">
+                                        <span class="text-slate-500 block text-[11px] font-medium">Total Peserta Pool:</span>
+                                        <span class="text-base font-black text-indigo-600 dark:text-indigo-400">${totalVoters} Peserta</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Actions -->
+                            <div class="flex items-center space-x-2 pt-2">
+                                <a href="${questionsUrl}"
+                                    class="flex-1 py-2 px-3 rounded-xl text-xs font-bold text-center bg-indigo-600 hover:bg-indigo-500 text-white transition flex items-center justify-center space-x-1 shadow-sm">
+                                    <i class="fa-solid fa-clipboard-question mr-1"></i>
+                                    <span>Kelola Soal (${activeCount})</span>
+                                </a>
+                                <button type="button" onclick="editBoothById(${b.id})"
+                                    class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-300 dark:hover:text-white border border-slate-200 dark:border-slate-700 transition cursor-pointer"
+                                    title="Edit Booth">
+                                    <i class="fa-solid fa-pen-to-square text-xs"></i>
+                                </button>
+                                <button type="button" onclick="confirmDeleteBooth(${b.id}, '${escapeAttr(b.name)}')"
+                                    class="p-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 dark:bg-rose-500/10 dark:hover:bg-rose-500/20 dark:text-rose-400 border border-rose-200 dark:border-rose-500/30 transition cursor-pointer"
+                                    title="Hapus Booth">
+                                    <i class="fa-solid fa-trash-can text-xs"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            $('#boothsGrid').html(cardsHtml);
+        },
+        error: function(xhr) {
+            $('#boothsGrid').html(`
+                <div class="col-span-full py-12 text-center text-rose-500 glass-panel rounded-2xl">
+                    <i class="fa-solid fa-triangle-exclamation text-4xl mb-2"></i>
+                    <p class="font-bold">Gagal memuat data booth</p>
+                    <button onclick="loadBoothsData()" class="mt-3 px-4 py-1.5 text-xs bg-indigo-600 text-white rounded-xl cursor-pointer">Coba Lagi</button>
+                </div>
+            `);
+        }
+    });
+}
+
+function editBoothById(id) {
+    const booth = boothsCache.find(item => item.id == id);
+    if (!booth) return;
+
     $('#formEditBooth').find('.border-rose-500').removeClass('border-rose-500');
     $('#formEditBooth').find('.field-error-msg').remove();
 
@@ -384,11 +468,9 @@ function handleBoothAjaxSubmit(formSelector, isEdit = false) {
     const $submitBtn = $form.find('button[type="submit"]');
     const originalBtnText = $submitBtn.html();
 
-    // Clear previous errors
     $form.find('.border-rose-500').removeClass('border-rose-500');
     $form.find('.field-error-msg').remove();
 
-    // Loading button state
     $submitBtn.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin mr-1.5"></i> Menyimpan...');
 
     const formData = new FormData($form[0]);
@@ -413,18 +495,18 @@ function handleBoothAjaxSubmit(formSelector, isEdit = false) {
                 $form[0].reset();
             }
 
+            // Client-side reload via jQuery!
+            loadBoothsData();
+
             Swal.fire({
                 icon: 'success',
                 title: isEdit ? 'Berhasil Diperbarui!' : 'Booth Ditambahkan!',
                 text: response.message || 'Data booth berhasil disimpan.',
-                timer: 1000,
+                timer: 1500,
                 showConfirmButton: false,
                 customClass: {
                     popup: 'rounded-2xl dark:bg-slate-900 dark:text-white border border-slate-200 dark:border-slate-800'
                 }
-            }).then(() => {
-                // Auto reload data instantly
-                window.location.reload();
             });
         },
         error: function(xhr) {
@@ -473,18 +555,6 @@ function handleBoothAjaxSubmit(formSelector, isEdit = false) {
     });
 }
 
-$(document).ready(function() {
-    $('#formAddBooth').on('submit', function(e) {
-        e.preventDefault();
-        handleBoothAjaxSubmit('#formAddBooth', false);
-    });
-
-    $('#formEditBooth').on('submit', function(e) {
-        e.preventDefault();
-        handleBoothAjaxSubmit('#formEditBooth', true);
-    });
-});
-
 function confirmDeleteBooth(id, name) {
     Swal.fire({
         title: 'Hapus Booth?',
@@ -521,20 +591,36 @@ function confirmDeleteBooth(id, name) {
         }
     }).then((result) => {
         if (result.isConfirmed) {
+            // Client-side reload via jQuery!
+            loadBoothsData();
+
             Swal.fire({
                 icon: 'success',
                 title: 'Terhapus!',
                 text: result.value?.message || 'Booth berhasil dihapus.',
-                timer: 1000,
+                timer: 1500,
                 showConfirmButton: false,
                 customClass: {
                     popup: 'rounded-2xl dark:bg-slate-900 dark:text-white border border-slate-200 dark:border-slate-800'
                 }
-            }).then(() => {
-                window.location.reload();
             });
         }
     });
 }
+
+$(document).ready(function() {
+    // Initial client-side load via jQuery
+    loadBoothsData();
+
+    $('#formAddBooth').on('submit', function(e) {
+        e.preventDefault();
+        handleBoothAjaxSubmit('#formAddBooth', false);
+    });
+
+    $('#formEditBooth').on('submit', function(e) {
+        e.preventDefault();
+        handleBoothAjaxSubmit('#formEditBooth', true);
+    });
+});
 </script>
 @endsection
