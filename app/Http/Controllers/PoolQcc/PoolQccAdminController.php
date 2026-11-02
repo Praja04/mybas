@@ -9,6 +9,7 @@ use App\Models\PoolQCC\PoolParticipant;
 use App\Models\PoolQCC\PoolVote;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
 use RealRashid\SweetAlert\Facades\Alert;
 
@@ -117,13 +118,31 @@ class PoolQccAdminController extends Controller
 
     public function storeBooth(Request $request)
     {
-        $request->validate([
+        $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'category' => 'required|string|in:' . implode(',', self::$departments),
             'pic_name' => 'nullable|string|max:100',
             'description' => 'nullable|string',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+        ], [
+            'name.required' => 'Nama Booth / Judul Inovasi wajib diisi.',
+            'category.required' => 'Departemen wajib dipilih.',
+            'category.in' => 'Pilihan departemen tidak valid.',
+            'image.image' => 'File harus berupa gambar.',
+            'image.mimes' => 'Format gambar harus jpeg, png, jpg, atau gif.',
+            'image.max' => 'Ukuran gambar maksimal 2MB.',
         ]);
+
+        if ($validator->fails()) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Validasi data gagal. Silakan periksa kolom yang ditandai merah.',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+            return redirect()->back()->withErrors($validator)->withInput();
+        }
 
         // Auto generate kode booth dari backend
         $autoCode = $this->generateBoothCode();
@@ -136,7 +155,7 @@ class PoolQccAdminController extends Controller
             $imagePath = 'uploads/pool_qcc/booths/' . $filename;
         }
 
-        PoolBooth::create([
+        $booth = PoolBooth::create([
             'code' => $autoCode,
             'name' => $request->name,
             'category' => $request->category,
@@ -148,6 +167,14 @@ class PoolQccAdminController extends Controller
             'is_active' => $request->has('is_active') ? (bool)$request->is_active : true,
         ]);
 
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'status' => 'success',
+                'message' => "Booth {$autoCode} berhasil ditambahkan!",
+                'booth' => $booth,
+            ]);
+        }
+
         return redirect()->back()->with('success', "Booth {$autoCode} berhasil ditambahkan! Silakan lengkapi minimal 5 pertanyaan untuk booth ini.");
     }
 
@@ -155,13 +182,31 @@ class PoolQccAdminController extends Controller
     {
         $booth = PoolBooth::findOrFail($id);
 
-        $request->validate([
+        $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'category' => 'required|string|in:' . implode(',', self::$departments),
             'pic_name' => 'nullable|string|max:100',
             'description' => 'nullable|string',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+        ], [
+            'name.required' => 'Nama Booth / Judul Inovasi wajib diisi.',
+            'category.required' => 'Departemen wajib dipilih.',
+            'category.in' => 'Pilihan departemen tidak valid.',
+            'image.image' => 'File harus berupa gambar.',
+            'image.mimes' => 'Format gambar harus jpeg, png, jpg, atau gif.',
+            'image.max' => 'Ukuran gambar maksimal 2MB.',
         ]);
+
+        if ($validator->fails()) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Validasi data gagal. Silakan periksa kolom yang ditandai merah.',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+            return redirect()->back()->withErrors($validator)->withInput();
+        }
 
         $data = [
             'name' => $request->name,
@@ -180,13 +225,30 @@ class PoolQccAdminController extends Controller
 
         $booth->update($data);
 
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'status' => 'success',
+                'message' => "Data Booth {$booth->code} berhasil diperbarui!",
+                'booth' => $booth->fresh(),
+            ]);
+        }
+
         return redirect()->back()->with('success', "Data Booth {$booth->code} berhasil diperbarui!");
     }
 
-    public function destroyBooth($id)
+    public function destroyBooth(Request $request, $id)
     {
         $booth = PoolBooth::findOrFail($id);
+        $code = $booth->code;
+        $name = $booth->name;
         $booth->delete();
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'status' => 'success',
+                'message' => "Booth {$code} - {$name} beserta seluruh soalnya berhasil dihapus.",
+            ]);
+        }
 
         return redirect()->back()->with('success', 'Booth beserta pertanyaan dan datanya berhasil dihapus.');
     }
@@ -211,7 +273,7 @@ class PoolQccAdminController extends Controller
 
     public function storeQuestion(Request $request)
     {
-        $request->validate([
+        $validator = Validator::make($request->all(), [
             'booth_id' => 'required|exists:pool_booths,id',
             'question_text' => 'required|string',
             'option_a' => 'required|string',
@@ -222,7 +284,33 @@ class PoolQccAdminController extends Controller
             'correct_answer' => 'required|in:A,B,C,D,E',
             'points' => 'required|integer|min:1',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+        ], [
+            'booth_id.required' => 'Booth wajib dipilih.',
+            'booth_id.exists' => 'Booth yang dipilih tidak valid.',
+            'question_text.required' => 'Teks pertanyaan kuis wajib diisi.',
+            'option_a.required' => 'Pilihan A wajib diisi.',
+            'option_b.required' => 'Pilihan B wajib diisi.',
+            'option_c.required' => 'Pilihan C wajib diisi.',
+            'option_d.required' => 'Pilihan D wajib diisi.',
+            'correct_answer.required' => 'Kunci jawaban yang benar wajib dipilih.',
+            'correct_answer.in' => 'Kunci jawaban harus antara A, B, C, D, atau E.',
+            'points.required' => 'Bobot poin wajib diisi.',
+            'points.integer' => 'Bobot poin harus berupa angka.',
+            'points.min' => 'Bobot poin minimal 1.',
+            'image.image' => 'File lampiran harus berupa gambar.',
+            'image.max' => 'Ukuran gambar lampiran maksimal 2MB.',
         ]);
+
+        if ($validator->fails()) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Validasi pertanyaan gagal. Silakan periksa kolom yang ditandai merah.',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+            return redirect()->back()->withErrors($validator)->withInput();
+        }
 
         $imagePath = null;
         if ($request->hasFile('image')) {
@@ -232,7 +320,7 @@ class PoolQccAdminController extends Controller
             $imagePath = 'uploads/pool_qcc/questions/' . $filename;
         }
 
-        PoolQuestion::create([
+        $question = PoolQuestion::create([
             'booth_id' => $request->booth_id,
             'question_text' => $request->question_text,
             'image' => $imagePath,
@@ -242,13 +330,22 @@ class PoolQccAdminController extends Controller
             'option_d' => $request->option_d,
             'option_e' => $request->option_e,
             'correct_answer' => strtoupper($request->correct_answer),
-            'points' => $request->points ?? 1, // Default 1 Poin
+            'points' => $request->points ?? 1,
             'explanation' => $request->explanation,
             'is_active' => $request->has('is_active') ? (bool)$request->is_active : true,
         ]);
 
         $booth = PoolBooth::find($request->booth_id);
-        $totalActive = $booth->activeQuestions()->count();
+        $totalActive = $booth ? $booth->activeQuestions()->count() : 0;
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'status' => 'success',
+                'message' => "Pertanyaan berhasil ditambahkan! Booth '{$booth->name}' sekarang memiliki {$totalActive} soal aktif.",
+                'question' => $question,
+                'total_active' => $totalActive,
+            ]);
+        }
 
         return redirect()->back()->with('success', "Pertanyaan berhasil ditambahkan! Booth '{$booth->name}' sekarang memiliki {$totalActive} pertanyaan aktif.");
     }
@@ -257,7 +354,7 @@ class PoolQccAdminController extends Controller
     {
         $question = PoolQuestion::findOrFail($id);
 
-        $request->validate([
+        $validator = Validator::make($request->all(), [
             'booth_id' => 'required|exists:pool_booths,id',
             'question_text' => 'required|string',
             'option_a' => 'required|string',
@@ -268,7 +365,33 @@ class PoolQccAdminController extends Controller
             'correct_answer' => 'required|in:A,B,C,D,E',
             'points' => 'required|integer|min:1',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+        ], [
+            'booth_id.required' => 'Booth wajib dipilih.',
+            'booth_id.exists' => 'Booth yang dipilih tidak valid.',
+            'question_text.required' => 'Teks pertanyaan kuis wajib diisi.',
+            'option_a.required' => 'Pilihan A wajib diisi.',
+            'option_b.required' => 'Pilihan B wajib diisi.',
+            'option_c.required' => 'Pilihan C wajib diisi.',
+            'option_d.required' => 'Pilihan D wajib diisi.',
+            'correct_answer.required' => 'Kunci jawaban yang benar wajib dipilih.',
+            'correct_answer.in' => 'Kunci jawaban harus antara A, B, C, D, atau E.',
+            'points.required' => 'Bobot poin wajib diisi.',
+            'points.integer' => 'Bobot poin harus berupa angka.',
+            'points.min' => 'Bobot poin minimal 1.',
+            'image.image' => 'File lampiran harus berupa gambar.',
+            'image.max' => 'Ukuran gambar lampiran maksimal 2MB.',
         ]);
+
+        if ($validator->fails()) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Validasi pertanyaan gagal. Silakan periksa kolom yang ditandai merah.',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+            return redirect()->back()->withErrors($validator)->withInput();
+        }
 
         $data = [
             'booth_id' => $request->booth_id,
@@ -293,13 +416,28 @@ class PoolQccAdminController extends Controller
 
         $question->update($data);
 
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Pertanyaan berhasil diperbarui!',
+                'question' => $question->fresh(),
+            ]);
+        }
+
         return redirect()->back()->with('success', 'Pertanyaan berhasil diperbarui!');
     }
 
-    public function destroyQuestion($id)
+    public function destroyQuestion(Request $request, $id)
     {
         $question = PoolQuestion::findOrFail($id);
         $question->delete();
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Pertanyaan berhasil dihapus.',
+            ]);
+        }
 
         return redirect()->back()->with('success', 'Pertanyaan berhasil dihapus.');
     }
@@ -352,6 +490,13 @@ class PoolQccAdminController extends Controller
                 'booths_voted_count' => 0,
             ]);
         });
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'status' => 'success',
+                'message' => "Riwayat vote peserta {$participant->name} berhasil di-reset!",
+            ]);
+        }
 
         return redirect()->back()->with('success', "Riwayat vote peserta {$participant->name} berhasil di-reset!");
     }
