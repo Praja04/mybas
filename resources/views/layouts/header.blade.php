@@ -1,4 +1,4 @@
-<div id="kt_header" class="header header-fixed">
+﻿<div id="kt_header" class="header header-fixed">
     <!--begin::Container-->
     <div class="container-fluid d-flex align-items-stretch justify-content-between">
         <!--begin::Header Menu Wrapper-->
@@ -16,6 +16,14 @@
                 @if (Auth::check())
                     <!--begin::Header Nav-->
                     <ul class="menu-nav">
+                        {{-- Pool QCC --}}
+                        @if (in_array('qcc-pool', $permissions))
+                            <li class="menu-item {{ request()->is('pool-qcc*') ? 'menu-item-active' : '' }}">
+                                <a href="{{ url('/pool-qcc') }}" class="menu-link">
+                                    <span class="menu-text"> Pool QCC</span>
+                                </a>
+                            </li>
+                        @endif
                         @if (in_array('hrd_pengambilan_id_card', $permissions))
                             <li class="menu-item menu-item-submenu menu-item-rel">
                                 <a href="{{ url('/display/pengambilan-id-card') }}" class="menu-link">
@@ -1939,6 +1947,12 @@
                 <!--end::Header Nav-->
             @else
                 <ul class="menu-nav">
+                    {{-- Pool QCC --}}
+                    <li class="menu-item {{ request()->is('pool-qcc*') ? 'menu-item-active' : '' }}">
+                        <a href="{{ url('/pool-qcc') }}" class="menu-link">
+                            <span class="menu-text">Pool QCC</span>
+                        </a>
+                    </li>
                     <li class="menu-item menu-item-submenu menu-item-rel menu-item-active" data-menu-toggle="click"
                         aria-haspopup="true">
                         <a href="{{ url('login') }}" class="menu-link menu-toggle">

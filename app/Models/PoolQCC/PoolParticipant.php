@@ -1,0 +1,47 @@
+<?php
+
+namespace App\Models\PoolQCC;
+
+use Illuminate\Database\Eloquent\Model;
+
+class PoolParticipant extends Model
+{
+    protected $table = 'pool_participants';
+
+    protected $fillable = [
+        'rfid',
+        'nik',
+        'name',
+        'department',
+        'photo',
+        'total_score',
+        'booths_voted_count',
+        'last_activity_at',
+    ];
+
+    protected $casts = [
+        'total_score' => 'integer',
+        'booths_voted_count' => 'integer',
+        'last_activity_at' => 'datetime',
+    ];
+
+    public function votes()
+    {
+        return $this->hasMany(PoolVote::class, 'participant_id');
+    }
+
+    public function votedBoothIds()
+    {
+        return $this->votes()->pluck('booth_id')->toArray();
+    }
+
+    public function canVoteMore($max = 3)
+    {
+        return $this->booths_voted_count < $max;
+    }
+
+    public function hasVotedBooth($boothId)
+    {
+        return $this->votes()->where('booth_id', $boothId)->exists();
+    }
+}
