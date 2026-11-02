@@ -99,10 +99,10 @@
                         <i class="fa-solid fa-pen-to-square"></i>
                         <span>Edit</span>
                     </button>
-                    <form action="{{ route('pool-qcc.admin.questions.destroy', $q->id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus soal ini?')" class="inline">
+                    <form id="delete-question-{{ $q->id }}" action="{{ route('pool-qcc.admin.questions.destroy', $q->id) }}" method="POST" class="inline">
                         @csrf
                         @method('DELETE')
-                        <button type="submit" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-rose-50 hover:bg-rose-100 text-rose-600 dark:bg-rose-500/10 dark:hover:bg-rose-500/20 dark:text-rose-400 border border-rose-200 dark:border-rose-500/30 transition">
+                        <button type="button" onclick="confirmDeleteQuestion('{{ $q->id }}')" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-rose-50 hover:bg-rose-100 text-rose-600 dark:bg-rose-500/10 dark:hover:bg-rose-500/20 dark:text-rose-400 border border-rose-200 dark:border-rose-500/30 transition cursor-pointer" title="Hapus Soal">
                             <i class="fa-solid fa-trash-can"></i>
                         </button>
                     </form>
@@ -393,6 +393,29 @@ function editQuestion(q) {
     document.getElementById('edit_q_is_active').checked = !!q.is_active;
 
     document.getElementById('modalEditQuestion').classList.remove('hidden');
+}
+
+function confirmDeleteQuestion(id) {
+    Swal.fire({
+        title: 'Hapus Soal?',
+        html: `Apakah Anda yakin ingin menghapus soal ini dari bank pertanyaan booth?<br><span class="text-rose-500 text-xs font-semibold mt-1.5 block">Tindakan ini tidak dapat dibatalkan.</span>`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#64748b',
+        confirmButtonText: '<i class="fa-solid fa-trash-can mr-1"></i> Ya, Hapus!',
+        cancelButtonText: 'Batal',
+        reverseButtons: true,
+        customClass: {
+            popup: 'rounded-2xl dark:bg-slate-900 dark:text-white border border-slate-200 dark:border-slate-800',
+            confirmButton: 'rounded-xl font-bold px-4 py-2 text-xs',
+            cancelButton: 'rounded-xl font-bold px-4 py-2 text-xs'
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            document.getElementById(`delete-question-${id}`).submit();
+        }
+    });
 }
 </script>
 @endsection
