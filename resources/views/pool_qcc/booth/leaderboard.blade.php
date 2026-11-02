@@ -303,31 +303,39 @@
 
 @section('scripts')
     <script>
-        // Confetti kecil ceria sesekali
+        // Confetti kecil ceria sesekali (aman dari web-worker resize bug)
         function randomFunCelebration() {
-            if (typeof confetti === 'function') {
-                confetti({
-                    particleCount: 22,
-                    angle: 60,
-                    spread: 50,
-                    origin: {
-                        x: 0,
-                        y: 0.8
-                    },
-                    colors: ['#f59e0b', '#06b6d4', '#10b981', '#ec4899', '#8b5cf6'],
-                    zIndex: 999999
-                });
-                confetti({
-                    particleCount: 22,
-                    angle: 120,
-                    spread: 50,
-                    origin: {
-                        x: 1,
-                        y: 0.8
-                    },
-                    colors: ['#f59e0b', '#06b6d4', '#10b981', '#ec4899', '#8b5cf6'],
-                    zIndex: 999999
-                });
+            try {
+                if (typeof confetti === 'function') {
+                    confetti({
+                        particleCount: 22,
+                        angle: 60,
+                        spread: 50,
+                        origin: {
+                            x: 0,
+                            y: 0.8
+                        },
+                        colors: ['#f59e0b', '#06b6d4', '#10b981', '#ec4899', '#8b5cf6'],
+                        zIndex: 999999,
+                        useWorker: false,
+                        disableForReducedMotion: true
+                    });
+                    confetti({
+                        particleCount: 22,
+                        angle: 120,
+                        spread: 50,
+                        origin: {
+                            x: 1,
+                            y: 0.8
+                        },
+                        colors: ['#f59e0b', '#06b6d4', '#10b981', '#ec4899', '#8b5cf6'],
+                        zIndex: 999999,
+                        useWorker: false,
+                        disableForReducedMotion: true
+                    });
+                }
+            } catch (err) {
+                // Safeguard against canvas resize in background/hidden tabs
             }
         }
 
