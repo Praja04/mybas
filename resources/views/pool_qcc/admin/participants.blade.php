@@ -123,6 +123,23 @@ function confirmResetParticipant(id, name) {
         confirmButtonText: '<i class="fa-solid fa-rotate-left mr-1"></i> Ya, Reset!',
         cancelButtonText: 'Batal',
         reverseButtons: true,
+        showLoaderOnConfirm: true,
+        preConfirm: () => {
+            return $.ajax({
+                url: `/pool-qcc/admin/participants/${id}/reset`,
+                type: 'POST',
+                data: {
+                    _token: '{{ csrf_token() }}'
+                },
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                }
+            }).catch(xhr => {
+                Swal.showValidationMessage(xhr.responseJSON?.message || 'Gagal mereset peserta.');
+            });
+        },
+        allowOutsideClick: () => !Swal.isLoading(),
         customClass: {
             popup: 'rounded-2xl dark:bg-slate-900 dark:text-white border border-slate-200 dark:border-slate-800',
             confirmButton: 'rounded-xl font-bold px-4 py-2 text-xs',
@@ -130,7 +147,18 @@ function confirmResetParticipant(id, name) {
         }
     }).then((result) => {
         if (result.isConfirmed) {
-            document.getElementById(`reset-participant-${id}`).submit();
+            Swal.fire({
+                icon: 'success',
+                title: 'Berhasil di-reset!',
+                text: result.value?.message || 'Riwayat vote peserta berhasil di-reset.',
+                timer: 1000,
+                showConfirmButton: false,
+                customClass: {
+                    popup: 'rounded-2xl dark:bg-slate-900 dark:text-white border border-slate-200 dark:border-slate-800'
+                }
+            }).then(() => {
+                window.location.reload();
+            });
         }
     });
 }

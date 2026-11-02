@@ -16,7 +16,7 @@
             <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Kelola pertanyaan kuis untuk setiap booth. Pastikan tiap booth memiliki minimal 5 pertanyaan aktif (Default 1 Poin per soal).</p>
         </div>
         <div class="mt-4 sm:mt-0 flex items-center space-x-3">
-            <button onclick="openModalAddQuestion()" class="px-4 py-2.5 rounded-xl text-sm font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-md shadow-amber-500/20 transition flex items-center space-x-2">
+            <button onclick="$('#modalAddQuestion').removeClass('hidden')" class="px-4 py-2.5 rounded-xl text-sm font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-md shadow-amber-500/20 transition flex items-center space-x-2">
                 <i class="fa-solid fa-plus text-xs"></i>
                 <span>Tambah Pertanyaan Baru</span>
             </button>
@@ -176,7 +176,7 @@
                 <h3 class="text-base sm:text-lg font-bold text-slate-900 dark:text-white flex items-center">
                     <i class="fa-solid fa-circle-question text-amber-500 mr-2.5"></i> Tambah Pertanyaan Baru
                 </h3>
-                <button type="button" onclick="document.getElementById('modalAddQuestion').classList.add('hidden')" class="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-500 hover:text-slate-800 dark:text-slate-300 dark:hover:text-white flex items-center justify-center transition cursor-pointer">
+                <button type="button" onclick="$('#modalAddQuestion').addClass('hidden')" class="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-500 hover:text-slate-800 dark:text-slate-300 dark:hover:text-white flex items-center justify-center transition cursor-pointer">
                     <i class="fa-solid fa-xmark text-base"></i>
                 </button>
             </div>
@@ -262,7 +262,7 @@
 
                 <!-- Footer (Fixed at bottom of modal card) -->
                 <div class="px-5 py-3.5 border-t border-slate-200 dark:border-slate-800 flex items-center justify-end space-x-3 flex-shrink-0 bg-slate-50 dark:bg-slate-800/80 z-10">
-                    <button type="button" onclick="document.getElementById('modalAddQuestion').classList.add('hidden')" class="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 transition cursor-pointer">Batal</button>
+                    <button type="button" onclick="$('#modalAddQuestion').addClass('hidden')" class="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 transition cursor-pointer">Batal</button>
                     <button type="submit" class="px-5 py-2.5 rounded-xl text-xs font-bold text-slate-950 bg-amber-400 hover:bg-amber-300 shadow-md transition cursor-pointer">Simpan Soal</button>
                 </div>
             </form>
@@ -279,7 +279,7 @@
                 <h3 class="text-base sm:text-lg font-bold text-slate-900 dark:text-white flex items-center">
                     <i class="fa-solid fa-pen-to-square text-cyan-600 dark:text-cyan-400 mr-2.5"></i> Edit Pertanyaan
                 </h3>
-                <button type="button" onclick="document.getElementById('modalEditQuestion').classList.add('hidden')" class="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-500 hover:text-slate-800 dark:text-slate-300 dark:hover:text-white flex items-center justify-center transition cursor-pointer">
+                <button type="button" onclick="$('#modalEditQuestion').addClass('hidden')" class="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-500 hover:text-slate-800 dark:text-slate-300 dark:hover:text-white flex items-center justify-center transition cursor-pointer">
                     <i class="fa-solid fa-xmark text-base"></i>
                 </button>
             </div>
@@ -363,7 +363,7 @@
 
                 <!-- Footer (Fixed at bottom of modal card) -->
                 <div class="px-5 py-3.5 border-t border-slate-200 dark:border-slate-800 flex items-center justify-end space-x-3 flex-shrink-0 bg-slate-50 dark:bg-slate-800/80 z-10">
-                    <button type="button" onclick="document.getElementById('modalEditQuestion').classList.add('hidden')" class="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 transition cursor-pointer">Batal</button>
+                    <button type="button" onclick="$('#modalEditQuestion').addClass('hidden')" class="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 transition cursor-pointer">Batal</button>
                     <button type="submit" class="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-cyan-600 hover:bg-cyan-500 shadow-md transition cursor-pointer">Simpan Perubahan</button>
                 </div>
             </form>
@@ -374,30 +374,24 @@
 
 @section('scripts')
 <script>
-function openModalAddQuestion() {
-    $('#formAddQuestion').find('.border-rose-500').removeClass('border-rose-500');
-    $('#formAddQuestion').find('.field-error-msg').remove();
-    document.getElementById('modalAddQuestion').classList.remove('hidden');
-}
-
 function editQuestion(q) {
     $('#formEditQuestion').find('.border-rose-500').removeClass('border-rose-500');
     $('#formEditQuestion').find('.field-error-msg').remove();
 
-    document.getElementById('formEditQuestion').action = `/pool-qcc/admin/questions/${q.id}`;
-    document.getElementById('edit_q_booth_id').value = q.booth_id;
-    document.getElementById('edit_question_text').value = q.question_text;
-    document.getElementById('edit_option_a').value = q.option_a;
-    document.getElementById('edit_option_b').value = q.option_b;
-    document.getElementById('edit_option_c').value = q.option_c;
-    document.getElementById('edit_option_d').value = q.option_d;
-    document.getElementById('edit_option_e').value = q.option_e || '';
-    document.getElementById('edit_correct_answer').value = q.correct_answer;
-    document.getElementById('edit_points').value = q.points;
-    document.getElementById('edit_explanation').value = q.explanation || '';
-    document.getElementById('edit_q_is_active').checked = !!q.is_active;
+    $('#formEditQuestion').attr('action', `/pool-qcc/admin/questions/${q.id}`);
+    $('#edit_q_booth_id').val(q.booth_id);
+    $('#edit_question_text').val(q.question_text);
+    $('#edit_option_a').val(q.option_a);
+    $('#edit_option_b').val(q.option_b);
+    $('#edit_option_c').val(q.option_c);
+    $('#edit_option_d').val(q.option_d);
+    $('#edit_option_e').val(q.option_e || '');
+    $('#edit_correct_answer').val(q.correct_answer);
+    $('#edit_points').val(q.points);
+    $('#edit_explanation').val(q.explanation || '');
+    $('#edit_q_is_active').prop('checked', Boolean(q.is_active));
 
-    document.getElementById('modalEditQuestion').classList.remove('hidden');
+    $('#modalEditQuestion').removeClass('hidden');
 }
 
 function handleQuestionAjaxSubmit(formSelector, isEdit = false) {
@@ -427,67 +421,24 @@ function handleQuestionAjaxSubmit(formSelector, isEdit = false) {
 
             if (isEdit) {
                 $('#modalEditQuestion').addClass('hidden');
-                const q = response.question;
-
-                if (q) {
-                    $(`.q-text-${q.id}`).text(q.question_text);
-                    $(`.q-points-${q.id}`).text(`+${q.points} Poin`);
-
-                    // Update option grid in DOM dynamically
-                    const optLetters = ['A', 'B', 'C', 'D'];
-                    if (q.option_e) optLetters.push('E');
-
-                    let optsHtml = '';
-                    optLetters.forEach(letter => {
-                        const optKey = `option_${letter.toLowerCase()}`;
-                        const optVal = q[optKey] || '';
-                        const isCorrect = (q.correct_answer === letter);
-                        const wrapCls = isCorrect
-                            ? 'bg-emerald-50 border-emerald-300 text-emerald-900 font-bold dark:bg-emerald-500/20 dark:border-emerald-500/50 dark:text-emerald-200'
-                            : 'bg-slate-50 border-slate-200 text-slate-700 dark:bg-slate-900/60 dark:border-slate-800 dark:text-slate-300';
-                        const badgeCls = isCorrect ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-400';
-                        const colSpan = (letter === 'E') ? 'sm:col-span-2' : '';
-
-                        optsHtml += `
-                            <div class="p-3 rounded-xl border flex items-center space-x-2.5 ${wrapCls} ${colSpan}">
-                                <span class="w-6 h-6 rounded-lg flex items-center justify-center font-black ${badgeCls}">${letter}</span>
-                                <span>${optVal}</span>
-                                ${isCorrect ? '<i class="fa-solid fa-circle-check ml-auto text-emerald-600 dark:text-emerald-400 text-base"></i>' : ''}
-                            </div>
-                        `;
-                    });
-
-                    $(`#q-options-grid-${q.id}`).html(optsHtml);
-                    $(`#btn-edit-question-${q.id}`).attr('onclick', `editQuestion(${JSON.stringify(q)})`);
-                }
-
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Pertanyaan Diperbarui!',
-                    text: response.message || 'Perubahan soal berhasil disimpan.',
-                    timer: 2000,
-                    showConfirmButton: false,
-                    customClass: {
-                        popup: 'rounded-2xl dark:bg-slate-900 dark:text-white border border-slate-200 dark:border-slate-800'
-                    }
-                });
             } else {
                 $('#modalAddQuestion').addClass('hidden');
                 $form[0].reset();
-
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Pertanyaan Ditambahkan!',
-                    text: response.message || 'Soal baru berhasil disimpan ke bank soal.',
-                    timer: 1600,
-                    showConfirmButton: false,
-                    customClass: {
-                        popup: 'rounded-2xl dark:bg-slate-900 dark:text-white border border-slate-200 dark:border-slate-800'
-                    }
-                }).then(() => {
-                    window.location.reload();
-                });
             }
+
+            Swal.fire({
+                icon: 'success',
+                title: isEdit ? 'Pertanyaan Diperbarui!' : 'Pertanyaan Ditambahkan!',
+                text: response.message || 'Data pertanyaan berhasil disimpan.',
+                timer: 1000,
+                showConfirmButton: false,
+                customClass: {
+                    popup: 'rounded-2xl dark:bg-slate-900 dark:text-white border border-slate-200 dark:border-slate-800'
+                }
+            }).then(() => {
+                // Auto reload data instantly
+                window.location.reload();
+            });
         },
         error: function(xhr) {
             $submitBtn.prop('disabled', false).html(originalBtnText);
@@ -587,18 +538,13 @@ function confirmDeleteQuestion(id) {
                 icon: 'success',
                 title: 'Terhapus!',
                 text: result.value?.message || 'Pertanyaan berhasil dihapus.',
-                timer: 1500,
+                timer: 1000,
                 showConfirmButton: false,
                 customClass: {
                     popup: 'rounded-2xl dark:bg-slate-900 dark:text-white border border-slate-200 dark:border-slate-800'
                 }
             }).then(() => {
-                $(`#question-card-${id}`).fadeOut(300, function() {
-                    $(this).remove();
-                    if ($('.question-item-card').length === 0) {
-                        window.location.reload();
-                    }
-                });
+                window.location.reload();
             });
         }
     });
