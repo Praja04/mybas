@@ -47,7 +47,7 @@
                             <div class="relative mb-2">
                                 <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-tr from-slate-200 via-white to-slate-300 border-3 border-slate-400 shadow-md flex items-center justify-center overflow-hidden">
                                     @if($b2->image)
-                                        <img src="{{ asset('storage/' . $b2->image) }}" alt="{{ $b2->name }}" class="w-full h-full object-cover">
+                                        <img src="{{ Str::startsWith($b2->image, ['http://', 'https://']) ? $b2->image : (Str::startsWith($b2->image, ['uploads/', 'storage/']) ? asset($b2->image) : asset('storage/' . $b2->image)) }}" alt="{{ $b2->name }}" class="w-full h-full object-cover" onerror="this.onerror=null; this.parentElement.innerHTML='<i class=\'fa-solid fa-rocket text-2xl text-slate-600\'></i>';">
                                     @else
                                         <i class="fa-solid fa-rocket text-2xl text-slate-600"></i>
                                     @endif
@@ -94,7 +94,7 @@
                         <div class="relative mb-2">
                             <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-tr from-amber-200 via-yellow-100 to-amber-300 border-4 border-amber-400 shadow-lg flex items-center justify-center overflow-hidden">
                                 @if($b1->image)
-                                    <img src="{{ asset('storage/' . $b1->image) }}" alt="{{ $b1->name }}" class="w-full h-full object-cover">
+                                    <img src="{{ Str::startsWith($b1->image, ['http://', 'https://']) ? $b1->image : (Str::startsWith($b1->image, ['uploads/', 'storage/']) ? asset($b1->image) : asset('storage/' . $b1->image)) }}" alt="{{ $b1->name }}" class="w-full h-full object-cover" onerror="this.onerror=null; this.parentElement.innerHTML='<i class=\'fa-solid fa-store text-3xl text-amber-600\'></i>';">
                                 @else
                                     <i class="fa-solid fa-store text-3xl text-amber-600"></i>
                                 @endif
@@ -134,7 +134,7 @@
                             <div class="relative mb-2">
                                 <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-tr from-orange-200 via-amber-100 to-orange-300 border-3 border-orange-400 shadow-md flex items-center justify-center overflow-hidden">
                                     @if($b3->image)
-                                        <img src="{{ asset('storage/' . $b3->image) }}" alt="{{ $b3->name }}" class="w-full h-full object-cover">
+                                        <img src="{{ Str::startsWith($b3->image, ['http://', 'https://']) ? $b3->image : (Str::startsWith($b3->image, ['uploads/', 'storage/']) ? asset($b3->image) : asset('storage/' . $b3->image)) }}" alt="{{ $b3->name }}" class="w-full h-full object-cover" onerror="this.onerror=null; this.parentElement.innerHTML='<i class=\'fa-solid fa-lightbulb text-2xl text-amber-500\'></i>';">
                                     @else
                                         <i class="fa-solid fa-lightbulb text-2xl text-amber-500"></i>
                                     @endif
@@ -208,7 +208,7 @@
                             <!-- Circular Avatar with 3D Ring Frame -->
                             <div class="w-9 h-9 rounded-full bg-indigo-100 dark:bg-slate-700 border-2 border-indigo-400 flex items-center justify-center text-sm overflow-hidden flex-shrink-0 shadow-sm text-indigo-600">
                                 @if($otherBooth->image)
-                                    <img src="{{ asset('storage/' . $otherBooth->image) }}" alt="{{ $otherBooth->name }}" class="w-full h-full object-cover">
+                                    <img src="{{ Str::startsWith($otherBooth->image, ['http://', 'https://']) ? $otherBooth->image : (Str::startsWith($otherBooth->image, ['uploads/', 'storage/']) ? asset($otherBooth->image) : asset('storage/' . $otherBooth->image)) }}" alt="{{ $otherBooth->name }}" class="w-full h-full object-cover" onerror="this.onerror=null; this.parentElement.innerHTML='<i class=\'fa-solid fa-store text-xs\'></i>';">
                                 @else
                                     <i class="fa-solid fa-store text-xs"></i>
                                 @endif
