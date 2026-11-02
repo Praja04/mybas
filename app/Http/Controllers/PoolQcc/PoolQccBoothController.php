@@ -1,0 +1,447 @@
+<?php
+
+namespace App\Http\Controllers\PoolQcc;
+
+use App\Http\Controllers\Controller;
+use App\Models\PoolQCC\PoolBooth;
+use App\Models\PoolQCC\PoolQuestion;
+use App\Models\PoolQCC\PoolParticipant;
+use App\Models\PoolQCC\PoolVote;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Session;
+
+class PoolQccBoothController extends Controller
+{
+    /**
+     * Halaman Daftar Booth untuk Peserta / Panitia
+     * Menampilkan seluruh booth untuk dipilih layar booth mana yang ingin dibuka
+     */
+    public function index()
+    {
+        $booths = PoolBooth::where('is_active', true)
+            ->withCount(['activeQuestions' => function ($q) {
+                $q->where('is_active', true);
+            }])
+            ->orderBy('code', 'asc')
+            ->get();
+
+        return view('pool_qcc.booth.index', compact('booths'));
+    }
+
+    /**
+     * Halaman Layar Tap Standby khusus untuk Booth Tertentu
+     * Setiap booth memiliki layar stand sendiri yang standby menunggu peserta tap
+     */
+    public function boothStation($boothId)
+    {
+        $booth = PoolBooth::withCount(['activeQuestions' => function ($q) {
+            $q->where('is_active', true);
+        }])->findOrFail($boothId);
+
+        return view('pool_qcc.booth.station', compact('booth'));
+    }
+
+    /**
+     * Endpoint API / AJAX untuk Scan Tapping RFID Card di Booth Tertentu
+     */
+    public function scanRfidAtBooth(Request $request, $boothId)
+    {
+        $request->validate([
+            'rfid' => 'required|string',
+        ]);
+
+        $booth = PoolBooth::findOrFail($boothId);
+
+        // 1. Validasi kelengkapan soal booth
+        $activeQuestionsCount = $booth->activeQuestions()->count();
+        if ($activeQuestionsCount < 5) {
+            return response()->json([
+                'status' => 'error',
+                'message' => "Booth '{$booth->name}' belum memiliki minimal 5 soal aktif (saat ini: {$activeQuestionsCount} soal). Silakan hubungi admin booth.",
+            ], 422);
+        }
+
+        $rawInput = trim($request->rfid);
+        $numericInput = is_numeric($rawInput) ? (int)$rawInput : 0;
+
+        // Generate variasi NIK (menangani cetakan ID card tanpa nol depan, misal 18000275 vs 018000275)
+        $candidates = [$rawInput];
+        if (is_numeric($rawInput)) {
+            $stripped = ltrim($rawInput, '0');
+            if ($stripped !== '') {
+                $candidates[] = $stripped;
+                $candidates[] = '0' . $stripped;
+                $candidates[] = str_pad($stripped, 8, '0', STR_PAD_LEFT);
+                $candidates[] = str_pad($stripped, 9, '0', STR_PAD_LEFT);
+            }
+        }
+        $candidates = array_values(array_unique(array_filter($candidates)));
+
+        // 2. Cari / Identifikasi Peserta yang sudah pernah tercatat di Pool QCC
+        $participant = PoolParticipant::where('rfid', $rawInput)
+            ->orWhereIn('nik', $candidates)
+            ->when($numericInput > 0, function ($q) use ($numericInput) {
+                $q->orWhere('rfid', (string)$numericInput);
+            })
+            ->first();
+
+        if (!$participant) {
+            $employeeData = null;
+
+            // 2a. Cari di MSIDCARD (192.168.178.44-admin)
+            // Query kartu berdasarkan nomor RFID / Device No / NIK / Barcode (termasuk variasi leading-zero)
+            try {
+                $matchedCard = DB::connection('192.168.178.44-admin')
+                    ->table('MSIDCARD')
+                    ->select('NIK', 'EMPNM', 'DEPTID', 'FOTOBLOB', 'CARDNODEVICE', 'RFID', 'STATUS', 'BARCODE')
+                    ->where(function ($q) use ($candidates, $numericInput, $rawInput) {
+                        if ($numericInput > 0) {
+                            $q->where('CARDNODEVICE', $numericInput);
+                        }
+                        $q->orWhere('RFID', $rawInput)
+                            ->orWhereIn('NIK', $candidates)
+                            ->orWhereIn('BARCODE', $candidates);
+                    })
+                    ->orderByRaw("CASE WHEN STATUS = 'X' THEN 0 ELSE 1 END ASC, CAST(EMPCARDID AS SIGNED) DESC")
+                    ->first();
+
+                if ($matchedCard) {
+                    // Jika ada NIK, utamakan profil ter-update dari kartu aktif (STATUS = 'X')
+                    if (!empty($matchedCard->NIK)) {
+                        $activeCard = DB::connection('192.168.178.44-admin')
+                            ->table('MSIDCARD')
+                            ->select('NIK', 'EMPNM', 'DEPTID', 'FOTOBLOB', 'CARDNODEVICE', 'RFID', 'STATUS')
+                            ->where('NIK', $matchedCard->NIK)
+                            ->where('STATUS', 'X')
+                            ->orderByRaw('CAST(EMPCARDID AS SIGNED) DESC')
+                            ->first();
+
+                        $employeeData = $activeCard ?: $matchedCard;
+                    } else {
+                        $employeeData = $matchedCard;
+                    }
+                }
+            } catch (\Exception $e) {
+                Log::warning('[PoolQcc] Gagal query MSIDCARD 192.168.178.44-admin: ' . $e->getMessage());
+            }
+
+            // 2b. Fallback ke tabel karyawan lokal jika ada
+            if (!$employeeData) {
+                try {
+                    $localKaryawan = DB::table('pkw_karyawan')
+                        ->where('rfid', $rawInput)
+                        ->orWhereIn('nik', $candidates)
+                        ->first();
+
+                    if ($localKaryawan) {
+                        $employeeData = (object) [
+                            'NIK' => $localKaryawan->nik ?? $localKaryawan->no_ktp ?? $rawInput,
+                            'EMPNM' => $localKaryawan->nama_lengkap ?? 'Karyawan ' . $rawInput,
+                            'DEPTID' => $localKaryawan->departemen ?? 'General',
+                            'FOTOBLOB' => null,
+                            'CARDNODEVICE' => null,
+                            'RFID' => $rawInput,
+                        ];
+                    }
+                } catch (\Exception $e) {
+                    // ignore
+                }
+            }
+
+            // Jika tidak ditemukan di database manapun, TOLAK (jangan buatkan guest acak)
+            if (!$employeeData) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => "Nomor RFID / NIK '{$rawInput}' tidak terdaftar di database karyawan. Pastikan data yang dimasukkan benar atau hubungi panitia QCC.",
+                ], 404);
+            }
+
+            // 2c. Cek kembali ke pool_participants berdasarkan NIK
+            // (Mencegah multi-akun jika karyawan tap dengan variasi NIK atau kartu berbeda)
+            if (!empty($employeeData->NIK)) {
+                $participant = PoolParticipant::where('nik', $employeeData->NIK)
+                    ->orWhereIn('nik', $candidates)
+                    ->first();
+            }
+
+            if (!$participant) {
+                $photoBase64 = !empty($employeeData->FOTOBLOB) ? 'data:image/jpeg;base64,' . base64_encode($employeeData->FOTOBLOB) : null;
+                $rfidToSave = !empty($employeeData->CARDNODEVICE) ? (string)$employeeData->CARDNODEVICE : (!empty($employeeData->RFID) ? $employeeData->RFID : $rawInput);
+
+                $participant = PoolParticipant::create([
+                    'rfid' => $rfidToSave,
+                    'nik' => $employeeData->NIK ?? $rawInput,
+                    'name' => $employeeData->EMPNM ?? ('Peserta ' . substr($rawInput, -4)),
+                    'department' => $employeeData->DEPTID ?? 'Umum',
+                    'photo' => $photoBase64,
+                    'total_score' => 0,
+                    'booths_voted_count' => 0,
+                    'last_activity_at' => Carbon::now(),
+                ]);
+            } else {
+                $participant->update([
+                    'last_activity_at' => Carbon::now(),
+                ]);
+            }
+        } else {
+            $participant->update([
+                'last_activity_at' => Carbon::now(),
+            ]);
+        }
+
+        // 3. Validasi: Apakah sudah pernah vote di booth ini?
+        if ($participant->hasVotedBooth($booth->id)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => "Mohon maaf {$participant->name}, Anda sudah pernah melakukan vote/pooling di Booth {$booth->code} ini!",
+            ], 422);
+        }
+
+        // 4. Validasi: Apakah sudah mencapai maksimal 3 booth?
+        if ($participant->booths_voted_count >= 3) {
+            return response()->json([
+                'status' => 'error',
+                'message' => "Mohon maaf {$participant->name}, kuota pooling Anda sudah habis (Maksimal 3 Booth). Terima kasih atas partisipasi Anda!",
+            ], 422);
+        }
+
+        // Simpan session kuis aktif untuk peserta di booth ini
+        Session::put('challenge_participant_id', $participant->id);
+        Session::put('challenge_booth_id', $booth->id);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => "Kartu terverifikasi! Selamat datang, {$participant->name} (Booth ke-" . ($participant->booths_voted_count + 1) . " dari 3)",
+            'participant' => [
+                'name' => $participant->name,
+                'nik' => $participant->nik,
+                'department' => $participant->department,
+                'booths_voted_count' => $participant->booths_voted_count,
+            ],
+            'redirect_url' => route('pool-qcc.booth-challenge', $booth->id),
+        ]);
+    }
+
+    /**
+     * Halaman Kuis Soal Acak untuk Booth Tertentu
+     */
+    public function challengeScreen($boothId)
+    {
+        $booth = PoolBooth::findOrFail($boothId);
+        $participantId = Session::get('challenge_participant_id');
+        $sessionBoothId = Session::get('challenge_booth_id');
+
+        if (!$participantId || $sessionBoothId != $booth->id) {
+            return redirect()->route('pool-qcc.booth-station', $booth->id)
+                ->with('warning', 'Silakan tempelkan ID Card Anda terlebih dahulu.');
+        }
+
+        $participant = PoolParticipant::findOrFail($participantId);
+
+        // Ambil 1 soal acak aktif dari booth ini
+        $question = PoolQuestion::where('booth_id', $booth->id)
+            ->where('is_active', true)
+            ->inRandomOrder()
+            ->first();
+
+        if (!$question) {
+            return redirect()->route('pool-qcc.booth-station', $booth->id)
+                ->with('error', 'Belum ada pertanyaan aktif di booth ini.');
+        }
+
+        // Kumpulkan pilihan jawaban dan acak (shuffle) posisinya
+        $rawOptions = [
+            'A' => $question->option_a,
+            'B' => $question->option_b,
+            'C' => $question->option_c,
+            'D' => $question->option_d,
+        ];
+        if (!empty($question->option_e)) {
+            $rawOptions['E'] = $question->option_e;
+        }
+
+        $optionList = [];
+        foreach ($rawOptions as $origKey => $text) {
+            if ($text !== null && trim($text) !== '') {
+                $optionList[] = [
+                    'original_key' => $origKey,
+                    'text' => $text,
+                ];
+            }
+        }
+
+        // Acak posisi pilihan jawaban
+        shuffle($optionList);
+
+        $labels = ['A', 'B', 'C', 'D', 'E'];
+        $shuffledOptions = [];
+        $displayToOrigMap = [];
+        $origToDisplayMap = [];
+
+        foreach ($optionList as $index => $opt) {
+            $displayLabel = $labels[$index];
+            $shuffledOptions[] = [
+                'label' => $displayLabel,
+                'original_key' => $opt['original_key'],
+                'text' => $opt['text'],
+            ];
+            $displayToOrigMap[$displayLabel] = $opt['original_key'];
+            $origToDisplayMap[$opt['original_key']] = $displayLabel;
+        }
+
+        // Simpan mapping acak ke session peserta untuk verifikasi saat submit jawaban
+        Session::put('challenge_question_id', $question->id);
+        Session::put('challenge_options_map', $displayToOrigMap);
+        Session::put('challenge_orig_to_display_map', $origToDisplayMap);
+
+        return view('pool_qcc.booth.challenge', compact('booth', 'participant', 'question', 'shuffledOptions'));
+    }
+
+    /**
+     * Submit Jawaban Kuis di Booth
+     */
+    public function submitAnswerAtBooth(Request $request, $boothId)
+    {
+        $request->validate([
+            'question_id' => 'required|exists:pool_questions,id',
+            'answer' => 'required|in:A,B,C,D,E',
+        ]);
+
+        $booth = PoolBooth::findOrFail($boothId);
+        $participantId = Session::get('challenge_participant_id');
+
+        if (!$participantId) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Sesi telah berakhir, silakan tap ulang ID Card Anda.',
+            ], 401);
+        }
+
+        $participant = PoolParticipant::findOrFail($participantId);
+        $question = PoolQuestion::findOrFail($request->question_id);
+
+        if ($participant->booths_voted_count >= 3) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Anda sudah mencapai batas maksimal 3 booth pooling!',
+            ], 422);
+        }
+
+        if ($participant->hasVotedBooth($booth->id)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Anda sudah pernah melakukan pooling untuk booth ini!',
+            ], 422);
+        }
+
+        // Terjemahkan jawaban yang dipilih di layar ke original key master di database
+        $chosenDisplayAnswer = strtoupper($request->answer); // Misal peserta mengklik 'C'
+        $displayToOrigMap = Session::get('challenge_options_map', []);
+        $origToDisplayMap = Session::get('challenge_orig_to_display_map', []);
+
+        $originalKey = $displayToOrigMap[$chosenDisplayAnswer] ?? $chosenDisplayAnswer;
+        $correctAnswerOrig = strtoupper($question->correct_answer);
+
+        $isCorrect = (strtoupper($originalKey) === $correctAnswerOrig);
+        $pointsEarned = $isCorrect ? ($question->points > 0 ? $question->points : 1) : 0;
+
+        // Label tampilan kunci jawaban yang benar di layar peserta saat ini
+        $correctAnswerDisplay = $origToDisplayMap[$correctAnswerOrig] ?? $correctAnswerOrig;
+        $correctAnswerField = 'option_' . strtolower($correctAnswerOrig);
+        $correctAnswerText = $question->{$correctAnswerField} ?? '';
+
+        DB::transaction(function () use ($participant, $booth, $question, $originalKey, $isCorrect, $pointsEarned) {
+            // 1. Simpan Log Vote (Simpan original key A/B/C/D agar konsisten dengan master bank soal)
+            PoolVote::create([
+                'participant_id' => $participant->id,
+                'booth_id' => $booth->id,
+                'question_id' => $question->id,
+                'participant_answer' => $originalKey,
+                'is_correct' => $isCorrect,
+                'points_awarded' => $pointsEarned,
+                'answered_at' => Carbon::now(),
+            ]);
+
+            // 2. Tambah poin peserta jika benar
+            if ($isCorrect) {
+                $participant->increment('total_score', $pointsEarned);
+            }
+            $participant->increment('booths_voted_count', 1);
+            $participant->update(['last_activity_at' => Carbon::now()]);
+
+            // 3. Tambah poin booth jika benar
+            if ($isCorrect) {
+                $booth->increment('total_points', $pointsEarned);
+            }
+            $booth->increment('total_voters', 1);
+        });
+
+        // Selesai kuis, bersihkan session challenge agar booth kembali standby
+        Session::forget('challenge_participant_id');
+        Session::forget('challenge_booth_id');
+        Session::forget('challenge_question_id');
+        Session::forget('challenge_options_map');
+        Session::forget('challenge_orig_to_display_map');
+
+        $participant->refresh();
+        $booth->refresh();
+
+        return response()->json([
+            'status' => 'success',
+            'is_correct' => $isCorrect,
+            'points_earned' => $pointsEarned,
+            'correct_answer' => $correctAnswerDisplay,
+            'correct_answer_display' => $correctAnswerDisplay,
+            'correct_answer_text' => $correctAnswerText,
+            'explanation' => $question->explanation,
+            'participant' => [
+                'name' => $participant->name,
+                'total_score' => $participant->total_score,
+                'booths_voted_count' => $participant->booths_voted_count,
+                'remaining_quota' => max(0, 3 - $participant->booths_voted_count),
+            ],
+            'booth' => [
+                'code' => $booth->code,
+                'name' => $booth->name,
+                'total_points' => $booth->total_points,
+            ],
+            'return_url' => route('pool-qcc.booth-station', $booth->id),
+        ]);
+    }
+
+    /**
+     * Halaman Live Display / Leaderboard Screen
+     * Mendukung reload data real-time via async AJAX maupun render halaman penuh
+     */
+    public function leaderboard(Request $request)
+    {
+        $booths = PoolBooth::orderBy('total_points', 'desc')
+            ->orderBy('total_voters', 'desc')
+            ->get();
+
+        $participants = PoolParticipant::orderBy('total_score', 'desc')
+            ->orderBy('updated_at', 'asc')
+            ->take(15)
+            ->get();
+
+        $totalVotes = PoolVote::count();
+        $totalParticipants = PoolParticipant::count();
+
+        // Jika request via AJAX / Fetch, kirim partial HTML dan stats untuk live update tanpa reload halaman
+        if ($request->ajax() || $request->wantsJson()) {
+            $arenaHtml = view('pool_qcc.booth.leaderboard_arena', compact('booths', 'participants'))->render();
+            return response()->json([
+                'status' => 'success',
+                'arena_html' => $arenaHtml,
+                'total_votes' => number_format($totalVotes),
+                'total_participants' => number_format($totalParticipants),
+                'updated_at' => Carbon::now()->format('H:i:s'),
+            ]);
+        }
+
+        return view('pool_qcc.booth.leaderboard', compact('booths', 'participants', 'totalVotes', 'totalParticipants'));
+    }
+}

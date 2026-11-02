@@ -777,6 +777,9 @@ require base_path('routes/pos-security.php');
 require base_path('routes/pos-security/ajax.php');
 require base_path('routes/pos-security/datatable.php');
 
+// Pool QCC
+require base_path('routes/pool_qcc/pool_qcc.php');
+
 // SP Pelanggaran Routes
 Route::group(['middleware' => ['auth', 'rules']], function () {
     Route::get('/sp-pelanggaran', [App\Http\Controllers\SpPelanggaranController::class, 'index'])->name('sp_pelanggaran.index');
