@@ -109,10 +109,10 @@
                     <button onclick="editBooth({{ json_encode($b) }})" class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-300 dark:hover:text-white border border-slate-200 dark:border-slate-700 transition" title="Edit Booth">
                         <i class="fa-solid fa-pen-to-square text-xs"></i>
                     </button>
-                    <form action="{{ route('pool-qcc.admin.booths.destroy', $b->id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus booth ini beserta seluruh soal dan data pollingnya?')" class="inline">
+                    <form id="delete-booth-{{ $b->id }}" action="{{ route('pool-qcc.admin.booths.destroy', $b->id) }}" method="POST" class="inline">
                         @csrf
                         @method('DELETE')
-                        <button type="submit" class="p-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 dark:bg-rose-500/10 dark:hover:bg-rose-500/20 dark:text-rose-400 border border-rose-200 dark:border-rose-500/30 transition" title="Hapus Booth">
+                        <button type="button" onclick="confirmDeleteBooth('{{ $b->id }}', '{{ addslashes($b->name) }}')" class="p-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 dark:bg-rose-500/10 dark:hover:bg-rose-500/20 dark:text-rose-400 border border-rose-200 dark:border-rose-500/30 transition cursor-pointer" title="Hapus Booth">
                             <i class="fa-solid fa-trash-can text-xs"></i>
                         </button>
                     </form>
@@ -293,6 +293,29 @@ function editBooth(booth) {
     document.getElementById('edit_is_active').checked = !!booth.is_active;
 
     document.getElementById('modalEditBooth').classList.remove('hidden');
+}
+
+function confirmDeleteBooth(id, name) {
+    Swal.fire({
+        title: 'Hapus Booth?',
+        html: `Apakah Anda yakin ingin menghapus booth <b>"${name}"</b>?<br><span class="text-rose-500 text-xs font-semibold mt-1.5 block">⚠️ Perhatian: Seluruh soal dan data vote polling terkait booth ini akan ikut terhapus permanen!</span>`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#64748b',
+        confirmButtonText: '<i class="fa-solid fa-trash-can mr-1"></i> Ya, Hapus!',
+        cancelButtonText: 'Batal',
+        reverseButtons: true,
+        customClass: {
+            popup: 'rounded-2xl dark:bg-slate-900 dark:text-white border border-slate-200 dark:border-slate-800',
+            confirmButton: 'rounded-xl font-bold px-4 py-2 text-xs',
+            cancelButton: 'rounded-xl font-bold px-4 py-2 text-xs'
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            document.getElementById(`delete-booth-${id}`).submit();
+        }
+    });
 }
 </script>
 @endsection

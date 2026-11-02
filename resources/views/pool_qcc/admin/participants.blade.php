@@ -83,9 +83,9 @@
                             <span class="text-base font-black text-emerald-600 dark:text-emerald-400">{{ number_format($p->total_score) }} Pts</span>
                         </td>
                         <td class="py-3.5 px-4 text-center">
-                            <form action="{{ route('pool-qcc.admin.participants.reset', $p->id) }}" method="POST" onsubmit="return confirm('Reset seluruh riwayat vote dan poin peserta ini?')">
+                            <form id="reset-participant-{{ $p->id }}" action="{{ route('pool-qcc.admin.participants.reset', $p->id) }}" method="POST">
                                 @csrf
-                                <button type="submit" class="px-2.5 py-1 rounded-xl text-xs font-bold bg-rose-50 hover:bg-rose-100 text-rose-600 dark:bg-rose-500/10 dark:hover:bg-rose-500/20 dark:text-rose-400 border border-rose-200 dark:border-rose-500/30 transition shadow-xs" title="Reset Kuota & Vote Peserta">
+                                <button type="button" onclick="confirmResetParticipant('{{ $p->id }}', '{{ addslashes($p->name) }}')" class="px-2.5 py-1 rounded-xl text-xs font-bold bg-rose-50 hover:bg-rose-100 text-rose-600 dark:bg-rose-500/10 dark:hover:bg-rose-500/20 dark:text-rose-400 border border-rose-200 dark:border-rose-500/30 transition shadow-xs cursor-pointer" title="Reset Kuota & Vote Peserta">
                                     <i class="fa-solid fa-rotate-left mr-1"></i> Reset
                                 </button>
                             </form>
@@ -108,4 +108,31 @@
         {{ $participants->links() }}
     </div>
 </div>
+@endsection
+
+@section('scripts')
+<script>
+function confirmResetParticipant(id, name) {
+    Swal.fire({
+        title: 'Reset Peserta?',
+        html: `Apakah Anda yakin ingin mereset kuota vote & skor peserta <b>"${name}"</b>?<br><span class="text-rose-500 text-xs font-semibold mt-1.5 block">Peserta dapat melakukan tapping dan voting kuis ulang dari awal.</span>`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#64748b',
+        confirmButtonText: '<i class="fa-solid fa-rotate-left mr-1"></i> Ya, Reset!',
+        cancelButtonText: 'Batal',
+        reverseButtons: true,
+        customClass: {
+            popup: 'rounded-2xl dark:bg-slate-900 dark:text-white border border-slate-200 dark:border-slate-800',
+            confirmButton: 'rounded-xl font-bold px-4 py-2 text-xs',
+            cancelButton: 'rounded-xl font-bold px-4 py-2 text-xs'
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            document.getElementById(`reset-participant-${id}`).submit();
+        }
+    });
+}
+</script>
 @endsection
