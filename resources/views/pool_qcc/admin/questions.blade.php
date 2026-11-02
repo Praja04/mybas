@@ -82,7 +82,7 @@
                             <span class="px-2.5 py-0.5 rounded-lg text-xs font-extrabold bg-indigo-100 text-indigo-800 dark:bg-indigo-600/30 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-500/30">
                                 {{ $q->booth->code ?? 'N/A' }}
                             </span>
-                            <span class="text-xs font-bold text-slate-700 dark:text-slate-300">{{ $q->booth->name ?? 'Booth' }}</span>
+                            <span class="q-booth-name-{{ $q->id }} text-xs font-bold text-slate-700 dark:text-slate-300">{{ $q->booth->name ?? 'Booth' }}</span>
                             <span class="px-2.5 py-0.5 rounded-md text-xs font-black bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30">
                                 +{{ $q->points }} Poin
                             </span>
@@ -90,12 +90,12 @@
                                 <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-300">Nonaktif</span>
                             @endif
                         </div>
-                        <h4 class="text-base font-bold text-slate-900 dark:text-white leading-relaxed">{{ $q->question_text }}</h4>
+                        <h4 class="q-text-{{ $q->id }} text-base font-bold text-slate-900 dark:text-white leading-relaxed">{{ $q->question_text }}</h4>
                     </div>
                 </div>
 
                 <div class="flex items-center space-x-2 self-end md:self-start">
-                    <button onclick="editQuestion({{ json_encode($q) }})" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-300 dark:hover:text-white border border-slate-200 dark:border-slate-700 transition flex items-center space-x-1">
+                    <button id="btn-edit-question-{{ $q->id }}" onclick="editQuestion({{ json_encode($q) }})" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-300 dark:hover:text-white border border-slate-200 dark:border-slate-700 transition flex items-center space-x-1 cursor-pointer">
                         <i class="fa-solid fa-pen-to-square"></i>
                         <span>Edit</span>
                     </button>
@@ -182,7 +182,7 @@
             </div>
 
             <!-- Form Body & Fixed Footer -->
-            <form action="{{ route('pool-qcc.admin.questions.store') }}" method="POST" enctype="multipart/form-data" class="flex flex-col flex-1 min-h-0 overflow-hidden">
+            <form id="formAddQuestion" action="{{ route('pool-qcc.admin.questions.store') }}" method="POST" enctype="multipart/form-data" class="flex flex-col flex-1 min-h-0 overflow-hidden">
                 @csrf
                 <div class="p-5 overflow-y-auto space-y-4 text-sm flex-1 overscroll-contain">
                     <div>
@@ -375,10 +375,15 @@
 @section('scripts')
 <script>
 function openModalAddQuestion() {
+    $('#formAddQuestion').find('.border-rose-500').removeClass('border-rose-500');
+    $('#formAddQuestion').find('.field-error-msg').remove();
     document.getElementById('modalAddQuestion').classList.remove('hidden');
 }
 
 function editQuestion(q) {
+    $('#formEditQuestion').find('.border-rose-500').removeClass('border-rose-500');
+    $('#formEditQuestion').find('.field-error-msg').remove();
+
     document.getElementById('formEditQuestion').action = `/pool-qcc/admin/questions/${q.id}`;
     document.getElementById('edit_q_booth_id').value = q.booth_id;
     document.getElementById('edit_question_text').value = q.question_text;
@@ -395,6 +400,153 @@ function editQuestion(q) {
     document.getElementById('modalEditQuestion').classList.remove('hidden');
 }
 
+function handleQuestionAjaxSubmit(formSelector, isEdit = false) {
+    const $form = $(formSelector);
+    const $submitBtn = $form.find('button[type="submit"]');
+    const originalBtnText = $submitBtn.html();
+
+    $form.find('.border-rose-500').removeClass('border-rose-500');
+    $form.find('.field-error-msg').remove();
+
+    $submitBtn.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin mr-1.5"></i> Menyimpan...');
+
+    const formData = new FormData($form[0]);
+
+    $.ajax({
+        url: $form.attr('action'),
+        type: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+        },
+        success: function(response) {
+            $submitBtn.prop('disabled', false).html(originalBtnText);
+
+            if (isEdit) {
+                $('#modalEditQuestion').addClass('hidden');
+                const q = response.question;
+
+                if (q) {
+                    $(`.q-text-${q.id}`).text(q.question_text);
+                    $(`.q-points-${q.id}`).text(`+${q.points} Poin`);
+
+                    // Update option grid in DOM dynamically
+                    const optLetters = ['A', 'B', 'C', 'D'];
+                    if (q.option_e) optLetters.push('E');
+
+                    let optsHtml = '';
+                    optLetters.forEach(letter => {
+                        const optKey = `option_${letter.toLowerCase()}`;
+                        const optVal = q[optKey] || '';
+                        const isCorrect = (q.correct_answer === letter);
+                        const wrapCls = isCorrect
+                            ? 'bg-emerald-50 border-emerald-300 text-emerald-900 font-bold dark:bg-emerald-500/20 dark:border-emerald-500/50 dark:text-emerald-200'
+                            : 'bg-slate-50 border-slate-200 text-slate-700 dark:bg-slate-900/60 dark:border-slate-800 dark:text-slate-300';
+                        const badgeCls = isCorrect ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-400';
+                        const colSpan = (letter === 'E') ? 'sm:col-span-2' : '';
+
+                        optsHtml += `
+                            <div class="p-3 rounded-xl border flex items-center space-x-2.5 ${wrapCls} ${colSpan}">
+                                <span class="w-6 h-6 rounded-lg flex items-center justify-center font-black ${badgeCls}">${letter}</span>
+                                <span>${optVal}</span>
+                                ${isCorrect ? '<i class="fa-solid fa-circle-check ml-auto text-emerald-600 dark:text-emerald-400 text-base"></i>' : ''}
+                            </div>
+                        `;
+                    });
+
+                    $(`#q-options-grid-${q.id}`).html(optsHtml);
+                    $(`#btn-edit-question-${q.id}`).attr('onclick', `editQuestion(${JSON.stringify(q)})`);
+                }
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Pertanyaan Diperbarui!',
+                    text: response.message || 'Perubahan soal berhasil disimpan.',
+                    timer: 2000,
+                    showConfirmButton: false,
+                    customClass: {
+                        popup: 'rounded-2xl dark:bg-slate-900 dark:text-white border border-slate-200 dark:border-slate-800'
+                    }
+                });
+            } else {
+                $('#modalAddQuestion').addClass('hidden');
+                $form[0].reset();
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Pertanyaan Ditambahkan!',
+                    text: response.message || 'Soal baru berhasil disimpan ke bank soal.',
+                    timer: 1600,
+                    showConfirmButton: false,
+                    customClass: {
+                        popup: 'rounded-2xl dark:bg-slate-900 dark:text-white border border-slate-200 dark:border-slate-800'
+                    }
+                }).then(() => {
+                    window.location.reload();
+                });
+            }
+        },
+        error: function(xhr) {
+            $submitBtn.prop('disabled', false).html(originalBtnText);
+
+            if (xhr.status === 422 && xhr.responseJSON && xhr.responseJSON.errors) {
+                const errors = xhr.responseJSON.errors;
+                let errorHtml = '<ul class="text-left text-xs text-rose-600 dark:text-rose-400 space-y-1.5 mt-2 list-disc list-inside">';
+
+                for (const field in errors) {
+                    const message = errors[field][0];
+                    errorHtml += `<li><b>${field.toUpperCase()}</b>: ${message}</li>`;
+
+                    const $input = $form.find(`[name="${field}"]`);
+                    if ($input.length) {
+                        $input.addClass('border-rose-500 focus:border-rose-500');
+                        $input.after(`<p class="field-error-msg text-[11px] text-rose-500 font-bold mt-1 flex items-center"><i class="fa-solid fa-circle-exclamation mr-1"></i> ${message}</p>`);
+                    }
+                }
+                errorHtml += '</ul>';
+
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Validasi Soal Gagal!',
+                    html: `Periksa kolom pertanyaan yang ditandai merah:<br>${errorHtml}`,
+                    confirmButtonColor: '#ef4444',
+                    confirmButtonText: 'Perbaiki',
+                    customClass: {
+                        popup: 'rounded-2xl dark:bg-slate-900 dark:text-white border border-slate-200 dark:border-slate-800',
+                        confirmButton: 'rounded-xl font-bold px-4 py-2 text-xs'
+                    }
+                });
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Gagal Menyimpan!',
+                    text: xhr.responseJSON?.message || 'Terjadi kesalahan saat memproses soal.',
+                    confirmButtonColor: '#ef4444',
+                    customClass: {
+                        popup: 'rounded-2xl dark:bg-slate-900 dark:text-white border border-slate-200 dark:border-slate-800',
+                        confirmButton: 'rounded-xl font-bold px-4 py-2 text-xs'
+                    }
+                });
+            }
+        }
+    });
+}
+
+$(document).ready(function() {
+    $('#formAddQuestion').on('submit', function(e) {
+        e.preventDefault();
+        handleQuestionAjaxSubmit('#formAddQuestion', false);
+    });
+
+    $('#formEditQuestion').on('submit', function(e) {
+        e.preventDefault();
+        handleQuestionAjaxSubmit('#formEditQuestion', true);
+    });
+});
+
 function confirmDeleteQuestion(id) {
     Swal.fire({
         title: 'Hapus Soal?',
@@ -406,6 +558,24 @@ function confirmDeleteQuestion(id) {
         confirmButtonText: '<i class="fa-solid fa-trash-can mr-1"></i> Ya, Hapus!',
         cancelButtonText: 'Batal',
         reverseButtons: true,
+        showLoaderOnConfirm: true,
+        preConfirm: () => {
+            return $.ajax({
+                url: `/pool-qcc/admin/questions/${id}`,
+                type: 'POST',
+                data: {
+                    _token: '{{ csrf_token() }}',
+                    _method: 'DELETE'
+                },
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                }
+            }).catch(xhr => {
+                Swal.showValidationMessage(xhr.responseJSON?.message || 'Gagal menghapus pertanyaan.');
+            });
+        },
+        allowOutsideClick: () => !Swal.isLoading(),
         customClass: {
             popup: 'rounded-2xl dark:bg-slate-900 dark:text-white border border-slate-200 dark:border-slate-800',
             confirmButton: 'rounded-xl font-bold px-4 py-2 text-xs',
@@ -413,7 +583,23 @@ function confirmDeleteQuestion(id) {
         }
     }).then((result) => {
         if (result.isConfirmed) {
-            document.getElementById(`delete-question-${id}`).submit();
+            Swal.fire({
+                icon: 'success',
+                title: 'Terhapus!',
+                text: result.value?.message || 'Pertanyaan berhasil dihapus.',
+                timer: 1500,
+                showConfirmButton: false,
+                customClass: {
+                    popup: 'rounded-2xl dark:bg-slate-900 dark:text-white border border-slate-200 dark:border-slate-800'
+                }
+            }).then(() => {
+                $(`#question-card-${id}`).fadeOut(300, function() {
+                    $(this).remove();
+                    if ($('.question-item-card').length === 0) {
+                        window.location.reload();
+                    }
+                });
+            });
         }
     });
 }

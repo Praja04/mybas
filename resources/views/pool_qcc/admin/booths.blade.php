@@ -16,7 +16,7 @@
             <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Daftarkan booth peserta exhibition, atur profil booth, dan pastikan minimal 5 pertanyaan tersedia.</p>
         </div>
         <div class="mt-4 sm:mt-0 flex items-center space-x-3">
-            <button onclick="document.getElementById('modalAddBooth').classList.remove('hidden')" class="px-4 py-2.5 rounded-xl text-sm font-bold bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-600/20 transition flex items-center space-x-2">
+            <button onclick="openModalAddBooth()" class="px-4 py-2.5 rounded-xl text-sm font-bold bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-600/20 transition flex items-center space-x-2">
                 <i class="fa-solid fa-plus text-xs"></i>
                 <span>Tambah Booth Baru</span>
             </button>
@@ -106,7 +106,7 @@
                         <i class="fa-solid fa-clipboard-question mr-1"></i>
                         <span>Kelola Soal ({{ $b->active_questions_count }})</span>
                     </a>
-                    <button onclick="editBooth({{ json_encode($b) }})" class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-300 dark:hover:text-white border border-slate-200 dark:border-slate-700 transition" title="Edit Booth">
+                    <button id="btn-edit-booth-{{ $b->id }}" onclick="editBooth({{ json_encode($b) }})" class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-300 dark:hover:text-white border border-slate-200 dark:border-slate-700 transition cursor-pointer" title="Edit Booth">
                         <i class="fa-solid fa-pen-to-square text-xs"></i>
                     </button>
                     <form id="delete-booth-{{ $b->id }}" action="{{ route('pool-qcc.admin.booths.destroy', $b->id) }}" method="POST" class="inline">
@@ -146,7 +146,7 @@
             </div>
 
             <!-- Form Body & Fixed Footer -->
-            <form action="{{ route('pool-qcc.admin.booths.store') }}" method="POST" enctype="multipart/form-data" class="flex flex-col flex-1 min-h-0 overflow-hidden">
+            <form id="formAddBooth" action="{{ route('pool-qcc.admin.booths.store') }}" method="POST" enctype="multipart/form-data" class="flex flex-col flex-1 min-h-0 overflow-hidden">
                 @csrf
                 <div class="p-5 overflow-y-auto space-y-4 text-sm flex-1 overscroll-contain">
                     <!-- Auto-generated Code Badge -->
@@ -284,6 +284,10 @@
 @section('scripts')
 <script>
 function editBooth(booth) {
+    // Reset previous errors in form
+    $('#formEditBooth').find('.border-rose-500').removeClass('border-rose-500');
+    $('#formEditBooth').find('.field-error-msg').remove();
+
     document.getElementById('formEditBooth').action = `/pool-qcc/admin/booths/${booth.id}`;
     document.getElementById('edit_code_badge').textContent = booth.code;
     document.getElementById('edit_name').value = booth.name;
@@ -294,6 +298,150 @@ function editBooth(booth) {
 
     document.getElementById('modalEditBooth').classList.remove('hidden');
 }
+
+function openModalAddBooth() {
+    $('#formAddBooth').find('.border-rose-500').removeClass('border-rose-500');
+    $('#formAddBooth').find('.field-error-msg').remove();
+    document.getElementById('modalAddBooth').classList.remove('hidden');
+}
+
+// Handler AJAX Form Submit
+function handleBoothAjaxSubmit(formSelector, isEdit = false) {
+    const $form = $(formSelector);
+    const $submitBtn = $form.find('button[type="submit"]');
+    const originalBtnText = $submitBtn.html();
+
+    // Clear previous errors
+    $form.find('.border-rose-500').removeClass('border-rose-500');
+    $form.find('.field-error-msg').remove();
+
+    // Loading button state
+    $submitBtn.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin mr-1.5"></i> Menyimpan...');
+
+    const formData = new FormData($form[0]);
+
+    $.ajax({
+        url: $form.attr('action'),
+        type: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+        },
+        success: function(response) {
+            $submitBtn.prop('disabled', false).html(originalBtnText);
+
+            if (isEdit) {
+                $('#modalEditBooth').addClass('hidden');
+
+                const booth = response.booth;
+                if (booth) {
+                    $(`.booth-name-${booth.id}`).text(booth.name);
+                    $(`.booth-category-${booth.id}`).text(booth.category);
+                    $(`.booth-desc-${booth.id}`).text(booth.description || 'Tidak ada deskripsi booth.');
+                    $(`.booth-pic-${booth.id}`).text(booth.pic_name || '-');
+
+                    if (booth.image) {
+                        const imgUrl = booth.image.startsWith('http') ? booth.image : '/' + booth.image;
+                        const $img = $(`.booth-img-${booth.id}`);
+                        if ($img.length) {
+                            $img.attr('src', imgUrl);
+                        } else {
+                            $(`#booth-card-${booth.id} .relative.h-44`).prepend(`<img src="${imgUrl}" alt="${booth.name}" class="booth-img-${booth.id} w-full h-full object-cover">`);
+                            $(`#booth-card-${booth.id} .relative.h-44 > div.w-full.h-full`).remove();
+                        }
+                    }
+
+                    $(`#btn-edit-booth-${booth.id}`).attr('onclick', `editBooth(${JSON.stringify(booth)})`);
+                }
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Berhasil Diperbarui!',
+                    text: response.message || 'Data booth berhasil disimpan secara instan.',
+                    timer: 2000,
+                    showConfirmButton: false,
+                    customClass: {
+                        popup: 'rounded-2xl dark:bg-slate-900 dark:text-white border border-slate-200 dark:border-slate-800'
+                    }
+                });
+            } else {
+                $('#modalAddBooth').addClass('hidden');
+                $form[0].reset();
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Booth Ditambahkan!',
+                    text: response.message || 'Booth baru berhasil dibuat.',
+                    timer: 1600,
+                    showConfirmButton: false,
+                    customClass: {
+                        popup: 'rounded-2xl dark:bg-slate-900 dark:text-white border border-slate-200 dark:border-slate-800'
+                    }
+                }).then(() => {
+                    window.location.reload();
+                });
+            }
+        },
+        error: function(xhr) {
+            $submitBtn.prop('disabled', false).html(originalBtnText);
+
+            if (xhr.status === 422 && xhr.responseJSON && xhr.responseJSON.errors) {
+                const errors = xhr.responseJSON.errors;
+                let errorHtml = '<ul class="text-left text-xs text-rose-600 dark:text-rose-400 space-y-1.5 mt-2 list-disc list-inside">';
+
+                for (const field in errors) {
+                    const message = errors[field][0];
+                    errorHtml += `<li><b>${field.toUpperCase()}</b>: ${message}</li>`;
+
+                    const $input = $form.find(`[name="${field}"]`);
+                    if ($input.length) {
+                        $input.addClass('border-rose-500 focus:border-rose-500');
+                        $input.after(`<p class="field-error-msg text-[11px] text-rose-500 font-bold mt-1 flex items-center"><i class="fa-solid fa-circle-exclamation mr-1"></i> ${message}</p>`);
+                    }
+                }
+                errorHtml += '</ul>';
+
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Validasi Gagal!',
+                    html: `Periksa kolom yang ditandai merah:<br>${errorHtml}`,
+                    confirmButtonColor: '#ef4444',
+                    confirmButtonText: 'Perbaiki',
+                    customClass: {
+                        popup: 'rounded-2xl dark:bg-slate-900 dark:text-white border border-slate-200 dark:border-slate-800',
+                        confirmButton: 'rounded-xl font-bold px-4 py-2 text-xs'
+                    }
+                });
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Gagal Menyimpan!',
+                    text: xhr.responseJSON?.message || 'Terjadi kesalahan saat memproses data booth.',
+                    confirmButtonColor: '#ef4444',
+                    customClass: {
+                        popup: 'rounded-2xl dark:bg-slate-900 dark:text-white border border-slate-200 dark:border-slate-800',
+                        confirmButton: 'rounded-xl font-bold px-4 py-2 text-xs'
+                    }
+                });
+            }
+        }
+    });
+}
+
+$(document).ready(function() {
+    $('#formAddBooth').on('submit', function(e) {
+        e.preventDefault();
+        handleBoothAjaxSubmit('#formAddBooth', false);
+    });
+
+    $('#formEditBooth').on('submit', function(e) {
+        e.preventDefault();
+        handleBoothAjaxSubmit('#formEditBooth', true);
+    });
+});
 
 function confirmDeleteBooth(id, name) {
     Swal.fire({
@@ -306,6 +454,24 @@ function confirmDeleteBooth(id, name) {
         confirmButtonText: '<i class="fa-solid fa-trash-can mr-1"></i> Ya, Hapus!',
         cancelButtonText: 'Batal',
         reverseButtons: true,
+        showLoaderOnConfirm: true,
+        preConfirm: () => {
+            return $.ajax({
+                url: `/pool-qcc/admin/booths/${id}`,
+                type: 'POST',
+                data: {
+                    _token: '{{ csrf_token() }}',
+                    _method: 'DELETE'
+                },
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                }
+            }).catch(xhr => {
+                Swal.showValidationMessage(xhr.responseJSON?.message || 'Gagal menghapus booth.');
+            });
+        },
+        allowOutsideClick: () => !Swal.isLoading(),
         customClass: {
             popup: 'rounded-2xl dark:bg-slate-900 dark:text-white border border-slate-200 dark:border-slate-800',
             confirmButton: 'rounded-xl font-bold px-4 py-2 text-xs',
@@ -313,7 +479,23 @@ function confirmDeleteBooth(id, name) {
         }
     }).then((result) => {
         if (result.isConfirmed) {
-            document.getElementById(`delete-booth-${id}`).submit();
+            Swal.fire({
+                icon: 'success',
+                title: 'Terhapus!',
+                text: result.value?.message || 'Booth berhasil dihapus.',
+                timer: 1500,
+                showConfirmButton: false,
+                customClass: {
+                    popup: 'rounded-2xl dark:bg-slate-900 dark:text-white border border-slate-200 dark:border-slate-800'
+                }
+            }).then(() => {
+                $(`#booth-card-${id}`).fadeOut(300, function() {
+                    $(this).remove();
+                    if ($('.booth-item-card').length === 0) {
+                        window.location.reload();
+                    }
+                });
+            });
         }
     });
 }
