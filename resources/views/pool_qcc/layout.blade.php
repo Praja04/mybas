@@ -192,7 +192,8 @@
                                     class="px-3.5 py-2 rounded-xl transition-all flex items-center space-x-1 {{ request()->routeIs('pool-qcc.admin.*') ? 'bg-indigo-50 text-indigo-700 dark:bg-slate-800 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-500/30 font-semibold' : 'text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60' }}">
                                     <i class="fa-solid fa-sliders mr-1.5 text-cyan-600 dark:text-cyan-400"></i>
                                     <span>Admin Panel</span>
-                                    <i class="fa-solid fa-chevron-down text-xs ml-1 text-slate-400 transition-transform duration-200 group-hover:rotate-180"></i>
+                                    <i
+                                        class="fa-solid fa-chevron-down text-xs ml-1 text-slate-400 transition-transform duration-200 group-hover:rotate-180"></i>
                                 </a>
                                 <!-- Dropdown container with pt-2 bridging the hover gap seamlessly -->
                                 <div id="adminDropdownMenu"
@@ -201,7 +202,8 @@
                                         class="rounded-2xl glass-panel shadow-2xl py-2 border border-slate-200 dark:border-slate-700/80 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md">
                                         <a href="{{ route('pool-qcc.admin.dashboard') }}"
                                             class="flex items-center px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-white hover:bg-indigo-50 dark:hover:bg-indigo-600/30 transition-colors">
-                                            <i class="fa-solid fa-chart-pie w-5 text-indigo-500 mr-2"></i> Dashboard Overview
+                                            <i class="fa-solid fa-chart-pie w-5 text-indigo-500 mr-2"></i> Dashboard
+                                            Overview
                                         </a>
                                         <a href="{{ route('pool-qcc.admin.booths') }}"
                                             class="flex items-center px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-white hover:bg-indigo-50 dark:hover:bg-indigo-600/30 transition-colors">
@@ -209,7 +211,8 @@
                                         </a>
                                         <a href="{{ route('pool-qcc.admin.questions') }}"
                                             class="flex items-center px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-white hover:bg-indigo-50 dark:hover:bg-indigo-600/30 transition-colors">
-                                            <i class="fa-solid fa-clipboard-question w-5 text-amber-500 mr-2"></i> Bank Soal Booth
+                                            <i class="fa-solid fa-clipboard-question w-5 text-amber-500 mr-2"></i> Bank
+                                            Soal Booth
                                         </a>
                                         <a href="{{ route('pool-qcc.admin.participants') }}"
                                             class="flex items-center px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-white hover:bg-indigo-50 dark:hover:bg-indigo-600/30 transition-colors">
@@ -217,7 +220,8 @@
                                         </a>
                                         <a href="{{ route('pool-qcc.admin.votes') }}"
                                             class="flex items-center px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-white hover:bg-indigo-50 dark:hover:bg-indigo-600/30 transition-colors">
-                                            <i class="fa-solid fa-receipt w-5 text-rose-500 mr-2"></i> Log Jawaban / Votes
+                                            <i class="fa-solid fa-receipt w-5 text-rose-500 mr-2"></i> Log Jawaban /
+                                            Votes
                                         </a>
                                     </div>
                                 </div>
@@ -298,7 +302,7 @@
                     class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between space-y-2 sm:space-y-0">
                     <div>
                         <span class="font-bold text-slate-800 dark:text-slate-300">Pool QCC</span> &copy;
-                        {{ date('Y') }} PT Basirih Industrial - QCC Innovation Challenge
+                        {{ date('Y') }} PT Bumi Alam Segar - QCC Innovation Challenge
                     </div>
                     <div class="flex items-center space-x-4">
                         <span class="flex items-center"><i
