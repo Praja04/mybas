@@ -102,7 +102,7 @@
 @section('modals')
     <!-- Modal Hasil Jawaban & Auto-Redirect ke Layar Booth -->
     <div id="modalResult"
-        class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden" style="z-index: 99999;">
+        class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden" style="z-index: 9000;">
         <div class="w-full h-full flex items-center justify-center p-3 sm:p-4 overflow-hidden">
             <div class="glass-panel w-full max-w-lg rounded-2xl sm:rounded-3xl overflow-y-auto shadow-2xl border p-6 sm:p-8 text-center bg-white dark:bg-slate-900 relative"
                 id="resultCard" style="max-height: calc(100vh - 2rem);">

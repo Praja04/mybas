@@ -48,7 +48,7 @@
 
 @section('modals')
     <!-- Modal Tambah Booth -->
-    <div id="modalAddBooth" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden" style="z-index: 99999;">
+    <div id="modalAddBooth" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden" style="z-index: 9000;">
         <div class="w-full h-full flex items-center justify-center p-3 sm:p-4 overflow-hidden">
             <div class="glass-panel w-full max-w-lg rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 flex flex-col relative"
                 style="max-height: calc(100vh - 2rem);">
@@ -148,7 +148,7 @@
     </div>
 
     <!-- Modal Edit Booth -->
-    <div id="modalEditBooth" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden" style="z-index: 99999;">
+    <div id="modalEditBooth" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden" style="z-index: 9000;">
         <div class="w-full h-full flex items-center justify-center p-3 sm:p-4 overflow-hidden">
             <div class="glass-panel w-full max-w-lg rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 flex flex-col relative"
                 style="max-height: calc(100vh - 2rem);">
