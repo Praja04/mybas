@@ -439,6 +439,22 @@ class PoolQccBoothController extends Controller
                 'total_votes' => number_format($totalVotes),
                 'total_participants' => number_format($totalParticipants),
                 'updated_at' => Carbon::now()->format('H:i:s'),
+                'booth_ranks' => $booths->values()->map(function ($b, $idx) {
+                    return [
+                        'id' => $b->id,
+                        'name' => $b->name,
+                        'rank' => $idx + 1,
+                        'points' => (int) $b->total_points,
+                    ];
+                }),
+                'participant_ranks' => $participants->values()->map(function ($p, $idx) {
+                    return [
+                        'id' => $p->id,
+                        'name' => $p->name,
+                        'rank' => $idx + 1,
+                        'score' => (int) $p->total_score,
+                    ];
+                }),
             ]);
         }
 

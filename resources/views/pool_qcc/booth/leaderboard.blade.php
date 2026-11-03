@@ -138,6 +138,60 @@
         .dark .game-sky-bg {
             background: radial-gradient(circle at 50% 10%, #1e1b4b 0%, #0f172a 50%, #020617 100%);
         }
+
+        /* ======================================================== */
+        /* RACE TAKEOVER / MENYALIP ANIMATION STYLES                */
+        /* ======================================================== */
+        .takeover-overtaker-active {
+            box-shadow: 0 0 35px 5px rgba(245, 158, 11, 0.95), 0 8px 24px rgba(0, 0, 0, 0.45) !important;
+            border-color: #f59e0b !important;
+            z-index: 60 !important;
+            position: relative !important;
+        }
+
+        .takeover-overtaken-active {
+            opacity: 0.85;
+            z-index: 20 !important;
+            position: relative !important;
+        }
+
+        @keyframes nitro-pulse {
+            0%, 100% { transform: scale(1); filter: drop-shadow(0 0 4px #f59e0b); }
+            50% { transform: scale(1.08); filter: drop-shadow(0 0 10px #ea580c); }
+        }
+
+        .anim-nitro-pulse {
+            animation: nitro-pulse 0.4s ease-in-out infinite;
+        }
+
+        @keyframes takeover-banner-slide {
+            0% {
+                opacity: 0;
+                transform: translateY(-50px) scale(0.85);
+            }
+            60% {
+                opacity: 1;
+                transform: translateY(6px) scale(1.02);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .anim-takeover-banner {
+            animation: takeover-banner-slide 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+
+        @keyframes badge-pop {
+            0% { transform: scale(0) rotate(-10deg); opacity: 0; }
+            70% { transform: scale(1.2) rotate(4deg); opacity: 1; }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+
+        .anim-badge-pop {
+            animation: badge-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
     </style>
 @endsection
 
@@ -234,6 +288,14 @@
 
                 <!-- Right: Utility Controls (Theme, Fullscreen, Portal) -->
                 <div class="flex items-center space-x-2">
+                    <!-- Simulasi Tes Takeover -->
+                    <button type="button" onclick="testTakeoverSimulation()"
+                        class="p-2 sm:px-3 sm:py-1.5 rounded-2xl bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-400 hover:to-pink-400 text-white font-black text-xs border-2 border-rose-700 game-btn-3d flex items-center space-x-1.5 cursor-pointer"
+                        title="Simulasi Efek Takeover Peringkat">
+                        <i class="fa-solid fa-bolt text-yellow-300"></i>
+                        <span class="hidden sm:inline text-[11px]">Tes Takeover</span>
+                    </button>
+
                     <!-- Theme Toggle -->
                     <button type="button" onclick="toggleTheme()"
                         class="p-2 sm:px-3 sm:py-1.5 rounded-2xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs border-2 border-amber-600 game-btn-3d flex items-center space-x-1.5 cursor-pointer"
@@ -259,6 +321,13 @@
                     </a>
                 </div>
             </div>
+        </div>
+
+        <!-- ======================================================== -->
+        <!-- TAKEOVER HUD ALERT BANNER CONTAINER                      -->
+        <!-- ======================================================== -->
+        <div id="takeoverHUD"
+            class="fixed top-4 left-1/2 -translate-x-1/2 z-[999999] flex flex-col items-center gap-2 pointer-events-none w-full max-w-md sm:max-w-lg px-4">
         </div>
 
         <!-- ======================================================== -->
@@ -303,7 +372,7 @@
 
 @section('scripts')
     <script>
-        // Confetti kecil ceria sesekali (aman dari web-worker resize bug)
+        // Confetti kecil ceria berkala
         function randomFunCelebration() {
             try {
                 if (typeof confetti === 'function') {
@@ -311,10 +380,7 @@
                         particleCount: 22,
                         angle: 60,
                         spread: 50,
-                        origin: {
-                            x: 0,
-                            y: 0.8
-                        },
+                        origin: { x: 0, y: 0.8 },
                         colors: ['#f59e0b', '#06b6d4', '#10b981', '#ec4899', '#8b5cf6'],
                         zIndex: 999999,
                         useWorker: false,
@@ -324,34 +390,116 @@
                         particleCount: 22,
                         angle: 120,
                         spread: 50,
-                        origin: {
-                            x: 1,
-                            y: 0.8
-                        },
+                        origin: { x: 1, y: 0.8 },
                         colors: ['#f59e0b', '#06b6d4', '#10b981', '#ec4899', '#8b5cf6'],
                         zIndex: 999999,
                         useWorker: false,
                         disableForReducedMotion: true
                     });
                 }
-            } catch (err) {
-                // Safeguard against canvas resize in background/hidden tabs
-            }
+            } catch (err) {}
         }
 
         setTimeout(randomFunCelebration, 1200);
-        setInterval(randomFunCelebration, 7500);
+        setInterval(randomFunCelebration, 8000);
 
         // ========================================================
-        // ASYNC JQUERY AJAX RELOAD DATA (TANPA REFRESH HALAMAN)
+        // WEB AUDIO API ARCADE SYNTHESIZER (ZERO ASSET / INSTANT)
+        // ========================================================
+        const GameAudio = {
+            ctx: null,
+            init() {
+                if (!this.ctx) {
+                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                    if (AudioCtx) this.ctx = new AudioCtx();
+                }
+                if (this.ctx && this.ctx.state === 'suspended') {
+                    this.ctx.resume().catch(() => {});
+                }
+            },
+            playNitroSwoosh() {
+                try {
+                    this.init();
+                    if (!this.ctx) return;
+                    const now = this.ctx.currentTime;
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(140, now);
+                    osc.frequency.exponentialRampToValueAtTime(580, now + 0.35);
+                    gain.gain.setValueAtTime(0.01, now);
+                    gain.gain.linearRampToValueAtTime(0.18, now + 0.08);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.38);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.4);
+                } catch(e) {}
+            },
+            playTakeoverChime() {
+                try {
+                    this.init();
+                    if (!this.ctx) return;
+                    const now = this.ctx.currentTime;
+                    
+                    // Arcade Victory Fanfare Arpeggio: C5 -> E5 -> G5 -> C6
+                    const notes = [
+                        { f: 523.25, time: 0, dur: 0.12 },
+                        { f: 659.25, time: 0.1, dur: 0.12 },
+                        { f: 783.99, time: 0.2, dur: 0.14 },
+                        { f: 1046.50, time: 0.32, dur: 0.45 }
+                    ];
+
+                    notes.forEach(n => {
+                        const osc = this.ctx.createOscillator();
+                        const gain = this.ctx.createGain();
+                        osc.type = 'triangle';
+                        osc.frequency.setValueAtTime(n.f, now + n.time);
+                        gain.gain.setValueAtTime(0.001, now + n.time);
+                        gain.gain.linearRampToValueAtTime(0.3, now + n.time + 0.02);
+                        gain.gain.exponentialRampToValueAtTime(0.0001, now + n.time + n.dur);
+                        osc.connect(gain);
+                        gain.connect(this.ctx.destination);
+                        osc.start(now + n.time);
+                        osc.stop(now + n.time + n.dur + 0.05);
+                    });
+                } catch (e) {}
+            }
+        };
+
+        // ========================================================
+        // ASYNC JQUERY AJAX RELOAD DATA (WITH REAL TAKEOVER SLIDE)
         // ========================================================
         let countdown = 15;
         let isSyncing = false;
+        let isFirstLoad = true;
+        let isAnimatingTakeover = false;
+        const previousBoothRanks = {};
+        const previousParticipantRanks = {};
+
         const timerEl = document.getElementById('refreshTimer');
         const syncIndicator = document.getElementById('syncIndicator');
 
+        // Record initial ranks directly from DOM
+        function cacheInitialRanks() {
+            $('[data-booth-id]').each(function() {
+                const id = $(this).data('booth-id');
+                const rank = parseInt($(this).data('booth-rank'));
+                if (id && rank) previousBoothRanks[id] = rank;
+            });
+            $('[data-participant-id]').each(function() {
+                const id = $(this).data('participant-id');
+                const rank = parseInt($(this).data('participant-rank'));
+                if (id && rank) previousParticipantRanks[id] = rank;
+            });
+        }
+
+        $(document).ready(function() {
+            cacheInitialRanks();
+        });
+
         function reloadLeaderboardData() {
-            if (isSyncing) return;
+            if (isSyncing || isAnimatingTakeover) return;
             isSyncing = true;
             if (syncIndicator) syncIndicator.classList.remove('hidden');
 
@@ -364,16 +512,7 @@
                 },
                 success: function(response) {
                     if (response && response.status === 'success') {
-                        // Update HTML area podium & ranks secara instan
-                        $('#arenaContainer').html(response.arena_html);
-
-                        // Update metric badges di header
-                        if (response.total_votes !== undefined) {
-                            $('#statTotalVotes').text(response.total_votes);
-                        }
-                        if (response.total_participants !== undefined) {
-                            $('#statTotalParticipants').text(response.total_participants);
-                        }
+                        processLeaderboardUpdate(response);
                     }
                 },
                 error: function(xhr, status, error) {
@@ -388,8 +527,327 @@
             });
         }
 
+        function processLeaderboardUpdate(response) {
+            // 1. Detect Takeovers
+            let primaryOvertaker = null;
+            const takeovers = [];
+
+            if (response.participant_ranks && !isFirstLoad) {
+                response.participant_ranks.forEach(p => {
+                    const oldRank = previousParticipantRanks[p.id];
+                    if (oldRank && p.rank < oldRank) {
+                        takeovers.push({
+                            type: 'participant',
+                            id: p.id,
+                            name: p.name,
+                            oldRank: oldRank,
+                            newRank: p.rank,
+                            delta: oldRank - p.rank
+                        });
+                        if (!primaryOvertaker) {
+                            primaryOvertaker = p;
+                        }
+                    }
+                });
+            }
+
+            if (response.booth_ranks && !isFirstLoad) {
+                response.booth_ranks.forEach(b => {
+                    const oldRank = previousBoothRanks[b.id];
+                    if (oldRank && b.rank < oldRank) {
+                        takeovers.push({
+                            type: 'booth',
+                            id: b.id,
+                            name: b.name,
+                            oldRank: oldRank,
+                            newRank: b.rank,
+                            delta: oldRank - b.rank
+                        });
+                    }
+                });
+            }
+
+            // 2. Check if we should execute physical sliding overtake animation first
+            if (primaryOvertaker) {
+                const overtakerEl = document.querySelector(`[data-participant-id="${primaryOvertaker.id}"]`);
+                const overtakenEl = document.querySelector(`[data-participant-rank="${primaryOvertaker.rank}"]`);
+
+                if (overtakerEl && overtakenEl && overtakerEl !== overtakenEl) {
+                    isAnimatingTakeover = true;
+                    animateParticipantOvertake(overtakerEl, overtakenEl, function() {
+                        commitNewArenaHTML(response, takeovers);
+                        isAnimatingTakeover = false;
+                    });
+                    return;
+                }
+            }
+
+            // If no physical sliding animation needed, commit HTML immediately
+            commitNewArenaHTML(response, takeovers);
+        }
+
+        function commitNewArenaHTML(response, takeovers) {
+            $('#arenaContainer').html(response.arena_html);
+
+            // Update cached ranks
+            if (response.participant_ranks) {
+                response.participant_ranks.forEach(p => {
+                    previousParticipantRanks[p.id] = p.rank;
+                });
+            }
+            if (response.booth_ranks) {
+                response.booth_ranks.forEach(b => {
+                    previousBoothRanks[b.id] = b.rank;
+                });
+            }
+            isFirstLoad = false;
+
+            // Update metric badges
+            if (response.total_votes !== undefined) {
+                $('#statTotalVotes').text(response.total_votes);
+            }
+            if (response.total_participants !== undefined) {
+                $('#statTotalParticipants').text(response.total_participants);
+            }
+
+            // Trigger HUD (hanya tampilkan takeover paling utama agar langsung menimpa tanpa tumpuk)
+            if (takeovers.length > 0) {
+                const topTakeover = takeovers.sort((a, b) => a.newRank - b.newRank)[0];
+                showTakeoverHUD(topTakeover);
+            }
+        }
+
+        // ========================================================
+        // PHYSICAL OVERTAKE SLIDING ANIMATION (RACE PASS MANEUVER)
+        // ========================================================
+        function animateParticipantOvertake(overtakerEl, overtakenEl, onComplete) {
+            const $overtaker = $(overtakerEl);
+            const $overtaken = $(overtakenEl);
+
+            if (!$overtaker.length || !$overtaken.length) {
+                if (onComplete) onComplete();
+                return;
+            }
+
+            // Calculate vertical distance between the two cards
+            const rectOvertaker = overtakerEl.getBoundingClientRect();
+            const rectOvertaken = overtakenEl.getBoundingClientRect();
+            const dy = rectOvertaker.top - rectOvertaken.top; // Positive distance to travel upwards
+
+            if (Math.abs(dy) < 5) {
+                if (onComplete) onComplete();
+                return;
+            }
+
+            // Sound 1: Nitro Turbo Swoosh
+            GameAudio.playNitroSwoosh();
+
+            // Set Initial Stacking
+            $overtaker.css({
+                'position': 'relative',
+                'z-index': '60',
+                'transition': 'transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.28s ease'
+            }).addClass('takeover-overtaker-active');
+
+            $overtaken.css({
+                'position': 'relative',
+                'z-index': '20',
+                'transition': 'transform 0.28s ease, opacity 0.28s ease'
+            }).addClass('takeover-overtaken-active');
+
+            // Add dynamic turbo boost badge
+            const $turboBadge = $(`
+                <span class="nitro-pill anim-badge-pop inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black bg-gradient-to-r from-amber-400 via-orange-500 to-amber-500 text-slate-950 border border-yellow-200 shadow-lg ml-1.5 anim-nitro-pulse">
+                    ⚡ MENYALIP...
+                </span>
+            `);
+            const $titleRow = $overtaker.find('.participant-title-row');
+            if ($titleRow.length) $titleRow.append($turboBadge);
+
+            // PHASE 1: Pull out to the lane (0 - 280ms)
+            // Overtaker pulls right & lifts up, overtaken shifts slightly left
+            $overtaker.css('transform', 'translate(18px, 0px) scale(1.03)');
+            $overtaken.css('transform', 'translate(-10px, 0px) scale(0.98)');
+
+            // PHASE 2: The Pass / Rush past each other (after 280ms)
+            setTimeout(() => {
+                $overtaker.css({
+                    'transition': 'transform 0.68s cubic-bezier(0.2, 0.9, 0.3, 1.25)',
+                    'transform': `translate(18px, -${dy}px) scale(1.04)`
+                });
+                $overtaken.css({
+                    'transition': 'transform 0.68s cubic-bezier(0.2, 0.9, 0.3, 1.25)',
+                    'transform': `translate(-10px, ${dy}px) scale(0.98)`
+                });
+
+                // PHASE 3: Dock back into the column (after 960ms)
+                setTimeout(() => {
+                    // Play victory sound as it docks in
+                    GameAudio.playTakeoverChime();
+
+                    $overtaker.css({
+                        'transition': 'transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                        'transform': `translate(0px, -${dy}px) scale(1.02)`
+                    });
+                    $overtaken.css({
+                        'transition': 'transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                        'transform': `translate(0px, ${dy}px) scale(1)`
+                    });
+
+                    // PHASE 4: Finalize & Swap DOM (after 1320ms)
+                    setTimeout(() => {
+                        $overtaker.css({
+                            'transform': '',
+                            'transition': '',
+                            'z-index': ''
+                        }).removeClass('takeover-overtaker-active');
+
+                        $overtaken.css({
+                            'transform': '',
+                            'transition': '',
+                            'z-index': ''
+                        }).removeClass('takeover-overtaken-active');
+
+                        $turboBadge.html('🔥 TAKEOVER!').removeClass('anim-nitro-pulse');
+
+                        // Physically insert overtaker before overtaken in the DOM
+                        $overtaker.insertBefore($overtaken);
+
+                        // Confetti if rank 1 was reached!
+                        if (typeof confetti === 'function') {
+                            confetti({
+                                particleCount: 85,
+                                spread: 90,
+                                origin: { y: 0.4 },
+                                colors: ['#fbbf24', '#f59e0b', '#ef4444', '#10b981', '#06b6d4'],
+                                zIndex: 9999999
+                            });
+                        }
+
+                        if (onComplete) onComplete();
+                    }, 370);
+                }, 680);
+            }, 280);
+        }
+
+        // ========================================================
+        // SIMULASI TAKEOVER UNTUK TESTING / DEMO
+        // ========================================================
+        function testTakeoverSimulation() {
+            if (isAnimatingTakeover) return;
+
+            const $cards = $('#participantsListWrapper [data-participant-id]');
+            if ($cards.length < 2) {
+                showTakeoverHUD({
+                    type: 'participant',
+                    id: 999,
+                    name: 'Peserta Bintang',
+                    oldRank: 2,
+                    newRank: 1,
+                    delta: 1
+                });
+                return;
+            }
+
+            // Target: Card 2 takes over Card 1
+            const cardUpper = $cards[0];
+            const cardLower = $cards[1];
+
+            const overtakerName = $(cardLower).data('participant-name') || 'Peserta';
+
+            isAnimatingTakeover = true;
+            animateParticipantOvertake(cardLower, cardUpper, function() {
+                // Swap rank badge numbers & Juara labels between the two cards
+                swapParticipantCardBadges(cardLower, cardUpper);
+
+                // Show Takeover HUD Toast
+                showTakeoverHUD({
+                    type: 'participant',
+                    id: $(cardLower).data('participant-id'),
+                    name: overtakerName,
+                    oldRank: 2,
+                    newRank: 1,
+                    delta: 1
+                });
+
+                isAnimatingTakeover = false;
+            });
+        }
+
+        function swapParticipantCardBadges(cardNewRank1, cardNewRank2) {
+            $(cardNewRank1).attr('data-participant-rank', 1);
+            $(cardNewRank2).attr('data-participant-rank', 2);
+
+            // Swap rank badge icons & numbers
+            const $badge1 = $(cardNewRank1).find('.flex-shrink-0.shadow-md').first();
+            const $badge2 = $(cardNewRank2).find('.flex-shrink-0.shadow-md').first();
+            if ($badge1.length && $badge2.length) {
+                $badge1.html('<i class="fa-solid fa-crown text-xs mr-0.5"></i> 1')
+                       .removeClass('from-slate-300 to-slate-100 border-slate-400 text-slate-800')
+                       .addClass('from-amber-400 to-yellow-300 border-amber-500 text-slate-950');
+                $badge2.html('<i class="fa-solid fa-medal text-xs mr-0.5"></i> 2')
+                       .removeClass('from-amber-400 to-yellow-300 border-amber-500 text-slate-950')
+                       .addClass('from-slate-300 to-slate-100 border-slate-400 text-slate-800');
+            }
+
+            // Swap Juara pills
+            const $pill1 = $(cardNewRank1).find('.participant-title-row span:last-child');
+            const $pill2 = $(cardNewRank2).find('.participant-title-row span:last-child');
+            if ($pill1.length && $pill2.length) {
+                $pill1.text('Juara 1').removeClass('bg-slate-300 text-slate-800').addClass('bg-amber-400 text-slate-950');
+                $pill2.text('Juara 2').removeClass('bg-amber-400 text-slate-950').addClass('bg-slate-300 text-slate-800');
+            }
+        }
+
+        let takeoverHUDTimer = null;
+
+        function showTakeoverHUD(item) {
+            const isBooth = item.type === 'booth';
+            const typeLabel = isBooth ? '🎪 STAND INOVASI' : '🧠 PESERTA';
+            const bgGradient = isBooth 
+                ? 'from-amber-500 via-yellow-400 to-amber-600' 
+                : 'from-cyan-500 via-teal-400 to-cyan-600';
+            const icon = isBooth ? '🏆' : '⚡';
+
+            if (takeoverHUDTimer) {
+                clearTimeout(takeoverHUDTimer);
+                takeoverHUDTimer = null;
+            }
+
+            const toast = $(`
+                <div class="anim-takeover-banner pointer-events-auto flex items-center gap-3 px-4 py-2.5 rounded-2xl bg-gradient-to-r ${bgGradient} text-slate-950 font-black shadow-[0_10px_30px_rgba(0,0,0,0.35)] border-3 border-white/90 backdrop-blur-md transition-all duration-300">
+                    <div class="w-10 h-10 rounded-xl bg-white/95 text-slate-950 flex items-center justify-center text-xl shadow-inner flex-shrink-0 animate-bounce">
+                        ${icon}
+                    </div>
+                    <div class="min-w-0 pr-2">
+                        <div class="flex items-center gap-1.5 text-[10px] tracking-wider uppercase font-black">
+                            <span class="bg-slate-950 text-white px-2 py-0.5 rounded-md shadow-xs">${typeLabel}</span>
+                            <span class="text-slate-950 font-black">TAKEOVER! (+${item.delta} POSISI)</span>
+                        </div>
+                        <div class="text-xs sm:text-sm font-black truncate text-slate-950 mt-0.5">
+                            <span class="underline decoration-2">${item.name}</span> merebut Peringkat #${item.newRank}!
+                        </div>
+                    </div>
+                    <button type="button" onclick="$(this).parent().remove()" class="text-slate-950 hover:opacity-70 p-1 text-xs ml-auto cursor-pointer">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+            `);
+
+            // Menimpa notifikasi lama di tempat yang sama (tidak menumpuk ke bawah)
+            $('#takeoverHUD').html(toast);
+
+            takeoverHUDTimer = setTimeout(() => {
+                toast.addClass('opacity-0 -translate-y-4 scale-90');
+                setTimeout(() => {
+                    toast.remove();
+                }, 400);
+            }, 4500);
+        }
+
         // Countdown timer setiap detik
         setInterval(() => {
+            if (isAnimatingTakeover) return;
             countdown--;
             if (timerEl) timerEl.textContent = countdown + 's';
             if (countdown <= 0) {

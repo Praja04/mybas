@@ -74,6 +74,11 @@
         <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
         <style>
+            /* SweetAlert2 Popup must ALWAYS be on top of every modal */
+            .swal2-container {
+                z-index: 9999999 !important;
+            }
+
             body {
                 font-family: 'Plus Jakarta Sans', sans-serif;
                 transition: background-color 0.3s ease, color 0.3s ease;

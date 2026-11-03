@@ -156,6 +156,7 @@ class PoolQccAdminController extends Controller
             'image.image' => 'File harus berupa gambar.',
             'image.mimes' => 'Format gambar harus jpeg, png, jpg, atau gif.',
             'image.max' => 'Ukuran gambar maksimal 2MB.',
+            'image.uploaded' => 'Ukuran file gambar melebihi batas upload server (Maksimal 2MB). Silakan kompres atau pilih file gambar yang lebih kecil.',
         ]);
 
         if ($validator->fails()) {
@@ -220,6 +221,7 @@ class PoolQccAdminController extends Controller
             'image.image' => 'File harus berupa gambar.',
             'image.mimes' => 'Format gambar harus jpeg, png, jpg, atau gif.',
             'image.max' => 'Ukuran gambar maksimal 2MB.',
+            'image.uploaded' => 'Ukuran file gambar melebihi batas upload server (Maksimal 2MB). Silakan kompres atau pilih file gambar yang lebih kecil.',
         ]);
 
         if ($validator->fails()) {
@@ -346,6 +348,7 @@ class PoolQccAdminController extends Controller
             'points.min' => 'Bobot poin minimal 1.',
             'image.image' => 'File lampiran harus berupa gambar.',
             'image.max' => 'Ukuran gambar lampiran maksimal 2MB.',
+            'image.uploaded' => 'Ukuran file gambar lampiran melebihi batas upload server (Maksimal 2MB). Silakan kompres gambar.',
         ]);
 
         if ($validator->fails()) {
@@ -427,6 +430,7 @@ class PoolQccAdminController extends Controller
             'points.min' => 'Bobot poin minimal 1.',
             'image.image' => 'File lampiran harus berupa gambar.',
             'image.max' => 'Ukuran gambar lampiran maksimal 2MB.',
+            'image.uploaded' => 'Ukuran file gambar lampiran melebihi batas upload server (Maksimal 2MB). Silakan kompres gambar.',
         ]);
 
         if ($validator->fails()) {
