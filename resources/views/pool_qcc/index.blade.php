@@ -15,7 +15,7 @@
                 <span class="text-cyan-200">POOL QCC Challenge</span>
             </h1>
             <p class="text-indigo-100 dark:text-slate-300 text-base sm:text-lg mb-8 leading-relaxed font-medium">
-                Setiap booth pameran QCC memiliki perangkat stand masing-masing. Peserta mengunjungi booth pilihan (maksimal <strong>3 booth</strong>), melakukan <strong>tapping ID card</strong> di booth tersebut, dan menjawab pertanyaan acak. Jawaban benar memberikan <strong>+1 Poin</strong> untuk Peserta dan Booth!
+                Setiap booth pameran QCC memiliki perangkat stand masing-masing. Peserta mengunjungi booth pilihan (maksimal <strong>10 booth</strong>), melakukan <strong>tapping ID card</strong> di booth tersebut, dan menjawab pertanyaan acak. Jawaban benar memberikan <strong>+1 Poin</strong> untuk Peserta dan Booth!
             </p>
             <div class="flex flex-wrap gap-4">
                 <a href="{{ route('pool-qcc.booths-index') }}" class="px-6 py-3.5 rounded-xl font-bold text-indigo-900 bg-white hover:bg-indigo-50 shadow-lg flex items-center space-x-2 transition transform hover:-translate-y-0.5">
@@ -101,7 +101,7 @@
             <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800">
                 <span class="text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider block mb-1">Langkah 1</span>
                 <div class="font-bold text-slate-900 dark:text-white mb-1">Kunjungi Booth Pilihan</div>
-                <p class="text-slate-500 dark:text-slate-400 text-xs leading-relaxed">Peserta mendatangi booth yang ingin di-pool (maksimal 3 booth berbeda selama event).</p>
+                <p class="text-slate-500 dark:text-slate-400 text-xs leading-relaxed">Peserta mendatangi booth yang ingin di-pool (maksimal 10 booth berbeda selama event).</p>
             </div>
             <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800">
                 <span class="text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider block mb-1">Langkah 2</span>

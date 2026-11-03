@@ -309,7 +309,7 @@
                                 class="fa-solid fa-circle text-[8px] text-emerald-500 mr-1.5 animate-pulse"></i> RFID
                             Reader
                             Ready</span>
-                        <span>Maksimal 3 Booth / Peserta</span>
+                        <span>Maksimal 10 Booth / Peserta</span>
                     </div>
                 </div>
             </footer>
