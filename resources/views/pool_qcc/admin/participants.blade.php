@@ -13,7 +13,7 @@
                 <span class="text-slate-500">Peserta</span>
             </div>
             <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white">Data Peserta & Riwayat Tap</h1>
-            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Daftar seluruh peserta yang telah melakukan tapping ID card RFID dan progres pooling 3 booth mereka.</p>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Daftar seluruh peserta yang telah melakukan tapping ID card RFID dan progres pooling 10 booth mereka.</p>
         </div>
         <div class="mt-4 sm:mt-0">
             <span id="totalParticipantsBadge" class="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700 shadow-sm">
@@ -34,8 +34,8 @@
             <div class="flex items-center space-x-2">
                 <select id="filter_participant_status" class="px-3.5 py-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white text-xs font-medium focus:outline-none focus:border-indigo-500 shadow-sm">
                     <option value="">-- Semua Status Kuota --</option>
-                    <option value="completed">Selesai (3/3 Booth)</option>
-                    <option value="in_progress">Belum Selesai (&lt; 3 Booth)</option>
+                    <option value="completed">Selesai (10/10 Booth)</option>
+                    <option value="in_progress">Belum Selesai (&lt; 10 Booth)</option>
                 </select>
 
                 <button type="button" id="btnResetParticipantFilter" class="px-3.5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold border border-slate-200 dark:border-slate-700 transition cursor-pointer flex items-center space-x-1" title="Reset Filter">
@@ -261,7 +261,7 @@ function loadParticipantsData(page = 1, search = '', status = '') {
                            <i class="fa-solid fa-circle-check mr-1"></i> Selesai (3/3)
                        </span>`
                     : `<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-300 border border-amber-200 dark:border-amber-500/30">
-                           ${p.booths_voted_count} / 3 Booth
+                           ${p.booths_voted_count} / 10 Booth
                        </span>`;
 
                 let votesHtml = '';

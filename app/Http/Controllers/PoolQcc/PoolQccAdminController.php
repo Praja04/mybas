@@ -517,9 +517,9 @@ class PoolQccAdminController extends Controller
 
         if ($request->filled('status')) {
             if ($request->status === 'completed') {
-                $query->where('booths_voted_count', '>=', 3);
+                $query->where('booths_voted_count', '>=', 10);
             } elseif ($request->status === 'in_progress') {
-                $query->where('booths_voted_count', '<', 3);
+                $query->where('booths_voted_count', '<', 10);
             }
         }
 

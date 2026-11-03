@@ -201,10 +201,10 @@ class PoolQccBoothController extends Controller
         }
 
         // 4. Validasi: Apakah sudah mencapai maksimal 3 booth?
-        if ($participant->booths_voted_count >= 3) {
+        if ($participant->booths_voted_count >= 10) {
             return response()->json([
                 'status' => 'error',
-                'message' => "Mohon maaf {$participant->name}, kuota pooling Anda sudah habis (Maksimal 3 Booth). Terima kasih atas partisipasi Anda!",
+                'message' => "Mohon maaf {$participant->name}, kuota pooling Anda sudah habis (Maksimal 10 Booth). Terima kasih atas partisipasi Anda!",
             ], 422);
         }
 
@@ -214,7 +214,7 @@ class PoolQccBoothController extends Controller
 
         return response()->json([
             'status' => 'success',
-            'message' => "Kartu terverifikasi! Selamat datang, {$participant->name} (Booth ke-" . ($participant->booths_voted_count + 1) . " dari 3)",
+            'message' => "Kartu terverifikasi! Selamat datang, {$participant->name} (Booth ke-" . ($participant->booths_voted_count + 1) . " dari 10)",
             'participant' => [
                 'name' => $participant->name,
                 'nik' => $participant->nik,
@@ -323,10 +323,10 @@ class PoolQccBoothController extends Controller
         $participant = PoolParticipant::findOrFail($participantId);
         $question = PoolQuestion::findOrFail($request->question_id);
 
-        if ($participant->booths_voted_count >= 3) {
+        if ($participant->booths_voted_count >= 10) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Anda sudah mencapai batas maksimal 3 booth pooling!',
+                'message' => 'Anda sudah mencapai batas maksimal 10 booth pooling!',
             ], 422);
         }
 
@@ -401,7 +401,7 @@ class PoolQccBoothController extends Controller
                 'name' => $participant->name,
                 'total_score' => $participant->total_score,
                 'booths_voted_count' => $participant->booths_voted_count,
-                'remaining_quota' => max(0, 3 - $participant->booths_voted_count),
+                'remaining_quota' => max(0, 10 - $participant->booths_voted_count),
             ],
             'booth' => [
                 'code' => $booth->code,
@@ -424,15 +424,120 @@ class PoolQccBoothController extends Controller
 
         $participants = PoolParticipant::orderBy('total_score', 'desc')
             ->orderBy('updated_at', 'asc')
-            ->take(15)
             ->get();
 
         $totalVotes = PoolVote::count();
         $totalParticipants = PoolParticipant::count();
 
+        // Kelompokkan peserta berdasarkan 5 Reward Tiers
+        // Format nominasi persis sesuai acuan:
+        // 1. Reward 1: > 8 booth (dipilih 1 pemenang)
+        // 2. Reward 2: > 6 booth (dipilih 1 pemenang)
+        // 3. Reward 3: > 5 booth (dipilih 1 pemenang)
+        // 4. Reward 4: > 4 booth (dipilih 1 pemenang)
+        // 5. Reward 5: > 2 booth (dipilih 16 pemenang)
+        $rewardTiers = [
+            'reward_1' => [
+                'id' => 'reward_1',
+                'name' => 'Reward 1',
+                'title' => 'NOMINASI REWARD 1',
+                'rule_text' => '> 8 booth',
+                'criteria_text' => 'Bisa menjawab benar > 8 booth',
+                'quota_winners' => 1,
+                'min_points' => 9,
+                'color' => 'amber',
+                'border_color' => 'border-amber-400 dark:border-amber-500',
+                'badge_color' => 'bg-amber-400 text-slate-950',
+                'icon' => 'fa-crown',
+                'participants' => $participants->filter(fn($p) => $p->total_score > 8)->values(),
+            ],
+            'reward_2' => [
+                'id' => 'reward_2',
+                'name' => 'Reward 2',
+                'title' => 'NOMINASI REWARD 2',
+                'rule_text' => '> 6 booth',
+                'criteria_text' => 'Bisa menjawab benar > 6 booth',
+                'quota_winners' => 1,
+                'min_points' => 7,
+                'color' => 'cyan',
+                'border_color' => 'border-cyan-400 dark:border-cyan-500',
+                'badge_color' => 'bg-cyan-400 text-slate-950',
+                'icon' => 'fa-gem',
+                'participants' => $participants->filter(fn($p) => $p->total_score > 6 && $p->total_score <= 8)->values(),
+            ],
+            'reward_3' => [
+                'id' => 'reward_3',
+                'name' => 'Reward 3',
+                'title' => 'NOMINASI REWARD 3',
+                'rule_text' => '> 5 booth',
+                'criteria_text' => 'Bisa menjawab benar > 5 booth',
+                'quota_winners' => 1,
+                'min_points' => 6,
+                'color' => 'emerald',
+                'border_color' => 'border-emerald-400 dark:border-emerald-500',
+                'badge_color' => 'bg-emerald-400 text-slate-950',
+                'icon' => 'fa-medal',
+                'participants' => $participants->filter(fn($p) => $p->total_score > 5 && $p->total_score <= 6)->values(),
+            ],
+            'reward_4' => [
+                'id' => 'reward_4',
+                'name' => 'Reward 4',
+                'title' => 'NOMINASI REWARD 4',
+                'rule_text' => '> 4 booth',
+                'criteria_text' => 'Bisa menjawab benar > 4 booth',
+                'quota_winners' => 1,
+                'min_points' => 5,
+                'color' => 'orange',
+                'border_color' => 'border-orange-400 dark:border-orange-500',
+                'badge_color' => 'bg-orange-400 text-slate-950',
+                'icon' => 'fa-award',
+                'participants' => $participants->filter(fn($p) => $p->total_score > 4 && $p->total_score <= 5)->values(),
+            ],
+            'reward_5' => [
+                'id' => 'reward_5',
+                'name' => 'Reward 5',
+                'title' => 'NOMINASI REWARD 5',
+                'rule_text' => '> 2 booth',
+                'criteria_text' => 'Bisa menjawab benar > 2 booth',
+                'quota_winners' => 16,
+                'min_points' => 3,
+                'color' => 'purple',
+                'border_color' => 'border-purple-400 dark:border-purple-500',
+                'badge_color' => 'bg-purple-400 text-slate-950',
+                'icon' => 'fa-gift',
+                'participants' => $participants->filter(fn($p) => $p->total_score > 2 && $p->total_score <= 4)->values(),
+            ],
+        ];
+
+        $otherParticipants = $participants->filter(fn($p) => $p->total_score <= 2)->values();
+
+        $rewardCandidates = collect($rewardTiers)->mapWithKeys(function ($tier, $key) {
+            return [
+                $key => [
+                    'id' => $tier['id'],
+                    'name' => $tier['name'],
+                    'title' => $tier['title'],
+                    'rule_text' => $tier['rule_text'],
+                    'color' => $tier['color'],
+                    'icon' => $tier['icon'],
+                    'candidates' => $tier['participants']->map(function ($p) {
+                        return [
+                            'id' => $p->id,
+                            'name' => $p->name,
+                            'nik' => $p->nik ?? '-',
+                            'department' => $p->department ?? 'Umum',
+                            'photo' => $p->photo,
+                            'total_score' => (int) $p->total_score,
+                            'booths_voted_count' => (int) $p->booths_voted_count,
+                        ];
+                    })->values(),
+                ]
+            ];
+        });
+
         // Jika request via AJAX / Fetch, kirim partial HTML dan stats untuk live update tanpa reload halaman
         if ($request->ajax() || $request->wantsJson()) {
-            $arenaHtml = view('pool_qcc.booth.leaderboard_arena', compact('booths', 'participants'))->render();
+            $arenaHtml = view('pool_qcc.booth.leaderboard_arena', compact('booths', 'participants', 'rewardTiers', 'otherParticipants'))->render();
             return response()->json([
                 'status' => 'success',
                 'arena_html' => $arenaHtml,
@@ -455,9 +560,108 @@ class PoolQccBoothController extends Controller
                         'score' => (int) $p->total_score,
                     ];
                 }),
+                'reward_candidates' => $rewardCandidates,
             ]);
         }
 
-        return view('pool_qcc.booth.leaderboard', compact('booths', 'participants', 'totalVotes', 'totalParticipants'));
+        return view('pool_qcc.booth.leaderboard', compact('booths', 'participants', 'rewardTiers', 'otherParticipants', 'rewardCandidates', 'totalVotes', 'totalParticipants'));
+    }
+
+    /**
+     * Halaman Dedicated Lucky Draw Spin Wheel (Full Page View)
+     */
+    public function spinWheel(Request $request)
+    {
+        $participants = PoolParticipant::orderBy('total_score', 'desc')
+            ->orderBy('updated_at', 'asc')
+            ->get();
+
+        $rewardTiers = [
+            'reward_1' => [
+                'id' => 'reward_1',
+                'name' => 'Reward 1',
+                'title' => 'NOMINASI REWARD 1',
+                'rule_text' => '> 8 booth',
+                'criteria_text' => 'Bisa menjawab benar > 8 booth',
+                'quota_winners' => 1,
+                'color' => 'amber',
+                'icon' => 'fa-crown',
+                'participants' => $participants->filter(fn($p) => $p->total_score > 8)->values(),
+            ],
+            'reward_2' => [
+                'id' => 'reward_2',
+                'name' => 'Reward 2',
+                'title' => 'NOMINASI REWARD 2',
+                'rule_text' => '> 6 booth',
+                'criteria_text' => 'Bisa menjawab benar > 6 booth',
+                'quota_winners' => 1,
+                'color' => 'cyan',
+                'icon' => 'fa-gem',
+                'participants' => $participants->filter(fn($p) => $p->total_score > 6 && $p->total_score <= 8)->values(),
+            ],
+            'reward_3' => [
+                'id' => 'reward_3',
+                'name' => 'Reward 3',
+                'title' => 'NOMINASI REWARD 3',
+                'rule_text' => '> 5 booth',
+                'criteria_text' => 'Bisa menjawab benar > 5 booth',
+                'quota_winners' => 1,
+                'color' => 'emerald',
+                'icon' => 'fa-medal',
+                'participants' => $participants->filter(fn($p) => $p->total_score > 5 && $p->total_score <= 6)->values(),
+            ],
+            'reward_4' => [
+                'id' => 'reward_4',
+                'name' => 'Reward 4',
+                'title' => 'NOMINASI REWARD 4',
+                'rule_text' => '> 4 booth',
+                'criteria_text' => 'Bisa menjawab benar > 4 booth',
+                'quota_winners' => 1,
+                'color' => 'orange',
+                'icon' => 'fa-award',
+                'participants' => $participants->filter(fn($p) => $p->total_score > 4 && $p->total_score <= 5)->values(),
+            ],
+            'reward_5' => [
+                'id' => 'reward_5',
+                'name' => 'Reward 5',
+                'title' => 'NOMINASI REWARD 5',
+                'rule_text' => '> 2 booth',
+                'criteria_text' => 'Bisa menjawab benar > 2 booth',
+                'quota_winners' => 16,
+                'color' => 'purple',
+                'icon' => 'fa-gift',
+                'participants' => $participants->filter(fn($p) => $p->total_score > 2 && $p->total_score <= 4)->values(),
+            ],
+        ];
+
+        $rewardCandidates = collect($rewardTiers)->mapWithKeys(function ($tier, $key) {
+            return [
+                $key => [
+                    'id' => $tier['id'],
+                    'name' => $tier['name'],
+                    'title' => $tier['title'],
+                    'rule_text' => $tier['rule_text'],
+                    'criteria_text' => $tier['criteria_text'],
+                    'quota_winners' => $tier['quota_winners'],
+                    'color' => $tier['color'],
+                    'icon' => $tier['icon'],
+                    'candidates' => $tier['participants']->map(function ($p) {
+                        return [
+                            'id' => $p->id,
+                            'name' => $p->name,
+                            'nik' => $p->nik ?? '-',
+                            'department' => $p->department ?? 'Umum',
+                            'photo' => $p->photo,
+                            'total_score' => (int) $p->total_score,
+                            'booths_voted_count' => (int) $p->booths_voted_count,
+                        ];
+                    })->values(),
+                ]
+            ];
+        });
+
+        $activeTier = $request->get('tier', 'reward_1');
+
+        return view('pool_qcc.booth.spin_wheel', compact('rewardTiers', 'rewardCandidates', 'activeTier'));
     }
 }

@@ -1947,12 +1947,6 @@
                 <!--end::Header Nav-->
             @else
                 <ul class="menu-nav">
-                    {{-- Pool QCC --}}
-                    <li class="menu-item {{ request()->is('pool-qcc*') ? 'menu-item-active' : '' }}">
-                        <a href="{{ url('/pool-qcc') }}" class="menu-link">
-                            <span class="menu-text">Pool QCC</span>
-                        </a>
-                    </li>
                     <li class="menu-item menu-item-submenu menu-item-rel menu-item-active" data-menu-toggle="click"
                         aria-haspopup="true">
                         <a href="{{ url('login') }}" class="menu-link menu-toggle">

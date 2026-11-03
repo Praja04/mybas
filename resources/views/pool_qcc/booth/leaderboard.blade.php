@@ -1,14 +1,14 @@
 @extends('pool_qcc.layout')
 
-@section('title', '🏆 Exhibition QCC 2026 - Live 3D Leaderboard!')
+@section('title', 'Leaderboard Exhibition QCC 2026')
 
 @section('hide_nav', true)
 
 @section('styles')
     <style>
         /* ========================================================
-                                               CASUAL 3D MOBILE GAME THEME (Royal Match / Arcade Style)
-                                               ======================================================== */
+                                                                           CASUAL 3D MOBILE GAME THEME (Royal Match / Arcade Style)
+                                                                           ======================================================== */
         @keyframes floatSlow {
 
             0%,
@@ -61,8 +61,8 @@
         /* 3D Hanging Game Signboard Header */
         .game-signboard {
             background: linear-gradient(180deg, #581c87 0%, #3b0764 60%, #2e0854 100%);
-            border: 5px solid #fbbf24;
-            box-shadow: inset 0 3px 5px rgba(255, 255, 255, 0.4), 0 8px 0 #b45309, 0 16px 28px rgba(0, 0, 0, 0.35);
+            border: 3.5px solid #fbbf24;
+            box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.4), 0 3px 0 #b45309, 0 6px 12px rgba(0, 0, 0, 0.2);
         }
 
         /* 3D Game Buttons & Resource Badges */
@@ -81,15 +81,14 @@
             box-shadow: 0 1px 0 rgba(0, 0, 0, 0.25);
         }
 
-        /* 3D Cartoon Cards */
+        /* 3D Cartoon Layout Cards - No translateY on hover to avoid collision with header */
         .game-card-3d {
             box-shadow: 0 6px 0 rgba(0, 0, 0, 0.15), 0 10px 20px rgba(0, 0, 0, 0.08);
-            transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.15s ease;
+            transition: box-shadow 0.15s ease;
         }
 
         .game-card-3d:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 0 rgba(0, 0, 0, 0.15), 0 14px 24px rgba(0, 0, 0, 0.12);
+            box-shadow: 0 8px 0 rgba(0, 0, 0, 0.15), 0 12px 22px rgba(0, 0, 0, 0.1);
         }
 
         /* 3D Cartoon Pedestals */
@@ -156,8 +155,17 @@
         }
 
         @keyframes nitro-pulse {
-            0%, 100% { transform: scale(1); filter: drop-shadow(0 0 4px #f59e0b); }
-            50% { transform: scale(1.08); filter: drop-shadow(0 0 10px #ea580c); }
+
+            0%,
+            100% {
+                transform: scale(1);
+                filter: drop-shadow(0 0 4px #f59e0b);
+            }
+
+            50% {
+                transform: scale(1.08);
+                filter: drop-shadow(0 0 10px #ea580c);
+            }
         }
 
         .anim-nitro-pulse {
@@ -169,10 +177,12 @@
                 opacity: 0;
                 transform: translateY(-50px) scale(0.85);
             }
+
             60% {
                 opacity: 1;
                 transform: translateY(6px) scale(1.02);
             }
+
             100% {
                 opacity: 1;
                 transform: translateY(0) scale(1);
@@ -184,20 +194,54 @@
         }
 
         @keyframes badge-pop {
-            0% { transform: scale(0) rotate(-10deg); opacity: 0; }
-            70% { transform: scale(1.2) rotate(4deg); opacity: 1; }
-            100% { transform: scale(1) rotate(0deg); opacity: 1; }
+            0% {
+                transform: scale(0) rotate(-10deg);
+                opacity: 0;
+            }
+
+            70% {
+                transform: scale(1.2) rotate(4deg);
+                opacity: 1;
+            }
+
+            100% {
+                transform: scale(1) rotate(0deg);
+                opacity: 1;
+            }
         }
 
         .anim-badge-pop {
             animation: badge-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+
+        /* Infinite Vertical Auto-Scroll Containers */
+        .infinite-scroll-container {
+            overflow: hidden !important;
+            scroll-behavior: auto !important;
+        }
+
+        .infinite-scroll-container::-webkit-scrollbar {
+            display: none;
+        }
+
+        .infinite-scroll-content {
+            will-change: transform;
+            transform: translate3d(0, 0, 0);
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+        }
+
+        /* Soft edge fade/blur mask for top & bottom boundaries during infinite scroll */
+        .infinite-scroll-mask {
+            -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 14px, black calc(100% - 14px), transparent 100%);
+            mask-image: linear-gradient(to bottom, transparent 0%, black 14px, black calc(100% - 14px), transparent 100%);
         }
     </style>
 @endsection
 
 @section('content')
     <div
-        class="min-h-screen px-3 sm:px-5 lg:px-7 py-4 flex flex-col justify-between relative overflow-hidden game-sky-bg text-slate-900 dark:text-slate-100 transition-colors font-game">
+        class="min-h-screen lg:h-screen lg:max-h-screen w-full px-2.5 sm:px-4 lg:px-6 pt-1 pb-2 flex flex-col justify-start relative overflow-y-auto lg:overflow-hidden game-sky-bg text-slate-900 dark:text-slate-100 transition-colors font-game">
 
         <!-- Cartoon Game Background Ornaments (Clouds & Ambient Glow) -->
         <div class="fixed inset-0 pointer-events-none overflow-hidden z-0">
@@ -212,115 +256,87 @@
         </div>
 
         <!-- ======================================================== -->
-        <!-- TOP 3D TOURNAMENT SIGNBOARD & GAME HUB BAR               -->
+        <!-- TOP 3D TOURNAMENT SIGNBOARD & GAME HUB BAR (SEJAJAR)      -->
         <!-- ======================================================== -->
-        <div class="relative z-20 flex flex-col items-center mb-3">
+        <div class="relative z-20 w-full flex items-center justify-between gap-2 sm:gap-4 mb-3 sm:mb-3.5 px-1 sm:px-2 flex-shrink-0">
 
-            <!-- Hanging Chain Rings from Ceiling -->
-            <div class="flex justify-between w-72 max-w-full px-10 -mb-2.5 z-10 pointer-events-none">
-                <div
-                    class="w-3.5 h-6 rounded-full border-2 border-amber-600 bg-gradient-to-b from-amber-300 to-amber-500 shadow-sm">
-                </div>
-                <div
-                    class="w-3.5 h-6 rounded-full border-2 border-amber-600 bg-gradient-to-b from-amber-300 to-amber-500 shadow-sm">
-                </div>
+            <!-- KIRI TITLE: Lucky Spin Wheel & Tes Takeover -->
+            <div class="flex items-center space-x-2 flex-1 justify-start">
+                <!-- Lucky Spin Wheel Direct Link -->
+                <a href="{{ route('pool-qcc.spin-wheel') }}"
+                    class="p-2 sm:px-3 sm:py-1.5 rounded-2xl bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 hover:from-amber-300 hover:to-yellow-200 text-slate-950 font-black text-xs border-2 border-amber-600 game-btn-3d flex items-center space-x-1.5 cursor-pointer shadow-md"
+                    title="Buka Undian Roda Keberuntungan (Spin Wheel)">
+                    <i class="fa-solid fa-dharmachakra text-amber-900 animate-spin-slow"></i>
+                    <span class="hidden sm:inline text-[11px]">Lucky Spin Wheel</span>
+                </a>
+
+                <!-- Simulasi Tes Takeover -->
+                <button type="button" onclick="testTakeoverSimulation()"
+                    class="p-2 sm:px-3 sm:py-1.5 rounded-2xl bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-400 hover:to-pink-400 text-white font-black text-xs border-2 border-rose-700 game-btn-3d flex items-center space-x-1.5 cursor-pointer shadow-md"
+                    title="Simulasi Efek Takeover Peringkat">
+                    <i class="fa-solid fa-bolt text-yellow-300"></i>
+                    <span class="hidden sm:inline text-[11px]">Tes Takeover</span>
+                </button>
             </div>
 
-            <!-- Main Wooden/Purple Signboard -->
-            <div
-                class="game-signboard relative px-6 sm:px-14 py-3 sm:py-4 rounded-3xl text-center flex flex-col items-center max-w-xl w-full">
-                <!-- Info Subtitle Ribbon -->
-                <div
-                    class="px-3.5 py-0.5 rounded-full bg-gradient-to-r from-amber-400 to-yellow-300 text-slate-950 font-black text-[10px] sm:text-xs tracking-wider uppercase border border-amber-500 shadow-sm flex items-center space-x-1 mb-1">
-                    <span>👑</span>
-                    <span>QCC/QCP PT BUMI ALAM SEGAR 2026</span>
-                    <span>👑</span>
-                </div>
-
-                <!-- Grand Title -->
-                <h1
-                    class="text-2xl sm:text-4xl font-black text-white tracking-tight drop-shadow-[0_4px_3px_rgba(0,0,0,0.85)] font-heading leading-tight">
-                    EXHIBITION QCC/QCP
-                </h1>
-
-                <!-- Hanging Live Countdown / Sync Clock -->
-                {{-- <div onclick="reloadLeaderboardData()" title="Klik untuk refresh instan"
-                    class="absolute -bottom-4 bg-gradient-to-b from-amber-300 via-amber-400 to-amber-500 hover:from-amber-200 hover:to-amber-400 text-slate-950 font-black px-4 sm:px-5 py-1 rounded-full text-xs border-2 border-amber-700 shadow-md flex items-center space-x-2 cursor-pointer game-btn-3d">
-                    <span class="anim-coin text-sm">⏱️</span>
-                    <span class="tracking-wide">SYNC:</span>
-                    <span id="refreshTimer" class="font-mono text-sm sm:text-base font-black">15s</span>
-                    <span id="syncIndicator" class="hidden text-emerald-900 animate-spin text-xs">
-                        <i class="fa-solid fa-arrows-rotate"></i>
-                    </span>
-                </div> --}}
-            </div>
-
-            <!-- Top Left & Right Game Bar (Resources & Action Buttons) -->
-            <div class="w-full flex items-center justify-between mt-3 px-1 sm:px-2">
-                <!-- Left: Game Resource Badges (Coins & Gems) -->
-                <div class="flex items-center space-x-2 sm:space-x-3">
-                    <!-- Total Votes (Coin Chest) -->
+            <!-- TENGAH: SIGNBOARD JUDUR UTAMA -->
+            <div class="flex flex-col items-center flex-shrink-0">
+                <!-- Hanging Chain Rings from Ceiling -->
+                <div class="flex justify-between w-36 max-w-full px-4 -mb-1 z-10 pointer-events-none">
                     <div
-                        class="flex items-center bg-white/95 dark:bg-slate-900/95 border-2 border-amber-400 dark:border-amber-500 rounded-2xl px-3 py-1 shadow-md">
-                        <span class="text-base text-amber-500 mr-2 anim-coin"><i class="fa-solid fa-coins"></i></span>
-                        <div>
-                            <span
-                                class="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block leading-none">Total
-                                Suara</span>
-                            <span id="statTotalVotes"
-                                class="text-xs sm:text-sm font-black text-amber-700 dark:text-amber-300">{{ number_format($totalVotes) }}</span>
-                        </div>
+                        class="w-2 h-3.5 rounded-full border-2 border-amber-600 bg-gradient-to-b from-amber-300 to-amber-500 shadow-xs">
                     </div>
-
-                    <!-- Total Participants (Gems) -->
                     <div
-                        class="flex items-center bg-white/95 dark:bg-slate-900/95 border-2 border-cyan-400 dark:border-cyan-500 rounded-2xl px-3 py-1 shadow-md">
-                        <span class="text-base text-cyan-500 mr-2 anim-game-float"><i class="fa-solid fa-gem"></i></span>
-                        <div>
-                            <span
-                                class="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block leading-none">Peserta
-                                Tap</span>
-                            <span id="statTotalParticipants"
-                                class="text-xs sm:text-sm font-black text-cyan-700 dark:text-cyan-300">{{ number_format($totalParticipants) }}</span>
-                        </div>
+                        class="w-2 h-3.5 rounded-full border-2 border-amber-600 bg-gradient-to-b from-amber-300 to-amber-500 shadow-xs">
                     </div>
                 </div>
 
-                <!-- Right: Utility Controls (Theme, Fullscreen, Portal) -->
-                <div class="flex items-center space-x-2">
-                    <!-- Simulasi Tes Takeover -->
-                    <button type="button" onclick="testTakeoverSimulation()"
-                        class="p-2 sm:px-3 sm:py-1.5 rounded-2xl bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-400 hover:to-pink-400 text-white font-black text-xs border-2 border-rose-700 game-btn-3d flex items-center space-x-1.5 cursor-pointer"
-                        title="Simulasi Efek Takeover Peringkat">
-                        <i class="fa-solid fa-bolt text-yellow-300"></i>
-                        <span class="hidden sm:inline text-[11px]">Tes Takeover</span>
-                    </button>
+                <!-- Main Wooden/Purple Signboard -->
+                <div
+                    class="game-signboard relative px-4 sm:px-7 py-1 rounded-2xl text-center flex flex-col items-center max-w-xs sm:max-w-md">
+                    <!-- Info Subtitle Ribbon -->
+                    <div
+                        class="px-2.5 py-0.5 rounded-full bg-gradient-to-r from-amber-400 to-yellow-300 text-slate-950 font-black text-[8.5px] sm:text-[9px] tracking-wider uppercase border border-amber-500 shadow-xs flex items-center space-x-1 mb-0.5 leading-none">
+                        <span>👑</span>
+                        <span>QCC/QCP PT BUMI ALAM SEGAR 2026</span>
+                        <span>👑</span>
+                    </div>
 
-                    <!-- Theme Toggle -->
-                    <button type="button" onclick="toggleTheme()"
-                        class="p-2 sm:px-3 sm:py-1.5 rounded-2xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs border-2 border-amber-600 game-btn-3d flex items-center space-x-1.5 cursor-pointer"
-                        title="Ganti Tema">
-                        <span class="theme-icon-sun hidden text-sm"><i class="fa-solid fa-sun text-amber-600"></i></span>
-                        <span class="theme-icon-moon text-sm"><i class="fa-solid fa-moon text-slate-900"></i></span>
-                        <span class="theme-label hidden sm:inline text-[11px]">Tema</span>
-                    </button>
-
-                    <!-- Fullscreen -->
-                    <button onclick="toggleFullScreen()"
-                        class="py-1 px-3 rounded-2xl bg-white hover:bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-white border-2 border-slate-300 dark:border-slate-700 game-btn-3d cursor-pointer"
-                        title="Layar Penuh">
-                        <i class="fa-solid fa-expand text-xs"></i>
-                    </button>
-
-                    <!-- Portal -->
-                    <a href="{{ route('pool-qcc.portal-home') }}"
-                        class="p-2 sm:px-3 sm:py-1.5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-black text-xs border-2 border-indigo-800 game-btn-3d flex items-center space-x-1.5"
-                        title="Kembali ke Portal BAS">
-                        <i class="fa-solid fa-house text-xs"></i>
-                        <span class="hidden sm:inline text-[11px]">Portal</span>
-                    </a>
+                    <!-- Grand Title -->
+                    <h1
+                        class="text-sm sm:text-base lg:text-lg font-black text-white tracking-tight drop-shadow-[0_3px_2px_rgba(0,0,0,0.85)] font-heading leading-tight">
+                        EXHIBITION QCC/QCP
+                    </h1>
                 </div>
             </div>
+
+            <!-- KANAN TITLE: Theme, Fullscreen, Portal -->
+            <div class="flex items-center space-x-2 flex-1 justify-end">
+                <!-- Theme Toggle -->
+                <button type="button" onclick="toggleTheme()"
+                    class="p-2 sm:px-3 sm:py-1.5 rounded-2xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs border-2 border-amber-600 game-btn-3d flex items-center space-x-1.5 cursor-pointer shadow-md"
+                    title="Ganti Tema">
+                    <span class="theme-icon-sun hidden text-sm"><i class="fa-solid fa-sun text-amber-600"></i></span>
+                    <span class="theme-icon-moon text-sm"><i class="fa-solid fa-moon text-slate-900"></i></span>
+                    <span class="theme-label hidden sm:inline text-[11px]">Tema</span>
+                </button>
+
+                <!-- Fullscreen -->
+                <button onclick="toggleFullScreen()"
+                    class="py-1 px-3 rounded-2xl bg-white hover:bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-white border-2 border-slate-300 dark:border-slate-700 game-btn-3d cursor-pointer shadow-md"
+                    title="Layar Penuh">
+                    <i class="fa-solid fa-expand text-xs"></i>
+                </button>
+
+                <!-- Portal -->
+                <a href="{{ route('pool-qcc.portal-home') }}"
+                    class="p-2 sm:px-3 sm:py-1.5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-black text-xs border-2 border-indigo-800 game-btn-3d flex items-center space-x-1.5 shadow-md"
+                    title="Kembali ke Portal BAS">
+                    <i class="fa-solid fa-house text-xs"></i>
+                    <span class="hidden sm:inline text-[11px]">Portal</span>
+                </a>
+            </div>
+
         </div>
 
         <!-- ======================================================== -->
@@ -333,56 +349,33 @@
         <!-- ======================================================== -->
         <!-- MAIN TWO-COLUMN ARENA (AJAX TARGET CONTAINER)            -->
         <!-- ======================================================== -->
-        <div id="arenaContainer" class="flex-1 flex flex-col justify-stretch relative z-10">
+        <div id="arenaContainer" class="flex-1 min-h-0 flex flex-col relative z-10 overflow-hidden">
             @include('pool_qcc.booth.leaderboard_arena', [
                 'booths' => $booths,
                 'participants' => $participants,
+                'rewardTiers' => $rewardTiers,
+                'otherParticipants' => $otherParticipants,
             ])
-        </div>
-
-        <!-- ======================================================== -->
-        <!-- BOTTOM TOURNAMENT TICKER / STAGES NOTICE                 -->
-        <!-- ======================================================== -->
-        <div
-            class="mt-3 pt-2.5 border-t-2 border-amber-400/30 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-700 dark:text-slate-300 gap-2 relative z-10 bg-white/60 dark:bg-slate-950/70 backdrop-blur-md rounded-2xl p-2.5 shadow-sm">
-            <div class="flex items-center space-x-2">
-                <span
-                    class="px-2.5 py-0.5 rounded-full bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 font-black text-[10px] border border-amber-600 shadow-xs">
-                    🎮 QUEST
-                </span>
-                <span class="font-bold text-[11px] sm:text-xs">
-                    Kunjungi minimal 3 booth, jawab challenge dengan benar, & kumpulkan skor setinggi-tingginya! 🚀
-                </span>
-            </div>
-
-            <!-- Auto Refresh Indicator -->
-            <div class="flex items-center space-x-3 text-[11px] font-bold">
-                <span class="flex items-center text-emerald-700 dark:text-emerald-400">
-                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping mr-1.5"></span>
-                    Arena Aktif
-                </span>
-                <span class="text-slate-500 dark:text-slate-400 cursor-pointer hover:underline"
-                    onclick="reloadLeaderboardData()">
-                    Auto-Refresh 15s <i class="fa-solid fa-arrows-rotate ml-1"></i>
-                </span>
-            </div>
         </div>
     </div>
 @endsection
 
 @section('scripts')
     <script>
-        // Confetti kecil ceria berkala
+        // Confetti kecil berkala di background
         function randomFunCelebration() {
             try {
-                if (typeof confetti === 'function') {
+                if (typeof confetti === 'function' && !isAnimatingTakeover) {
                     confetti({
                         particleCount: 22,
                         angle: 60,
                         spread: 50,
-                        origin: { x: 0, y: 0.8 },
+                        origin: {
+                            x: 0,
+                            y: 0.8
+                        },
                         colors: ['#f59e0b', '#06b6d4', '#10b981', '#ec4899', '#8b5cf6'],
-                        zIndex: 999999,
+                        zIndex: 99999,
                         useWorker: false,
                         disableForReducedMotion: true
                     });
@@ -390,9 +383,12 @@
                         particleCount: 22,
                         angle: 120,
                         spread: 50,
-                        origin: { x: 1, y: 0.8 },
+                        origin: {
+                            x: 1,
+                            y: 0.8
+                        },
                         colors: ['#f59e0b', '#06b6d4', '#10b981', '#ec4899', '#8b5cf6'],
-                        zIndex: 999999,
+                        zIndex: 99999,
                         useWorker: false,
                         disableForReducedMotion: true
                     });
@@ -401,10 +397,10 @@
         }
 
         setTimeout(randomFunCelebration, 1200);
-        setInterval(randomFunCelebration, 8000);
+        setInterval(randomFunCelebration, 8500);
 
         // ========================================================
-        // WEB AUDIO API ARCADE SYNTHESIZER (ZERO ASSET / INSTANT)
+        // WEB AUDIO API ARCADE SYNTHESIZER
         // ========================================================
         const GameAudio = {
             ctx: null,
@@ -416,6 +412,24 @@
                 if (this.ctx && this.ctx.state === 'suspended') {
                     this.ctx.resume().catch(() => {});
                 }
+            },
+            playTick() {
+                try {
+                    this.init();
+                    if (!this.ctx) return;
+                    const now = this.ctx.currentTime;
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(750, now);
+                    osc.frequency.exponentialRampToValueAtTime(120, now + 0.04);
+                    gain.gain.setValueAtTime(0.12, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.05);
+                } catch (e) {}
             },
             playNitroSwoosh() {
                 try {
@@ -434,20 +448,35 @@
                     gain.connect(this.ctx.destination);
                     osc.start(now);
                     osc.stop(now + 0.4);
-                } catch(e) {}
+                } catch (e) {}
             },
             playTakeoverChime() {
                 try {
                     this.init();
                     if (!this.ctx) return;
                     const now = this.ctx.currentTime;
-                    
-                    // Arcade Victory Fanfare Arpeggio: C5 -> E5 -> G5 -> C6
-                    const notes = [
-                        { f: 523.25, time: 0, dur: 0.12 },
-                        { f: 659.25, time: 0.1, dur: 0.12 },
-                        { f: 783.99, time: 0.2, dur: 0.14 },
-                        { f: 1046.50, time: 0.32, dur: 0.45 }
+
+                    // Arcade Victory Fanfare: C5 -> E5 -> G5 -> C6
+                    const notes = [{
+                            f: 523.25,
+                            time: 0,
+                            dur: 0.12
+                        },
+                        {
+                            f: 659.25,
+                            time: 0.1,
+                            dur: 0.12
+                        },
+                        {
+                            f: 783.99,
+                            time: 0.2,
+                            dur: 0.14
+                        },
+                        {
+                            f: 1046.50,
+                            time: 0.32,
+                            dur: 0.45
+                        }
                     ];
 
                     notes.forEach(n => {
@@ -468,7 +497,7 @@
         };
 
         // ========================================================
-        // ASYNC JQUERY AJAX RELOAD DATA (WITH REAL TAKEOVER SLIDE)
+        // ASYNC JQUERY AJAX RELOAD DATA (WITH TAKEOVER ANIMATION)
         // ========================================================
         let countdown = 15;
         let isSyncing = false;
@@ -480,7 +509,9 @@
         const timerEl = document.getElementById('refreshTimer');
         const syncIndicator = document.getElementById('syncIndicator');
 
-        // Record initial ranks directly from DOM
+        // Initial candidates cache
+        window.qccRewardCandidates = {!! json_encode($rewardCandidates ?? []) !!};
+
         function cacheInitialRanks() {
             $('[data-booth-id]').each(function() {
                 const id = $(this).data('booth-id');
@@ -496,10 +527,14 @@
 
         $(document).ready(function() {
             cacheInitialRanks();
+            // Start infinite scroll once layout is ready, with an initial 1.2s stationary hold so items don't jerk
+            setTimeout(function() {
+                initInfiniteScroll(1200);
+            }, 300);
         });
 
         function reloadLeaderboardData() {
-            if (isSyncing || isAnimatingTakeover) return;
+            if (isSyncing || isAnimatingTakeover || isSpinning) return;
             isSyncing = true;
             if (syncIndicator) syncIndicator.classList.remove('hidden');
 
@@ -528,6 +563,11 @@
         }
 
         function processLeaderboardUpdate(response) {
+            // Update reward candidates cache
+            if (response.reward_candidates) {
+                window.qccRewardCandidates = response.reward_candidates;
+            }
+
             // 1. Detect Takeovers
             let primaryOvertaker = null;
             const takeovers = [];
@@ -567,7 +607,7 @@
                 });
             }
 
-            // 2. Check if we should execute physical sliding overtake animation first
+            // 2. Physical overtake animation if applicable
             if (primaryOvertaker) {
                 const overtakerEl = document.querySelector(`[data-participant-id="${primaryOvertaker.id}"]`);
                 const overtakenEl = document.querySelector(`[data-participant-rank="${primaryOvertaker.rank}"]`);
@@ -582,14 +622,12 @@
                 }
             }
 
-            // If no physical sliding animation needed, commit HTML immediately
             commitNewArenaHTML(response, takeovers);
         }
 
         function commitNewArenaHTML(response, takeovers) {
             $('#arenaContainer').html(response.arena_html);
 
-            // Update cached ranks
             if (response.participant_ranks) {
                 response.participant_ranks.forEach(p => {
                     previousParticipantRanks[p.id] = p.rank;
@@ -602,7 +640,6 @@
             }
             isFirstLoad = false;
 
-            // Update metric badges
             if (response.total_votes !== undefined) {
                 $('#statTotalVotes').text(response.total_votes);
             }
@@ -610,15 +647,17 @@
                 $('#statTotalParticipants').text(response.total_participants);
             }
 
-            // Trigger HUD (hanya tampilkan takeover paling utama agar langsung menimpa tanpa tumpuk)
             if (takeovers.length > 0) {
                 const topTakeover = takeovers.sort((a, b) => a.newRank - b.newRank)[0];
                 showTakeoverHUD(topTakeover);
             }
+
+            // Re-initialize Infinite Scroll on updated DOM
+            setTimeout(initInfiniteScroll, 300);
         }
 
         // ========================================================
-        // PHYSICAL OVERTAKE SLIDING ANIMATION (RACE PASS MANEUVER)
+        // PHYSICAL OVERTAKE SLIDING ANIMATION
         // ========================================================
         function animateParticipantOvertake(overtakerEl, overtakenEl, onComplete) {
             const $overtaker = $(overtakerEl);
@@ -629,20 +668,17 @@
                 return;
             }
 
-            // Calculate vertical distance between the two cards
             const rectOvertaker = overtakerEl.getBoundingClientRect();
             const rectOvertaken = overtakenEl.getBoundingClientRect();
-            const dy = rectOvertaker.top - rectOvertaken.top; // Positive distance to travel upwards
+            const dy = rectOvertaker.top - rectOvertaken.top;
 
             if (Math.abs(dy) < 5) {
                 if (onComplete) onComplete();
                 return;
             }
 
-            // Sound 1: Nitro Turbo Swoosh
             GameAudio.playNitroSwoosh();
 
-            // Set Initial Stacking
             $overtaker.css({
                 'position': 'relative',
                 'z-index': '60',
@@ -655,21 +691,22 @@
                 'transition': 'transform 0.28s ease, opacity 0.28s ease'
             }).addClass('takeover-overtaken-active');
 
-            // Add dynamic turbo boost badge
+            // User requirement: Cukup 1 badge takeover saja di seluruh leaderboard, timpa jika berulang kali
+            $('.takeover-badge-pill, .nitro-pill').remove();
+
             const $turboBadge = $(`
-                <span class="nitro-pill anim-badge-pop inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black bg-gradient-to-r from-amber-400 via-orange-500 to-amber-500 text-slate-950 border border-yellow-200 shadow-lg ml-1.5 anim-nitro-pulse">
+                <span class="takeover-badge-pill nitro-pill anim-badge-pop inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black bg-gradient-to-r from-amber-400 via-orange-500 to-amber-500 text-slate-950 border border-yellow-200 shadow-lg ml-1.5 anim-nitro-pulse">
                     ⚡ MENYALIP...
                 </span>
             `);
-            const $titleRow = $overtaker.find('.participant-title-row');
+            const $titleRow = $overtaker.find('.participant-title-row, .truncate').first();
             if ($titleRow.length) $titleRow.append($turboBadge);
 
-            // PHASE 1: Pull out to the lane (0 - 280ms)
-            // Overtaker pulls right & lifts up, overtaken shifts slightly left
+            // Phase 1: Pull out
             $overtaker.css('transform', 'translate(18px, 0px) scale(1.03)');
             $overtaken.css('transform', 'translate(-10px, 0px) scale(0.98)');
 
-            // PHASE 2: The Pass / Rush past each other (after 280ms)
+            // Phase 2: Slide past
             setTimeout(() => {
                 $overtaker.css({
                     'transition': 'transform 0.68s cubic-bezier(0.2, 0.9, 0.3, 1.25)',
@@ -680,9 +717,8 @@
                     'transform': `translate(-10px, ${dy}px) scale(0.98)`
                 });
 
-                // PHASE 3: Dock back into the column (after 960ms)
+                // Phase 3: Dock
                 setTimeout(() => {
-                    // Play victory sound as it docks in
                     GameAudio.playTakeoverChime();
 
                     $overtaker.css({
@@ -694,7 +730,7 @@
                         'transform': `translate(0px, ${dy}px) scale(1)`
                     });
 
-                    // PHASE 4: Finalize & Swap DOM (after 1320ms)
+                    // Phase 4: Finalize
                     setTimeout(() => {
                         $overtaker.css({
                             'transform': '',
@@ -709,17 +745,22 @@
                         }).removeClass('takeover-overtaken-active');
 
                         $turboBadge.html('🔥 TAKEOVER!').removeClass('anim-nitro-pulse');
+                        setTimeout(() => {
+                            $turboBadge.fadeOut(500, function() { $(this).remove(); });
+                        }, 12000);
 
-                        // Physically insert overtaker before overtaken in the DOM
                         $overtaker.insertBefore($overtaken);
 
-                        // Confetti if rank 1 was reached!
                         if (typeof confetti === 'function') {
                             confetti({
                                 particleCount: 85,
                                 spread: 90,
-                                origin: { y: 0.4 },
-                                colors: ['#fbbf24', '#f59e0b', '#ef4444', '#10b981', '#06b6d4'],
+                                origin: {
+                                    y: 0.4
+                                },
+                                colors: ['#fbbf24', '#f59e0b', '#ef4444', '#10b981',
+                                    '#06b6d4'
+                                ],
                                 zIndex: 9999999
                             });
                         }
@@ -731,82 +772,16 @@
         }
 
         // ========================================================
-        // SIMULASI TAKEOVER UNTUK TESTING / DEMO
+        // TAKEOVER HUD NOTIFICATION (OVERWRITE MODE)
         // ========================================================
-        function testTakeoverSimulation() {
-            if (isAnimatingTakeover) return;
-
-            const $cards = $('#participantsListWrapper [data-participant-id]');
-            if ($cards.length < 2) {
-                showTakeoverHUD({
-                    type: 'participant',
-                    id: 999,
-                    name: 'Peserta Bintang',
-                    oldRank: 2,
-                    newRank: 1,
-                    delta: 1
-                });
-                return;
-            }
-
-            // Target: Card 2 takes over Card 1
-            const cardUpper = $cards[0];
-            const cardLower = $cards[1];
-
-            const overtakerName = $(cardLower).data('participant-name') || 'Peserta';
-
-            isAnimatingTakeover = true;
-            animateParticipantOvertake(cardLower, cardUpper, function() {
-                // Swap rank badge numbers & Juara labels between the two cards
-                swapParticipantCardBadges(cardLower, cardUpper);
-
-                // Show Takeover HUD Toast
-                showTakeoverHUD({
-                    type: 'participant',
-                    id: $(cardLower).data('participant-id'),
-                    name: overtakerName,
-                    oldRank: 2,
-                    newRank: 1,
-                    delta: 1
-                });
-
-                isAnimatingTakeover = false;
-            });
-        }
-
-        function swapParticipantCardBadges(cardNewRank1, cardNewRank2) {
-            $(cardNewRank1).attr('data-participant-rank', 1);
-            $(cardNewRank2).attr('data-participant-rank', 2);
-
-            // Swap rank badge icons & numbers
-            const $badge1 = $(cardNewRank1).find('.flex-shrink-0.shadow-md').first();
-            const $badge2 = $(cardNewRank2).find('.flex-shrink-0.shadow-md').first();
-            if ($badge1.length && $badge2.length) {
-                $badge1.html('<i class="fa-solid fa-crown text-xs mr-0.5"></i> 1')
-                       .removeClass('from-slate-300 to-slate-100 border-slate-400 text-slate-800')
-                       .addClass('from-amber-400 to-yellow-300 border-amber-500 text-slate-950');
-                $badge2.html('<i class="fa-solid fa-medal text-xs mr-0.5"></i> 2')
-                       .removeClass('from-amber-400 to-yellow-300 border-amber-500 text-slate-950')
-                       .addClass('from-slate-300 to-slate-100 border-slate-400 text-slate-800');
-            }
-
-            // Swap Juara pills
-            const $pill1 = $(cardNewRank1).find('.participant-title-row span:last-child');
-            const $pill2 = $(cardNewRank2).find('.participant-title-row span:last-child');
-            if ($pill1.length && $pill2.length) {
-                $pill1.text('Juara 1').removeClass('bg-slate-300 text-slate-800').addClass('bg-amber-400 text-slate-950');
-                $pill2.text('Juara 2').removeClass('bg-amber-400 text-slate-950').addClass('bg-slate-300 text-slate-800');
-            }
-        }
-
         let takeoverHUDTimer = null;
 
         function showTakeoverHUD(item) {
             const isBooth = item.type === 'booth';
             const typeLabel = isBooth ? '🎪 STAND INOVASI' : '🧠 PESERTA';
-            const bgGradient = isBooth 
-                ? 'from-amber-500 via-yellow-400 to-amber-600' 
-                : 'from-cyan-500 via-teal-400 to-cyan-600';
+            const bgGradient = isBooth ?
+                'from-amber-500 via-yellow-400 to-amber-600' :
+                'from-cyan-500 via-teal-400 to-cyan-600';
             const icon = isBooth ? '🏆' : '⚡';
 
             if (takeoverHUDTimer) {
@@ -834,7 +809,6 @@
                 </div>
             `);
 
-            // Menimpa notifikasi lama di tempat yang sama (tidak menumpuk ke bawah)
             $('#takeoverHUD').html(toast);
 
             takeoverHUDTimer = setTimeout(() => {
@@ -844,6 +818,251 @@
                 }, 400);
             }, 4500);
         }
+
+        function testTakeoverSimulation() {
+            if (isAnimatingTakeover) return;
+
+            // 1. Cari kolom peserta yang memiliki minimal 2 kandidat dalam 1 kolom reward
+            let $cards = null;
+            let isBooth = false;
+
+            $('#participantsListWrapper .infinite-scroll-content').each(function() {
+                const $c = $(this).children('[data-participant-id]:not(.infinite-clone-item)');
+                if ($c.length >= 2) {
+                    $cards = $c;
+                    return false;
+                }
+            });
+
+            // 2. Jika peserta belum ada minimal 2 dalam 1 kolom, gunakan list booth yang bertanding
+            if (!$cards || $cards.length < 2) {
+                const $boothCards = $('.infinite-scroll-content [data-booth-id]:not(.infinite-clone-item)');
+                if ($boothCards.length >= 2) {
+                    $cards = $boothCards;
+                    isBooth = true;
+                }
+            }
+
+            // 3. Fallback jika benar-benar tidak ada 2 kartu
+            if (!$cards || $cards.length < 2) {
+                showTakeoverHUD({
+                    type: 'participant',
+                    id: 999,
+                    name: 'Peserta Bintang',
+                    oldRank: 2,
+                    newRank: 1,
+                    delta: 1
+                });
+                return;
+            }
+
+            const cardUpper = $cards[0];
+            const cardLower = $cards[1];
+            const overtakerName = isBooth ?
+                ($(cardLower).data('booth-name') || 'Booth Inovasi') :
+                ($(cardLower).data('participant-name') || 'Peserta');
+            const oldRank = isBooth ?
+                (parseInt($(cardLower).data('booth-rank')) || 5) :
+                (parseInt($(cardLower).data('participant-rank')) || 2);
+            const newRank = isBooth ?
+                (parseInt($(cardUpper).data('booth-rank')) || 4) :
+                (parseInt($(cardUpper).data('participant-rank')) || 1);
+
+            isAnimatingTakeover = true;
+            animateParticipantOvertake(cardLower, cardUpper, function() {
+                showTakeoverHUD({
+                    type: isBooth ? 'booth' : 'participant',
+                    id: isBooth ? $(cardLower).data('booth-id') : $(cardLower).data('participant-id'),
+                    name: overtakerName,
+                    oldRank: oldRank,
+                    newRank: newRank,
+                    delta: Math.max(1, oldRank - newRank)
+                });
+                isAnimatingTakeover = false;
+            });
+        }
+
+        // ========================================================
+        // SEAMLESS INFINITE VERTICAL AUTO-SCROLL ENGINE
+        // (Hardware-accelerated translate3d with exact offsetTop wrapping)
+        // ========================================================
+        let infiniteScrollTracks = [];
+        let infiniteScrollRafId = null;
+        let infiniteScrollLastTime = null;
+
+        function initInfiniteScroll(initialDelayMs = 0) {
+            if (infiniteScrollRafId) {
+                cancelAnimationFrame(infiniteScrollRafId);
+                infiniteScrollRafId = null;
+            }
+
+            // Preserve current scroll offsets so re-renders/resizes never jerk
+            const prevOffsets = new Map();
+            infiniteScrollTracks.forEach(t => {
+                if (t.container && typeof t.pos === 'number') {
+                    prevOffsets.set(t.container, t.pos);
+                }
+            });
+
+            infiniteScrollTracks = [];
+
+            $('.infinite-scroll-container').each(function() {
+                const container = this;
+                const $container = $(container);
+                const $content = $container.find('.infinite-scroll-content');
+                if (!$content.length) return;
+
+                // Remove existing clones to accurately measure base content height
+                $content.find('.infinite-clone-item').remove();
+                $content[0].style.transform = 'translate3d(0, 0, 0)';
+
+                const $cards = $content.children('[data-participant-id], [data-booth-id]');
+                // If fewer than 2 cards, no need to loop
+                if ($cards.length < 2) {
+                    $container.removeClass('infinite-scroll-mask');
+                    $container.off('mouseenter mouseleave touchstart touchend wheel');
+                    return;
+                }
+
+                const baseHeight = $content[0].scrollHeight;
+                const containerHeight = $container[0].clientHeight || 250;
+
+                // User Requirement: Jika view muat untuk semua data, TIDAK PERLU auto-scroll.
+                // Jika view kurang (konten melimpah/overflow dari container), barulah auto-scroll!
+                if (baseHeight <= containerHeight + 2) {
+                    $container.removeClass('infinite-scroll-mask');
+                    $container.off('mouseenter mouseleave touchstart touchend wheel');
+                    return;
+                }
+
+                // Aktifkan efek blur fade-out batas atas dan bawah saat auto scroll berjalan
+                $container.addClass('infinite-scroll-mask');
+
+                // 1. Clone original cards to create the seamless loop
+                const $clone1 = $cards.clone().addClass('infinite-clone-item');
+                $clone1.removeAttr('id');
+                $clone1.find('[id]').removeAttr('id');
+                $clone1.removeAttr('data-participant-id data-booth-id');
+                $clone1.find('[data-participant-id], [data-booth-id]').removeAttr('data-participant-id data-booth-id');
+                $clone1.find('.takeover-badge-pill, .nitro-pill').remove();
+                $content.append($clone1);
+
+                // Compute exact subpixel distance between original item 1 and clone item 1
+                const firstOrig = $cards.first()[0];
+                const firstClone = $clone1.first()[0];
+                let loopDistance = 0;
+
+                try {
+                    const origRect = firstOrig.getBoundingClientRect();
+                    const cloneRect = firstClone.getBoundingClientRect();
+                    loopDistance = cloneRect.top - origRect.top;
+                } catch (e) {}
+
+                if (!loopDistance || loopDistance <= 0) {
+                    loopDistance = (firstClone.offsetTop - firstOrig.offsetTop) || baseHeight;
+                }
+                if (loopDistance <= 0) loopDistance = 50;
+
+                // 2. Ensure total content is tall enough to cover screen buffer
+                let currentHeight = $content[0].scrollHeight;
+                let cloneBatches = 0;
+                while (currentHeight < containerHeight + loopDistance * 1.5 && cloneBatches < 5) {
+                    const $extraClone = $cards.clone().addClass('infinite-clone-item');
+                    $extraClone.removeAttr('id');
+                    $extraClone.find('[id]').removeAttr('id');
+                    $extraClone.removeAttr('data-participant-id data-booth-id');
+                    $extraClone.find('[data-participant-id], [data-booth-id]').removeAttr('data-participant-id data-booth-id');
+                    $extraClone.find('.takeover-badge-pill, .nitro-pill').remove();
+                    $content.append($extraClone);
+                    currentHeight = $content[0].scrollHeight;
+                    cloneBatches++;
+                }
+
+                const prevPos = prevOffsets.get(container) || 0;
+                const startingPos = (prevPos % loopDistance);
+
+                const trackObj = {
+                    container: container,
+                    content: $content[0],
+                    loopDistance: loopDistance,
+                    pos: startingPos,
+                    speed: 0.35, // Steady, calm, readable, and velvety smooth (~21px/sec)
+                    isHovered: false,
+                    startAfter: Date.now() + initialDelayMs
+                };
+
+                if (startingPos > 0) {
+                    trackObj.content.style.transform = `translate3d(0, -${startingPos.toFixed(2)}px, 0)`;
+                }
+
+                // Mouse / Touch pause controls
+                $container.off('mouseenter mouseleave touchstart touchend wheel');
+                $container.on('mouseenter touchstart', function() {
+                    trackObj.isHovered = true;
+                });
+                $container.on('mouseleave touchend', function() {
+                    trackObj.isHovered = false;
+                });
+
+                // Support manual wheel scrolling with infinite wrap-around
+                $container.on('wheel', function(e) {
+                    e.preventDefault();
+                    trackObj.pos += e.originalEvent.deltaY * 0.45;
+                    if (trackObj.pos >= trackObj.loopDistance) {
+                        trackObj.pos %= trackObj.loopDistance;
+                    } else if (trackObj.pos < 0) {
+                        trackObj.pos = (trackObj.pos % trackObj.loopDistance) + trackObj.loopDistance;
+                    }
+                    trackObj.content.style.transform = `translate3d(0, -${trackObj.pos.toFixed(2)}px, 0)`;
+                });
+
+                infiniteScrollTracks.push(trackObj);
+            });
+
+            if (infiniteScrollTracks.length > 0) {
+                runInfiniteScrollLoop();
+            }
+        }
+
+        function runInfiniteScrollLoop() {
+            infiniteScrollLastTime = performance.now();
+
+            function loop(nowTimestamp) {
+                if (!isAnimatingTakeover) {
+                    const elapsed = nowTimestamp - (infiniteScrollLastTime || nowTimestamp);
+                    // Delta time normalized to 60fps (16.67ms per frame), clamped between 0.5 and 2.0
+                    const dt = Math.max(0.5, Math.min(elapsed / 16.67, 2.0));
+                    const nowWall = Date.now();
+
+                    for (let i = 0; i < infiniteScrollTracks.length; i++) {
+                        const item = infiniteScrollTracks[i];
+                        if (item.isHovered) continue;
+                        if (item.startAfter && nowWall < item.startAfter) continue;
+
+                        item.pos += item.speed * dt;
+
+                        // Exact seamless loop: when pos exceeds loopDistance,
+                        // reset by subtracting loopDistance.
+                        // Because item 1' is at offset `loopDistance` and is identical to item 1 at offset 0,
+                        // the wrap is 100% mathematically indistinguishable and completely invisible!
+                        if (item.pos >= item.loopDistance) {
+                            item.pos -= item.loopDistance;
+                        }
+
+                        item.content.style.transform = `translate3d(0, -${item.pos.toFixed(2)}px, 0)`;
+                    }
+                }
+                infiniteScrollLastTime = nowTimestamp;
+                infiniteScrollRafId = requestAnimationFrame(loop);
+            }
+            infiniteScrollRafId = requestAnimationFrame(loop);
+        }
+
+        // Auto-recalculate on window resize or fullscreen toggle
+        $(window).on('resize', function() {
+            clearTimeout(window.qccResizeTimer);
+            window.qccResizeTimer = setTimeout(initInfiniteScroll, 200);
+        });
 
         // Countdown timer setiap detik
         setInterval(() => {
@@ -855,7 +1074,6 @@
             }
         }, 1000);
 
-        // Toggle Fullscreen helper
         function toggleFullScreen() {
             if (!document.fullscreenElement) {
                 document.documentElement.requestFullscreen().catch(err => {});

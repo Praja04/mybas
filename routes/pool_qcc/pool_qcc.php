@@ -18,6 +18,7 @@ Route::group(['prefix' => 'pool-qcc', 'as' => 'pool-qcc.'], function () {
         Route::get('/booth/{boothId}/challenge', 'PoolQcc\PoolQccBoothController@challengeScreen')->name('booth-challenge');
         Route::post('/booth/{boothId}/submit', 'PoolQcc\PoolQccBoothController@submitAnswerAtBooth')->name('booth-submit');
         Route::get('/leaderboard', 'PoolQcc\PoolQccBoothController@leaderboard')->name('leaderboard');
+        Route::get('/spin-wheel', 'PoolQcc\PoolQccBoothController@spinWheel')->name('spin-wheel');
 
         // Compatibility redirects
         Route::get('/kiosk', function () {
