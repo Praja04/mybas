@@ -7,8 +7,8 @@
 @section('styles')
     <style>
         /* ========================================================
-                                                                           CASUAL 3D MOBILE GAME THEME (Royal Match / Arcade Style)
-                                                                           ======================================================== */
+                                                                                   CASUAL 3D MOBILE GAME THEME (Royal Match / Arcade Style)
+                                                                                   ======================================================== */
         @keyframes floatSlow {
 
             0%,
@@ -258,7 +258,8 @@
         <!-- ======================================================== -->
         <!-- TOP 3D TOURNAMENT SIGNBOARD & GAME HUB BAR (SEJAJAR)      -->
         <!-- ======================================================== -->
-        <div class="relative z-20 w-full flex items-center justify-between gap-2 sm:gap-4 mb-3 sm:mb-3.5 px-1 sm:px-2 flex-shrink-0">
+        <div
+            class="relative z-20 w-full flex items-center justify-between gap-2 sm:gap-4 mb-3 sm:mb-3.5 px-1 sm:px-2 flex-shrink-0">
 
             <!-- KIRI TITLE: Lucky Spin Wheel & Tes Takeover -->
             <div class="flex items-center space-x-2 flex-1 justify-start">
@@ -633,7 +634,8 @@
 
             // SMOOTH LIVE SYNC: If HTML and ranks have not changed, DO NOT wipe DOM!
             // This prevents resetting scroll and allows the infinite animation to glide uninterrupted!
-            if (!isFirstLoad && currentArenaHtml && response.arena_html && response.arena_html.trim() === currentArenaHtml.trim()) {
+            if (!isFirstLoad && currentArenaHtml && response.arena_html && response.arena_html.trim() === currentArenaHtml
+                .trim()) {
                 if (response.total_votes !== undefined) {
                     $('#statTotalVotes').text(response.total_votes);
                 }
@@ -701,7 +703,8 @@
             const rawOvertaker = $overtaker[0];
             const rawOvertaken = $overtaken[0];
 
-            if (!rawOvertaker || !rawOvertaken || typeof rawOvertaker.getBoundingClientRect !== 'function' || typeof rawOvertaken.getBoundingClientRect !== 'function') {
+            if (!rawOvertaker || !rawOvertaken || typeof rawOvertaker.getBoundingClientRect !== 'function' ||
+                typeof rawOvertaken.getBoundingClientRect !== 'function') {
                 if (onComplete) onComplete();
                 return;
             }
@@ -784,7 +787,9 @@
 
                         $turboBadge.html('🔥 TAKEOVER!').removeClass('anim-nitro-pulse');
                         setTimeout(() => {
-                            $turboBadge.fadeOut(500, function() { $(this).remove(); });
+                            $turboBadge.fadeOut(500, function() {
+                                $(this).remove();
+                            });
                         }, 12000);
 
                         $overtaker.insertBefore($overtaken);
@@ -982,7 +987,8 @@
                 $clone1.removeAttr('id');
                 $clone1.find('[id]').removeAttr('id');
                 $clone1.removeAttr('data-participant-id data-booth-id');
-                $clone1.find('[data-participant-id], [data-booth-id]').removeAttr('data-participant-id data-booth-id');
+                $clone1.find('[data-participant-id], [data-booth-id]').removeAttr(
+                    'data-participant-id data-booth-id');
                 $clone1.find('.takeover-badge-pill, .nitro-pill').remove();
                 $content.append($clone1);
 
@@ -992,7 +998,8 @@
                 let loopDistance = 0;
 
                 try {
-                    if (firstOrig && firstClone && typeof firstOrig.getBoundingClientRect === 'function' && typeof firstClone.getBoundingClientRect === 'function') {
+                    if (firstOrig && firstClone && typeof firstOrig.getBoundingClientRect === 'function' &&
+                        typeof firstClone.getBoundingClientRect === 'function') {
                         const origRect = firstOrig.getBoundingClientRect();
                         const cloneRect = firstClone.getBoundingClientRect();
                         loopDistance = cloneRect.top - origRect.top;
@@ -1012,7 +1019,8 @@
                     $extraClone.removeAttr('id');
                     $extraClone.find('[id]').removeAttr('id');
                     $extraClone.removeAttr('data-participant-id data-booth-id');
-                    $extraClone.find('[data-participant-id], [data-booth-id]').removeAttr('data-participant-id data-booth-id');
+                    $extraClone.find('[data-participant-id], [data-booth-id]').removeAttr(
+                        'data-participant-id data-booth-id');
                     $extraClone.find('.takeover-badge-pill, .nitro-pill').remove();
                     $content.append($extraClone);
                     currentHeight = $content[0].scrollHeight;
@@ -1034,8 +1042,6 @@
                 };
 
                 trackObj.content.style.transform = `translate3d(0, -${startingPos.toFixed(2)}px, 0)`;
-                    trackObj.content.style.transform = `translate3d(0, -${startingPos.toFixed(2)}px, 0)`;
-                }
 
                 // Mouse / Touch pause controls
                 $container.off('mouseenter mouseleave touchstart touchend wheel');
