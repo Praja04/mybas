@@ -830,16 +830,20 @@
         function onWheelStopped(winner) {
             GameAudio.playFanfare();
 
-            if (typeof confetti === 'function') {
-                confetti({
-                    particleCount: 140,
-                    spread: 120,
-                    origin: {
-                        y: 0.5
-                    },
-                    zIndex: 99999999
-                });
-            }
+            try {
+                if (typeof confetti === 'function') {
+                    confetti({
+                        particleCount: 140,
+                        spread: 120,
+                        origin: {
+                            y: 0.5
+                        },
+                        zIndex: 99999999,
+                        useWorker: false,
+                        disableForReducedMotion: true
+                    });
+                }
+            } catch (e) {}
 
             const tierInfo = window.qccRewardCandidates[currentSpinTier] || {
                 title: 'REWARD'

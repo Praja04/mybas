@@ -79,21 +79,20 @@
 
                             <!-- 3D Shield Badge #2 -->
                             <div
-                                class="shield-3d-2 w-7 h-7 rounded-full flex items-center justify-center font-black text-slate-900 text-[11px] -mb-2 z-10 gap-0.5 shadow-xs">
+                                class="shield-3d-2 w-7 h-7 rounded-full flex items-center justify-center font-black text-slate-900 text-[11px] -mb-1 z-10 gap-0.5 shadow-xs">
                                 <i class="fa-solid fa-medal text-slate-900 text-[9px]"></i> 2
                             </div>
 
                             <!-- 3D Pedestal Body (Silver) -->
                             <div
-                                class="pedestal-3d-silver w-full pt-2 pb-1 px-1 rounded-2xl text-slate-900 dark:text-white h-13 sm:h-14 flex flex-col justify-center">
+                                class="pedestal-3d-silver w-full pt-3 pb-1.5 px-1 rounded-2xl text-slate-900 dark:text-white h-13 sm:h-14 flex flex-col justify-end items-center">
                                 <span
-                                    class="text-xs sm:text-sm font-black text-slate-800 dark:text-slate-900 leading-tight flex items-center justify-center gap-1">
+                                    class="text-xs sm:text-sm font-black text-slate-800 dark:text-slate-900 leading-none flex items-center justify-center gap-1 mb-1">
                                     <i class="fa-solid fa-coins text-amber-500 text-[10px]"></i>
                                     <span>{{ number_format($b2->total_points) }}</span>
                                 </span>
-                                <span class="text-[8px] font-extrabold text-slate-600 uppercase">Pts</span>
                                 <span
-                                    class="text-[7.5px] font-bold text-slate-700 bg-white/70 rounded-full px-1 py-0.2 mt-0.5 flex items-center justify-center gap-0.5">
+                                    class="text-[7.5px] font-bold text-slate-700 bg-white/70 rounded-full px-1.5 py-0.5 flex items-center justify-center gap-0.5 leading-none">
                                     <i class="fa-solid fa-check-to-slot text-slate-500 text-[7px]"></i>
                                     {{ $b2->total_voters }} Pool
                                 </span>
@@ -140,23 +139,22 @@
 
                         <!-- 3D Shield Badge #1 -->
                         <div
-                            class="shield-3d-1 w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center font-black text-amber-950 text-xs -mb-2.5 z-10 anim-coin gap-0.5 shadow-xs">
+                            class="shield-3d-1 w-8 h-8 sm:w-8.5 sm:h-8.5 rounded-full flex items-center justify-center font-black text-amber-950 text-xs -mb-1.5 z-10 anim-coin gap-0.5 shadow-xs">
                             <i class="fa-solid fa-trophy text-slate-950 text-[9px]"></i> <span
                                 class="text-slate-950 font-black">1</span>
                         </div>
 
                         <!-- 3D Pedestal Body (Gold, Taller) -->
                         <div
-                            class="pedestal-3d-gold w-full pt-2.5 pb-1.5 px-1 rounded-2xl text-slate-950 h-16 sm:h-18 flex flex-col justify-center">
+                            class="pedestal-3d-gold w-full pt-3.5 pb-1.5 px-1 rounded-2xl text-slate-950 h-16 sm:h-18 flex flex-col justify-end items-center">
                             <span
-                                class="text-xs sm:text-sm font-black text-amber-950 leading-tight flex items-center justify-center gap-1">
+                                class="text-xs sm:text-sm font-black text-amber-950 leading-none flex items-center justify-center gap-1 mb-1">
                                 <i class="fa-solid fa-coins text-amber-600 text-[10px]"></i>
                                 <span>{{ number_format($b1->total_points) }}</span>
                             </span>
-                            <span class="text-[8px] font-black text-amber-900 uppercase">Points</span>
                             <span
-                                class="text-[8px] font-black text-amber-950 bg-amber-200/90 rounded-full px-1.5 py-0.5 mt-0.5 border border-amber-400 flex items-center justify-center gap-0.5">
-                                <i class="fa-solid fa-check-to-slot text-amber-700 text-[8px]"></i>
+                                class="text-[8px] font-black text-amber-950 bg-amber-200/90 rounded-full px-2 py-0.5 border border-amber-400 flex items-center justify-center gap-0.5 leading-none">
+                                <i class="fa-solid fa-check-to-slot text-amber-700 text-[7.5px]"></i>
                                 {{ $b1->total_voters }} Pemilih
                             </span>
                         </div>
@@ -195,21 +193,20 @@
 
                             <!-- 3D Shield Badge #3 -->
                             <div
-                                class="shield-3d-3 w-7 h-7 rounded-full flex items-center justify-center font-black text-white text-[11px] -mb-2 z-10 gap-0.5 shadow-xs">
+                                class="shield-3d-3 w-7 h-7 rounded-full flex items-center justify-center font-black text-white text-[11px] -mb-1 z-10 gap-0.5 shadow-xs">
                                 <i class="fa-solid fa-medal text-white text-[9px]"></i> 3
                             </div>
 
                             <!-- 3D Pedestal Body (Bronze) -->
                             <div
-                                class="pedestal-3d-bronze w-full pt-2 pb-1 px-1 rounded-2xl text-slate-900 h-11 sm:h-12 flex flex-col justify-center">
+                                class="pedestal-3d-bronze w-full pt-3 pb-1.5 px-1 rounded-2xl text-slate-900 h-11 sm:h-12 flex flex-col justify-end items-center">
                                 <span
-                                    class="text-xs sm:text-sm font-black text-amber-950 leading-tight flex items-center justify-center gap-1">
+                                    class="text-xs sm:text-sm font-black text-amber-950 leading-none flex items-center justify-center gap-1 mb-1">
                                     <i class="fa-solid fa-coins text-amber-700 text-[10px]"></i>
                                     <span>{{ number_format($b3->total_points) }}</span>
                                 </span>
-                                <span class="text-[8px] font-extrabold text-amber-900 uppercase">Pts</span>
                                 <span
-                                    class="text-[7.5px] font-bold text-amber-950 bg-amber-200/80 rounded-full px-1 py-0.2 mt-0.5 flex items-center justify-center gap-0.5">
+                                    class="text-[7.5px] font-bold text-amber-950 bg-amber-200/80 rounded-full px-1.5 py-0.5 flex items-center justify-center gap-0.5 leading-none">
                                     <i class="fa-solid fa-check-to-slot text-amber-800 text-[7px]"></i>
                                     {{ $b3->total_voters }} Pool
                                 </span>
