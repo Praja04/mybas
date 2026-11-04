@@ -17,7 +17,7 @@
                     <!--begin::Header Nav-->
                     <ul class="menu-nav">
                         {{-- Pool QCC --}}
-                        @if (in_array('qcc-pool', $permissions))
+                        @if (in_array('qcc_pool', $permissions))
                             <li class="menu-item {{ request()->is('pool-qcc*') ? 'menu-item-active' : '' }}">
                                 <a href="{{ url('/pool-qcc') }}" class="menu-link">
                                     <span class="menu-text"> Pool QCC</span>

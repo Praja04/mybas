@@ -12,6 +12,10 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
 use RealRashid\SweetAlert\Facades\Alert;
+use App\Models\PoolQCC\PoolJudge;
+use App\Models\PoolQCC\PoolJudgeEvaluation;
+use Illuminate\Support\Facades\Log;
+use Carbon\Carbon;
 
 class PoolQccAdminController extends Controller
 {
@@ -650,5 +654,323 @@ class PoolQccAdminController extends Controller
         }
 
         return redirect()->back()->with('success', "Riwayat vote peserta {$participant->name} berhasil di-reset!");
+    }
+
+    /**
+     * Halaman Manajemen Dewan Juri
+     */
+    public function judges()
+    {
+        return view('pool_qcc.admin.judges');
+    }
+
+    /**
+     * API Data Dewan Juri
+     */
+    public function getJudgesData(Request $request)
+    {
+        $judges = PoolJudge::withCount('evaluations')
+            ->orderBy('is_active', 'desc')
+            ->orderBy('name', 'asc')
+            ->get()
+            ->map(function ($j) {
+                return [
+                    'id' => $j->id,
+                    'rfid' => $j->rfid,
+                    'nik' => $j->nik,
+                    'name' => $j->name,
+                    'department' => $j->department,
+                    'title' => $j->title ?: 'Juri',
+                    'vote_weight' => (int)($j->vote_weight > 0 ? $j->vote_weight : 10),
+                    'photo' => $j->photo,
+                    'is_active' => (bool)$j->is_active,
+                    'evaluations_count' => (int)$j->evaluations_count,
+                    'created_at_formatted' => $j->created_at ? $j->created_at->format('d/m/Y H:i') : '-',
+                ];
+            });
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $judges,
+            'total' => $judges->count(),
+            'active_count' => $judges->where('is_active', true)->count(),
+        ]);
+    }
+
+    /**
+     * Lookup Data Karyawan by RFID atau NIK untuk Registrasi Dewan Juri
+     */
+    public function lookupJudge(Request $request)
+    {
+        $rawInput = trim((string)($request->input('query') ?: $request->input('input') ?: $request->input('nik') ?: $request->input('rfid')));
+
+        if (empty($rawInput)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Silakan masukkan NIK atau scan kartu RFID Juri.',
+            ], 422);
+        }
+
+        $numericInput = is_numeric($rawInput) ? (int)$rawInput : 0;
+
+        // Generate variasi NIK (leading zeroes)
+        $candidates = [$rawInput];
+        if (is_numeric($rawInput)) {
+            $stripped = ltrim($rawInput, '0');
+            if ($stripped !== '') {
+                $candidates[] = $stripped;
+                $candidates[] = '0' . $stripped;
+                $candidates[] = str_pad($stripped, 8, '0', STR_PAD_LEFT);
+                $candidates[] = str_pad($stripped, 9, '0', STR_PAD_LEFT);
+            }
+        }
+        $candidates = array_values(array_unique(array_filter($candidates)));
+
+        // 1. Cek apakah sudah terdaftar di pool_judges
+        $existingJudge = PoolJudge::where('rfid', $rawInput)
+            ->orWhereIn('nik', $candidates)
+            ->when($numericInput > 0, function ($q) use ($numericInput) {
+                $q->orWhere('rfid', (string)$numericInput);
+            })
+            ->first();
+
+        if ($existingJudge) {
+            return response()->json([
+                'status' => 'already_registered',
+                'message' => "Juri {$existingJudge->name} ({$existingJudge->nik}) sudah terdaftar sebagai Dewan Juri!",
+                'data' => [
+                    'id' => $existingJudge->id,
+                    'nik' => $existingJudge->nik,
+                    'name' => $existingJudge->name,
+                    'department' => $existingJudge->department,
+                    'rfid' => $existingJudge->rfid,
+                    'photo' => $existingJudge->photo,
+                    'title' => $existingJudge->title,
+                    'is_active' => (bool)$existingJudge->is_active,
+                ],
+            ]);
+        }
+
+        // 2. Lookup ke database karyawan (MSIDCARD)
+        $employeeData = null;
+        try {
+            $matchedCard = DB::connection('192.168.178.44-admin')
+                ->table('MSIDCARD')
+                ->select('NIK', 'EMPNM', 'DEPTID', 'FOTOBLOB', 'CARDNODEVICE', 'RFID', 'STATUS', 'BARCODE')
+                ->where(function ($q) use ($candidates, $numericInput, $rawInput) {
+                    if ($numericInput > 0) {
+                        $q->where('CARDNODEVICE', $numericInput);
+                    }
+                    $q->orWhere('RFID', $rawInput)
+                        ->orWhereIn('NIK', $candidates)
+                        ->orWhereIn('BARCODE', $candidates);
+                })
+                ->orderByRaw("CASE WHEN STATUS = 'X' THEN 0 ELSE 1 END ASC, CAST(EMPCARDID AS SIGNED) DESC")
+                ->first();
+
+            if ($matchedCard) {
+                if (!empty($matchedCard->NIK)) {
+                    $activeCard = DB::connection('192.168.178.44-admin')
+                        ->table('MSIDCARD')
+                        ->select('NIK', 'EMPNM', 'DEPTID', 'FOTOBLOB', 'CARDNODEVICE', 'RFID', 'STATUS')
+                        ->where('NIK', $matchedCard->NIK)
+                        ->where('STATUS', 'X')
+                        ->orderByRaw('CAST(EMPCARDID AS SIGNED) DESC')
+                        ->first();
+
+                    $employeeData = $activeCard ?: $matchedCard;
+                } else {
+                    $employeeData = $matchedCard;
+                }
+            }
+        } catch (\Exception $e) {
+            Log::warning('[PoolQccAdmin] Gagal query MSIDCARD: ' . $e->getMessage());
+        }
+
+        // 3. Fallback ke pkw_karyawan
+        if (!$employeeData) {
+            try {
+                $localKaryawan = DB::table('pkw_karyawan')
+                    ->where('rfid', $rawInput)
+                    ->orWhereIn('nik', $candidates)
+                    ->first();
+
+                if ($localKaryawan) {
+                    $employeeData = (object) [
+                        'NIK' => $localKaryawan->nik ?? $localKaryawan->no_ktp ?? $rawInput,
+                        'EMPNM' => $localKaryawan->nama_lengkap ?? 'Karyawan ' . $rawInput,
+                        'DEPTID' => $localKaryawan->departemen ?? 'General',
+                        'FOTOBLOB' => null,
+                        'CARDNODEVICE' => null,
+                        'RFID' => $rawInput,
+                    ];
+                }
+            } catch (\Exception $e) {
+                // ignore
+            }
+        }
+
+        // 4. Fallback ke PoolParticipant jika pernah tap di booth
+        if (!$employeeData) {
+            $participant = PoolParticipant::where('rfid', $rawInput)
+                ->orWhereIn('nik', $candidates)
+                ->first();
+            if ($participant) {
+                $employeeData = (object) [
+                    'NIK' => $participant->nik,
+                    'EMPNM' => $participant->name,
+                    'DEPTID' => $participant->department,
+                    'FOTOBLOB' => null,
+                    'CARDNODEVICE' => null,
+                    'RFID' => $participant->rfid,
+                    'photo_url' => $participant->photo,
+                ];
+            }
+        }
+
+        if (!$employeeData) {
+            return response()->json([
+                'status' => 'error',
+                'message' => "Data karyawan dengan RFID/NIK '{$rawInput}' tidak ditemukan di database. Pastikan NIK atau kartu benar.",
+            ], 404);
+        }
+
+        $photoBase64 = !empty($employeeData->FOTOBLOB)
+            ? 'data:image/jpeg;base64,' . base64_encode($employeeData->FOTOBLOB)
+            : ($employeeData->photo_url ?? null);
+
+        $rfidToSave = !empty($employeeData->CARDNODEVICE)
+            ? (string)$employeeData->CARDNODEVICE
+            : (!empty($employeeData->RFID) ? $employeeData->RFID : $rawInput);
+
+        return response()->json([
+            'status' => 'success',
+            'data' => [
+                'nik' => $employeeData->NIK ?? $rawInput,
+                'name' => $employeeData->EMPNM ?? 'Juri',
+                'department' => $employeeData->DEPTID ?? 'Umum',
+                'rfid' => $rfidToSave,
+                'photo' => $photoBase64,
+                'title' => 'Juri',
+                'vote_weight' => 10,
+            ],
+        ]);
+    }
+
+    /**
+     * Konfirmasi & Simpan Juri / Manajemen Baru
+     */
+    public function storeJudge(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'nik' => 'required|string|max:50',
+            'name' => 'required|string|max:150',
+            'department' => 'nullable|string|max:100',
+            'title' => 'required|string|max:100',
+            'vote_weight' => 'nullable|integer|min:1|max:100',
+            'rfid' => 'nullable|string|max:50',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => $validator->errors()->first(),
+            ], 422);
+        }
+
+        $judge = PoolJudge::updateOrCreate(
+            ['nik' => trim($request->nik)],
+            [
+                'rfid' => $request->rfid ? trim($request->rfid) : null,
+                'name' => trim($request->name),
+                'department' => $request->department ? trim($request->department) : 'Umum',
+                'title' => $request->title ? trim($request->title) : 'Juri',
+                'vote_weight' => $request->vote_weight ? (int)$request->vote_weight : 10,
+                'photo' => $request->photo ?: null,
+                'is_active' => true,
+            ]
+        );
+
+        return response()->json([
+            'status' => 'success',
+            'message' => "{$judge->title} {$judge->name} berhasil didaftarkan (Bobot Vote: +{$judge->vote_weight} Poin)!",
+            'data' => $judge,
+        ]);
+    }
+
+    /**
+     * Edit / Perbarui Data Juri / Manajemen
+     */
+    public function updateJudge(Request $request, $id)
+    {
+        $judge = PoolJudge::findOrFail($id);
+
+        $validator = Validator::make($request->all(), [
+            'title' => 'required|string|max:100',
+            'vote_weight' => 'required|integer|min:1|max:100',
+            'department' => 'nullable|string|max:100',
+            'is_active' => 'nullable|boolean',
+        ], [
+            'title.required' => 'Gelar / Peranan wajib dipilih.',
+            'vote_weight.required' => 'Bobot poin vote wajib diisi.',
+            'vote_weight.integer' => 'Bobot poin harus berupa angka bulat.',
+            'vote_weight.min' => 'Bobot poin vote minimal 1.',
+            'vote_weight.max' => 'Bobot poin vote maksimal 100.',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => $validator->errors()->first(),
+            ], 422);
+        }
+
+        $judge->title = trim($request->title);
+        $judge->vote_weight = (int)$request->vote_weight;
+        if ($request->has('department') && !empty($request->department)) {
+            $judge->department = trim($request->department);
+        }
+        if ($request->has('is_active')) {
+            $judge->is_active = (bool)$request->is_active;
+        }
+        $judge->save();
+
+        return response()->json([
+            'status' => 'success',
+            'message' => "Data {$judge->name} berhasil diperbarui (Gelar: {$judge->title}, Bobot: +{$judge->vote_weight} Poin)!",
+            'data' => $judge,
+        ]);
+    }
+
+    /**
+     * Toggle Aktif/Nonaktif Juri
+     */
+    public function toggleJudgeStatus($id)
+    {
+        $judge = PoolJudge::findOrFail($id);
+        $judge->is_active = !$judge->is_active;
+        $judge->save();
+
+        $statusStr = $judge->is_active ? 'diaktifkan' : 'dinonaktifkan';
+        return response()->json([
+            'status' => 'success',
+            'message' => "Dewan Juri {$judge->name} berhasil {$statusStr}.",
+            'is_active' => (bool)$judge->is_active,
+        ]);
+    }
+
+    /**
+     * Hapus Dewan Juri
+     */
+    public function destroyJudge($id)
+    {
+        $judge = PoolJudge::findOrFail($id);
+        $name = $judge->name;
+        $judge->delete();
+
+        return response()->json([
+            'status' => 'success',
+            'message' => "Dewan Juri {$name} berhasil dihapus dari sistem.",
+        ]);
     }
 }

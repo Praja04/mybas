@@ -201,7 +201,7 @@
                             <div
                                 class="pedestal-3d-bronze w-full pt-3 pb-1.5 px-1 rounded-2xl text-slate-900 h-11 sm:h-12 flex flex-col justify-end items-center">
                                 <span
-                                    class="text-xs sm:text-sm font-black text-amber-950 leading-none flex items-center justify-center gap-1 mb-1">
+                                    class="text-xs sm:text-sm font-black text-amber-950 leading-none flex items-center justify-center gap-1">
                                     <i class="fa-solid fa-coins text-amber-700 text-[10px]"></i>
                                     <span>{{ number_format($b3->total_points) }}</span>
                                 </span>
@@ -235,7 +235,8 @@
                     Bertanding</span>
             </div>
 
-            <div data-scroll-key="booth-list" class="infinite-scroll-container flex-1 min-h-0 overflow-hidden py-1 px-1 relative">
+            <div data-scroll-key="booth-list"
+                class="infinite-scroll-container flex-1 min-h-0 overflow-hidden py-1 px-1 relative">
                 <div class="infinite-scroll-content flex flex-col gap-1.5 pb-2">
                     @forelse($booths->slice(3) as $otherBooth)
                         <div id="booth-card-{{ $otherBooth->id }}" data-booth-id="{{ $otherBooth->id }}"
@@ -380,7 +381,8 @@
                     </div>
 
                     <!-- Infinite Scrollable Candidate Rows -->
-                    <div data-scroll-key="tier-{{ $tierKey }}" class="infinite-scroll-container flex-1 min-h-0 overflow-hidden mt-1.5 px-0.5 relative">
+                    <div data-scroll-key="tier-{{ $tierKey }}"
+                        class="infinite-scroll-container flex-1 min-h-0 overflow-hidden mt-1.5 px-0.5 relative">
                         <div class="infinite-scroll-content flex flex-col gap-1 py-0.5 pb-2">
                             @forelse($tParticipants as $p)
                                 @php

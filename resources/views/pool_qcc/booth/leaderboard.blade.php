@@ -335,6 +335,14 @@
                     <span class="hidden sm:inline text-[11px]">Lucky Spin Wheel</span>
                 </a>
 
+                <!-- Pemenang Juri Direct Link -->
+                <a href="{{ route('pool-qcc.jury.recap') }}"
+                    class="p-2 sm:px-3 sm:py-1.5 rounded-2xl bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 hover:from-purple-500 hover:to-indigo-500 text-white font-black text-xs border-2 border-purple-800 game-btn-3d flex items-center space-x-1.5 cursor-pointer shadow-md"
+                    title="Buka Rekap & Pemenang Penilaian Dewan Juri">
+                    <i class="fa-solid fa-crown text-amber-300"></i>
+                    <span class="hidden sm:inline text-[11px]">Pemenang Juri</span>
+                </a>
+
                 <!-- Simulasi Tes Takeover Booth -->
                 <button type="button" onclick="testTakeoverSimulation('booth')"
                     class="p-2 sm:px-3 sm:py-1.5 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-400 to-amber-600 hover:from-amber-400 hover:to-orange-300 text-slate-950 font-black text-xs border-2 border-amber-700 game-btn-3d flex items-center space-x-1.5 cursor-pointer shadow-md"
