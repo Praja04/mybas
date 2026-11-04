@@ -240,12 +240,12 @@
                     @forelse($booths->slice(3) as $otherBooth)
                         <div id="booth-card-{{ $otherBooth->id }}" data-booth-id="{{ $otherBooth->id }}"
                             data-booth-name="{{ $otherBooth->name }}" data-booth-rank="{{ $loop->iteration + 3 }}"
-                            class="relative hover:z-10 p-2 rounded-xl bg-white hover:bg-amber-50/80 dark:bg-slate-800/80 dark:hover:bg-slate-800 border-2 border-slate-200 dark:border-slate-700/80 shadow-xs flex items-center justify-between text-xs transition-all duration-150 hover:-translate-y-0.5">
+                            class="relative hover:z-20 p-2 rounded-xl bg-white hover:bg-amber-50/80 dark:bg-slate-800/80 dark:hover:bg-slate-800 border-2 border-slate-200 dark:border-slate-700/80 shadow-xs flex items-center justify-between text-xs transition-all duration-150 hover:-translate-y-0.5">
 
                             <div class="flex items-center space-x-2 min-w-0">
                                 <!-- 3D Rank Embossed Circle -->
                                 <div
-                                    class="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 font-black text-slate-700 dark:text-slate-200 text-[11px] flex items-center justify-center flex-shrink-0 shadow-inner">
+                                    class="rank-badge-box w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 font-black text-slate-700 dark:text-slate-200 text-[11px] flex items-center justify-center flex-shrink-0 shadow-inner">
                                     #{{ $loop->iteration + 3 }}
                                 </div>
 
@@ -271,6 +271,9 @@
                                     </span>
                                 </div>
                             </div>
+
+                            <!-- Dedicated Takeover Slot (outside truncate) -->
+                            <div class="takeover-slot flex items-center flex-shrink-0 mx-1"></div>
 
                             <!-- Right: Points Badge -->
                             <div class="flex items-center space-x-1.5 flex-shrink-0 pl-1.5">
@@ -391,13 +394,13 @@
                                     data-participant-id="{{ $p->id }}"
                                     data-participant-name="{{ $p->name }}"
                                     data-participant-rank="{{ $loop->iteration }}"
-                                    class="p-1.5 rounded-xl bg-white dark:bg-slate-800/90 border border-{{ $tColor }}-200 dark:border-slate-700 shadow-xs flex items-center justify-between text-xs hover:-translate-y-0.5 transition-transform">
+                                    class="relative hover:z-20 p-1.5 rounded-xl bg-white dark:bg-slate-800/90 border border-{{ $tColor }}-200 dark:border-slate-700 shadow-xs flex items-center justify-between text-xs hover:-translate-y-0.5 transition-transform">
 
                                     <!-- Left: Rank + Circle Avatar + Name/Dept -->
                                     <div class="flex items-center space-x-1.5 min-w-0">
                                         <!-- Rank Number -->
                                         <span
-                                            class="text-[10px] font-black text-slate-600 dark:text-slate-300 w-3.5 text-center flex-shrink-0">
+                                            class="rank-badge-box text-[10px] font-black text-slate-600 dark:text-slate-300 w-3.5 text-center flex-shrink-0">
                                             {{ $loop->iteration }}
                                         </span>
 
@@ -424,6 +427,9 @@
                                             </div>
                                         </div>
                                     </div>
+
+                                    <!-- Dedicated Takeover Slot (outside truncate) -->
+                                    <div class="takeover-slot flex items-center flex-shrink-0 mx-1"></div>
 
                                     <!-- Right: Score -->
                                     <div class="flex-shrink-0 pl-1 text-right">
