@@ -200,7 +200,7 @@ class PoolQccBoothController extends Controller
             ], 422);
         }
 
-        // 4. Validasi: Apakah sudah mencapai maksimal 3 booth?
+        // 4. Validasi: Apakah sudah mencapai maksimal 10 booth?
         if ($participant->booths_voted_count >= 10) {
             return response()->json([
                 'status' => 'error',

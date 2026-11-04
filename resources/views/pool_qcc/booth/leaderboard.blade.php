@@ -141,17 +141,75 @@
         /* ======================================================== */
         /* RACE TAKEOVER / MENYALIP ANIMATION STYLES                */
         /* ======================================================== */
+        @keyframes flameAura {
+            0%, 100% {
+                box-shadow: 0 0 25px 6px rgba(245, 158, 11, 0.85), 0 0 50px 12px rgba(239, 68, 68, 0.4), 0 10px 30px rgba(0, 0, 0, 0.5);
+                border-color: #fbbf24;
+            }
+            50% {
+                box-shadow: 0 0 40px 10px rgba(251, 191, 36, 1), 0 0 75px 20px rgba(249, 115, 22, 0.65), 0 12px 35px rgba(0, 0, 0, 0.6);
+                border-color: #f97316;
+            }
+        }
+
         .takeover-overtaker-active {
-            box-shadow: 0 0 35px 5px rgba(245, 158, 11, 0.95), 0 8px 24px rgba(0, 0, 0, 0.45) !important;
-            border-color: #f59e0b !important;
-            z-index: 60 !important;
+            animation: flameAura 0.35s ease-in-out infinite alternate !important;
+            border: 2.5px solid #fbbf24 !important;
+            background: linear-gradient(135deg, rgba(254, 243, 199, 0.98), rgba(255, 237, 213, 0.95)) !important;
+            z-index: 100 !important;
             position: relative !important;
+            filter: drop-shadow(0 6px 16px rgba(245, 158, 11, 0.5));
+        }
+
+        .dark .takeover-overtaker-active {
+            background: linear-gradient(135deg, rgba(69, 26, 3, 0.95), rgba(41, 37, 36, 0.98)) !important;
         }
 
         .takeover-overtaken-active {
-            opacity: 0.85;
+            opacity: 0.6 !important;
+            filter: grayscale(45%) contrast(0.9) !important;
             z-index: 20 !important;
             position: relative !important;
+            transform-origin: center center;
+            transition: transform 0.28s ease, opacity 0.28s ease, filter 0.28s ease !important;
+        }
+
+        /* Screen Shake effect on takeover dock */
+        @keyframes screenRumble {
+            0% { transform: translate(0, 0); }
+            20% { transform: translate(-3px, 2px); }
+            40% { transform: translate(3px, -2px); }
+            60% { transform: translate(-2px, -1px); }
+            80% { transform: translate(2px, 1px); }
+            100% { transform: translate(0, 0); }
+        }
+
+        .anim-screen-shake {
+            animation: screenRumble 0.35s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+        }
+
+        /* Rank Swap Pop Animation */
+        @keyframes rankSwapPop {
+            0% {
+                transform: scale(0.6) rotate(-15deg);
+                opacity: 0.5;
+            }
+            50% {
+                transform: scale(1.4) rotate(8deg);
+                background-color: #f59e0b;
+                color: #000;
+            }
+            75% {
+                transform: scale(0.95) rotate(-3deg);
+            }
+            100% {
+                transform: scale(1) rotate(0deg);
+                opacity: 1;
+            }
+        }
+
+        .anim-rank-swap {
+            animation: rankSwapPop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) forwards !important;
         }
 
         @keyframes nitro-pulse {
@@ -236,6 +294,12 @@
             -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 14px, black calc(100% - 14px), transparent 100%);
             mask-image: linear-gradient(to bottom, transparent 0%, black 14px, black calc(100% - 14px), transparent 100%);
         }
+
+        /* Hover unmask: when user hovers over list, show all cards sharply without clipping */
+        .infinite-scroll-container:hover {
+            -webkit-mask-image: none !important;
+            mask-image: none !important;
+        }
     </style>
 @endsection
 
@@ -294,7 +358,7 @@
 
                 <!-- Main Wooden/Purple Signboard -->
                 <div
-                    class="game-signboard relative px-4 sm:px-7 py-1 rounded-2xl text-center flex flex-col items-center max-w-xs sm:max-w-md">
+                    class="game-signboard relative px-3 sm:px-6 py-0.5 sm:py-1 rounded-2xl text-center flex flex-col items-center max-w-xs sm:max-w-md">
                     <!-- Info Subtitle Ribbon -->
                     <div
                         class="px-2.5 py-0.5 rounded-full bg-gradient-to-r from-amber-400 to-yellow-300 text-slate-950 font-black text-[8.5px] sm:text-[9px] tracking-wider uppercase border border-amber-500 shadow-xs flex items-center space-x-1 mb-0.5 leading-none">
@@ -446,15 +510,33 @@
                     const osc = this.ctx.createOscillator();
                     const gain = this.ctx.createGain();
                     osc.type = 'sawtooth';
-                    osc.frequency.setValueAtTime(140, now);
-                    osc.frequency.exponentialRampToValueAtTime(580, now + 0.35);
+                    osc.frequency.setValueAtTime(110, now);
+                    osc.frequency.exponentialRampToValueAtTime(750, now + 0.38);
                     gain.gain.setValueAtTime(0.01, now);
-                    gain.gain.linearRampToValueAtTime(0.18, now + 0.08);
-                    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.38);
+                    gain.gain.linearRampToValueAtTime(0.28, now + 0.1);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.42);
                     osc.connect(gain);
                     gain.connect(this.ctx.destination);
                     osc.start(now);
-                    osc.stop(now + 0.4);
+                    osc.stop(now + 0.45);
+                } catch (e) {}
+            },
+            playImpactThud() {
+                try {
+                    this.init();
+                    if (!this.ctx) return;
+                    const now = this.ctx.currentTime;
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(160, now);
+                    osc.frequency.exponentialRampToValueAtTime(32, now + 0.16);
+                    gain.gain.setValueAtTime(0.45, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.17);
                 } catch (e) {}
             },
             playTakeoverChime() {
@@ -492,7 +574,7 @@
                         osc.type = 'triangle';
                         osc.frequency.setValueAtTime(n.f, now + n.time);
                         gain.gain.setValueAtTime(0.001, now + n.time);
-                        gain.gain.linearRampToValueAtTime(0.3, now + n.time + 0.02);
+                        gain.gain.linearRampToValueAtTime(0.35, now + n.time + 0.02);
                         gain.gain.exponentialRampToValueAtTime(0.0001, now + n.time + n.dur);
                         osc.connect(gain);
                         gain.connect(this.ctx.destination);
@@ -618,18 +700,27 @@
             }
 
             // 2. Physical overtake animation if applicable
-            if (primaryOvertaker) {
-                const overtakerEl = document.querySelector(`[data-participant-id="${primaryOvertaker.id}"]`);
-                const overtakenEl = document.querySelector(`[data-participant-rank="${primaryOvertaker.rank}"]`);
+            let animOvertakerEl = null;
+            let animOvertakenEl = null;
 
-                if (overtakerEl && overtakenEl && overtakerEl !== overtakenEl) {
-                    isAnimatingTakeover = true;
-                    animateParticipantOvertake(overtakerEl, overtakenEl, function() {
-                        commitNewArenaHTML(response, takeovers);
-                        isAnimatingTakeover = false;
-                    });
-                    return;
+            if (primaryOvertaker) {
+                animOvertakerEl = document.querySelector(`[data-participant-id="${primaryOvertaker.id}"]`);
+                animOvertakenEl = document.querySelector(`[data-participant-rank="${primaryOvertaker.rank}"]`);
+            } else if (takeovers.length > 0) {
+                const boothTakeover = takeovers.find(t => t.type === 'booth');
+                if (boothTakeover) {
+                    animOvertakerEl = document.querySelector(`[data-booth-id="${boothTakeover.id}"]`);
+                    animOvertakenEl = document.querySelector(`[data-booth-rank="${boothTakeover.newRank}"]`);
                 }
+            }
+
+            if (animOvertakerEl && animOvertakenEl && animOvertakerEl !== animOvertakenEl) {
+                isAnimatingTakeover = true;
+                animateParticipantOvertake(animOvertakerEl, animOvertakenEl, function() {
+                    commitNewArenaHTML(response, takeovers);
+                    isAnimatingTakeover = false;
+                });
+                return;
             }
 
             // SMOOTH LIVE SYNC: If HTML and ranks have not changed, DO NOT wipe DOM!
@@ -718,49 +809,82 @@
                 return;
             }
 
+            // Synthesize powerful revving audio
             GameAudio.playNitroSwoosh();
 
             $overtaker.css({
                 'position': 'relative',
-                'z-index': '60',
+                'z-index': '100',
                 'transition': 'transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.28s ease'
             }).addClass('takeover-overtaker-active');
 
             $overtaken.css({
                 'position': 'relative',
                 'z-index': '20',
-                'transition': 'transform 0.28s ease, opacity 0.28s ease'
+                'transition': 'transform 0.28s ease, opacity 0.28s ease, filter 0.28s ease'
             }).addClass('takeover-overtaken-active');
 
             // User requirement: Cukup 1 badge takeover saja di seluruh leaderboard, timpa jika berulang kali
             $('.takeover-badge-pill, .nitro-pill').remove();
+            $('.takeover-slot').empty();
 
             const $turboBadge = $(`
-                <span class="takeover-badge-pill nitro-pill anim-badge-pop inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black bg-gradient-to-r from-amber-400 via-orange-500 to-amber-500 text-slate-950 border border-yellow-200 shadow-lg ml-1.5 anim-nitro-pulse">
+                <span class="takeover-badge-pill nitro-pill anim-badge-pop inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black bg-gradient-to-r from-amber-400 via-orange-500 to-amber-500 text-slate-950 border border-yellow-200 shadow-lg anim-nitro-pulse flex-shrink-0">
                     ⚡ MENYALIP...
                 </span>
             `);
-            const $titleRow = $overtaker.find('.participant-title-row, .truncate').first();
-            if ($titleRow.length) $titleRow.append($turboBadge);
+            const $slot = $overtaker.find('.takeover-slot');
+            if ($slot.length) {
+                $slot.html($turboBadge);
+            } else {
+                const $titleRow = $overtaker.find('.participant-title-row, .truncate').first();
+                if ($titleRow.length) $titleRow.append($turboBadge);
+            }
 
-            // Phase 1: Pull out
-            $overtaker.css('transform', 'translate(18px, 0px) scale(1.03)');
-            $overtaken.css('transform', 'translate(-10px, 0px) scale(0.98)');
+            // Phase 1: Pull out sideways with nitro flare
+            $overtaker.css('transform', 'translate(22px, 0px) scale(1.05)');
+            $overtaken.css('transform', 'translate(-12px, 0px) scale(0.96)');
 
-            // Phase 2: Slide past
+            // Phase 2: High-speed surge past the rival
             setTimeout(() => {
                 $overtaker.css({
-                    'transition': 'transform 0.68s cubic-bezier(0.2, 0.9, 0.3, 1.25)',
-                    'transform': `translate(18px, -${dy}px) scale(1.04)`
+                    'transition': 'transform 0.65s cubic-bezier(0.12, 0.8, 0.2, 1.25)',
+                    'transform': `translate(22px, -${dy}px) scale(1.06)`
                 });
                 $overtaken.css({
-                    'transition': 'transform 0.68s cubic-bezier(0.2, 0.9, 0.3, 1.25)',
-                    'transform': `translate(-10px, ${dy}px) scale(0.98)`
+                    'transition': 'transform 0.65s cubic-bezier(0.12, 0.8, 0.2, 1.25)',
+                    'transform': `translate(-12px, ${dy}px) scale(0.96)`
                 });
 
-                // Phase 3: Dock
+                // Midpoint nitro fiery sparks burst
                 setTimeout(() => {
+                    try {
+                        const oRect = rawOvertaker.getBoundingClientRect();
+                        const posX = (oRect.left + oRect.width / 2) / window.innerWidth;
+                        const posY = (oRect.top + oRect.height / 2) / window.innerHeight;
+                        triggerConfetti({
+                            particleCount: 30,
+                            spread: 55,
+                            startVelocity: 18,
+                            ticks: 45,
+                            origin: { x: posX, y: posY },
+                            colors: ['#fbbf24', '#f59e0b', '#ef4444', '#ffffff'],
+                            zIndex: 999999
+                        });
+                    } catch (e) {}
+                }, 300);
+
+                // Phase 3: Slam & Dock into new rank position with tactile thud & screen rumble
+                setTimeout(() => {
+                    GameAudio.playImpactThud();
                     GameAudio.playTakeoverChime();
+
+                    // Camera screen rumble
+                    const $arena = $('#arenaContainer');
+                    $arena.removeClass('anim-screen-shake');
+                    if ($arena[0]) void $arena[0].offsetWidth; // trigger reflow
+                    $arena.addClass('anim-screen-shake');
+                    setTimeout(() => $arena.removeClass('anim-screen-shake'), 400);
 
                     $overtaker.css({
                         'transition': 'transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)',
@@ -771,7 +895,7 @@
                         'transform': `translate(0px, ${dy}px) scale(1)`
                     });
 
-                    // Phase 4: Finalize
+                    // Phase 4: Finalize, Swap DOM, Swap Rank Numbers with pop animation
                     setTimeout(() => {
                         $overtaker.css({
                             'transform': '',
@@ -785,18 +909,51 @@
                             'z-index': ''
                         }).removeClass('takeover-overtaken-active');
 
-                        $turboBadge.html('🔥 TAKEOVER!').removeClass('anim-nitro-pulse');
+                        // Transform badge to celebratory TAKEOVER
+                        $turboBadge.html('🔥 TAKEOVER!').removeClass('anim-nitro-pulse').addClass('bg-gradient-to-r from-yellow-300 via-amber-400 to-orange-500 border-amber-300 shadow-xl');
                         setTimeout(() => {
                             $turboBadge.fadeOut(500, function() {
                                 $(this).remove();
                             });
                         }, 12000);
 
+                        // Swap DOM elements
                         $overtaker.insertBefore($overtaken);
 
+                        // Swap Rank Numbers with Pop Animation
+                        const $overtakerRankEl = $overtaker.find('.rank-badge-box');
+                        const $overtakenRankEl = $overtaken.find('.rank-badge-box');
+                        if ($overtakerRankEl.length && $overtakenRankEl.length) {
+                            const overtakerRankTxt = $overtakerRankEl.text().trim();
+                            const overtakenRankTxt = $overtakenRankEl.text().trim();
+
+                            $overtakerRankEl.text(overtakenRankTxt).addClass('anim-rank-swap');
+                            $overtakenRankEl.text(overtakerRankTxt).addClass('anim-rank-swap');
+
+                            setTimeout(() => {
+                                $overtakerRankEl.removeClass('anim-rank-swap');
+                                $overtakenRankEl.removeClass('anim-rank-swap');
+                            }, 700);
+                        }
+
+                        // Swap data attributes
+                        const bRank1 = $overtaker.attr('data-booth-rank');
+                        const bRank2 = $overtaken.attr('data-booth-rank');
+                        if (bRank1 !== undefined && bRank2 !== undefined) {
+                            $overtaker.attr('data-booth-rank', bRank2);
+                            $overtaken.attr('data-booth-rank', bRank1);
+                        }
+                        const pRank1 = $overtaker.attr('data-participant-rank');
+                        const pRank2 = $overtaken.attr('data-participant-rank');
+                        if (pRank1 !== undefined && pRank2 !== undefined) {
+                            $overtaker.attr('data-participant-rank', pRank2);
+                            $overtaken.attr('data-participant-rank', p1);
+                        }
+
+                        // Victory confetti celebration
                         triggerConfetti({
-                            particleCount: 85,
-                            spread: 90,
+                            particleCount: 90,
+                            spread: 95,
                             origin: {
                                 y: 0.4
                             },
@@ -806,7 +963,7 @@
 
                         if (onComplete) onComplete();
                     }, 370);
-                }, 680);
+                }, 650);
             }, 280);
         }
 
@@ -861,6 +1018,10 @@
         function testTakeoverSimulation() {
             if (isAnimatingTakeover) return;
 
+            // Pause auto-refresh and give user 15s to view simulated takeover before next auto-sync
+            countdown = 15;
+            if (timerEl) timerEl.textContent = countdown + 's';
+
             // 1. Cari kolom peserta yang memiliki minimal 2 kandidat dalam 1 kolom reward
             let $cards = null;
             let isBooth = false;
@@ -898,14 +1059,14 @@
             const cardUpper = $cards[0];
             const cardLower = $cards[1];
             const overtakerName = isBooth ?
-                ($(cardLower).data('booth-name') || 'Booth Inovasi') :
-                ($(cardLower).data('participant-name') || 'Peserta');
+                ($(cardLower).attr('data-booth-name') || $(cardLower).data('booth-name') || 'Booth Inovasi') :
+                ($(cardLower).attr('data-participant-name') || $(cardLower).data('participant-name') || 'Peserta');
             const oldRank = isBooth ?
-                (parseInt($(cardLower).data('booth-rank')) || 5) :
-                (parseInt($(cardLower).data('participant-rank')) || 2);
+                (parseInt($(cardLower).attr('data-booth-rank') || $(cardLower).data('booth-rank')) || 5) :
+                (parseInt($(cardLower).attr('data-participant-rank') || $(cardLower).data('participant-rank')) || 2);
             const newRank = isBooth ?
-                (parseInt($(cardUpper).data('booth-rank')) || 4) :
-                (parseInt($(cardUpper).data('participant-rank')) || 1);
+                (parseInt($(cardUpper).attr('data-booth-rank') || $(cardUpper).data('booth-rank')) || 4) :
+                (parseInt($(cardUpper).attr('data-participant-rank') || $(cardUpper).data('participant-rank')) || 1);
 
             isAnimatingTakeover = true;
             animateParticipantOvertake(cardLower, cardUpper, function() {
@@ -990,6 +1151,7 @@
                 $clone1.find('[data-participant-id], [data-booth-id]').removeAttr(
                     'data-participant-id data-booth-id');
                 $clone1.find('.takeover-badge-pill, .nitro-pill').remove();
+                $clone1.find('.takeover-slot').empty();
                 $content.append($clone1);
 
                 // Compute exact subpixel distance between original item 1 and clone item 1
@@ -1022,6 +1184,7 @@
                     $extraClone.find('[data-participant-id], [data-booth-id]').removeAttr(
                         'data-participant-id data-booth-id');
                     $extraClone.find('.takeover-badge-pill, .nitro-pill').remove();
+                    $extraClone.find('.takeover-slot').empty();
                     $content.append($extraClone);
                     currentHeight = $content[0].scrollHeight;
                     cloneBatches++;

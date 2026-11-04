@@ -256,9 +256,9 @@ function loadParticipantsData(page = 1, search = '', status = '') {
                     ? `<img src="${p.photo}" alt="${escapeHtml(p.name)}" class="w-9 h-9 rounded-full object-cover border border-slate-300 dark:border-slate-700">`
                     : `<div class="w-9 h-9 rounded-full bg-indigo-50 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-400 flex items-center justify-center font-bold text-xs border border-indigo-200 dark:border-indigo-500/30">${p.initials}</div>`;
 
-                const quotaBadge = p.booths_voted_count >= 3
+                const quotaBadge = p.booths_voted_count >= 10
                     ? `<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30">
-                           <i class="fa-solid fa-circle-check mr-1"></i> Selesai (3/3)
+                           <i class="fa-solid fa-circle-check mr-1"></i> Selesai (10/10)
                        </span>`
                     : `<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-300 border border-amber-200 dark:border-amber-500/30">
                            ${p.booths_voted_count} / 10 Booth
