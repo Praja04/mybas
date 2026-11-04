@@ -384,11 +384,7 @@
                         <div class="infinite-scroll-content flex flex-col gap-1 py-0.5 pb-2">
                             @forelse($tParticipants as $p)
                                 @php
-                                    $nameParts = explode(' ', trim($p->name));
-                                    $initials = strtoupper(
-                                        substr($nameParts[0], 0, 1) .
-                                            (isset($nameParts[1]) ? substr($nameParts[1], 0, 1) : ''),
-                                    );
+                                    $firstInitial = strtoupper(mb_substr(trim($p->name), 0, 1)) ?: 'P';
                                 @endphp
                                 <div id="participant-card-{{ $p->id }}"
                                     data-participant-id="{{ $p->id }}"
@@ -404,15 +400,10 @@
                                             {{ $loop->iteration }}
                                         </span>
 
-                                        <!-- Circular Avatar with 2-Letter Initials or Photo -->
+                                        <!-- Circular Avatar with 1-Letter First Name Initial (e.g. Damang -> D) -->
                                         <div
-                                            class="w-7 h-7 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-white font-black text-[9px] flex items-center justify-center flex-shrink-0 shadow-xs uppercase overflow-hidden">
-                                            @if ($p->photo)
-                                                <img src="{{ $p->photo }}" alt="{{ $p->name }}"
-                                                    class="w-full h-full object-cover">
-                                            @else
-                                                {{ $initials ?: 'P' }}
-                                            @endif
+                                            class="w-7 h-7 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-white font-black text-[11px] flex items-center justify-center flex-shrink-0 shadow-xs uppercase">
+                                            {{ $firstInitial }}
                                         </div>
 
                                         <!-- Name & Department -->
