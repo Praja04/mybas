@@ -362,38 +362,44 @@
 
 @section('scripts')
     <script>
+        // Safe confetti helper preventing worker & resize getBoundingClientRect exceptions
+        function triggerConfetti(options) {
+            try {
+                if (typeof confetti === 'function') {
+                    confetti(Object.assign({
+                        useWorker: false,
+                        disableForReducedMotion: true,
+                        zIndex: 99999
+                    }, options || {}));
+                }
+            } catch (err) {
+                console.warn('Confetti error suppressed:', err);
+            }
+        }
+
         // Confetti kecil berkala di background
         function randomFunCelebration() {
-            try {
-                if (typeof confetti === 'function' && !isAnimatingTakeover) {
-                    confetti({
-                        particleCount: 22,
-                        angle: 60,
-                        spread: 50,
-                        origin: {
-                            x: 0,
-                            y: 0.8
-                        },
-                        colors: ['#f59e0b', '#06b6d4', '#10b981', '#ec4899', '#8b5cf6'],
-                        zIndex: 99999,
-                        useWorker: false,
-                        disableForReducedMotion: true
-                    });
-                    confetti({
-                        particleCount: 22,
-                        angle: 120,
-                        spread: 50,
-                        origin: {
-                            x: 1,
-                            y: 0.8
-                        },
-                        colors: ['#f59e0b', '#06b6d4', '#10b981', '#ec4899', '#8b5cf6'],
-                        zIndex: 99999,
-                        useWorker: false,
-                        disableForReducedMotion: true
-                    });
-                }
-            } catch (err) {}
+            if (isAnimatingTakeover) return;
+            triggerConfetti({
+                particleCount: 22,
+                angle: 60,
+                spread: 50,
+                origin: {
+                    x: 0,
+                    y: 0.8
+                },
+                colors: ['#f59e0b', '#06b6d4', '#10b981', '#ec4899', '#8b5cf6']
+            });
+            triggerConfetti({
+                particleCount: 22,
+                angle: 120,
+                spread: 50,
+                origin: {
+                    x: 1,
+                    y: 0.8
+                },
+                colors: ['#f59e0b', '#06b6d4', '#10b981', '#ec4899', '#8b5cf6']
+            });
         }
 
         setTimeout(randomFunCelebration, 1200);
@@ -499,10 +505,11 @@
         // ========================================================
         // ASYNC JQUERY AJAX RELOAD DATA (WITH TAKEOVER ANIMATION)
         // ========================================================
-        let countdown = 15;
+        let countdown = 5;
         let isSyncing = false;
         let isFirstLoad = true;
         let isAnimatingTakeover = false;
+        var isSpinning = false; // Fallback definition to avoid ReferenceError
         const previousBoothRanks = {};
         const previousParticipantRanks = {};
 
@@ -534,7 +541,7 @@
         });
 
         function reloadLeaderboardData() {
-            if (isSyncing || isAnimatingTakeover || isSpinning) return;
+            if (isSyncing || isAnimatingTakeover) return;
             isSyncing = true;
             if (syncIndicator) syncIndicator.classList.remove('hidden');
 
@@ -556,7 +563,7 @@
                 complete: function() {
                     isSyncing = false;
                     if (syncIndicator) syncIndicator.classList.add('hidden');
-                    countdown = 15;
+                    countdown = 5;
                     if (timerEl) timerEl.textContent = countdown + 's';
                 }
             });
@@ -668,8 +675,16 @@
                 return;
             }
 
-            const rectOvertaker = overtakerEl.getBoundingClientRect();
-            const rectOvertaken = overtakenEl.getBoundingClientRect();
+            const rawOvertaker = $overtaker[0];
+            const rawOvertaken = $overtaken[0];
+
+            if (!rawOvertaker || !rawOvertaken || typeof rawOvertaker.getBoundingClientRect !== 'function' || typeof rawOvertaken.getBoundingClientRect !== 'function') {
+                if (onComplete) onComplete();
+                return;
+            }
+
+            const rectOvertaker = rawOvertaker.getBoundingClientRect();
+            const rectOvertaken = rawOvertaken.getBoundingClientRect();
             const dy = rectOvertaker.top - rectOvertaken.top;
 
             if (Math.abs(dy) < 5) {
@@ -751,19 +766,15 @@
 
                         $overtaker.insertBefore($overtaken);
 
-                        if (typeof confetti === 'function') {
-                            confetti({
-                                particleCount: 85,
-                                spread: 90,
-                                origin: {
-                                    y: 0.4
-                                },
-                                colors: ['#fbbf24', '#f59e0b', '#ef4444', '#10b981',
-                                    '#06b6d4'
-                                ],
-                                zIndex: 9999999
-                            });
-                        }
+                        triggerConfetti({
+                            particleCount: 85,
+                            spread: 90,
+                            origin: {
+                                y: 0.4
+                            },
+                            colors: ['#fbbf24', '#f59e0b', '#ef4444', '#10b981', '#06b6d4'],
+                            zIndex: 9999999
+                        });
 
                         if (onComplete) onComplete();
                     }, 370);
@@ -953,9 +964,11 @@
                 let loopDistance = 0;
 
                 try {
-                    const origRect = firstOrig.getBoundingClientRect();
-                    const cloneRect = firstClone.getBoundingClientRect();
-                    loopDistance = cloneRect.top - origRect.top;
+                    if (firstOrig && firstClone && typeof firstOrig.getBoundingClientRect === 'function' && typeof firstClone.getBoundingClientRect === 'function') {
+                        const origRect = firstOrig.getBoundingClientRect();
+                        const cloneRect = firstClone.getBoundingClientRect();
+                        loopDistance = cloneRect.top - origRect.top;
+                    }
                 } catch (e) {}
 
                 if (!loopDistance || loopDistance <= 0) {
