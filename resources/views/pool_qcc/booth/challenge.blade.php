@@ -19,7 +19,13 @@
             </div>
             <div class="text-right">
                 <span class="text-[11px] font-bold text-slate-500 dark:text-slate-400 block uppercase">Reward</span>
-                <span class="text-lg font-black text-emerald-600 dark:text-emerald-400">+{{ $question->points }} Poin</span>
+                @if(!empty($isJudge))
+                    <span class="text-lg font-black text-amber-500 flex items-center justify-end gap-1.5">
+                        <i class="fa-solid fa-crown text-sm"></i> +{{ $judgeVoteWeight ?? 10 }} Poin ({{ $judgeTitle ?? 'Dewan Juri' }})
+                    </span>
+                @else
+                    <span class="text-lg font-black text-emerald-600 dark:text-emerald-400">+{{ $question->points > 0 ? $question->points : 1 }} Poin</span>
+                @endif
             </div>
         </div>
 
@@ -32,9 +38,14 @@
                     class="inline-flex items-center text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">
                     <i class="fa-solid fa-circle-question mr-1.5 text-base"></i> Kuis Inovasi Booth
                 </span>
-                <span class="text-xs text-slate-600 dark:text-slate-400">
-                    Peserta: <strong class="text-slate-900 dark:text-white font-bold">{{ $participant->name }}</strong>
-                    (Booth ke-{{ $participant->booths_voted_count + 1 }} dari 3)
+                <span class="text-xs text-slate-600 dark:text-slate-400 flex items-center gap-1.5">
+                    @if(!empty($isJudge))
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-black bg-amber-500 text-white shadow-xs">
+                            <i class="fa-solid fa-crown mr-1"></i> {{ strtoupper($judgeTitle ?? 'DEWAN JURI') }}
+                        </span>
+                    @endif
+                    <span>Peserta: <strong class="text-slate-900 dark:text-white font-bold">{{ $participant->name }}</strong>
+                    (Booth ke-{{ $participant->booths_voted_count + 1 }} dari 10)</span>
                 </span>
             </div>
 
@@ -252,13 +263,22 @@
                     'w-24 h-24 rounded-full mx-auto mb-5 flex items-center justify-center text-5xl bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-500/40';
                 iconWrapper.innerHTML = '<i class="fa-solid fa-check"></i>';
                 title.innerHTML = 'JAWABAN BENAR! 🎉';
-                subtitle.innerHTML =
-                    `Selamat <strong>${data.participant.name}</strong>! Anda mendapat <strong>+1 Poin</strong> dan <strong>${data.booth.name}</strong> juga mendapat <strong>+1 Poin</strong>.`;
-
-                pointsBox.className =
-                    'p-4 rounded-2xl mb-5 bg-emerald-50 border border-emerald-200 text-emerald-800 dark:bg-emerald-500/20 dark:border-emerald-500/40 dark:text-emerald-300';
-                pointsLabel.innerHTML = 'Poin Diperoleh (Ganda)';
-                pointsValue.innerHTML = `+${data.points_earned} Poin`;
+                if (data.is_judge) {
+                    const roleTitle = data.judge_title || 'Dewan Juri';
+                    subtitle.innerHTML =
+                        `Luar biasa <strong>${data.participant.name}</strong> (${roleTitle})! Vote Anda memberikan bobot <strong>+${data.points_earned} Poin</strong> untuk booth <strong>${data.booth.name}</strong>.`;
+                    pointsBox.className =
+                        'p-4 rounded-2xl mb-5 bg-amber-50 border border-amber-300 text-amber-800 dark:bg-amber-500/20 dark:border-amber-500/40 dark:text-amber-300';
+                    pointsLabel.innerHTML = `👑 Poin ${roleTitle} (Bobot Spesial)`;
+                    pointsValue.innerHTML = `+${data.points_earned} Poin`;
+                } else {
+                    subtitle.innerHTML =
+                        `Selamat <strong>${data.participant.name}</strong>! Anda mendapat <strong>+${data.points_earned} Poin</strong> dan <strong>${data.booth.name}</strong> juga mendapat <strong>+${data.points_earned} Poin</strong>.`;
+                    pointsBox.className =
+                        'p-4 rounded-2xl mb-5 bg-emerald-50 border border-emerald-200 text-emerald-800 dark:bg-emerald-500/20 dark:border-emerald-500/40 dark:text-emerald-300';
+                    pointsLabel.innerHTML = 'Poin Diperoleh (Ganda)';
+                    pointsValue.innerHTML = `+${data.points_earned} Poin`;
+                }
 
                 // Confetti meriah di atas layer modal (zIndex tinggi)
                 confetti({

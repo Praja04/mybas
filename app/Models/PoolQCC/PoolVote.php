@@ -15,11 +15,13 @@ class PoolVote extends Model
         'participant_answer',
         'is_correct',
         'points_awarded',
+        'is_judge_vote',
         'answered_at',
     ];
 
     protected $casts = [
         'is_correct' => 'boolean',
+        'is_judge_vote' => 'boolean',
         'points_awarded' => 'integer',
         'answered_at' => 'datetime',
     ];

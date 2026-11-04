@@ -5,8 +5,8 @@ use Illuminate\Support\Facades\Route;
 // ==========================================
 // POOL QCC ROUTES (INNOVATION & BOOTH CHALLENGE)
 // ==========================================
-Route::group(['prefix' => 'pool-qcc', 'as' => 'pool-qcc.'], function () {
-    Route::group(['middleware' => ['auth', 'access_log', 'rules']], function () {
+Route::group(['middleware' => ['auth', 'access_log', 'rules:qcc_pool']], function () {
+    Route::group(['prefix' => 'pool-qcc', 'as' => 'pool-qcc.'], function () {
         Route::get('/', function () {
             return view('pool_qcc.index');
         })->name('portal-home');
@@ -28,31 +28,56 @@ Route::group(['prefix' => 'pool-qcc', 'as' => 'pool-qcc.'], function () {
             return redirect()->route('pool-qcc.booths-index');
         })->name('portal');
 
-        // Admin Management (Booth & Soal & Peserta)
-        Route::group(['prefix' => 'admin', 'as' => 'admin.'], function () {
-            Route::get('/', 'PoolQcc\PoolQccAdminController@index')->name('dashboard');
-            Route::get('/api/dashboard', 'PoolQcc\PoolQccAdminController@getDashboardData')->name('api.dashboard');
+        Route::group(['middleware' => ['rules:qcc_pool_admin']], function () {
+            // Penilaian Dewan Juri (Jury Booth Scoring & Recap Pemenang)
+            Route::group(['prefix' => 'jury', 'as' => 'jury.'], function () {
+                Route::get('/scoring', 'PoolQcc\PoolQccJuryController@scoringView')->name('scoring');
+                Route::get('/api/booths', 'PoolQcc\PoolQccJuryController@getBoothsList')->name('api.booths');
+                Route::post('/verify-judge', 'PoolQcc\PoolQccJuryController@verifyJudgeAndGetEvaluation')->name('verify-judge');
+                Route::get('/api/scoring-data', 'PoolQcc\PoolQccJuryController@getScoringData')->name('api.scoring-data');
+                Route::post('/switch', 'PoolQcc\PoolQccJuryController@switchJudge')->name('switch');
+                Route::post('/score', 'PoolQcc\PoolQccJuryController@saveScore')->name('save-score');
+                Route::get('/recap', 'PoolQcc\PoolQccJuryController@recapView')->name('recap');
+                Route::get('/api/recap', 'PoolQcc\PoolQccJuryController@getRecapData')->name('api.recap');
+            });
 
-            // Booths
-            Route::get('/api/booths', 'PoolQcc\PoolQccAdminController@getBoothsData')->name('api.booths');
-            Route::get('/booths', 'PoolQcc\PoolQccAdminController@booths')->name('booths');
-            Route::post('/booths', 'PoolQcc\PoolQccAdminController@storeBooth')->name('booths.store');
-            Route::put('/booths/{id}', 'PoolQcc\PoolQccAdminController@updateBooth')->name('booths.update');
-            Route::delete('/booths/{id}', 'PoolQcc\PoolQccAdminController@destroyBooth')->name('booths.destroy');
 
-            // Questions
-            Route::get('/api/questions', 'PoolQcc\PoolQccAdminController@getQuestionsData')->name('api.questions');
-            Route::get('/questions', 'PoolQcc\PoolQccAdminController@questions')->name('questions');
-            Route::post('/questions', 'PoolQcc\PoolQccAdminController@storeQuestion')->name('questions.store');
-            Route::put('/questions/{id}', 'PoolQcc\PoolQccAdminController@updateQuestion')->name('questions.update');
-            Route::delete('/questions/{id}', 'PoolQcc\PoolQccAdminController@destroyQuestion')->name('questions.destroy');
+            // Admin Management (Booth & Soal & Peserta & Dewan Juri)
+            Route::group(['prefix' => 'admin', 'as' => 'admin.'], function () {
+                Route::get('/', 'PoolQcc\PoolQccAdminController@index')->name('dashboard');
+                Route::get('/api/dashboard', 'PoolQcc\PoolQccAdminController@getDashboardData')->name('api.dashboard');
 
-            // Participants & Votes Log
-            Route::get('/api/participants', 'PoolQcc\PoolQccAdminController@getParticipantsData')->name('api.participants');
-            Route::get('/participants', 'PoolQcc\PoolQccAdminController@participants')->name('participants');
-            Route::post('/participants/{id}/reset', 'PoolQcc\PoolQccAdminController@resetParticipantVotes')->name('participants.reset');
-            Route::get('/api/votes', 'PoolQcc\PoolQccAdminController@getVotesData')->name('api.votes');
-            Route::get('/votes', 'PoolQcc\PoolQccAdminController@votes')->name('votes');
+                // Booths
+                Route::get('/api/booths', 'PoolQcc\PoolQccAdminController@getBoothsData')->name('api.booths');
+                Route::get('/booths', 'PoolQcc\PoolQccAdminController@booths')->name('booths');
+                Route::post('/booths', 'PoolQcc\PoolQccAdminController@storeBooth')->name('booths.store');
+                Route::put('/booths/{id}', 'PoolQcc\PoolQccAdminController@updateBooth')->name('booths.update');
+                Route::delete('/booths/{id}', 'PoolQcc\PoolQccAdminController@destroyBooth')->name('booths.destroy');
+
+                // Questions
+                Route::get('/api/questions', 'PoolQcc\PoolQccAdminController@getQuestionsData')->name('api.questions');
+                Route::get('/questions', 'PoolQcc\PoolQccAdminController@questions')->name('questions');
+                Route::post('/questions', 'PoolQcc\PoolQccAdminController@storeQuestion')->name('questions.store');
+                Route::put('/questions/{id}', 'PoolQcc\PoolQccAdminController@updateQuestion')->name('questions.update');
+                Route::delete('/questions/{id}', 'PoolQcc\PoolQccAdminController@destroyQuestion')->name('questions.destroy');
+
+                // Dewan Juri & Manajemen VIP
+                Route::get('/api/judges', 'PoolQcc\PoolQccAdminController@getJudgesData')->name('api.judges');
+                Route::get('/judges', 'PoolQcc\PoolQccAdminController@judges')->name('judges');
+                Route::post('/judges/lookup', 'PoolQcc\PoolQccAdminController@lookupJudge')->name('judges.lookup');
+                Route::post('/judges', 'PoolQcc\PoolQccAdminController@storeJudge')->name('judges.store');
+                Route::put('/judges/{id}', 'PoolQcc\PoolQccAdminController@updateJudge')->name('judges.update');
+                Route::post('/judges/{id}/toggle', 'PoolQcc\PoolQccAdminController@toggleJudgeStatus')->name('judges.toggle');
+                Route::delete('/judges/{id}', 'PoolQcc\PoolQccAdminController@destroyJudge')->name('judges.destroy');
+
+
+                // Participants & Votes Log
+                Route::get('/api/participants', 'PoolQcc\PoolQccAdminController@getParticipantsData')->name('api.participants');
+                Route::get('/participants', 'PoolQcc\PoolQccAdminController@participants')->name('participants');
+                Route::post('/participants/{id}/reset', 'PoolQcc\PoolQccAdminController@resetParticipantVotes')->name('participants.reset');
+                Route::get('/api/votes', 'PoolQcc\PoolQccAdminController@getVotesData')->name('api.votes');
+                Route::get('/votes', 'PoolQcc\PoolQccAdminController@votes')->name('votes');
+            });
         });
     });
 });

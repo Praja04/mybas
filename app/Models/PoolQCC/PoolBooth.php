@@ -43,6 +43,11 @@ class PoolBooth extends Model
         return $this->hasMany(PoolVote::class, 'booth_id');
     }
 
+    public function judgeEvaluations()
+    {
+        return $this->hasMany(PoolJudgeEvaluation::class, 'booth_id');
+    }
+
     // Helper untuk mengecek apakah pertanyaan sudah mencapai minimal 5
     public function hasMinQuestions($min = 5)
     {

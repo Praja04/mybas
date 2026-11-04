@@ -7,6 +7,7 @@ use App\Models\PoolQCC\PoolBooth;
 use App\Models\PoolQCC\PoolQuestion;
 use App\Models\PoolQCC\PoolParticipant;
 use App\Models\PoolQCC\PoolVote;
+use App\Models\PoolQCC\PoolJudge;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -208,13 +209,46 @@ class PoolQccBoothController extends Controller
             ], 422);
         }
 
+        // Cek apakah peserta terdaftar sebagai Dewan Juri / Manajemen (termasuk variasi leading zero NIK / RFID)
+        $strippedNik = ltrim((string)$participant->nik, '0');
+        $judgeCandidates = array_values(array_unique(array_filter([
+            (string)$participant->nik,
+            $strippedNik,
+            '0' . $strippedNik,
+            str_pad($strippedNik, 8, '0', STR_PAD_LEFT),
+            str_pad($strippedNik, 9, '0', STR_PAD_LEFT),
+            (string)$participant->rfid,
+            ltrim((string)$participant->rfid, '0'),
+        ])));
+
+        $matchedJudge = PoolJudge::where('is_active', true)
+            ->where(function ($q) use ($judgeCandidates) {
+                $q->whereIn('nik', $judgeCandidates)
+                    ->orWhereIn('rfid', $judgeCandidates);
+            })
+            ->first();
+
+        $isJudge = !is_null($matchedJudge);
+        $judgeTitle = $isJudge ? ($matchedJudge->title ?: 'Dewan Juri') : null;
+        $judgeVoteWeight = $isJudge ? (int)($matchedJudge->vote_weight > 0 ? $matchedJudge->vote_weight : 10) : 1;
+
         // Simpan session kuis aktif untuk peserta di booth ini
         Session::put('challenge_participant_id', $participant->id);
         Session::put('challenge_booth_id', $booth->id);
+        Session::put('challenge_is_judge', $isJudge);
+        Session::put('challenge_judge_title', $judgeTitle);
+        Session::put('challenge_judge_weight', $judgeVoteWeight);
+
+        $welcomeMsg = $isJudge
+            ? "{$judgeTitle} terverifikasi! Selamat datang, {$participant->name} (Vote bernilai +{$judgeVoteWeight} Poin)"
+            : "Kartu terverifikasi! Selamat datang, {$participant->name} (Booth ke-" . ($participant->booths_voted_count + 1) . " dari 10)";
 
         return response()->json([
             'status' => 'success',
-            'message' => "Kartu terverifikasi! Selamat datang, {$participant->name} (Booth ke-" . ($participant->booths_voted_count + 1) . " dari 10)",
+            'message' => $welcomeMsg,
+            'is_judge' => $isJudge,
+            'judge_title' => $judgeTitle,
+            'judge_vote_weight' => $judgeVoteWeight,
             'participant' => [
                 'name' => $participant->name,
                 'nik' => $participant->nik,
@@ -297,7 +331,40 @@ class PoolQccBoothController extends Controller
         Session::put('challenge_options_map', $displayToOrigMap);
         Session::put('challenge_orig_to_display_map', $origToDisplayMap);
 
-        return view('pool_qcc.booth.challenge', compact('booth', 'participant', 'question', 'shuffledOptions'));
+        $isJudge = (bool) Session::get('challenge_is_judge', false);
+        $judgeTitle = Session::get('challenge_judge_title');
+        $judgeVoteWeight = (int) Session::get('challenge_judge_weight', 10);
+
+        if (!$isJudge) {
+            $strippedNik = ltrim((string)$participant->nik, '0');
+            $judgeCandidates = array_values(array_unique(array_filter([
+                (string)$participant->nik,
+                $strippedNik,
+                '0' . $strippedNik,
+                str_pad($strippedNik, 8, '0', STR_PAD_LEFT),
+                str_pad($strippedNik, 9, '0', STR_PAD_LEFT),
+                (string)$participant->rfid,
+                ltrim((string)$participant->rfid, '0'),
+            ])));
+
+            $matchedJudge = PoolJudge::where('is_active', true)
+                ->where(function ($q) use ($judgeCandidates) {
+                    $q->whereIn('nik', $judgeCandidates)
+                        ->orWhereIn('rfid', $judgeCandidates);
+                })
+                ->first();
+
+            if ($matchedJudge) {
+                $isJudge = true;
+                $judgeTitle = $matchedJudge->title ?: 'Dewan Juri';
+                $judgeVoteWeight = (int)($matchedJudge->vote_weight > 0 ? $matchedJudge->vote_weight : 10);
+                Session::put('challenge_is_judge', true);
+                Session::put('challenge_judge_title', $judgeTitle);
+                Session::put('challenge_judge_weight', $judgeVoteWeight);
+            }
+        }
+
+        return view('pool_qcc.booth.challenge', compact('booth', 'participant', 'question', 'shuffledOptions', 'isJudge', 'judgeTitle', 'judgeVoteWeight'));
     }
 
     /**
@@ -345,15 +412,46 @@ class PoolQccBoothController extends Controller
         $originalKey = $displayToOrigMap[$chosenDisplayAnswer] ?? $chosenDisplayAnswer;
         $correctAnswerOrig = strtoupper($question->correct_answer);
 
+        $isJudge = (bool) Session::get('challenge_is_judge', false);
+        $judgeTitle = Session::get('challenge_judge_title', 'Dewan Juri');
+        $judgeVoteWeight = (int) Session::get('challenge_judge_weight', 10);
+
+        if (!$isJudge) {
+            $strippedNik = ltrim((string)$participant->nik, '0');
+            $judgeCandidates = array_values(array_unique(array_filter([
+                (string)$participant->nik,
+                $strippedNik,
+                '0' . $strippedNik,
+                str_pad($strippedNik, 8, '0', STR_PAD_LEFT),
+                str_pad($strippedNik, 9, '0', STR_PAD_LEFT),
+                (string)$participant->rfid,
+                ltrim((string)$participant->rfid, '0'),
+            ])));
+
+            $matchedJudge = PoolJudge::where('is_active', true)
+                ->where(function ($q) use ($judgeCandidates) {
+                    $q->whereIn('nik', $judgeCandidates)
+                        ->orWhereIn('rfid', $judgeCandidates);
+                })
+                ->first();
+
+            if ($matchedJudge) {
+                $isJudge = true;
+                $judgeTitle = $matchedJudge->title ?: 'Dewan Juri';
+                $judgeVoteWeight = (int)($matchedJudge->vote_weight > 0 ? $matchedJudge->vote_weight : 10);
+            }
+        }
+
         $isCorrect = (strtoupper($originalKey) === $correctAnswerOrig);
-        $pointsEarned = $isCorrect ? ($question->points > 0 ? $question->points : 1) : 0;
+        // Juri / Manajemen mendapatkan bobot poin vote dinamis (default 10 poin), peserta umum 1 poin
+        $pointsEarned = $isCorrect ? ($isJudge ? $judgeVoteWeight : ($question->points > 0 ? $question->points : 1)) : 0;
 
         // Label tampilan kunci jawaban yang benar di layar peserta saat ini
         $correctAnswerDisplay = $origToDisplayMap[$correctAnswerOrig] ?? $correctAnswerOrig;
         $correctAnswerField = 'option_' . strtolower($correctAnswerOrig);
         $correctAnswerText = $question->{$correctAnswerField} ?? '';
 
-        DB::transaction(function () use ($participant, $booth, $question, $originalKey, $isCorrect, $pointsEarned) {
+        DB::transaction(function () use ($participant, $booth, $question, $originalKey, $isCorrect, $pointsEarned, $isJudge) {
             // 1. Simpan Log Vote (Simpan original key A/B/C/D agar konsisten dengan master bank soal)
             PoolVote::create([
                 'participant_id' => $participant->id,
@@ -362,6 +460,7 @@ class PoolQccBoothController extends Controller
                 'participant_answer' => $originalKey,
                 'is_correct' => $isCorrect,
                 'points_awarded' => $pointsEarned,
+                'is_judge_vote' => $isJudge,
                 'answered_at' => Carbon::now(),
             ]);
 
@@ -393,6 +492,9 @@ class PoolQccBoothController extends Controller
             'status' => 'success',
             'is_correct' => $isCorrect,
             'points_earned' => $pointsEarned,
+            'is_judge' => $isJudge,
+            'judge_title' => $judgeTitle,
+            'judge_vote_weight' => $judgeVoteWeight,
             'correct_answer' => $correctAnswerDisplay,
             'correct_answer_display' => $correctAnswerDisplay,
             'correct_answer_text' => $correctAnswerText,
