@@ -335,12 +335,20 @@
                     <span class="hidden sm:inline text-[11px]">Lucky Spin Wheel</span>
                 </a>
 
-                <!-- Simulasi Tes Takeover -->
-                <button type="button" onclick="testTakeoverSimulation()"
+                <!-- Simulasi Tes Takeover Booth -->
+                <button type="button" onclick="testTakeoverSimulation('booth')"
+                    class="p-2 sm:px-3 sm:py-1.5 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-400 to-amber-600 hover:from-amber-400 hover:to-orange-300 text-slate-950 font-black text-xs border-2 border-amber-700 game-btn-3d flex items-center space-x-1.5 cursor-pointer shadow-md"
+                    title="Simulasi Efek Takeover Peringkat Stand Booth">
+                    <i class="fa-solid fa-store text-amber-950"></i>
+                    <span class="hidden sm:inline text-[11px]">Tes Booth</span>
+                </button>
+
+                <!-- Simulasi Tes Takeover Peserta -->
+                <button type="button" onclick="testTakeoverSimulation('participant')"
                     class="p-2 sm:px-3 sm:py-1.5 rounded-2xl bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-400 hover:to-pink-400 text-white font-black text-xs border-2 border-rose-700 game-btn-3d flex items-center space-x-1.5 cursor-pointer shadow-md"
-                    title="Simulasi Efek Takeover Peringkat">
+                    title="Simulasi Efek Takeover Peringkat Peserta">
                     <i class="fa-solid fa-bolt text-yellow-300"></i>
-                    <span class="hidden sm:inline text-[11px]">Tes Takeover</span>
+                    <span class="hidden sm:inline text-[11px]">Tes Peserta</span>
                 </button>
             </div>
 
@@ -802,9 +810,10 @@
 
             const rectOvertaker = rawOvertaker.getBoundingClientRect();
             const rectOvertaken = rawOvertaken.getBoundingClientRect();
+            const dx = rectOvertaker.left - rectOvertaken.left;
             const dy = rectOvertaker.top - rectOvertaken.top;
 
-            if (Math.abs(dy) < 5) {
+            if (Math.abs(dy) < 5 && Math.abs(dx) < 5) {
                 if (onComplete) onComplete();
                 return;
             }
@@ -842,14 +851,14 @@
             }
 
             // Phase 1: Pull out sideways with nitro flare
-            $overtaker.css('transform', 'translate(22px, 0px) scale(1.05)');
+            $overtaker.css('transform', 'translate(16px, 0px) scale(1.04)');
             $overtaken.css('transform', 'translate(-12px, 0px) scale(0.96)');
 
             // Phase 2: High-speed surge past the rival
             setTimeout(() => {
                 $overtaker.css({
                     'transition': 'transform 0.65s cubic-bezier(0.12, 0.8, 0.2, 1.25)',
-                    'transform': `translate(22px, -${dy}px) scale(1.06)`
+                    'transform': `translate(16px, -${dy}px) scale(1.05)`
                 });
                 $overtaken.css({
                     'transition': 'transform 0.65s cubic-bezier(0.12, 0.8, 0.2, 1.25)',
@@ -940,14 +949,14 @@
                         const bRank1 = $overtaker.attr('data-booth-rank');
                         const bRank2 = $overtaken.attr('data-booth-rank');
                         if (bRank1 !== undefined && bRank2 !== undefined) {
-                            $overtaker.attr('data-booth-rank', bRank2);
-                            $overtaken.attr('data-booth-rank', bRank1);
+                            $overtaker.attr('data-booth-rank', bRank2).data('booth-rank', bRank2);
+                            $overtaken.attr('data-booth-rank', bRank1).data('booth-rank', bRank1);
                         }
                         const pRank1 = $overtaker.attr('data-participant-rank');
                         const pRank2 = $overtaken.attr('data-participant-rank');
                         if (pRank1 !== undefined && pRank2 !== undefined) {
-                            $overtaker.attr('data-participant-rank', pRank2);
-                            $overtaken.attr('data-participant-rank', p1);
+                            $overtaker.attr('data-participant-rank', pRank2).data('participant-rank', pRank2);
+                            $overtaken.attr('data-participant-rank', pRank1).data('participant-rank', pRank1);
                         }
 
                         // Victory confetti celebration
@@ -1015,40 +1024,67 @@
             }, 4500);
         }
 
-        function testTakeoverSimulation() {
+        let lastSimulationType = 'participant';
+
+        function testTakeoverSimulation(targetType = null) {
             if (isAnimatingTakeover) return;
 
             // Pause auto-refresh and give user 15s to view simulated takeover before next auto-sync
             countdown = 15;
             if (timerEl) timerEl.textContent = countdown + 's';
 
-            // 1. Cari kolom peserta yang memiliki minimal 2 kandidat dalam 1 kolom reward
+            if (!targetType) {
+                targetType = (lastSimulationType === 'participant' ? 'booth' : 'participant');
+            }
+            lastSimulationType = targetType;
+
             let $cards = null;
-            let isBooth = false;
+            let isBooth = (targetType === 'booth');
 
-            $('#participantsListWrapper .infinite-scroll-content').each(function() {
-                const $c = $(this).children('[data-participant-id]:not(.infinite-clone-item)');
-                if ($c.length >= 2) {
-                    $cards = $c;
-                    return false;
+            if (isBooth) {
+                const $boothListCards = $('[data-scroll-key="booth-list"] .infinite-scroll-content').children('[data-booth-id]:not(.infinite-clone-item)');
+                if ($boothListCards.length >= 2) {
+                    $cards = $boothListCards;
+                } else {
+                    const $allBoothCards = $('[data-booth-id]:not(.infinite-clone-item)');
+                    if ($allBoothCards.length >= 2) {
+                        $cards = $allBoothCards;
+                    }
                 }
-            });
+            } else {
+                $('#participantsListWrapper .infinite-scroll-content').each(function() {
+                    const $c = $(this).children('[data-participant-id]:not(.infinite-clone-item)');
+                    if ($c.length >= 2) {
+                        $cards = $c;
+                        return false;
+                    }
+                });
+            }
 
-            // 2. Jika peserta belum ada minimal 2 dalam 1 kolom, gunakan list booth yang bertanding
             if (!$cards || $cards.length < 2) {
-                const $boothCards = $('.infinite-scroll-content [data-booth-id]:not(.infinite-clone-item)');
-                if ($boothCards.length >= 2) {
-                    $cards = $boothCards;
-                    isBooth = true;
+                if (isBooth) {
+                    $('#participantsListWrapper .infinite-scroll-content').each(function() {
+                        const $c = $(this).children('[data-participant-id]:not(.infinite-clone-item)');
+                        if ($c.length >= 2) {
+                            $cards = $c;
+                            isBooth = false;
+                            return false;
+                        }
+                    });
+                } else {
+                    const $boothListCards = $('[data-scroll-key="booth-list"] .infinite-scroll-content').children('[data-booth-id]:not(.infinite-clone-item)');
+                    if ($boothListCards.length >= 2) {
+                        $cards = $boothListCards;
+                        isBooth = true;
+                    }
                 }
             }
 
-            // 3. Fallback jika benar-benar tidak ada 2 kartu
             if (!$cards || $cards.length < 2) {
                 showTakeoverHUD({
-                    type: 'participant',
+                    type: isBooth ? 'booth' : 'participant',
                     id: 999,
-                    name: 'Peserta Bintang',
+                    name: isBooth ? 'Stand Inovasi' : 'Peserta Bintang',
                     oldRank: 2,
                     newRank: 1,
                     delta: 1
