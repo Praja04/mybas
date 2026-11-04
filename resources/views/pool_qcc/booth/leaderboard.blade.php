@@ -510,6 +510,7 @@
         let isFirstLoad = true;
         let isAnimatingTakeover = false;
         var isSpinning = false; // Fallback definition to avoid ReferenceError
+        let currentArenaHtml = '';
         const previousBoothRanks = {};
         const previousParticipantRanks = {};
 
@@ -534,6 +535,7 @@
 
         $(document).ready(function() {
             cacheInitialRanks();
+            currentArenaHtml = $('#arenaContainer').html() || '';
             // Start infinite scroll once layout is ready, with an initial 1.2s stationary hold so items don't jerk
             setTimeout(function() {
                 initInfiniteScroll(1200);
@@ -629,11 +631,32 @@
                 }
             }
 
+            // SMOOTH LIVE SYNC: If HTML and ranks have not changed, DO NOT wipe DOM!
+            // This prevents resetting scroll and allows the infinite animation to glide uninterrupted!
+            if (!isFirstLoad && currentArenaHtml && response.arena_html && response.arena_html.trim() === currentArenaHtml.trim()) {
+                if (response.total_votes !== undefined) {
+                    $('#statTotalVotes').text(response.total_votes);
+                }
+                if (response.total_participants !== undefined) {
+                    $('#statTotalParticipants').text(response.total_participants);
+                }
+                return;
+            }
+
             commitNewArenaHTML(response, takeovers);
         }
 
         function commitNewArenaHTML(response, takeovers) {
+            // Snapshot current scroll positions by persistent string key so re-renders NEVER reset to 0
+            const savedPositions = new Map();
+            infiniteScrollTracks.forEach(t => {
+                if (t.key && typeof t.pos === 'number') {
+                    savedPositions.set(t.key, t.pos);
+                }
+            });
+
             $('#arenaContainer').html(response.arena_html);
+            currentArenaHtml = response.arena_html;
 
             if (response.participant_ranks) {
                 response.participant_ranks.forEach(p => {
@@ -659,8 +682,8 @@
                 showTakeoverHUD(topTakeover);
             }
 
-            // Re-initialize Infinite Scroll on updated DOM
-            setTimeout(initInfiniteScroll, 300);
+            // Immediately restore scroll positions with 0 initial delay so animation never stutters
+            initInfiniteScroll(0, savedPositions);
         }
 
         // ========================================================
@@ -901,25 +924,30 @@
         let infiniteScrollRafId = null;
         let infiniteScrollLastTime = null;
 
-        function initInfiniteScroll(initialDelayMs = 0) {
+        function initInfiniteScroll(initialDelayMs = 0, explicitPositions = null) {
             if (infiniteScrollRafId) {
                 cancelAnimationFrame(infiniteScrollRafId);
                 infiniteScrollRafId = null;
             }
 
-            // Preserve current scroll offsets so re-renders/resizes never jerk
+            // Preserve current scroll offsets using String Key so DOM updates NEVER reset position
             const prevOffsets = new Map();
-            infiniteScrollTracks.forEach(t => {
-                if (t.container && typeof t.pos === 'number') {
-                    prevOffsets.set(t.container, t.pos);
-                }
-            });
+            if (explicitPositions instanceof Map) {
+                explicitPositions.forEach((val, key) => prevOffsets.set(key, val));
+            } else {
+                infiniteScrollTracks.forEach(t => {
+                    if (t.key && typeof t.pos === 'number') {
+                        prevOffsets.set(t.key, t.pos);
+                    }
+                });
+            }
 
             infiniteScrollTracks = [];
 
-            $('.infinite-scroll-container').each(function() {
+            $('.infinite-scroll-container').each(function(index) {
                 const container = this;
                 const $container = $(container);
+                const scrollKey = $container.data('scroll-key') || container.id || ('track-' + index);
                 const $content = $container.find('.infinite-scroll-content');
                 if (!$content.length) return;
 
@@ -991,10 +1019,11 @@
                     cloneBatches++;
                 }
 
-                const prevPos = prevOffsets.get(container) || 0;
-                const startingPos = (prevPos % loopDistance);
+                const prevPos = prevOffsets.has(scrollKey) ? prevOffsets.get(scrollKey) : 0;
+                const startingPos = (loopDistance > 0 ? (prevPos % loopDistance) : 0);
 
                 const trackObj = {
+                    key: scrollKey,
                     container: container,
                     content: $content[0],
                     loopDistance: loopDistance,
@@ -1004,7 +1033,7 @@
                     startAfter: Date.now() + initialDelayMs
                 };
 
-                if (startingPos > 0) {
+                trackObj.content.style.transform = `translate3d(0, -${startingPos.toFixed(2)}px, 0)`;
                     trackObj.content.style.transform = `translate3d(0, -${startingPos.toFixed(2)}px, 0)`;
                 }
 
