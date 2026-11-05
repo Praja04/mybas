@@ -434,6 +434,20 @@
         `);
             } else {
                 booth.evaluations.forEach(e => {
+                    let criteriaHtml = '';
+                    if (e.criteria_scores && Array.isArray(e.criteria_scores) && e.criteria_scores.length > 0) {
+                        criteriaHtml = '<div class="mt-2.5 pt-2 border-t border-slate-200/60 dark:border-slate-700/60 grid grid-cols-1 sm:grid-cols-2 gap-1.5">';
+                        e.criteria_scores.forEach(cs => {
+                            criteriaHtml += `
+                                <div class="px-2 py-1 rounded-lg bg-white/80 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800 text-[10px] flex items-center justify-between">
+                                    <span class="text-slate-600 dark:text-slate-400 truncate pr-1" title="${cs.name}">${cs.name} (${cs.weight}%)</span>
+                                    <span class="font-black text-indigo-600 dark:text-indigo-400 font-mono">${cs.score}</span>
+                                </div>
+                            `;
+                        });
+                        criteriaHtml += '</div>';
+                    }
+
                     $list.append(`
                 <div class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60">
                     <div class="flex items-center justify-between mb-1.5">
@@ -443,15 +457,16 @@
                             </span>
                             <div>
                                 <h5 class="text-xs font-extrabold text-slate-900 dark:text-white">${e.judge_name}</h5>
-                                <span class="text-[10px] text-slate-400">${e.judge_dept}</span>
+                                <span class="text-[10px] text-slate-400">${e.judge_dept} &bull; ${e.evaluated_at}</span>
                             </div>
                         </div>
                         <div class="text-right">
-                            <span class="px-2.5 py-1 rounded-xl text-xs font-black bg-emerald-500 text-white">
+                            <span class="px-2.5 py-1 rounded-xl text-xs font-black bg-emerald-500 text-white shadow-xs">
                                 ${Number(e.score).toFixed(2)}
                             </span>
                         </div>
                     </div>
+                    ${criteriaHtml}
                     ${e.notes ? `<div class="mt-2 text-xs italic text-slate-600 dark:text-slate-400 p-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800">"${e.notes}"</div>` : ''}
                 </div>
             `);

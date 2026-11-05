@@ -111,12 +111,12 @@
 
                 <!-- Manual input trigger if needed -->
                 <div
-                    class="pt-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-center space-x-4 text-xs text-slate-500 dark:text-slate-400">
-                    <span>Kendala scanner?</span>
-                    <button type="button"
-                        onclick="document.getElementById('rfidBoothInput').focus(); document.getElementById('rfidBoothInput').placeholder='Ketik NIK/No Kartu lalu Enter';"
-                        class="text-indigo-600 dark:text-indigo-400 hover:underline font-bold">
-                        Input Manual
+                    class="pt-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-center space-x-3 text-xs text-slate-500 dark:text-slate-400">
+                    <span>Kendala scanner atau kartu belum terdaftar?</span>
+                    <button type="button" onclick="openManualModal()"
+                        class="px-3.5 py-1.5 rounded-xl font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/40 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 border border-indigo-200 dark:border-indigo-800/60 transition flex items-center space-x-1 cursor-pointer">
+                        <i class="fa-solid fa-keyboard mr-1 text-xs"></i>
+                        <span>Input Manual (NIK & Nama)</span>
                     </button>
                 </div>
             </div>
@@ -125,7 +125,7 @@
             <div
                 class="mt-8 pt-4 border-t border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-center gap-6 text-xs text-slate-500 dark:text-slate-400">
                 <span class="flex items-center"><i
-                        class="fa-solid fa-check text-emerald-600 dark:text-emerald-400 mr-1.5 font-bold"></i> Maksimal 3
+                        class="fa-solid fa-check text-emerald-600 dark:text-emerald-400 mr-1.5 font-bold"></i> Maksimal 10
                     Booth / Peserta</span>
                 <span class="flex items-center"><i
                         class="fa-solid fa-1 text-indigo-600 dark:text-indigo-400 mr-1.5 font-bold"></i> 1x Vote per
@@ -133,6 +133,89 @@
                 <span class="flex items-center"><i class="fa-solid fa-trophy text-amber-500 mr-1.5 font-bold"></i> Jawaban
                     Benar = +1 Poin Peserta & Booth</span>
             </div>
+        </div>
+    </div>
+
+    <!-- ============================================================== -->
+    <!-- MODAL: INPUT MANUAL PESERTA QCC (NIK + NAMA)                  -->
+    <!-- ============================================================== -->
+    <div id="modalManualInput" class="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="glass-panel w-full max-w-md rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl p-6 sm:p-8 relative overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <!-- Close Button -->
+            <button type="button" onclick="closeManualModal()"
+                class="absolute top-5 right-5 w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-slate-700 dark:hover:text-white flex items-center justify-center transition cursor-pointer">
+                <i class="fa-solid fa-xmark text-sm"></i>
+            </button>
+
+            <!-- Header -->
+            <div class="flex items-center space-x-3 mb-5 pb-4 border-b border-slate-100 dark:border-slate-800">
+                <div class="w-10 h-10 rounded-2xl bg-indigo-600 text-white flex items-center justify-center text-lg shadow-md shadow-indigo-600/30 flex-shrink-0">
+                    <i class="fa-solid fa-user-pen"></i>
+                </div>
+                <div>
+                    <h3 class="text-base font-extrabold text-slate-900 dark:text-white leading-tight">
+                        Input Manual Peserta
+                    </h3>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">
+                        Booth <strong>{{ $booth->code }}</strong> &bull; {{ $booth->name }}
+                    </p>
+                </div>
+            </div>
+
+            <!-- Notice -->
+            <div class="mb-4 p-3 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800/60 text-xs text-indigo-700 dark:text-indigo-300 flex items-start space-x-2">
+                <i class="fa-solid fa-circle-info mt-0.5 text-indigo-500 flex-shrink-0"></i>
+                <span class="leading-relaxed">
+                    Masukkan NIK dan Nama lengkap peserta. Data otomatis terdaftar sebagai <strong>Peserta QCC</strong> tanpa pengecekan database pusat.
+                </span>
+            </div>
+
+            <!-- Error Banner -->
+            <div id="manualInputError" class="hidden mb-4 p-3 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-xs text-rose-700 dark:text-rose-300 font-bold flex items-start space-x-2">
+                <i class="fa-solid fa-circle-exclamation mt-0.5 text-rose-500 flex-shrink-0"></i>
+                <span id="manualInputErrorMessage" class="leading-relaxed">Terjadi kesalahan.</span>
+            </div>
+
+            <!-- Form -->
+            <form id="formManualParticipant" onsubmit="handleManualSubmit(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 uppercase tracking-wider">
+                        Nomor NIK / ID Peserta <span class="text-rose-500">*</span>
+                    </label>
+                    <input type="text" id="manualNikInput" required autocomplete="off"
+                        placeholder="Contoh: 120000086 atau NIK Peserta..."
+                        class="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-900/80 border border-slate-300 dark:border-slate-700 text-sm font-mono font-bold text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 uppercase tracking-wider">
+                        Nama Lengkap Peserta <span class="text-rose-500">*</span>
+                    </label>
+                    <input type="text" id="manualNameInput" required autocomplete="off"
+                        placeholder="Masukkan nama lengkap peserta..."
+                        class="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-900/80 border border-slate-300 dark:border-slate-700 text-sm font-bold text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 uppercase tracking-wider">
+                        Departemen
+                    </label>
+                    <input type="text" value="Peserta QCC" readonly
+                        class="w-full px-4 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-500 dark:text-slate-400 cursor-not-allowed">
+                </div>
+
+                <div class="pt-3 flex items-center space-x-3">
+                    <button type="button" onclick="closeManualModal()"
+                        class="w-1/3 py-3 rounded-xl text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 transition cursor-pointer">
+                        Batal
+                    </button>
+                    <button type="submit" id="btnSubmitManual"
+                        class="w-2/3 py-3 rounded-xl text-xs font-black bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white shadow-lg shadow-indigo-600/25 transition flex items-center justify-center space-x-2 cursor-pointer">
+                        <i class="fa-solid fa-play text-xs"></i>
+                        <span>Mulai Kuis Booth</span>
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 @endsection
@@ -143,9 +226,11 @@
         const scanStatus = document.getElementById('scanStatus');
         const boothId = {{ $booth->id }};
 
-        // Auto focus terus pada input scanner
+        // Auto focus terus pada input scanner jika modal manual tidak terbuka
         setInterval(() => {
-            if (document.activeElement !== rfidInput && !document.querySelector('input:focus')) {
+            const modal = document.getElementById('modalManualInput');
+            const isModalOpen = modal && !modal.classList.contains('hidden');
+            if (!isModalOpen && document.activeElement !== rfidInput && !document.querySelector('input:focus')) {
                 rfidInput.focus();
             }
         }, 2000);
@@ -212,6 +297,94 @@
                     rfidInput.value = '';
                     rfidInput.focus();
                 });
+        }
+
+        // ==============================================================
+        // MODAL MANUAL INPUT HANDLERS
+        // ==============================================================
+        function openManualModal() {
+            document.getElementById('manualInputError').classList.add('hidden');
+            document.getElementById('manualNikInput').value = '';
+            document.getElementById('manualNameInput').value = '';
+            document.getElementById('modalManualInput').classList.remove('hidden');
+            setTimeout(() => {
+                document.getElementById('manualNikInput').focus();
+            }, 100);
+        }
+
+        function closeManualModal() {
+            document.getElementById('modalManualInput').classList.add('hidden');
+            rfidInput.disabled = false;
+            rfidInput.focus();
+        }
+
+        function handleManualSubmit(e) {
+            e.preventDefault();
+            const nik = document.getElementById('manualNikInput').value.trim();
+            const name = document.getElementById('manualNameInput').value.trim();
+
+            if (!nik || !name) {
+                showManualError('NIK dan Nama lengkap wajib diisi.');
+                return;
+            }
+
+            const btn = document.getElementById('btnSubmitManual');
+            const origHtml = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin mr-1.5"></i> Memproses...';
+            document.getElementById('manualInputError').classList.add('hidden');
+
+            fetch(`/pool-qcc/booth/${boothId}/scan-rfid`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: JSON.stringify({
+                    rfid: nik,
+                    nik: nik,
+                    name: name,
+                    is_manual: true
+                })
+            })
+            .then(res => res.json().then(data => ({ httpStatus: res.status, data })))
+            .then(({ httpStatus, data }) => {
+                btn.disabled = false;
+                btn.innerHTML = origHtml;
+
+                if (data.status === 'success') {
+                    closeManualModal();
+                    scanStatus.className =
+                        'my-4 p-4 rounded-2xl text-xs sm:text-sm font-bold bg-emerald-50 text-emerald-800 border border-emerald-300 shadow-sm';
+                    scanStatus.innerHTML =
+                        `<i class="fa-solid fa-circle-check text-emerald-600 mr-2"></i> ${data.message} &bull; Memuat kuis...`;
+                    scanStatus.classList.remove('hidden');
+
+                    confetti({
+                        particleCount: 50,
+                        spread: 60,
+                        origin: { y: 0.6 }
+                    });
+
+                    setTimeout(() => {
+                        window.location.href = data.redirect_url;
+                    }, 600);
+                } else {
+                    showManualError(data.message || 'Gagal memproses peserta.');
+                }
+            })
+            .catch(err => {
+                btn.disabled = false;
+                btn.innerHTML = origHtml;
+                showManualError(err.message || 'Terjadi kesalahan jaringan.');
+            });
+        }
+
+        function showManualError(msg) {
+            const errBox = document.getElementById('manualInputError');
+            const errMsg = document.getElementById('manualInputErrorMessage');
+            errMsg.textContent = msg;
+            errBox.classList.remove('hidden');
         }
     </script>
 @endsection

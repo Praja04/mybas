@@ -12,12 +12,14 @@ class PoolJudgeEvaluation extends Model
         'judge_id',
         'booth_id',
         'score',
+        'criteria_scores',
         'notes',
         'evaluated_at',
     ];
 
     protected $casts = [
         'score' => 'float',
+        'criteria_scores' => 'array',
         'evaluated_at' => 'datetime',
     ];
 
@@ -30,5 +32,9 @@ class PoolJudgeEvaluation extends Model
     {
         return $this->belongsTo(PoolBooth::class, 'booth_id');
     }
-}
 
+    public function details()
+    {
+        return $this->hasMany(PoolJudgeEvaluationDetail::class, 'evaluation_id');
+    }
+}

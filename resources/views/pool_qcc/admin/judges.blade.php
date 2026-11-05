@@ -97,11 +97,16 @@
                         <i class="fa-solid fa-magnifying-glass"></i>
                         <span>Cek Identitas</span>
                     </button>
+                    <button type="button" onclick="openManualJudgeModal()"
+                        class="px-5 py-3.5 rounded-2xl bg-amber-500 hover:bg-amber-600 text-white text-sm font-extrabold transition shadow-lg shadow-amber-500/25 flex items-center justify-center space-x-2 cursor-pointer flex-shrink-0">
+                        <i class="fa-solid fa-keyboard"></i>
+                        <span>Input Manual</span>
+                    </button>
                 </div>
             </form>
             <div class="mt-2 text-[11px] text-slate-400 flex items-center space-x-2">
                 <i class="fa-solid fa-circle-info text-indigo-500"></i>
-                <span>Data profil (nama, foto, departemen) akan otomatis disinkronkan dari database karyawan pusat.</span>
+                <span>Gunakan <strong>Cek Identitas</strong> untuk sinkron dari database karyawan pusat, atau klik <strong>Input Manual</strong> jika data belum terdaftar di database.</span>
             </div>
         </div>
     </div>
@@ -320,6 +325,117 @@
         </form>
     </div>
 </div>
+
+<!-- ============================================================== -->
+<!-- MODAL 3: INPUT MANUAL JURI / MANAJEMEN                         -->
+<!-- ============================================================== -->
+<div id="modalManualJudge" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="glass-panel rounded-3xl max-w-lg w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-2xl overflow-hidden animate-scale-up">
+        <!-- Modal Header -->
+        <div class="px-6 py-5 bg-gradient-to-r from-amber-500 to-indigo-600 text-white flex items-center justify-between">
+            <div class="flex items-center space-x-2.5">
+                <div class="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center text-sm">
+                    <i class="fa-solid fa-user-plus"></i>
+                </div>
+                <div>
+                    <h3 class="font-extrabold text-base leading-tight">Pendaftaran Manual Juri / Manajemen</h3>
+                    <p class="text-[11px] text-white/80">Input langsung tanpa verifikasi database pusat</p>
+                </div>
+            </div>
+            <button type="button" onclick="closeManualJudgeModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/25 flex items-center justify-center text-white text-xs transition">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <!-- Modal Body -->
+        <form id="manualJudgeForm" onsubmit="saveManualJudge(event)" class="p-6 space-y-4">
+            <!-- NIK / No. Identitas -->
+            <div>
+                <label for="manualJudgeNik" class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 uppercase tracking-wider">
+                    NIK / No. Identitas <span class="text-rose-500">*</span>:
+                </label>
+                <div class="relative">
+                    <i class="fa-solid fa-id-badge absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                    <input type="text" id="manualJudgeNik" required placeholder="Contoh: 120000086"
+                        class="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs text-slate-900 dark:text-white font-mono font-bold focus:outline-none focus:border-amber-500">
+                </div>
+            </div>
+
+            <!-- Nama Lengkap -->
+            <div>
+                <label for="manualJudgeName" class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 uppercase tracking-wider">
+                    Nama Lengkap <span class="text-rose-500">*</span>:
+                </label>
+                <div class="relative">
+                    <i class="fa-solid fa-user absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                    <input type="text" id="manualJudgeName" required placeholder="Contoh: Bpk. Bambang Sutrisno"
+                        class="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs text-slate-900 dark:text-white font-bold focus:outline-none focus:border-amber-500">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <!-- Gelar / Peran Dropdown -->
+                <div>
+                    <label for="manualJudgeTitle" class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 uppercase tracking-wider">
+                        Gelar / Peranan:
+                    </label>
+                    <select id="manualJudgeTitle" required class="w-full px-3 py-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs text-slate-900 dark:text-white font-bold focus:outline-none focus:border-amber-500">
+                        <option value="Juri" selected>Juri</option>
+                        <option value="Factory Manager">Factory Manager</option>
+                        <option value="Direktur">Direktur</option>
+                    </select>
+                </div>
+
+                <!-- Bobot Poin Vote -->
+                <div>
+                    <label for="manualJudgeVoteWeight" class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 uppercase tracking-wider">
+                        Bobot Poin Vote:
+                    </label>
+                    <div class="relative">
+                        <input type="number" id="manualJudgeVoteWeight" min="1" max="100" value="10" required
+                            class="w-full px-3 py-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs text-slate-900 dark:text-white font-bold focus:outline-none focus:border-amber-500">
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <!-- Departemen -->
+                <div>
+                    <label for="manualJudgeDept" class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 uppercase tracking-wider">
+                        Departemen:
+                    </label>
+                    <input type="text" id="manualJudgeDept" value="Dewan Juri" placeholder="Contoh: Dewan Juri / Management"
+                        class="w-full px-3 py-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs text-slate-900 dark:text-white font-medium focus:outline-none focus:border-amber-500">
+                </div>
+
+                <!-- No. Kartu RFID (Opsional) -->
+                <div>
+                    <label for="manualJudgeRfid" class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 uppercase tracking-wider">
+                        No. Kartu RFID (Opsional):
+                    </label>
+                    <input type="text" id="manualJudgeRfid" placeholder="Contoh: 0012345678"
+                        class="w-full px-3 py-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs text-slate-900 dark:text-white font-mono focus:outline-none focus:border-amber-500">
+                </div>
+            </div>
+
+            <div class="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-[11px] text-amber-800 dark:text-amber-300 flex items-start space-x-2">
+                <i class="fa-solid fa-triangle-exclamation text-amber-500 mt-0.5"></i>
+                <span>Data ini akan langsung disimpan ke sistem Pool QCC tanpa membutuhkan verifikasi kartu dari database pusat.</span>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end space-x-3">
+                <button type="button" onclick="closeManualJudgeModal()" class="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition">
+                    Batal
+                </button>
+                <button type="submit" id="btnSaveManualJudge" class="px-5 py-2.5 rounded-xl text-xs font-extrabold bg-amber-500 hover:bg-amber-600 text-white shadow-md shadow-amber-500/30 transition flex items-center space-x-2 cursor-pointer">
+                    <i class="fa-solid fa-check"></i>
+                    <span>Simpan & Daftarkan</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
 @endsection
 
 @section('scripts')
@@ -523,14 +639,23 @@ function handleLookup(e) {
         },
         error: function(xhr) {
             $btn.prop('disabled', false).html(origHtml);
-            const msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Karyawan tidak ditemukan di database.';
+            const msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Karyawan tidak ditemukan di database pusat.';
             Swal.fire({
-                icon: 'error',
+                icon: 'question',
                 title: 'Data Tidak Ditemukan',
-                text: msg,
-                confirmButtonColor: '#4f46e5',
+                html: `${escapeHtml(msg)}<br><span class="text-xs text-slate-500 dark:text-slate-400 mt-2 block">Apakah Anda ingin mendaftarkannya secara manual?</span>`,
+                showCancelButton: true,
+                confirmButtonColor: '#f59e0b',
+                cancelButtonColor: '#64748b',
+                confirmButtonText: '<i class="fa-solid fa-keyboard mr-1"></i> Input Manual',
+                cancelButtonText: 'Batal',
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    openManualJudgeModal(inputVal);
+                } else {
+                    $('#judgeScanInput').select().focus();
+                }
             });
-            $('#judgeScanInput').select().focus();
         }
     });
 }
@@ -744,6 +869,91 @@ function deleteJudge(id, name) {
                     });
                     loadJudgesData();
                 }
+            });
+        }
+    });
+}
+
+// ==============================================================
+// MODAL 3: INPUT MANUAL JURI / MANAJEMEN HANDLERS
+// ==============================================================
+function openManualJudgeModal(prefillNik = '') {
+    $('#manualJudgeForm')[0].reset();
+    $('#manualJudgeNik').val(prefillNik);
+    $('#manualJudgeDept').val('Dewan Juri');
+    $('#manualJudgeTitle').val('Juri');
+    $('#manualJudgeVoteWeight').val(10);
+    $('#modalManualJudge').removeClass('hidden');
+    setTimeout(() => {
+        if (prefillNik) {
+            $('#manualJudgeName').focus();
+        } else {
+            $('#manualJudgeNik').focus();
+        }
+    }, 100);
+}
+
+function closeManualJudgeModal() {
+    $('#modalManualJudge').addClass('hidden');
+    $('#judgeScanInput').focus();
+}
+
+function saveManualJudge(e) {
+    e.preventDefault();
+    const nik = $('#manualJudgeNik').val().trim();
+    const name = $('#manualJudgeName').val().trim();
+    const dept = $('#manualJudgeDept').val().trim() || 'Dewan Juri';
+    const title = $('#manualJudgeTitle').val() || 'Juri';
+    const weight = $('#manualJudgeVoteWeight').val() || 10;
+    const rfid = $('#manualJudgeRfid').val().trim() || null;
+
+    if (!nik || !name) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Form Belum Lengkap',
+            text: 'NIK dan Nama Lengkap wajib diisi.',
+            confirmButtonColor: '#4f46e5'
+        });
+        return;
+    }
+
+    const $btn = $('#btnSaveManualJudge');
+    const origHtml = $btn.html();
+    $btn.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin mr-1.5"></i> Menyimpan...');
+
+    $.ajax({
+        url: "{{ route('pool-qcc.admin.judges.store') }}",
+        type: 'POST',
+        data: {
+            _token: "{{ csrf_token() }}",
+            nik: nik,
+            name: name,
+            department: dept,
+            title: title,
+            vote_weight: weight,
+            rfid: rfid
+        },
+        dataType: 'json',
+        success: function(res) {
+            $btn.prop('disabled', false).html(origHtml);
+            closeManualJudgeModal();
+            Swal.fire({
+                icon: 'success',
+                title: 'Berhasil Didaftarkan!',
+                text: res.message || 'Juri / Manajemen berhasil didaftarkan secara manual!',
+                confirmButtonColor: '#4f46e5',
+                timer: 2000
+            });
+            loadJudgesData();
+        },
+        error: function(xhr) {
+            $btn.prop('disabled', false).html(origHtml);
+            const msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Gagal menyimpan data juri.';
+            Swal.fire({
+                icon: 'error',
+                title: 'Gagal Menyimpan',
+                text: msg,
+                confirmButtonColor: '#4f46e5'
             });
         }
     });

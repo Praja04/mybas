@@ -12,8 +12,13 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
 use RealRashid\SweetAlert\Facades\Alert;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\PoolQCC\TemplateBoothExport;
+use App\Exports\PoolQCC\TemplateQuestionExport;
 use App\Models\PoolQCC\PoolJudge;
 use App\Models\PoolQCC\PoolJudgeEvaluation;
+use App\Models\PoolQCC\PoolEvaluationCriterion;
+use App\Models\PoolQCC\PoolJudgeEvaluationDetail;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 
@@ -972,5 +977,451 @@ class PoolQccAdminController extends Controller
             'status' => 'success',
             'message' => "Dewan Juri {$name} berhasil dihapus dari sistem.",
         ]);
+    }
+
+    /**
+     * Halaman Manajemen Kriteria Penilaian Booth Dewan Juri
+     */
+    public function criteria(Request $request)
+    {
+        return view('pool_qcc.admin.criteria');
+    }
+
+    /**
+     * API Data Kriteria Penilaian Booth
+     */
+    public function getCriteriaData(Request $request)
+    {
+        $criteria = PoolEvaluationCriterion::orderBy('order', 'asc')
+            ->orderBy('id', 'asc')
+            ->get();
+
+        $totalWeight = $criteria->where('is_active', true)->sum('weight');
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $criteria,
+            'meta' => [
+                'total_criteria' => $criteria->count(),
+                'active_criteria' => $criteria->where('is_active', true)->count(),
+                'total_active_weight' => round($totalWeight, 2),
+            ]
+        ]);
+    }
+
+    /**
+     * Simpan Kriteria Penilaian Baru
+     */
+    public function storeCriterion(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string|max:1000',
+            'weight' => 'required|numeric|min:0|max:100',
+            'max_score' => 'nullable|numeric|min:1|max:1000',
+            'order' => 'nullable|integer|min:0',
+            'is_active' => 'nullable|boolean',
+        ], [
+            'name.required' => 'Nama kriteria wajib diisi.',
+            'weight.required' => 'Bobot kriteria wajib diisi.',
+            'weight.numeric' => 'Bobot kriteria harus berupa angka.',
+            'weight.min' => 'Bobot kriteria minimal 0%.',
+            'weight.max' => 'Bobot kriteria maksimal 100%.',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => $validator->errors()->first(),
+            ], 422);
+        }
+
+        $criterion = PoolEvaluationCriterion::create([
+            'name' => trim($request->name),
+            'description' => $request->description ? trim($request->description) : null,
+            'weight' => (float)$request->weight,
+            'max_score' => $request->max_score ? (float)$request->max_score : 100.00,
+            'order' => $request->has('order') && $request->order !== null ? (int)$request->order : ((int)PoolEvaluationCriterion::max('order') + 1),
+            'is_active' => $request->has('is_active') ? (bool)$request->is_active : true,
+        ]);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => "Kriteria '{$criterion->name}' (Bobot: {$criterion->weight}%) berhasil ditambahkan!",
+            'data' => $criterion,
+        ]);
+    }
+
+    /**
+     * Update Kriteria Penilaian
+     */
+    public function updateCriterion(Request $request, $id)
+    {
+        $criterion = PoolEvaluationCriterion::findOrFail($id);
+
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string|max:1000',
+            'weight' => 'required|numeric|min:0|max:100',
+            'max_score' => 'nullable|numeric|min:1|max:1000',
+            'order' => 'nullable|integer|min:0',
+            'is_active' => 'nullable|boolean',
+        ], [
+            'name.required' => 'Nama kriteria wajib diisi.',
+            'weight.required' => 'Bobot kriteria wajib diisi.',
+            'weight.numeric' => 'Bobot kriteria harus berupa angka.',
+            'weight.min' => 'Bobot kriteria minimal 0%.',
+            'weight.max' => 'Bobot kriteria maksimal 100%.',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => $validator->errors()->first(),
+            ], 422);
+        }
+
+        $criterion->update([
+            'name' => trim($request->name),
+            'description' => $request->description ? trim($request->description) : null,
+            'weight' => (float)$request->weight,
+            'max_score' => $request->max_score ? (float)$request->max_score : 100.00,
+            'order' => $request->has('order') && $request->order !== null ? (int)$request->order : $criterion->order,
+            'is_active' => $request->has('is_active') ? (bool)$request->is_active : $criterion->is_active,
+        ]);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => "Kriteria '{$criterion->name}' berhasil diperbarui!",
+            'data' => $criterion,
+        ]);
+    }
+
+    /**
+     * Toggle Status Aktif Kriteria
+     */
+    public function toggleCriterionStatus($id)
+    {
+        $criterion = PoolEvaluationCriterion::findOrFail($id);
+        $criterion->is_active = !$criterion->is_active;
+        $criterion->save();
+
+        $statusStr = $criterion->is_active ? 'diaktifkan' : 'dinonaktifkan';
+        return response()->json([
+            'status' => 'success',
+            'message' => "Kriteria '{$criterion->name}' berhasil {$statusStr}.",
+            'is_active' => (bool)$criterion->is_active,
+        ]);
+    }
+
+    /**
+     * Hapus Kriteria Penilaian
+     */
+    public function destroyCriterion($id)
+    {
+        $criterion = PoolEvaluationCriterion::findOrFail($id);
+        $name = $criterion->name;
+        $criterion->delete();
+
+        return response()->json([
+            'status' => 'success',
+            'message' => "Kriteria '{$name}' berhasil dihapus dari sistem.",
+        ]);
+    }
+
+    /**
+     * Download Template Excel untuk Import Booth
+     */
+    public function downloadBoothTemplate()
+    {
+        return Excel::download(new TemplateBoothExport, 'template_import_booth_qcc.xlsx');
+    }
+
+    /**
+     * Import Data Booth dari File Excel / CSV
+     */
+    public function importBooths(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'excel_file' => 'required|file|mimes:xlsx,xls,csv,txt|max:5120',
+        ], [
+            'excel_file.required' => 'File Excel wajib dipilih.',
+            'excel_file.mimes' => 'Format file harus berupa .xlsx, .xls, atau .csv.',
+            'excel_file.max' => 'Ukuran file maksimal adalah 5MB.',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => $validator->errors()->first(),
+            ], 422);
+        }
+
+        try {
+            $sheets = Excel::toArray([], $request->file('excel_file'));
+            if (empty($sheets) || empty($sheets[0])) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'File Excel kosong atau tidak terbaca.',
+                ], 422);
+            }
+
+            $rows = $sheets[0];
+            // Baris 0 adalah Header, data dimulai dari baris index 1
+            $createdCount = 0;
+            $updatedCount = 0;
+            $errors = [];
+
+            for ($i = 1; $i < count($rows); $i++) {
+                $row = $rows[$i];
+                if (empty($row)) continue;
+
+                $code = isset($row[0]) ? trim((string)$row[0]) : '';
+                $name = isset($row[1]) ? trim((string)$row[1]) : '';
+                $category = isset($row[2]) ? trim((string)$row[2]) : '';
+                $picName = isset($row[3]) ? trim((string)$row[3]) : '';
+                $picContact = isset($row[4]) ? trim((string)$row[4]) : '';
+                $location = isset($row[5]) ? trim((string)$row[5]) : '';
+                $description = isset($row[6]) ? trim((string)$row[6]) : '';
+
+                // Lewati baris kosong
+                if (empty($name) && empty($code)) {
+                    continue;
+                }
+
+                $rowNumber = $i + 1;
+
+                if (empty($name)) {
+                    $errors[] = "Baris {$rowNumber}: Nama booth / judul inovasi wajib diisi.";
+                    continue;
+                }
+
+                if (empty($category)) {
+                    $category = 'Produksi';
+                }
+
+                // Cek atau buat booth
+                if (!empty($code)) {
+                    $existing = PoolBooth::where('code', $code)->first();
+                    if ($existing) {
+                        $existing->update([
+                            'name' => $name,
+                            'category' => $category,
+                            'pic_name' => $picName ?: $existing->pic_name,
+                            'pic_contact' => $picContact ?: $existing->pic_contact,
+                            'location' => $location ?: $existing->location,
+                            'description' => $description ?: $existing->description,
+                            'is_active' => true,
+                        ]);
+                        $updatedCount++;
+                    } else {
+                        PoolBooth::create([
+                            'code' => strtoupper($code),
+                            'name' => $name,
+                            'category' => $category,
+                            'pic_name' => $picName ?: null,
+                            'pic_contact' => $picContact ?: null,
+                            'location' => $location ?: null,
+                            'description' => $description ?: null,
+                            'is_active' => true,
+                        ]);
+                        $createdCount++;
+                    }
+                } else {
+                    $autoCode = $this->generateBoothCode();
+                    PoolBooth::create([
+                        'code' => $autoCode,
+                        'name' => $name,
+                        'category' => $category,
+                        'pic_name' => $picName ?: null,
+                        'pic_contact' => $picContact ?: null,
+                        'location' => $location ?: null,
+                        'description' => $description ?: null,
+                        'is_active' => true,
+                    ]);
+                    $createdCount++;
+                }
+            }
+
+            $totalProcessed = $createdCount + $updatedCount;
+            if ($totalProcessed === 0 && !empty($errors)) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Gagal memproses data: ' . implode(' ', $errors),
+                    'errors' => $errors,
+                ], 422);
+            }
+
+            $msg = "Import berhasil! {$totalProcessed} booth diproses ({$createdCount} booth baru, {$updatedCount} diperbarui).";
+            if (!empty($errors)) {
+                $msg .= " Catatan: " . count($errors) . " baris dilewati karena format tidak sesuai.";
+            }
+
+            return response()->json([
+                'status' => 'success',
+                'message' => $msg,
+                'data' => [
+                    'created' => $createdCount,
+                    'updated' => $updatedCount,
+                    'total' => $totalProcessed,
+                    'errors' => $errors,
+                ]
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error import booths excel: ' . $e->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Terjadi kesalahan saat memproses file Excel: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Download Template Excel untuk Import Pertanyaan Kuis
+     */
+    public function downloadQuestionTemplate()
+    {
+        return Excel::download(new TemplateQuestionExport, 'template_import_soal_qcc.xlsx');
+    }
+
+    /**
+     * Import Data Pertanyaan Kuis dari File Excel / CSV
+     */
+    public function importQuestions(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'excel_file' => 'required|file|mimes:xlsx,xls,csv,txt|max:5120',
+        ], [
+            'excel_file.required' => 'File Excel wajib dipilih.',
+            'excel_file.mimes' => 'Format file harus berupa .xlsx, .xls, atau .csv.',
+            'excel_file.max' => 'Ukuran file maksimal adalah 5MB.',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => $validator->errors()->first(),
+            ], 422);
+        }
+
+        try {
+            $sheets = Excel::toArray([], $request->file('excel_file'));
+            if (empty($sheets) || empty($sheets[0])) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'File Excel kosong atau tidak terbaca.',
+                ], 422);
+            }
+
+            $rows = $sheets[0];
+            $createdCount = 0;
+            $errors = [];
+
+            // Pre-load booths by code and by name for high-performance lookup
+            $boothsByCode = PoolBooth::all()->keyBy(function ($b) {
+                return strtoupper(trim($b->code));
+            });
+            $boothsByName = PoolBooth::all()->keyBy(function ($b) {
+                return strtolower(trim($b->name));
+            });
+
+            for ($i = 1; $i < count($rows); $i++) {
+                $row = $rows[$i];
+                if (empty($row)) continue;
+
+                $boothRef = isset($row[0]) ? trim((string)$row[0]) : '';
+                $questionText = isset($row[1]) ? trim((string)$row[1]) : '';
+                $optA = isset($row[2]) ? trim((string)$row[2]) : '';
+                $optB = isset($row[3]) ? trim((string)$row[3]) : '';
+                $optC = isset($row[4]) ? trim((string)$row[4]) : '';
+                $optD = isset($row[5]) ? trim((string)$row[5]) : '';
+                $optE = isset($row[6]) ? trim((string)$row[6]) : '';
+                $correctAnswer = isset($row[7]) ? strtoupper(trim((string)$row[7])) : '';
+                $points = isset($row[8]) && is_numeric($row[8]) ? (int)$row[8] : 1;
+                $explanation = isset($row[9]) ? trim((string)$row[9]) : '';
+
+                if (empty($boothRef) && empty($questionText)) {
+                    continue;
+                }
+
+                $rowNumber = $i + 1;
+
+                if (empty($boothRef)) {
+                    $errors[] = "Baris {$rowNumber}: Kode booth wajib diisi.";
+                    continue;
+                }
+
+                if (empty($questionText)) {
+                    $errors[] = "Baris {$rowNumber}: Teks pertanyaan wajib diisi.";
+                    continue;
+                }
+
+                if (empty($optA) || empty($optB) || empty($optC) || empty($optD)) {
+                    $errors[] = "Baris {$rowNumber}: Pilihan jawaban A, B, C, dan D wajib diisi lengkap.";
+                    continue;
+                }
+
+                if (!in_array($correctAnswer, ['A', 'B', 'C', 'D', 'E'])) {
+                    $errors[] = "Baris {$rowNumber}: Kunci jawaban '{$correctAnswer}' tidak valid. Harus A, B, C, D, atau E.";
+                    continue;
+                }
+
+                // Cari target booth
+                $booth = $boothsByCode->get(strtoupper($boothRef));
+                if (!$booth) {
+                    $booth = $boothsByName->get(strtolower($boothRef));
+                }
+
+                if (!$booth) {
+                    $errors[] = "Baris {$rowNumber}: Booth '{$boothRef}' tidak ditemukan di sistem.";
+                    continue;
+                }
+
+                // Simpan pertanyaan
+                PoolQuestion::create([
+                    'booth_id' => $booth->id,
+                    'question_text' => $questionText,
+                    'option_a' => $optA,
+                    'option_b' => $optB,
+                    'option_c' => $optC,
+                    'option_d' => $optD,
+                    'option_e' => !empty($optE) ? $optE : null,
+                    'correct_answer' => $correctAnswer,
+                    'points' => $points > 0 ? $points : 1,
+                    'explanation' => !empty($explanation) ? $explanation : null,
+                    'is_active' => true,
+                ]);
+
+                $createdCount++;
+            }
+
+            if ($createdCount === 0 && !empty($errors)) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Gagal memproses soal: ' . implode(' ', array_slice($errors, 0, 3)),
+                    'errors' => $errors,
+                ], 422);
+            }
+
+            $msg = "Import berhasil! {$createdCount} pertanyaan kuis berhasil ditambahkan.";
+            if (!empty($errors)) {
+                $msg .= " Catatan: " . count($errors) . " baris dilewati karena ada data yang tidak valid.";
+            }
+
+            return response()->json([
+                'status' => 'success',
+                'message' => $msg,
+                'data' => [
+                    'created' => $createdCount,
+                    'errors' => $errors,
+                ]
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error import questions excel: ' . $e->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Terjadi kesalahan saat memproses file Excel: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 }
