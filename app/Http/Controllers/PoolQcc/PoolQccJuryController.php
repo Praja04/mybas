@@ -292,6 +292,7 @@ class PoolQccJuryController extends Controller
                 $criteriaSnapshot[] = [
                     'criterion_id' => $criterion->id,
                     'name' => $criterion->name,
+                    'description' => $criterion->description,
                     'score' => round($val, 2),
                     'max_score' => (float)$criterion->max_score,
                     'weight' => $weight,

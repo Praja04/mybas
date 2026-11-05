@@ -684,16 +684,20 @@
                 response.participant_ranks.forEach(p => {
                     const oldRank = previousParticipantRanks[p.id];
                     if (oldRank && p.rank < oldRank) {
-                        takeovers.push({
-                            type: 'participant',
-                            id: p.id,
-                            name: p.name,
-                            oldRank: oldRank,
-                            newRank: p.rank,
-                            delta: oldRank - p.rank
-                        });
-                        if (!primaryOvertaker) {
-                            primaryOvertaker = p;
+                        // Hanya daftarkan takeover jika peserta tersebut memang tampil di kolom Award Nominees DOM!
+                        const existsInDOM = document.querySelector(`[data-participant-id="${p.id}"]`);
+                        if (existsInDOM) {
+                            takeovers.push({
+                                type: 'participant',
+                                id: p.id,
+                                name: p.name,
+                                oldRank: oldRank,
+                                newRank: p.rank,
+                                delta: oldRank - p.rank
+                            });
+                            if (!primaryOvertaker) {
+                                primaryOvertaker = p;
+                            }
                         }
                     }
                 });
@@ -716,18 +720,17 @@
             }
 
             // 2. Physical overtake animation if applicable
+            // Prioritas: Utamakan animasi Booth Stand Inovasi jika ada perubahan peringkat booth
             let animOvertakerEl = null;
             let animOvertakenEl = null;
 
-            if (primaryOvertaker) {
+            const boothTakeover = takeovers.find(t => t.type === 'booth');
+            if (boothTakeover) {
+                animOvertakerEl = document.querySelector(`[data-booth-id="${boothTakeover.id}"]`);
+                animOvertakenEl = document.querySelector(`[data-booth-rank="${boothTakeover.newRank}"]`);
+            } else if (primaryOvertaker) {
                 animOvertakerEl = document.querySelector(`[data-participant-id="${primaryOvertaker.id}"]`);
                 animOvertakenEl = document.querySelector(`[data-participant-rank="${primaryOvertaker.rank}"]`);
-            } else if (takeovers.length > 0) {
-                const boothTakeover = takeovers.find(t => t.type === 'booth');
-                if (boothTakeover) {
-                    animOvertakerEl = document.querySelector(`[data-booth-id="${boothTakeover.id}"]`);
-                    animOvertakenEl = document.querySelector(`[data-booth-rank="${boothTakeover.newRank}"]`);
-                }
             }
 
             if (animOvertakerEl && animOvertakenEl && animOvertakerEl !== animOvertakenEl) {
@@ -787,7 +790,9 @@
             }
 
             if (takeovers.length > 0) {
-                const topTakeover = takeovers.sort((a, b) => a.newRank - b.newRank)[0];
+                // Utamakan notifikasi Booth Takeover jika booth naik peringkat (misal dari vote juri/peserta)
+                const boothTakeoverItem = takeovers.find(t => t.type === 'booth');
+                const topTakeover = boothTakeoverItem || takeovers.sort((a, b) => a.newRank - b.newRank)[0];
                 showTakeoverHUD(topTakeover);
             }
 

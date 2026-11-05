@@ -282,19 +282,19 @@
                             </span>
                         </div>
 
-                        <!-- Winner Banner if this tier already has a winner -->
+                        <!-- Winner Banner if this tier already has winners -->
                         <div id="sideWinnerBanner"
-                            class="hidden mb-2 p-2.5 rounded-2xl bg-gradient-to-r from-amber-100 to-yellow-100 dark:from-amber-950/40 dark:to-slate-800 border-2 border-amber-400 text-slate-900 dark:text-white shadow-sm flex-shrink-0">
-                            <div class="flex items-center justify-between">
-                                <span
-                                    class="text-[10px] font-black uppercase text-amber-800 dark:text-amber-300 flex items-center gap-1">
+                            class="hidden mb-2 p-3 rounded-2xl bg-gradient-to-r from-amber-100 via-amber-50 to-yellow-100 dark:from-amber-950/40 dark:via-slate-800 dark:to-slate-800 border-2 border-amber-400 text-slate-900 dark:text-white shadow-sm flex-shrink-0">
+                            <div class="flex items-center justify-between pb-1.5 border-b border-amber-300/60 dark:border-amber-800/60">
+                                <span class="text-[10px] font-black uppercase text-amber-800 dark:text-amber-300 flex items-center gap-1" id="sideWinnerBannerTitle">
                                     <i class="fa-solid fa-trophy text-amber-500"></i> Pemenang Sah Terundi:
                                 </span>
                                 <button type="button" onclick="resetTierWinner()"
-                                    class="text-[10px] font-bold text-rose-600 hover:underline cursor-pointer">Reset</button>
+                                    class="text-[10px] font-bold text-rose-600 hover:underline cursor-pointer">Reset Semua</button>
                             </div>
-                            <div class="font-black text-xs sm:text-sm mt-0.5" id="sideWinnerName">-</div>
-                            <div class="text-[10px] text-slate-500 dark:text-slate-400" id="sideWinnerMeta">-</div>
+                            <div id="sideWinnerList" class="mt-2 space-y-1.5 max-h-44 overflow-y-auto pr-1">
+                                <!-- Populated dynamically via JS -->
+                            </div>
                         </div>
 
                         <!-- Candidates Scroll List with soft fade mask -->
@@ -496,23 +496,65 @@
 
         function getSavedWinners() {
             try {
-                return JSON.parse(localStorage.getItem('qcc_reward_winners') || '{}');
+                const raw = JSON.parse(localStorage.getItem('qcc_reward_winners') || '{}');
+                const normalized = {};
+                for (const k in raw) {
+                    if (Array.isArray(raw[k])) {
+                        normalized[k] = raw[k];
+                    } else if (raw[k] && typeof raw[k] === 'object') {
+                        normalized[k] = [raw[k]];
+                    } else {
+                        normalized[k] = [];
+                    }
+                }
+                return normalized;
             } catch (e) {
                 return {};
             }
         }
 
+        function getTierWinners(tierKey) {
+            const all = getSavedWinners();
+            return all[tierKey] || [];
+        }
+
         function saveWinner(tierKey, winner) {
-            const winners = getSavedWinners();
-            winners[tierKey] = winner;
-            localStorage.setItem('qcc_reward_winners', JSON.stringify(winners));
+            const all = getSavedWinners();
+            let list = getTierWinners(tierKey);
+            const tierData = window.qccRewardCandidates[tierKey] || {};
+            const quota = tierData.quota_winners || 1;
+
+            const alreadyWon = list.some(w => w.id == winner.id || (w.nik && w.nik == winner.nik));
+            if (!alreadyWon && list.length < quota) {
+                const newWinner = Object.assign({}, winner, {
+                    order: list.length + 1,
+                    won_at: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
+                });
+                list.push(newWinner);
+            }
+            all[tierKey] = list;
+            localStorage.setItem('qcc_reward_winners', JSON.stringify(all));
+        }
+
+        function removeSingleWinner(tierKey, winnerId) {
+            const all = getSavedWinners();
+            let list = getTierWinners(tierKey);
+            list = list.filter(w => w.id != winnerId);
+            list.forEach((w, idx) => w.order = idx + 1);
+            all[tierKey] = list;
+            localStorage.setItem('qcc_reward_winners', JSON.stringify(all));
+            selectSpinTier(currentSpinTier);
         }
 
         function resetTierWinner() {
-            const winners = getSavedWinners();
-            delete winners[currentSpinTier];
-            localStorage.setItem('qcc_reward_winners', JSON.stringify(winners));
-            selectSpinTier(currentSpinTier);
+            const tierData = window.qccRewardCandidates[currentSpinTier] || {};
+            const tierName = tierData.name || currentSpinTier;
+            if (confirm(`Yakin ingin mereset pemenang undian untuk ${tierName}?`)) {
+                const all = getSavedWinners();
+                delete all[currentSpinTier];
+                localStorage.setItem('qcc_reward_winners', JSON.stringify(all));
+                selectSpinTier(currentSpinTier);
+            }
         }
 
         function clearAllWinners() {
@@ -555,48 +597,97 @@
             const tierData = window.qccRewardCandidates[tierKey] || {
                 title: tierKey.toUpperCase(),
                 rule_text: '',
+                quota_winners: 1,
                 candidates: []
             };
 
-            currentCandidates = tierData.candidates || [];
+            const quota = tierData.quota_winners || 1;
+            const tierWinners = getTierWinners(tierKey);
+            const allCandidates = tierData.candidates || [];
+
+            // Filter kandidat yang belum pernah menang di tier ini
+            const availableCandidates = allCandidates.filter(c => !tierWinners.some(w => w.id == c.id || (w.nik && w.nik == c.nik)));
+
+            const isCompleted = tierWinners.length >= quota;
+            currentCandidates = isCompleted ? [] : availableCandidates;
 
             // Update Stage Titles
             $('#stageTierTitle').text(tierData.title || tierKey.toUpperCase());
-            $('#stageTierSubtitle').text((tierData.criteria_text || '') + (tierData.quota_winners ? ' • Akan dipilih ' +
-                tierData.quota_winners + ' pemenang' : ''));
-            $('#stageCandidatePill').text(currentCandidates.length + ' Kandidat');
-            $('#sideCandidateBadge').text(currentCandidates.length + ' Peserta');
+            const quotaText = quota > 1
+                ? ` • Kuota: ${quota} Pemenang (${tierWinners.length}/${quota} Terpilih)`
+                : ' • Kuota: 1 Pemenang';
+            $('#stageTierSubtitle').text((tierData.criteria_text || '') + quotaText);
+            $('#stageCandidatePill').text(availableCandidates.length + ' Sisa Kandidat');
+            $('#sideCandidateBadge').text(allCandidates.length + ' Total Kandidat');
 
-            // Check if this tier has saved winner
-            const savedWinners = getSavedWinners();
-            const existingWin = savedWinners[tierKey];
-            if (existingWin) {
-                $('#sideWinnerName').text(existingWin.name);
-                $('#sideWinnerMeta').html(`${existingWin.department || 'Umum'} &bull; NIK: ${existingWin.nik || '-'}`);
+            // Update Center Spin Button & Status
+            const $spinHub = $('#centerSpinBtn');
+            if (isCompleted) {
+                $spinHub.prop('disabled', true).addClass('opacity-75 cursor-not-allowed bg-emerald-500 text-white')
+                    .html(`<i class="fa-solid fa-check text-xl"></i><span class="text-[9px] font-black uppercase mt-0.5">LENGKAP</span>`);
+            } else if (availableCandidates.length === 0) {
+                $spinHub.prop('disabled', true).addClass('opacity-50 cursor-not-allowed')
+                    .html(`<span>HABIS</span>`);
+            } else {
+                $spinHub.prop('disabled', false).removeClass('opacity-50 opacity-75 cursor-not-allowed bg-emerald-500 text-white')
+                    .html(`<span>SPIN!</span><span class="text-[9px] font-black opacity-85">#${tierWinners.length + 1}</span>`);
+            }
+
+            // Check if this tier has saved winners
+            if (tierWinners.length > 0) {
+                $('#sideWinnerBannerTitle').html(`<i class="fa-solid fa-trophy text-amber-500"></i> Pemenang Sah (${tierWinners.length}/${quota} Terpilih):`);
+                const $wList = $('#sideWinnerList');
+                $wList.empty();
+                tierWinners.forEach((w, idx) => {
+                    $wList.append(`
+                        <div class="p-1.5 rounded-xl bg-white/90 dark:bg-slate-900/90 border border-amber-300 dark:border-amber-700/60 flex items-center justify-between text-xs">
+                            <div class="flex items-center space-x-2 min-w-0">
+                                <span class="w-5 h-5 rounded-md bg-amber-400 text-slate-950 font-black text-[10px] flex items-center justify-center flex-shrink-0">
+                                    #${w.order || (idx + 1)}
+                                </span>
+                                <div class="truncate">
+                                    <span class="font-extrabold text-slate-900 dark:text-white text-[11px] truncate block leading-tight">${escapeHtml(w.name)}</span>
+                                    <span class="text-[9px] text-slate-500 dark:text-slate-400 truncate block leading-none font-bold">${escapeHtml(w.department || 'Umum')} &bull; NIK: ${escapeHtml(w.nik || '-')}</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-1.5 flex-shrink-0 pl-1">
+                                <span class="px-1.5 py-0.5 rounded text-[10px] font-black bg-amber-100 dark:bg-amber-950 text-amber-900 dark:text-amber-300">
+                                    ${w.total_score} Pts
+                                </span>
+                                <button type="button" onclick="removeSingleWinner('${tierKey}', ${w.id})" title="Hapus pemenang ini untuk diundi ulang" class="text-slate-400 hover:text-rose-600 text-xs p-0.5 cursor-pointer">
+                                    <i class="fa-solid fa-xmark"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `);
+                });
                 $('#sideWinnerBanner').removeClass('hidden');
             } else {
                 $('#sideWinnerBanner').addClass('hidden');
             }
 
-            // Populate Sidebar
+            // Populate Sidebar Candidates List
             const $cList = $('#sideCandidateList');
             $cList.empty();
 
-            if (currentCandidates.length === 0) {
+            if (allCandidates.length === 0) {
                 $cList.html(`
                     <div class="py-12 text-center text-xs text-slate-400 dark:text-slate-500 italic rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-700">
                         Belum ada peserta yang memenuhi syarat (${tierData.rule_text || ''}).
                     </div>
                 `);
             } else {
-                currentCandidates.forEach((c, idx) => {
-                    const isWin = existingWin && existingWin.id == c.id;
+                allCandidates.forEach((c, idx) => {
+                    const winIdx = tierWinners.findIndex(w => w.id == c.id || (w.nik && w.nik == c.nik));
+                    const isWin = winIdx !== -1;
+                    const winOrder = isWin ? (tierWinners[winIdx].order || (winIdx + 1)) : 0;
+
                     const words = (c.name || '').trim().split(' ');
                     let initials = '';
                     words.slice(0, 2).forEach(w => initials += w.charAt(0).toUpperCase());
 
                     $cList.append(`
-                        <div class="p-2.5 rounded-2xl bg-white dark:bg-slate-800 border-2 ${isWin ? 'border-amber-400 bg-amber-50/70 dark:bg-amber-950/40' : 'border-slate-200 dark:border-slate-700'} flex items-center justify-between text-xs transition-all hover:-translate-y-0.5 shadow-xs">
+                        <div class="p-2.5 rounded-2xl bg-white dark:bg-slate-800 border-2 ${isWin ? 'border-amber-400 bg-amber-50/70 dark:bg-amber-950/40 shadow-sm' : 'border-slate-200 dark:border-slate-700'} flex items-center justify-between text-xs transition-all hover:-translate-y-0.5 shadow-xs">
                             <div class="flex items-center space-x-2.5 min-w-0">
                                 <span class="w-6 text-[10px] font-black text-slate-500 text-center flex-shrink-0">
                                     #${idx + 1}
@@ -605,15 +696,15 @@
                                     ${c.photo ? `<img src="${c.photo}" class="w-full h-full object-cover">` : (initials || 'P')}
                                 </div>
                                 <div class="truncate leading-tight">
-                                    <span class="font-black text-slate-900 dark:text-white truncate block text-xs leading-tight">${c.name}</span>
-                                    <span class="text-[9px] text-slate-500 dark:text-slate-400 truncate block leading-none font-bold">${c.department || 'Umum'} &bull; NIK: ${c.nik || '-'}</span>
+                                    <span class="font-black text-slate-900 dark:text-white truncate block text-xs leading-tight">${escapeHtml(c.name)}</span>
+                                    <span class="text-[9px] text-slate-500 dark:text-slate-400 truncate block leading-none font-bold">${escapeHtml(c.department || 'Umum')} &bull; NIK: ${escapeHtml(c.nik || '-')}</span>
                                 </div>
                             </div>
                             <div class="text-right flex-shrink-0 pl-1">
                                 <span class="px-2 py-0.5 rounded-lg bg-amber-100 dark:bg-slate-700 font-black text-amber-950 dark:text-amber-300 text-xs">
                                     ${c.total_score} Pts
                                 </span>
-                                ${isWin ? '<span class="text-[9px] font-black text-amber-700 block mt-0.5">👑 PEMENANG</span>' : ''}
+                                ${isWin ? `<span class="text-[9px] font-black text-amber-700 dark:text-amber-300 block mt-0.5"><i class="fa-solid fa-crown text-[8px] mr-0.5"></i> SAH #${winOrder}</span>` : ''}
                             </div>
                         </div>
                     `);
@@ -624,14 +715,16 @@
         }
 
         function renderWinnersLogView() {
-            const winners = getSavedWinners();
+            const allWinners = getSavedWinners();
             const $container = $('#winnersLogCards');
             $container.empty();
 
-            const tierKeys = ['reward_1', 'reward_2', 'reward_3', 'reward_4', 'reward_5'];
+            const singleTierKeys = ['reward_1', 'reward_2', 'reward_3', 'reward_4'];
 
-            tierKeys.forEach(key => {
-                const win = winners[key];
+            // 1. Render Reward 1 - 4 (Single winner each)
+            singleTierKeys.forEach(key => {
+                const list = getTierWinners(key);
+                const win = list.length > 0 ? list[0] : null;
                 const tierInfo = window.qccRewardCandidates[key] || {
                     title: key.toUpperCase(),
                     rule_text: ''
@@ -649,8 +742,8 @@
                                     <i class="fa-solid fa-trophy"></i>
                                 </div>
                                 <div class="truncate">
-                                    <h5 class="font-black text-sm text-slate-950 dark:text-white truncate">${win.name}</h5>
-                                    <p class="text-xs text-slate-600 dark:text-slate-400 font-bold truncate">${win.department || 'Umum'} &bull; NIK: ${win.nik || '-'}</p>
+                                    <h5 class="font-black text-sm text-slate-950 dark:text-white truncate">${escapeHtml(win.name)}</h5>
+                                    <p class="text-xs text-slate-600 dark:text-slate-400 font-bold truncate">${escapeHtml(win.department || 'Umum')} &bull; NIK: ${escapeHtml(win.nik || '-')}</p>
                                     <span class="text-xs font-black text-amber-700 dark:text-amber-400">Skor: ${win.total_score || '-'} Poin</span>
                                 </div>
                             </div>
@@ -658,7 +751,7 @@
                     `);
                 } else {
                     $container.append(`
-                        <div class="p-4 rounded-3xl bg-slate-100 dark:bg-slate-800/40 border-2 border-dashed border-slate-300 dark:border-slate-700 text-center flex flex-col justify-center items-center py-8">
+                        <div class="p-4 rounded-3xl bg-slate-100 dark:bg-slate-800/40 border-2 border-dashed border-slate-300 dark:border-slate-700 text-center flex flex-col justify-center items-center py-6">
                             <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-bold bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400 uppercase mb-2">${tierInfo.title || key.toUpperCase()}</span>
                             <span class="text-xs text-slate-400 dark:text-slate-500 italic font-semibold">Belum Diundi</span>
                             <button type="button" onclick="selectSpinTier('${key}')" class="mt-3 px-4 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs game-btn-3d cursor-pointer shadow-sm">
@@ -668,6 +761,97 @@
                     `);
                 }
             });
+
+            // 2. Render Reward 5 (16 Winners Full Master Section)
+            const list5 = getTierWinners('reward_5');
+            const tier5Info = window.qccRewardCandidates['reward_5'] || {
+                title: 'NOMINASI REWARD 5',
+                rule_text: '> 2 booth',
+                quota_winners: 16
+            };
+            const quota5 = tier5Info.quota_winners || 16;
+
+            let slotsHtml = '';
+            for (let i = 1; i <= quota5; i++) {
+                const w = list5[i - 1];
+                if (w) {
+                    const words = (w.name || '').trim().split(' ');
+                    let initials = '';
+                    words.slice(0, 2).forEach(s => initials += s.charAt(0).toUpperCase());
+                    slotsHtml += `
+                        <div class="p-2.5 rounded-2xl bg-white dark:bg-slate-800 border-2 border-purple-400 shadow-xs flex items-center justify-between text-xs">
+                            <div class="flex items-center space-x-2 min-w-0">
+                                <span class="w-6 h-6 rounded-lg bg-purple-600 text-white font-black text-[11px] flex items-center justify-center flex-shrink-0">
+                                    #${i}
+                                </span>
+                                <div class="w-7 h-7 rounded-full bg-purple-100 dark:bg-slate-700 border border-purple-400 flex items-center justify-center text-[10px] font-black text-purple-800 dark:text-purple-300 flex-shrink-0 overflow-hidden">
+                                    ${w.photo ? `<img src="${w.photo}" class="w-full h-full object-cover">` : initials}
+                                </div>
+                                <div class="truncate">
+                                    <h6 class="font-extrabold text-slate-900 dark:text-white text-xs truncate leading-tight">${escapeHtml(w.name)}</h6>
+                                    <p class="text-[9px] text-slate-500 dark:text-slate-400 truncate leading-none font-bold">${escapeHtml(w.department || 'Umum')} &bull; NIK: ${escapeHtml(w.nik || '-')}</p>
+                                </div>
+                            </div>
+                            <span class="px-2 py-0.5 rounded-md bg-purple-100 dark:bg-purple-950 font-black text-purple-900 dark:text-purple-300 text-[11px] flex-shrink-0 ml-1">
+                                ${w.total_score} Pts
+                            </span>
+                        </div>
+                    `;
+                } else {
+                    slotsHtml += `
+                        <div onclick="selectSpinTier('reward_5')" class="p-2.5 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-purple-400 dark:hover:border-purple-500 bg-slate-50/50 dark:bg-slate-850/50 flex items-center justify-between text-xs text-slate-400 hover:text-purple-600 transition cursor-pointer group">
+                            <div class="flex items-center space-x-2">
+                                <span class="w-6 h-6 rounded-lg bg-slate-200 dark:bg-slate-700 group-hover:bg-purple-100 group-hover:text-purple-700 font-bold text-[11px] flex items-center justify-center text-slate-500 transition">
+                                    #${i}
+                                </span>
+                                <span class="text-[11px] italic font-semibold">Slot Pemenang #${i}</span>
+                            </div>
+                            <i class="fa-solid fa-plus text-xs group-hover:scale-110 transition-transform"></i>
+                        </div>
+                    `;
+                }
+            }
+
+            $container.append(`
+                <div class="col-span-full mt-2 p-5 rounded-3xl bg-gradient-to-br from-purple-50/70 via-white to-amber-50/60 dark:from-slate-800/90 dark:via-slate-850 dark:to-slate-900 border-3 border-purple-400/90 shadow-xl">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 mb-4 border-b-2 border-purple-200 dark:border-purple-800">
+                        <div class="flex items-center space-x-3">
+                            <span class="w-10 h-10 rounded-2xl bg-purple-600 text-white flex items-center justify-center text-lg shadow-md">
+                                <i class="fa-solid fa-gift"></i>
+                            </span>
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <h4 class="font-black text-base text-slate-900 dark:text-white uppercase leading-tight">
+                                        ${escapeHtml(tier5Info.title || 'NOMINASI REWARD 5')}
+                                    </h4>
+                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-purple-100 dark:bg-purple-950/80 text-purple-700 dark:text-purple-300 border border-purple-300 dark:border-purple-700">
+                                        16 Pemenang Sah
+                                    </span>
+                                </div>
+                                <p class="text-xs text-slate-500 dark:text-slate-400 font-bold mt-0.5">
+                                    ${escapeHtml(tier5Info.criteria_text || 'Bisa menjawab benar > 2 booth')} &bull; Status: ${list5.length} dari ${quota5} Pemenang Terundi
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center space-x-2">
+                            <span class="px-3 py-1.5 rounded-xl text-xs font-black ${list5.length === quota5 ? 'bg-emerald-500 text-white shadow-md' : 'bg-amber-400 text-slate-950 shadow-sm'}">
+                                ${list5.length === quota5 ? '✓ 16 Pemenang Lengkap' : `${list5.length} / ${quota5} Pemenang Terpilih`}
+                            </span>
+                            ${list5.length < quota5 ? `
+                                <button type="button" onclick="selectSpinTier('reward_5')" class="px-3.5 py-1.5 rounded-xl text-xs font-black bg-purple-600 hover:bg-purple-700 text-white shadow-md transition flex items-center space-x-1.5 cursor-pointer">
+                                    <i class="fa-solid fa-dharmachakra"></i>
+                                    <span>Lanjut Undi (#${list5.length + 1})</span>
+                                </button>
+                            ` : ''}
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5">
+                        ${slotsHtml}
+                    </div>
+                </div>
+            `);
         }
 
         // ========================================================
@@ -688,22 +872,32 @@
             const n = currentCandidates.length;
 
             if (n === 0) {
+                const tierData = window.qccRewardCandidates[currentSpinTier] || {};
+                const quota = tierData.quota_winners || 1;
+                const tierWinners = getTierWinners(currentSpinTier);
+                const isCompleted = tierWinners.length >= quota;
+
                 ctx.save();
                 ctx.beginPath();
                 ctx.arc(cx, cy, radius, 0, 2 * Math.PI);
-                ctx.fillStyle = '#334155';
+                ctx.fillStyle = isCompleted ? '#064e3b' : '#334155';
                 ctx.fill();
                 ctx.lineWidth = 6;
-                ctx.strokeStyle = '#64748b';
+                ctx.strokeStyle = isCompleted ? '#10b981' : '#64748b';
                 ctx.stroke();
 
-                ctx.fillStyle = '#94a3b8';
+                ctx.fillStyle = '#ffffff';
                 ctx.font = 'bold 16px sans-serif';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
-                ctx.fillText('Belum Ada Kandidat', cx, cy - 12);
-                ctx.font = '12px sans-serif';
-                ctx.fillText('Tidak ada peserta di tier ini', cx, cy + 14);
+                if (isCompleted) {
+                    ctx.fillText('SEMUA ' + quota + ' PEMENANG', cx, cy - 14);
+                    ctx.fillText('TELAH LENGKAP TERUNDI!', cx, cy + 14);
+                } else {
+                    ctx.fillText('Belum Ada Kandidat', cx, cy - 12);
+                    ctx.font = '12px sans-serif';
+                    ctx.fillText('Tidak ada peserta tersisa di tier ini', cx, cy + 14);
+                }
                 ctx.restore();
                 return;
             }
@@ -766,8 +960,17 @@
 
         function spinTheWheel() {
             if (isSpinning) return;
+            const tierData = window.qccRewardCandidates[currentSpinTier] || {};
+            const quota = tierData.quota_winners || 1;
+            const tierWinners = getTierWinners(currentSpinTier);
+
+            if (tierWinners.length >= quota) {
+                alert(`Seluruh kuota (${quota} pemenang) untuk ${tierData.name || currentSpinTier} sudah lengkap terpilih!`);
+                return;
+            }
+
             if (!currentCandidates || currentCandidates.length === 0) {
-                alert('Tidak ada kandidat di kategori ini untuk diundi!');
+                alert('Tidak ada sisa kandidat yang memenuhi syarat untuk diundi!');
                 return;
             }
 
@@ -848,7 +1051,16 @@
             const tierInfo = window.qccRewardCandidates[currentSpinTier] || {
                 title: 'REWARD'
             };
-            $('#winModalTierTag').text('PEMENANG ' + (tierInfo.name || 'REWARD').toUpperCase());
+            const tierWinners = getTierWinners(currentSpinTier);
+            const quota = tierInfo.quota_winners || 1;
+            const nextOrder = tierWinners.length + 1;
+
+            if (quota > 1) {
+                $('#winModalTierTag').text(`PEMENANG #${nextOrder} DARI ${quota} • ${(tierInfo.name || 'REWARD').toUpperCase()}`);
+            } else {
+                $('#winModalTierTag').text('PEMENANG ' + (tierInfo.name || 'REWARD').toUpperCase());
+            }
+
             $('#winModalName').text(winner.name);
             $('#winModalMeta').html(`${winner.department || 'Umum'} &bull; NIK: ${winner.nik || '-'}`);
             $('#winModalScore').text(winner.total_score + ' Poin');
@@ -865,7 +1077,34 @@
         function confirmWinner() {
             if (pendingWinner) {
                 saveWinner(currentSpinTier, pendingWinner);
+                const tierWinners = getTierWinners(currentSpinTier);
+                const tierData = window.qccRewardCandidates[currentSpinTier] || {};
+                const quota = tierData.quota_winners || 1;
+
                 selectSpinTier(currentSpinTier);
+
+                if (tierWinners.length < quota) {
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            icon: 'success',
+                            title: `Pemenang #${tierWinners.length} Sah Disimpan!`,
+                            text: `${pendingWinner.name} berhasil tersimpan. Silakan putar lagi untuk pemenang ke-${tierWinners.length + 1} dari ${quota}!`,
+                            timer: 2800,
+                            showConfirmButton: false,
+                            toast: true,
+                            position: 'top-end'
+                        });
+                    }
+                } else {
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            icon: 'success',
+                            title: `Lengkap! Seluruh ${quota} Pemenang Terpilih!`,
+                            text: `Selamat kepada seluruh ${quota} pemenang undian ${tierData.name || currentSpinTier}!`,
+                            confirmButtonColor: '#f59e0b'
+                        });
+                    }
+                }
             }
             $('#winnerCelebrationOverlay').addClass('hidden');
         }

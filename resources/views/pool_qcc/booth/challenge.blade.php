@@ -18,11 +18,16 @@
                 </div>
             </div>
             <div class="text-right">
-                <span class="text-[11px] font-bold text-slate-500 dark:text-slate-400 block uppercase">Reward</span>
+                <span class="text-[11px] font-bold text-slate-500 dark:text-slate-400 block uppercase">Reward Vote</span>
                 @if(!empty($isJudge))
-                    <span class="text-lg font-black text-amber-500 flex items-center justify-end gap-1.5">
-                        <i class="fa-solid fa-crown text-sm"></i> +{{ $judgeVoteWeight ?? 10 }} Poin ({{ $judgeTitle ?? 'Dewan Juri' }})
-                    </span>
+                    <div class="flex flex-col items-end">
+                        <span class="text-xs sm:text-sm font-black text-amber-500 flex items-center justify-end gap-1">
+                            <i class="fa-solid fa-crown text-[10px]"></i> Booth: +{{ $judgeVoteWeight ?? 10 }} Poin ({{ $judgeTitle ?? 'Dewan Juri' }})
+                        </span>
+                        <span class="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
+                            Peserta: +1 Poin
+                        </span>
+                    </div>
                 @else
                     <span class="text-lg font-black text-emerald-600 dark:text-emerald-400">+{{ $question->points > 0 ? $question->points : 1 }} Poin</span>
                 @endif
@@ -265,12 +270,14 @@
                 title.innerHTML = 'JAWABAN BENAR! 🎉';
                 if (data.is_judge) {
                     const roleTitle = data.judge_title || 'Dewan Juri';
+                    const boothPts = data.booth_points_earned || data.judge_vote_weight || 10;
+                    const personalPts = data.points_earned || 1;
                     subtitle.innerHTML =
-                        `Luar biasa <strong>${data.participant.name}</strong> (${roleTitle})! Vote Anda memberikan bobot <strong>+${data.points_earned} Poin</strong> untuk booth <strong>${data.booth.name}</strong>.`;
+                        `Luar biasa <strong>${data.participant.name}</strong> (${roleTitle})! Vote Anda memberikan bobot <strong>+${boothPts} Poin</strong> untuk booth <strong>${data.booth.name}</strong>. Skor reward personal Anda bertambah <strong>+${personalPts} Poin</strong>.`;
                     pointsBox.className =
                         'p-4 rounded-2xl mb-5 bg-amber-50 border border-amber-300 text-amber-800 dark:bg-amber-500/20 dark:border-amber-500/40 dark:text-amber-300';
-                    pointsLabel.innerHTML = `👑 Poin ${roleTitle} (Bobot Spesial)`;
-                    pointsValue.innerHTML = `+${data.points_earned} Poin`;
+                    pointsLabel.innerHTML = `👑 Bobot Vote Booth (${roleTitle})`;
+                    pointsValue.innerHTML = `+${boothPts} Poin Booth <div class="text-xs font-bold text-emerald-700 dark:text-emerald-400 mt-1">(Reward Pribadi: +${personalPts} Poin)</div>`;
                 } else {
                     subtitle.innerHTML =
                         `Selamat <strong>${data.participant.name}</strong>! Anda mendapat <strong>+${data.points_earned} Poin</strong> dan <strong>${data.booth.name}</strong> juga mendapat <strong>+${data.points_earned} Poin</strong>.`;

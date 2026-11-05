@@ -438,10 +438,15 @@
                     if (e.criteria_scores && Array.isArray(e.criteria_scores) && e.criteria_scores.length > 0) {
                         criteriaHtml = '<div class="mt-2.5 pt-2 border-t border-slate-200/60 dark:border-slate-700/60 grid grid-cols-1 sm:grid-cols-2 gap-1.5">';
                         e.criteria_scores.forEach(cs => {
+                            const titleText = cs.description ? `${cs.name} - ${cs.description}` : cs.name;
+                            const displayText = cs.description ? `${cs.description}` : cs.name;
                             criteriaHtml += `
-                                <div class="px-2 py-1 rounded-lg bg-white/80 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800 text-[10px] flex items-center justify-between">
-                                    <span class="text-slate-600 dark:text-slate-400 truncate pr-1" title="${cs.name}">${cs.name} (${cs.weight}%)</span>
-                                    <span class="font-black text-indigo-600 dark:text-indigo-400 font-mono">${cs.score}</span>
+                                <div class="px-2 py-1.5 rounded-lg bg-white/80 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800 text-[10px] flex items-center justify-between gap-1" title="${titleText}">
+                                    <div class="truncate">
+                                        <span class="font-bold text-slate-800 dark:text-slate-200 block truncate">${displayText}</span>
+                                        ${cs.description ? `<span class="text-[9px] text-slate-400 truncate block">${cs.name} (${cs.weight}%)</span>` : `<span class="text-[9px] text-slate-400">Bobot: ${cs.weight}%</span>`}
+                                    </div>
+                                    <span class="font-black text-indigo-600 dark:text-indigo-400 font-mono text-xs flex-shrink-0">${cs.score}</span>
                                 </div>
                             `;
                         });

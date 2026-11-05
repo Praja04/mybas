@@ -77,10 +77,12 @@ class PoolQccBoothController extends Controller
 
         $rawInput = trim((string)($request->rfid ?: $request->nik));
         $isManual = (bool)($request->is_manual || $request->filled('name'));
+        $manualRfid = trim((string)$request->rfid);
+        $manualNik = trim((string)($request->nik ?: $request->rfid));
         $manualName = trim((string)$request->name);
 
         if ($isManual) {
-            if (empty($rawInput)) {
+            if (empty($manualNik)) {
                 return response()->json([
                     'status' => 'error',
                     'message' => 'Nomor NIK / Identitas peserta wajib diisi.',
@@ -125,11 +127,20 @@ class PoolQccBoothController extends Controller
             ->first();
 
         if ($isManual) {
-            // Mode Input Manual: Tanpa pengecekan ke DB pusat (MSIDCARD), Dept default 'Peserta QCC'
+            // Mode Input Manual: Simpan HANYA di database lokal PoolParticipant (jangan ke DB pusat 192.168)
+            // Dept default 'Peserta QCC'
+            $rfidToSave = !empty($manualRfid) ? $manualRfid : $manualNik;
+
+            if (!$participant) {
+                $participant = PoolParticipant::where('nik', $manualNik)
+                    ->orWhere('rfid', $rfidToSave)
+                    ->first();
+            }
+
             if (!$participant) {
                 $participant = PoolParticipant::create([
-                    'rfid' => $rawInput,
-                    'nik' => $rawInput,
+                    'rfid' => $rfidToSave,
+                    'nik' => $manualNik,
                     'name' => $manualName,
                     'department' => 'Peserta QCC',
                     'photo' => null,
@@ -138,117 +149,123 @@ class PoolQccBoothController extends Controller
                     'last_activity_at' => Carbon::now(),
                 ]);
             } else {
-                $participant->update([
+                $updateData = [
                     'name' => $manualName ?: $participant->name,
                     'department' => $participant->department ?: 'Peserta QCC',
                     'last_activity_at' => Carbon::now(),
-                ]);
+                ];
+                if (!empty($manualRfid)) {
+                    $updateData['rfid'] = $manualRfid;
+                }
+                $participant->update($updateData);
             }
         } else {
             // Mode Scanner Normal: Cek ke DB Karyawan jika belum ada di tabel lokal pool_participants
             if (!$participant) {
                 $employeeData = null;
 
-            // 2a. Cari di MSIDCARD (192.168.178.44-admin)
-            // Query kartu berdasarkan nomor RFID / Device No / NIK / Barcode (termasuk variasi leading-zero)
-            try {
-                $matchedCard = DB::connection('192.168.178.44-admin')
-                    ->table('MSIDCARD')
-                    ->select('NIK', 'EMPNM', 'DEPTID', 'FOTOBLOB', 'CARDNODEVICE', 'RFID', 'STATUS', 'BARCODE')
-                    ->where(function ($q) use ($candidates, $numericInput, $rawInput) {
-                        if ($numericInput > 0) {
-                            $q->where('CARDNODEVICE', $numericInput);
-                        }
-                        $q->orWhere('RFID', $rawInput)
-                            ->orWhereIn('NIK', $candidates)
-                            ->orWhereIn('BARCODE', $candidates);
-                    })
-                    ->orderByRaw("CASE WHEN STATUS = 'X' THEN 0 ELSE 1 END ASC, CAST(EMPCARDID AS SIGNED) DESC")
-                    ->first();
-
-                if ($matchedCard) {
-                    // Jika ada NIK, utamakan profil ter-update dari kartu aktif (STATUS = 'X')
-                    if (!empty($matchedCard->NIK)) {
-                        $activeCard = DB::connection('192.168.178.44-admin')
-                            ->table('MSIDCARD')
-                            ->select('NIK', 'EMPNM', 'DEPTID', 'FOTOBLOB', 'CARDNODEVICE', 'RFID', 'STATUS')
-                            ->where('NIK', $matchedCard->NIK)
-                            ->where('STATUS', 'X')
-                            ->orderByRaw('CAST(EMPCARDID AS SIGNED) DESC')
-                            ->first();
-
-                        $employeeData = $activeCard ?: $matchedCard;
-                    } else {
-                        $employeeData = $matchedCard;
-                    }
-                }
-            } catch (\Exception $e) {
-                Log::warning('[PoolQcc] Gagal query MSIDCARD 192.168.178.44-admin: ' . $e->getMessage());
-            }
-
-            // 2b. Fallback ke tabel karyawan lokal jika ada
-            if (!$employeeData) {
+                // 2a. Cari di MSIDCARD (192.168.178.44-admin)
+                // Query kartu berdasarkan nomor RFID / Device No / NIK / Barcode (termasuk variasi leading-zero)
                 try {
-                    $localKaryawan = DB::table('pkw_karyawan')
-                        ->where('rfid', $rawInput)
-                        ->orWhereIn('nik', $candidates)
+                    $matchedCard = DB::connection('192.168.178.44-admin')
+                        ->table('MSIDCARD')
+                        ->select('NIK', 'EMPNM', 'DEPTID', 'FOTOBLOB', 'CARDNODEVICE', 'RFID', 'STATUS', 'BARCODE')
+                        ->where(function ($q) use ($candidates, $numericInput, $rawInput) {
+                            if ($numericInput > 0) {
+                                $q->where('CARDNODEVICE', $numericInput);
+                            }
+                            $q->orWhere('RFID', $rawInput)
+                                ->orWhereIn('NIK', $candidates)
+                                ->orWhereIn('BARCODE', $candidates);
+                        })
+                        ->orderByRaw("CASE WHEN STATUS = 'X' THEN 0 ELSE 1 END ASC, CAST(EMPCARDID AS SIGNED) DESC")
                         ->first();
 
-                    if ($localKaryawan) {
-                        $employeeData = (object) [
-                            'NIK' => $localKaryawan->nik ?? $localKaryawan->no_ktp ?? $rawInput,
-                            'EMPNM' => $localKaryawan->nama_lengkap ?? 'Karyawan ' . $rawInput,
-                            'DEPTID' => $localKaryawan->departemen ?? 'General',
-                            'FOTOBLOB' => null,
-                            'CARDNODEVICE' => null,
-                            'RFID' => $rawInput,
-                        ];
+                    if ($matchedCard) {
+                        // Jika ada NIK, utamakan profil ter-update dari kartu aktif (STATUS = 'X')
+                        if (!empty($matchedCard->NIK)) {
+                            $activeCard = DB::connection('192.168.178.44-admin')
+                                ->table('MSIDCARD')
+                                ->select('NIK', 'EMPNM', 'DEPTID', 'FOTOBLOB', 'CARDNODEVICE', 'RFID', 'STATUS')
+                                ->where('NIK', $matchedCard->NIK)
+                                ->where('STATUS', 'X')
+                                ->orderByRaw('CAST(EMPCARDID AS SIGNED) DESC')
+                                ->first();
+
+                            $employeeData = $activeCard ?: $matchedCard;
+                        } else {
+                            $employeeData = $matchedCard;
+                        }
                     }
                 } catch (\Exception $e) {
-                    // ignore
+                    Log::warning('[PoolQcc] Gagal query MSIDCARD 192.168.178.44-admin: ' . $e->getMessage());
                 }
-            }
 
-            // Jika tidak ditemukan di database manapun, TOLAK (jangan buatkan guest acak)
-            if (!$employeeData) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => "Nomor RFID / NIK '{$rawInput}' tidak terdaftar di database karyawan. Pastikan data yang dimasukkan benar atau hubungi panitia QCC.",
-                ], 404);
-            }
+                // 2b. Fallback ke tabel karyawan lokal jika ada
+                if (!$employeeData) {
+                    try {
+                        $localKaryawan = DB::table('hr_karyawan')
+                            ->where('rfid', $rawInput)
+                            ->orWhereIn('nik', $candidates)
+                            ->first();
 
-            // 2c. Cek kembali ke pool_participants berdasarkan NIK
-            // (Mencegah multi-akun jika karyawan tap dengan variasi NIK atau kartu berbeda)
-            if (!empty($employeeData->NIK)) {
-                $participant = PoolParticipant::where('nik', $employeeData->NIK)
-                    ->orWhereIn('nik', $candidates)
-                    ->first();
-            }
+                        if ($localKaryawan) {
+                            $employeeData = (object) [
+                                'NIK' => $localKaryawan->nik ?? $localKaryawan->no_ktp ?? $rawInput,
+                                'EMPNM' => $localKaryawan->nama_lengkap ?? 'Karyawan ' . $rawInput,
+                                'DEPTID' => $localKaryawan->departemen ?? 'General',
+                                'FOTOBLOB' => null,
+                                'CARDNODEVICE' => null,
+                                'RFID' => $rawInput,
+                            ];
+                        }
+                    } catch (\Exception $e) {
+                        // ignore
+                    }
+                }
 
-            if (!$participant) {
-                $photoBase64 = !empty($employeeData->FOTOBLOB) ? 'data:image/jpeg;base64,' . base64_encode($employeeData->FOTOBLOB) : null;
-                $rfidToSave = !empty($employeeData->CARDNODEVICE) ? (string)$employeeData->CARDNODEVICE : (!empty($employeeData->RFID) ? $employeeData->RFID : $rawInput);
+                // Jika tidak ditemukan di database manapun, TOLAK (beri flag not_registered agar frontend bisa confirm input manual)
+                if (!$employeeData) {
+                    return response()->json([
+                        'status' => 'error',
+                        'not_registered' => true,
+                        'rfid' => $rawInput,
+                        'message' => "Nomor RFID / NIK '{$rawInput}' tidak terdaftar di database pusat.",
+                    ], 404);
+                }
 
-                $participant = PoolParticipant::create([
-                    'rfid' => $rfidToSave,
-                    'nik' => $employeeData->NIK ?? $rawInput,
-                    'name' => $employeeData->EMPNM ?? ('Peserta ' . substr($rawInput, -4)),
-                    'department' => $employeeData->DEPTID ?? 'Umum',
-                    'photo' => $photoBase64,
-                    'total_score' => 0,
-                    'booths_voted_count' => 0,
-                    'last_activity_at' => Carbon::now(),
-                ]);
+                // 2c. Cek kembali ke pool_participants berdasarkan NIK
+                // (Mencegah multi-akun jika karyawan tap dengan variasi NIK atau kartu berbeda)
+                if (!empty($employeeData->NIK)) {
+                    $participant = PoolParticipant::where('nik', $employeeData->NIK)
+                        ->orWhereIn('nik', $candidates)
+                        ->first();
+                }
+
+                if (!$participant) {
+                    $photoBase64 = !empty($employeeData->FOTOBLOB) ? 'data:image/jpeg;base64,' . base64_encode($employeeData->FOTOBLOB) : null;
+                    $rfidToSave = !empty($employeeData->CARDNODEVICE) ? (string)$employeeData->CARDNODEVICE : (!empty($employeeData->RFID) ? $employeeData->RFID : $rawInput);
+
+                    $participant = PoolParticipant::create([
+                        'rfid' => $rfidToSave,
+                        'nik' => $employeeData->NIK ?? $rawInput,
+                        'name' => $employeeData->EMPNM ?? ('Peserta ' . substr($rawInput, -4)),
+                        'department' => $employeeData->DEPTID ?? 'Umum',
+                        'photo' => $photoBase64,
+                        'total_score' => 0,
+                        'booths_voted_count' => 0,
+                        'last_activity_at' => Carbon::now(),
+                    ]);
+                } else {
+                    $participant->update([
+                        'last_activity_at' => Carbon::now(),
+                    ]);
+                }
             } else {
                 $participant->update([
                     'last_activity_at' => Carbon::now(),
                 ]);
             }
-        } else {
-            $participant->update([
-                'last_activity_at' => Carbon::now(),
-            ]);
-        }
         }
 
         // 3. Validasi: Apakah sudah pernah vote di booth ini?
@@ -501,15 +518,17 @@ class PoolQccBoothController extends Controller
         }
 
         $isCorrect = (strtoupper($originalKey) === $correctAnswerOrig);
-        // Juri / Manajemen mendapatkan bobot poin vote dinamis (default 10 poin), peserta umum 1 poin
-        $pointsEarned = $isCorrect ? ($isJudge ? $judgeVoteWeight : ($question->points > 0 ? $question->points : 1)) : 0;
+        // Bobot vote untuk Booth: Juri / VIP memberikan bobot poin dinamis (misal 10 poin), peserta umum 1 poin
+        $boothPoints = $isCorrect ? ($isJudge ? $judgeVoteWeight : ($question->points > 0 ? $question->points : 1)) : 0;
+        // Poin untuk Diri Sendiri (Reward Nominee peserta): TETAP 1 poin jika benar agar tidak jomplang nominasi rewardnya
+        $participantPoints = $isCorrect ? 1 : 0;
 
         // Label tampilan kunci jawaban yang benar di layar peserta saat ini
         $correctAnswerDisplay = $origToDisplayMap[$correctAnswerOrig] ?? $correctAnswerOrig;
         $correctAnswerField = 'option_' . strtolower($correctAnswerOrig);
         $correctAnswerText = $question->{$correctAnswerField} ?? '';
 
-        DB::transaction(function () use ($participant, $booth, $question, $originalKey, $isCorrect, $pointsEarned, $isJudge) {
+        DB::transaction(function () use ($participant, $booth, $question, $originalKey, $isCorrect, $boothPoints, $participantPoints, $isJudge) {
             // 1. Simpan Log Vote (Simpan original key A/B/C/D agar konsisten dengan master bank soal)
             PoolVote::create([
                 'participant_id' => $participant->id,
@@ -517,21 +536,21 @@ class PoolQccBoothController extends Controller
                 'question_id' => $question->id,
                 'participant_answer' => $originalKey,
                 'is_correct' => $isCorrect,
-                'points_awarded' => $pointsEarned,
+                'points_awarded' => $boothPoints,
                 'is_judge_vote' => $isJudge,
                 'answered_at' => Carbon::now(),
             ]);
 
-            // 2. Tambah poin peserta jika benar
+            // 2. Tambah poin peserta jika benar (TETAP 1 poin untuk personal score reward nominee)
             if ($isCorrect) {
-                $participant->increment('total_score', $pointsEarned);
+                $participant->increment('total_score', $participantPoints);
             }
             $participant->increment('booths_voted_count', 1);
             $participant->update(['last_activity_at' => Carbon::now()]);
 
-            // 3. Tambah poin booth jika benar
+            // 3. Tambah poin booth jika benar (Bobot vote khusus juri/VIP)
             if ($isCorrect) {
-                $booth->increment('total_points', $pointsEarned);
+                $booth->increment('total_points', $boothPoints);
             }
             $booth->increment('total_voters', 1);
         });
@@ -549,7 +568,8 @@ class PoolQccBoothController extends Controller
         return response()->json([
             'status' => 'success',
             'is_correct' => $isCorrect,
-            'points_earned' => $pointsEarned,
+            'points_earned' => $participantPoints,
+            'booth_points_earned' => $boothPoints,
             'is_judge' => $isJudge,
             'judge_title' => $judgeTitle,
             'judge_vote_weight' => $judgeVoteWeight,
@@ -582,7 +602,31 @@ class PoolQccBoothController extends Controller
             ->orderBy('total_voters', 'desc')
             ->get();
 
-        $participants = PoolParticipant::orderBy('total_score', 'desc')
+        // Ambil daftar NIK & RFID juri aktif agar tidak masuk dalam nominasi reward dan takeover peserta
+        $judgeIdentifiers = PoolJudge::where('is_active', true)
+            ->get(['nik', 'rfid'])
+            ->flatMap(function ($j) {
+                $nik = (string)$j->nik;
+                $stripped = ltrim($nik, '0');
+                return array_filter([
+                    $nik,
+                    $stripped,
+                    '0' . $stripped,
+                    str_pad($stripped, 8, '0', STR_PAD_LEFT),
+                    str_pad($stripped, 9, '0', STR_PAD_LEFT),
+                    (string)$j->rfid,
+                ]);
+            })
+            ->unique()
+            ->values()
+            ->toArray();
+
+        $participants = PoolParticipant::whereNotIn('nik', $judgeIdentifiers)
+            ->where(function ($q) use ($judgeIdentifiers) {
+                $q->whereNull('rfid')
+                  ->orWhereNotIn('rfid', $judgeIdentifiers);
+            })
+            ->orderBy('total_score', 'desc')
             ->orderBy('updated_at', 'asc')
             ->get();
 
@@ -732,7 +776,31 @@ class PoolQccBoothController extends Controller
      */
     public function spinWheel(Request $request)
     {
-        $participants = PoolParticipant::orderBy('total_score', 'desc')
+        // Ambil daftar NIK & RFID juri aktif agar tidak masuk dalam undian lucky draw
+        $judgeIdentifiers = PoolJudge::where('is_active', true)
+            ->get(['nik', 'rfid'])
+            ->flatMap(function ($j) {
+                $nik = (string)$j->nik;
+                $stripped = ltrim($nik, '0');
+                return array_filter([
+                    $nik,
+                    $stripped,
+                    '0' . $stripped,
+                    str_pad($stripped, 8, '0', STR_PAD_LEFT),
+                    str_pad($stripped, 9, '0', STR_PAD_LEFT),
+                    (string)$j->rfid,
+                ]);
+            })
+            ->unique()
+            ->values()
+            ->toArray();
+
+        $participants = PoolParticipant::whereNotIn('nik', $judgeIdentifiers)
+            ->where(function ($q) use ($judgeIdentifiers) {
+                $q->whereNull('rfid')
+                  ->orWhereNotIn('rfid', $judgeIdentifiers);
+            })
+            ->orderBy('total_score', 'desc')
             ->orderBy('updated_at', 'asc')
             ->get();
 
