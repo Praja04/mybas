@@ -111,7 +111,8 @@
                 <thead>
                     <tr class="bg-slate-50/75 dark:bg-slate-800/50 text-[11px] font-extrabold text-slate-400 uppercase tracking-wider border-b border-slate-200 dark:border-slate-800">
                         <th class="py-3 px-4 text-center w-14">Urutan</th>
-                        <th class="py-3 px-4">Nama Aspek & Deskripsi Kriteria</th>
+                        <th class="py-3 px-4 w-60 sm:w-72">Nama Aspek</th>
+                        <th class="py-3 px-4">Kriteria / Indikator Penilaian</th>
                         <th class="py-3 px-4 text-center w-28">Bobot (%)</th>
                         <th class="py-3 px-4 text-center w-28">Skor Maks</th>
                         <th class="py-3 px-4 text-center w-28">Status</th>
@@ -120,7 +121,7 @@
                 </thead>
                 <tbody id="criteriaTableBody" class="divide-y divide-slate-100 dark:divide-slate-800 text-xs">
                     <tr>
-                        <td colspan="6" class="py-12 text-center text-slate-400">
+                        <td colspan="7" class="py-12 text-center text-slate-400">
                             <i class="fa-solid fa-circle-notch fa-spin text-2xl text-indigo-500 mb-2 block"></i>
                             <span>Memuat data kriteria penilaian...</span>
                         </td>
@@ -154,21 +155,25 @@
 
         <!-- Form Body -->
         <form id="createCriterionForm" onsubmit="saveNewCriterion(event)" class="p-6 space-y-4">
-            <!-- Nama Kriteria -->
+            <!-- Nama Aspek (Dengan Autocomplete Merge) -->
             <div>
-                <label for="createName" class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 uppercase tracking-wider">
-                    Nama Aspek / Kriteria <span class="text-rose-500">*</span>:
-                </label>
-                <input type="text" id="createName" required placeholder="Contoh: Kreativitas & Orisinalitas Inovasi"
+                <div class="flex items-center justify-between mb-1.5">
+                    <label for="createName" class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                        Nama Aspek Penilaian <span class="text-rose-500">*</span>:
+                    </label>
+                    <span class="text-[10px] text-indigo-600 dark:text-indigo-400 font-semibold">Bisa pakai nama aspek yang sama untuk di-merge</span>
+                </div>
+                <input type="text" id="createName" list="aspectNamesList" required placeholder="Pilih atau ketik aspek (Contoh: Interaksi & Campaign Engagement)"
                     class="w-full px-4 py-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs text-slate-900 dark:text-white font-bold focus:outline-none focus:border-indigo-500">
+                <datalist id="aspectNamesList"></datalist>
             </div>
 
-            <!-- Deskripsi / Pedoman Penilaian -->
+            <!-- Deskripsi / Indikator Penilaian -->
             <div>
                 <label for="createDescription" class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 uppercase tracking-wider">
-                    Deskripsi & Panduan Penilaian Juri:
+                    Kriteria / Indikator Penilaian Spesifik:
                 </label>
-                <textarea id="createDescription" rows="3" placeholder="Jelaskan indikator apa yang dinilai juri pada kriteria ini..."
+                <textarea id="createDescription" rows="3" placeholder="Contoh: Seberapa masif tim mempromosikan booth dan acara..."
                     class="w-full px-4 py-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500"></textarea>
             </div>
 
@@ -250,19 +255,22 @@
         <form id="editCriterionForm" onsubmit="saveEditCriterion(event)" class="p-6 space-y-4">
             <input type="hidden" id="editCriterionId" value="">
 
-            <!-- Nama Kriteria -->
+            <!-- Nama Aspek (Dengan Autocomplete Merge) -->
             <div>
-                <label for="editName" class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 uppercase tracking-wider">
-                    Nama Aspek / Kriteria <span class="text-rose-500">*</span>:
-                </label>
-                <input type="text" id="editName" required
+                <div class="flex items-center justify-between mb-1.5">
+                    <label for="editName" class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                        Nama Aspek Penilaian <span class="text-rose-500">*</span>:
+                    </label>
+                    <span class="text-[10px] text-amber-600 dark:text-amber-400 font-semibold">Bisa pakai nama aspek yang sama untuk di-merge</span>
+                </div>
+                <input type="text" id="editName" list="aspectNamesList" required
                     class="w-full px-4 py-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs text-slate-900 dark:text-white font-bold focus:outline-none focus:border-amber-500">
             </div>
 
-            <!-- Deskripsi / Pedoman Penilaian -->
+            <!-- Deskripsi / Indikator Penilaian -->
             <div>
                 <label for="editDescription" class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 uppercase tracking-wider">
-                    Deskripsi & Panduan Penilaian Juri:
+                    Kriteria / Indikator Penilaian Spesifik:
                 </label>
                 <textarea id="editDescription" rows="3"
                     class="w-full px-4 py-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-amber-500"></textarea>
@@ -342,6 +350,7 @@ function loadCriteriaData() {
         success: function(res) {
             if (res.status === 'success') {
                 currentCriteria = res.data || [];
+                updateAspectDataList();
                 updateStats(res.meta || {});
                 renderTable($('#searchCriteriaInput').val().toLowerCase().trim());
             }
@@ -350,7 +359,7 @@ function loadCriteriaData() {
             console.error('Error loading criteria:', err);
             $('#criteriaTableBody').html(`
                 <tr>
-                    <td colspan="6" class="py-8 text-center text-rose-500 font-bold">
+                    <td colspan="7" class="py-8 text-center text-rose-500 font-bold">
                         <i class="fa-solid fa-triangle-exclamation mr-1.5"></i> Gagal memuat data kriteria.
                     </td>
                 </tr>
@@ -382,6 +391,16 @@ function updateStats(meta) {
     }
 }
 
+function updateAspectDataList() {
+    const $dl = $('#aspectNamesList');
+    if ($dl.length === 0) return;
+    $dl.empty();
+    const uniqueNames = Array.from(new Set(currentCriteria.map(c => (c.name || '').trim()))).filter(Boolean);
+    uniqueNames.forEach(name => {
+        $dl.append(`<option value="${escapeHtml(name)}">`);
+    });
+}
+
 function renderTable(keyword = '') {
     const $tbody = $('#criteriaTableBody');
     $tbody.empty();
@@ -397,7 +416,7 @@ function renderTable(keyword = '') {
     if (filtered.length === 0) {
         $tbody.html(`
             <tr>
-                <td colspan="6" class="py-12 text-center text-slate-400">
+                <td colspan="7" class="py-12 text-center text-slate-400">
                     <i class="fa-solid fa-clipboard-list text-3xl mb-2 text-slate-300 dark:text-slate-600 block"></i>
                     <span class="text-sm font-semibold">Tidak ada data kriteria yang sesuai.</span>
                 </td>
@@ -406,50 +425,126 @@ function renderTable(keyword = '') {
         return;
     }
 
-    filtered.forEach((c) => {
-        const statusBadge = c.is_active
-            ? `<button onclick="toggleCriterion(${c.id})" class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20 transition cursor-pointer" title="Klik untuk nonaktifkan"><i class="fa-solid fa-check-circle mr-1"></i> Aktif</button>`
-            : `<button onclick="toggleCriterion(${c.id})" class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-slate-500/10 text-slate-500 border border-slate-500/30 hover:bg-slate-500/20 transition cursor-pointer" title="Klik untuk aktifkan"><i class="fa-solid fa-ban mr-1"></i> Nonaktif</button>`;
+    // Kelompokkan data berdasarkan Nama Aspek (case-insensitive & trimmed)
+    const groups = [];
+    const groupMap = new Map();
 
-        const tr = `
-            <tr class="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition">
-                <td class="py-3.5 px-4 text-center font-extrabold text-xs text-slate-500">
-                    <span class="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-800 inline-flex items-center justify-center">
-                        ${c.order || '-'}
-                    </span>
-                </td>
-                <td class="py-3.5 px-4">
-                    <div class="font-extrabold text-slate-900 dark:text-white text-sm">
-                        ${escapeHtml(c.name)}
-                    </div>
-                    ${c.description ? `<p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-2">${escapeHtml(c.description)}</p>` : ''}
-                </td>
-                <td class="py-3.5 px-4 text-center">
-                    <span class="inline-flex items-center px-2.5 py-1 rounded-xl text-xs font-black bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800">
-                        ${c.weight}%
-                    </span>
-                </td>
-                <td class="py-3.5 px-4 text-center">
-                    <span class="font-mono text-xs font-bold text-slate-700 dark:text-slate-300">
-                        ${c.max_score}
-                    </span>
-                </td>
-                <td class="py-3.5 px-4 text-center">
-                    ${statusBadge}
-                </td>
-                <td class="py-3.5 px-4 text-center">
-                    <div class="flex items-center justify-center space-x-1.5">
-                        <button onclick="openEditModal(${c.id})" class="p-2 rounded-xl text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/50 transition cursor-pointer" title="Edit Kriteria">
-                            <i class="fa-solid fa-pen-to-square"></i>
-                        </button>
-                        <button onclick="deleteCriterion(${c.id}, '${escapeHtml(c.name)}')" class="p-2 rounded-xl text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/50 transition cursor-pointer" title="Hapus Kriteria">
-                            <i class="fa-solid fa-trash-can"></i>
-                        </button>
-                    </div>
-                </td>
-            </tr>
-        `;
-        $tbody.append(tr);
+    filtered.forEach(c => {
+        const rawName = (c.name || 'Umum').trim();
+        const normKey = rawName.toLowerCase();
+        if (!groupMap.has(normKey)) {
+            const groupObj = {
+                key: normKey,
+                name: rawName,
+                items: [],
+                totalWeight: 0
+            };
+            groupMap.set(normKey, groupObj);
+            groups.push(groupObj);
+        }
+        const grp = groupMap.get(normKey);
+        grp.items.push(c);
+        if (c.is_active) {
+            grp.totalWeight += parseFloat(c.weight || 0);
+        }
+    });
+
+    // Render per group dengan merge (rowspan) pada kolom Nama Aspek
+    groups.forEach((grp) => {
+        const isMultiple = grp.items.length > 1;
+        const rowspan = grp.items.length;
+        const roundedGroupWeight = (grp.totalWeight % 1 === 0) ? grp.totalWeight.toFixed(0) : grp.totalWeight.toFixed(1);
+
+        grp.items.forEach((c, itemIdx) => {
+            const isFirst = (itemIdx === 0);
+            const isLast = (itemIdx === grp.items.length - 1);
+
+            const statusBadge = c.is_active
+                ? `<button onclick="toggleCriterion(${c.id})" class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20 transition cursor-pointer" title="Klik untuk nonaktifkan"><i class="fa-solid fa-check-circle mr-1"></i> Aktif</button>`
+                : `<button onclick="toggleCriterion(${c.id})" class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-slate-500/10 text-slate-500 border border-slate-500/30 hover:bg-slate-500/20 transition cursor-pointer" title="Klik untuk aktifkan"><i class="fa-solid fa-ban mr-1"></i> Nonaktif</button>`;
+
+            // Kolom Nama Aspek (hanya di-render pada item pertama di grup, dengan rowspan)
+            let aspectCellHtml = '';
+            if (isFirst) {
+                if (isMultiple) {
+                    aspectCellHtml = `
+                        <td rowspan="${rowspan}" class="py-3.5 px-4 align-top bg-indigo-50/25 dark:bg-indigo-950/20 border-r border-slate-200/80 dark:border-slate-800">
+                            <div class="font-extrabold text-slate-900 dark:text-white text-sm leading-snug">
+                                ${escapeHtml(grp.name)}
+                            </div>
+                            <div class="flex flex-wrap items-center gap-1.5 mt-2">
+                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300">
+                                    <i class="fa-solid fa-layer-group text-[9px]"></i> ${rowspan} Indikator (Merged)
+                                </span>
+                                <span class="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800" title="Akumulasi bobot aktif dalam aspek ini">
+                                    Total ${roundedGroupWeight}%
+                                </span>
+                            </div>
+                        </td>
+                    `;
+                } else {
+                    aspectCellHtml = `
+                        <td class="py-3.5 px-4 align-top border-r border-slate-100 dark:border-slate-800/60">
+                            <div class="font-extrabold text-slate-900 dark:text-white text-sm">
+                                ${escapeHtml(grp.name)}
+                            </div>
+                        </td>
+                    `;
+                }
+            }
+
+            // Indikator Deskripsi
+            const descHtml = c.description
+                ? `<div class="text-xs font-semibold text-slate-800 dark:text-slate-200 leading-relaxed">${escapeHtml(c.description)}</div>`
+                : `<span class="text-xs text-slate-400 italic">Tidak ada rincian kriteria penilaian</span>`;
+
+            const subBadge = isMultiple
+                ? `<span class="text-[10px] text-indigo-500 dark:text-indigo-400 font-bold block mt-1"><i class="fa-solid fa-turn-up fa-rotate-90 mr-1 text-[9px]"></i> Butir Penilaian #${itemIdx + 1}</span>`
+                : '';
+
+            const rowBorderClass = (isMultiple && !isLast)
+                ? 'border-b border-dashed border-slate-200/70 dark:border-slate-800/70 hover:bg-indigo-50/15 dark:hover:bg-slate-800/40'
+                : 'hover:bg-slate-50/60 dark:hover:bg-slate-800/40';
+
+            const tr = `
+                <tr class="${rowBorderClass} transition">
+                    <td class="py-3.5 px-4 text-center font-extrabold text-xs text-slate-500 align-top">
+                        <span class="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-800 inline-flex items-center justify-center">
+                            ${c.order || '-'}
+                        </span>
+                    </td>
+                    ${aspectCellHtml}
+                    <td class="py-3.5 px-4 align-top">
+                        ${descHtml}
+                        ${subBadge}
+                    </td>
+                    <td class="py-3.5 px-4 text-center align-top">
+                        <span class="inline-flex items-center px-2.5 py-1 rounded-xl text-xs font-black bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800">
+                            ${c.weight}%
+                        </span>
+                    </td>
+                    <td class="py-3.5 px-4 text-center align-top">
+                        <span class="font-mono text-xs font-bold text-slate-700 dark:text-slate-300">
+                            ${c.max_score}
+                        </span>
+                    </td>
+                    <td class="py-3.5 px-4 text-center align-top">
+                        ${statusBadge}
+                    </td>
+                    <td class="py-3.5 px-4 text-center align-top">
+                        <div class="flex items-center justify-center space-x-1.5">
+                            <button onclick="openEditModal(${c.id})" class="p-2 rounded-xl text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/50 transition cursor-pointer" title="Edit Kriteria">
+                                <i class="fa-solid fa-pen-to-square"></i>
+                            </button>
+                            <button onclick="deleteCriterion(${c.id}, '${escapeHtml(c.name)}')" class="p-2 rounded-xl text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/50 transition cursor-pointer" title="Hapus Kriteria">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+            $tbody.append(tr);
+        });
     });
 }
 

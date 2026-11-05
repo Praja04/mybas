@@ -178,6 +178,17 @@
 
             <!-- Form -->
             <form id="formManualParticipant" onsubmit="handleManualSubmit(event)" class="space-y-4">
+                <input type="hidden" id="manualRfidInput" value="">
+
+                <!-- RFID Terdeteksi Box (Muncul jika dibuka via Tapping RFID) -->
+                <div id="manualRfidBox" class="hidden p-3 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800/60 flex items-center justify-between">
+                    <div class="flex items-center space-x-2">
+                        <i class="fa-solid fa-id-card text-indigo-600 dark:text-indigo-400 text-sm"></i>
+                        <span class="text-xs font-bold text-slate-700 dark:text-slate-300">RFID Terdeteksi:</span>
+                    </div>
+                    <span id="manualRfidDisplay" class="font-mono font-black text-xs text-indigo-700 dark:text-indigo-300 bg-white dark:bg-slate-900 px-2.5 py-1 rounded-lg border border-indigo-200 dark:border-indigo-800"></span>
+                </div>
+
                 <div>
                     <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 uppercase tracking-wider">
                         Nomor NIK / ID Peserta <span class="text-rose-500">*</span>
@@ -226,11 +237,12 @@
         const scanStatus = document.getElementById('scanStatus');
         const boothId = {{ $booth->id }};
 
-        // Auto focus terus pada input scanner jika modal manual tidak terbuka
+        // Auto focus terus pada input scanner jika modal manual tidak terbuka dan tidak ada dialog alert
         setInterval(() => {
             const modal = document.getElementById('modalManualInput');
             const isModalOpen = modal && !modal.classList.contains('hidden');
-            if (!isModalOpen && document.activeElement !== rfidInput && !document.querySelector('input:focus')) {
+            const isSwalOpen = (typeof Swal !== 'undefined' && typeof Swal.isVisible === 'function' && Swal.isVisible());
+            if (!isModalOpen && !isSwalOpen && document.activeElement !== rfidInput && !document.querySelector('input:focus')) {
                 rfidInput.focus();
             }
         }, 2000);
@@ -265,8 +277,10 @@
                         rfid: rfidVal
                     })
                 })
-                .then(res => res.json())
-                .then(data => {
+                .then(res => res.json().then(data => ({ httpStatus: res.status, data })))
+                .then(({ httpStatus, data }) => {
+                    rfidInput.disabled = false;
+
                     if (data.status === 'success') {
                         scanStatus.className =
                             'my-4 p-4 rounded-2xl text-xs sm:text-sm font-bold bg-emerald-50 text-emerald-800 border border-emerald-300 shadow-sm';
@@ -284,16 +298,62 @@
                         setTimeout(() => {
                             window.location.href = data.redirect_url;
                         }, 700);
+                    } else if (data.not_registered) {
+                        // KARTU TIDAK TERDAFTAR DI DB PUSAT -> TAMPILKAN CONFIRM MODAL INPUT MANUAL
+                        scanStatus.className =
+                            'my-4 p-4 rounded-2xl text-xs sm:text-sm font-bold bg-amber-50 text-amber-800 border border-amber-300 shadow-sm';
+                        scanStatus.innerHTML =
+                            `<i class="fa-solid fa-triangle-exclamation text-amber-600 mr-2"></i> Kartu RFID '${data.rfid || rfidVal}' belum terdaftar di database pusat.`;
+
+                        rfidInput.value = '';
+                        rfidInput.blur();
+
+                        Swal.fire({
+                            icon: 'question',
+                            title: 'Kartu Belum Terdaftar',
+                            html: `
+                                <div class="text-left text-xs text-slate-600 dark:text-slate-300 space-y-2">
+                                    <p>Nomor Kartu RFID berikut tidak ditemukan di database pusat (MSIDCARD):</p>
+                                    <div class="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-center font-mono font-black text-sm text-indigo-600 dark:text-indigo-400 border border-slate-200 dark:border-slate-700">
+                                        ${data.rfid || rfidVal}
+                                    </div>
+                                    <p class="font-bold text-slate-800 dark:text-slate-200 pt-1">
+                                        Apakah Anda ingin mendaftarkan manual (NIK & Nama) untuk kartu RFID ini sekarang?
+                                    </p>
+                                    <p class="text-[11px] text-slate-400">
+                                        *Data akan disimpan di database lokal. Selanjutnya kartu ini bisa langsung digunakan untuk tap di seluruh booth!
+                                    </p>
+                                </div>
+                            `,
+                            showCancelButton: true,
+                            confirmButtonText: '<i class="fa-solid fa-user-pen mr-1.5"></i> Ya, Input Manual',
+                            cancelButtonText: 'Batal / Tap Ulang',
+                            confirmButtonColor: '#4f46e5',
+                            cancelButtonColor: '#64748b',
+                            reverseButtons: true
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                openManualModalWithRfid(data.rfid || rfidVal);
+                            } else {
+                                rfidInput.focus();
+                            }
+                        });
                     } else {
-                        throw new Error(data.message || 'Kartu tidak dapat digunakan pada booth ini.');
+                        // Error validasi lainnya (misal: sudah pernah vote, kuota penuh)
+                        scanStatus.className =
+                            'my-4 p-4 rounded-2xl text-xs sm:text-sm font-bold bg-rose-50 text-rose-800 border border-rose-300 shadow-sm';
+                        scanStatus.innerHTML =
+                            `<i class="fa-solid fa-circle-xmark text-rose-600 mr-2 text-base"></i> ${data.message || 'Kartu tidak dapat digunakan pada booth ini.'}`;
+                        rfidInput.value = '';
+                        rfidInput.focus();
                     }
                 })
                 .catch(err => {
+                    rfidInput.disabled = false;
                     scanStatus.className =
                         'my-4 p-4 rounded-2xl text-xs sm:text-sm font-bold bg-rose-50 text-rose-800 border border-rose-300 shadow-sm';
                     scanStatus.innerHTML =
-                        `<i class="fa-solid fa-circle-xmark text-rose-600 mr-2 text-base"></i> ${err.message}`;
-                    rfidInput.disabled = false;
+                        `<i class="fa-solid fa-circle-xmark text-rose-600 mr-2 text-base"></i> ${err.message || 'Terjadi kesalahan jaringan.'}`;
                     rfidInput.value = '';
                     rfidInput.focus();
                 });
@@ -303,13 +363,26 @@
         // MODAL MANUAL INPUT HANDLERS
         // ==============================================================
         function openManualModal() {
+            openManualModalWithRfid('');
+        }
+
+        function openManualModalWithRfid(rfid = '') {
             document.getElementById('manualInputError').classList.add('hidden');
+            document.getElementById('manualRfidInput').value = rfid || '';
+            const rfidBox = document.getElementById('manualRfidBox');
+            const rfidDisplay = document.getElementById('manualRfidDisplay');
+            if (rfid) {
+                rfidDisplay.textContent = rfid;
+                rfidBox.classList.remove('hidden');
+            } else {
+                rfidBox.classList.add('hidden');
+            }
             document.getElementById('manualNikInput').value = '';
             document.getElementById('manualNameInput').value = '';
             document.getElementById('modalManualInput').classList.remove('hidden');
             setTimeout(() => {
                 document.getElementById('manualNikInput').focus();
-            }, 100);
+            }, 150);
         }
 
         function closeManualModal() {
@@ -320,6 +393,7 @@
 
         function handleManualSubmit(e) {
             e.preventDefault();
+            const rfid = document.getElementById('manualRfidInput').value.trim();
             const nik = document.getElementById('manualNikInput').value.trim();
             const name = document.getElementById('manualNameInput').value.trim();
 
@@ -341,7 +415,7 @@
                     "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                 },
                 body: JSON.stringify({
-                    rfid: nik,
+                    rfid: rfid || nik,
                     nik: nik,
                     name: name,
                     is_manual: true

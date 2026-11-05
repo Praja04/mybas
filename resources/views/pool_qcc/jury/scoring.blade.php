@@ -654,70 +654,142 @@
             }
 
             $('#singleScoreFallback').addClass('hidden');
-            $('#criteriaCountBadge').text(criteria.length + ' Kriteria');
+            $('#criteriaCountBadge').text(criteria.length + ' Butir Penilaian');
 
-            criteria.forEach((c, index) => {
-                const maxScore = c.max_score || 100;
-                let initScore = (c.saved_score !== null && c.saved_score !== undefined)
-                    ? parseFloat(c.saved_score)
-                    : (evalData ? parseFloat(evalData.score) : 80);
+            // Kelompokkan kriteria berdasarkan Nama Aspek (case-insensitive & trimmed)
+            const groups = [];
+            const groupMap = new Map();
 
-                if (initScore > maxScore) initScore = maxScore;
-                if (initScore < 0) initScore = 0;
+            criteria.forEach(c => {
+                const rawName = (c.name || 'Umum').trim();
+                const normKey = rawName.toLowerCase();
+                if (!groupMap.has(normKey)) {
+                    const grp = {
+                        name: rawName,
+                        items: [],
+                        totalWeight: 0
+                    };
+                    groupMap.set(normKey, grp);
+                    groups.push(grp);
+                }
+                const grp = groupMap.get(normKey);
+                grp.items.push(c);
+                grp.totalWeight += parseFloat(c.weight || 0);
+            });
 
-                const cardHtml = `
-                    <div class="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs hover:border-indigo-300 dark:hover:border-indigo-800 transition">
-                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2 pb-2 border-b border-slate-100 dark:border-slate-800">
-                            <div>
-                                <div class="flex items-center gap-2">
-                                    <span class="w-6 h-6 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 font-extrabold text-xs flex items-center justify-center">
-                                        ${index + 1}
+            let globalOrder = 0;
+            groups.forEach(grp => {
+                const isGrouped = grp.items.length > 1;
+                const roundedWeight = (grp.totalWeight % 1 === 0) ? grp.totalWeight.toFixed(0) : grp.totalWeight.toFixed(1);
+
+                let innerItemsHtml = '';
+
+                grp.items.forEach((c, itemIdx) => {
+                    globalOrder++;
+                    const maxScore = c.max_score || 100;
+                    let initScore = (c.saved_score !== null && c.saved_score !== undefined)
+                        ? parseFloat(c.saved_score)
+                        : (evalData ? parseFloat(evalData.score) : 80);
+
+                    if (initScore > maxScore) initScore = maxScore;
+                    if (initScore < 0) initScore = 0;
+
+                    const itemTitle = isGrouped 
+                        ? (c.description || `Indikator #${itemIdx + 1}`) 
+                        : (c.name);
+                    const itemDesc = isGrouped 
+                        ? '' 
+                        : (c.description ? `<p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1 pl-8">${escapeHtml(c.description)}</p>` : '');
+
+                    innerItemsHtml += `
+                        <div class="${isGrouped ? 'p-3.5 sm:p-4 rounded-xl bg-slate-50/80 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/60' : ''}">
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2 pb-2 border-b border-slate-100 dark:border-slate-800">
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="w-6 h-6 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 font-extrabold text-xs flex items-center justify-center">
+                                            ${isGrouped ? `${itemIdx + 1}` : globalOrder}
+                                        </span>
+                                        <h5 class="text-sm font-extrabold text-slate-900 dark:text-white">
+                                            ${escapeHtml(itemTitle)}
+                                        </h5>
+                                    </div>
+                                    ${itemDesc}
+                                </div>
+                                <div class="flex items-center justify-end space-x-2 pl-8 sm:pl-0 flex-shrink-0">
+                                    <span class="px-2.5 py-0.5 rounded-full text-[11px] font-black bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800">
+                                        Bobot: ${c.weight}%
                                     </span>
-                                    <h5 class="text-sm font-extrabold text-slate-900 dark:text-white">
-                                        ${escapeHtml(c.name)}
-                                    </h5>
+                                    <div class="flex items-center space-x-1">
+                                        <input type="number" id="criterion_num_${c.id}" min="0" max="${maxScore}" value="${initScore}"
+                                            oninput="onCriterionInputChange(${c.id}, this.value, 'num')"
+                                            class="w-16 px-2 py-1 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-center font-black text-sm text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500">
+                                        <span class="text-[11px] text-slate-400 font-bold">/ ${maxScore}</span>
+                                    </div>
                                 </div>
-                                ${c.description ? `<p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1 pl-8">${escapeHtml(c.description)}</p>` : ''}
                             </div>
-                            <div class="flex items-center justify-end space-x-2 pl-8 sm:pl-0 flex-shrink-0">
-                                <span class="px-2.5 py-0.5 rounded-full text-[11px] font-black bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800">
-                                    Bobot: ${c.weight}%
-                                </span>
+
+                            <!-- Slider -->
+                            <div class="mt-3 px-1">
+                                <input type="range" id="criterion_range_${c.id}" min="0" max="${maxScore}" step="1" value="${initScore}"
+                                    oninput="onCriterionInputChange(${c.id}, this.value, 'range')"
+                                    class="w-full h-2.5 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-600 focus:outline-none">
+                            </div>
+
+                            <!-- Preset Chips & Contrib Preview -->
+                            <div class="mt-3 flex flex-wrap items-center justify-between gap-2 pt-2 text-[11px]">
                                 <div class="flex items-center space-x-1">
-                                    <input type="number" id="criterion_num_${c.id}" min="0" max="${maxScore}" value="${initScore}"
-                                        oninput="onCriterionInputChange(${c.id}, this.value, 'num')"
-                                        class="w-16 px-2 py-1 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-center font-black text-sm text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500">
-                                    <span class="text-[11px] text-slate-400 font-bold">/ ${maxScore}</span>
+                                    <span class="text-[10px] font-bold text-slate-400 mr-1 hidden sm:inline">Pilihan:</span>
+                                    <button type="button" onclick="setCriterionPreset(${c.id}, 70)" class="px-2 py-0.5 rounded-lg font-bold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-indigo-50 transition">70</button>
+                                    <button type="button" onclick="setCriterionPreset(${c.id}, 75)" class="px-2 py-0.5 rounded-lg font-bold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-indigo-50 transition">75</button>
+                                    <button type="button" onclick="setCriterionPreset(${c.id}, 80)" class="px-2 py-0.5 rounded-lg font-bold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-indigo-50 transition">80</button>
+                                    <button type="button" onclick="setCriterionPreset(${c.id}, 85)" class="px-2 py-0.5 rounded-lg font-bold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-indigo-50 transition">85</button>
+                                    <button type="button" onclick="setCriterionPreset(${c.id}, 90)" class="px-2 py-0.5 rounded-lg font-bold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-indigo-50 transition">90</button>
+                                    <button type="button" onclick="setCriterionPreset(${c.id}, 95)" class="px-2 py-0.5 rounded-lg font-bold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-indigo-50 transition">95</button>
+                                    <button type="button" onclick="setCriterionPreset(${c.id}, 100)" class="px-2 py-0.5 rounded-lg font-bold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 transition">100</button>
+                                </div>
+                                <div class="text-right text-slate-500 dark:text-slate-400 font-semibold">
+                                    Kontribusi: <strong id="criterion_contrib_${c.id}" class="text-slate-800 dark:text-white font-extrabold">-</strong> Poin
                                 </div>
                             </div>
                         </div>
+                    `;
+                });
 
-                        <!-- Slider -->
-                        <div class="mt-3 px-1">
-                            <input type="range" id="criterion_range_${c.id}" min="0" max="${maxScore}" step="1" value="${initScore}"
-                                oninput="onCriterionInputChange(${c.id}, this.value, 'range')"
-                                class="w-full h-2.5 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-600 focus:outline-none">
-                        </div>
-
-                        <!-- Preset Chips & Contrib Preview -->
-                        <div class="mt-3 flex flex-wrap items-center justify-between gap-2 pt-2 text-[11px]">
-                            <div class="flex items-center space-x-1">
-                                <span class="text-[10px] font-bold text-slate-400 mr-1 hidden sm:inline">Pilihan:</span>
-                                <button type="button" onclick="setCriterionPreset(${c.id}, 70)" class="px-2 py-0.5 rounded-lg font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-indigo-50 transition">70</button>
-                                <button type="button" onclick="setCriterionPreset(${c.id}, 75)" class="px-2 py-0.5 rounded-lg font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-indigo-50 transition">75</button>
-                                <button type="button" onclick="setCriterionPreset(${c.id}, 80)" class="px-2 py-0.5 rounded-lg font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-indigo-50 transition">80</button>
-                                <button type="button" onclick="setCriterionPreset(${c.id}, 85)" class="px-2 py-0.5 rounded-lg font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-indigo-50 transition">85</button>
-                                <button type="button" onclick="setCriterionPreset(${c.id}, 90)" class="px-2 py-0.5 rounded-lg font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-indigo-50 transition">90</button>
-                                <button type="button" onclick="setCriterionPreset(${c.id}, 95)" class="px-2 py-0.5 rounded-lg font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-indigo-50 transition">95</button>
-                                <button type="button" onclick="setCriterionPreset(${c.id}, 100)" class="px-2 py-0.5 rounded-lg font-bold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 transition">100</button>
+                if (isGrouped) {
+                    const cardHtml = `
+                        <div class="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border-2 border-indigo-200 dark:border-indigo-900/60 shadow-xs space-y-4">
+                            <div class="flex items-center justify-between pb-3 border-b border-indigo-100 dark:border-indigo-900/60">
+                                <div class="flex items-center space-x-2">
+                                    <span class="w-7 h-7 rounded-lg bg-indigo-600 text-white font-black text-xs flex items-center justify-center">
+                                        <i class="fa-solid fa-layer-group"></i>
+                                    </span>
+                                    <div>
+                                        <h4 class="text-sm font-black text-indigo-950 dark:text-indigo-200">
+                                            ${escapeHtml(grp.name)}
+                                        </h4>
+                                        <span class="text-[10px] font-bold text-slate-400">
+                                            ${grp.items.length} Butir Penilaian (Aspek Gabungan)
+                                        </span>
+                                    </div>
+                                </div>
+                                <span class="px-2.5 py-1 rounded-full text-xs font-black bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800">
+                                    Total Bobot Aspek: ${roundedWeight}%
+                                </span>
                             </div>
-                            <div class="text-right text-slate-500 dark:text-slate-400 font-semibold">
-                                Kontribusi: <strong id="criterion_contrib_${c.id}" class="text-slate-800 dark:text-white font-extrabold">-</strong> Poin
+                            <div class="space-y-3">
+                                ${innerItemsHtml}
                             </div>
                         </div>
-                    </div>
-                `;
-                $container.append(cardHtml);
+                    `;
+                    $container.append(cardHtml);
+                } else {
+                    const cardHtml = `
+                        <div class="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs hover:border-indigo-300 dark:hover:border-indigo-800 transition">
+                            ${innerItemsHtml}
+                        </div>
+                    `;
+                    $container.append(cardHtml);
+                }
             });
 
             calculateTotalScore();
