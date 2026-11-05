@@ -706,7 +706,6 @@ class PoolQccBoothController extends Controller
                             'name' => $p->name,
                             'nik' => $p->nik ?? '-',
                             'department' => $p->department ?? 'Umum',
-                            'photo' => $p->photo,
                             'total_score' => (int) $p->total_score,
                             'booths_voted_count' => (int) $p->booths_voted_count,
                         ];
@@ -831,7 +830,6 @@ class PoolQccBoothController extends Controller
                             'name' => $p->name,
                             'nik' => $p->nik ?? '-',
                             'department' => $p->department ?? 'Umum',
-                            'photo' => $p->photo,
                             'total_score' => (int) $p->total_score,
                             'booths_voted_count' => (int) $p->booths_voted_count,
                         ];

@@ -240,22 +240,22 @@
                     <!-- Canvas Wheel Display -->
                     <div class="flex-1 min-h-0 flex flex-col items-center justify-center relative w-full my-auto">
                         <!-- Flapper Needle -->
-                        <div class="relative z-30 flex flex-col items-center -mb-4">
-                            <div class="w-7 h-9 bg-gradient-to-b from-amber-400 to-amber-600 border-2 border-white rounded-b-md shadow-2xl flex items-center justify-center filter drop-shadow-lg transform transition-transform"
+                        <div class="relative z-30 flex flex-col items-center -mb-5">
+                            <div class="w-8 h-11 bg-gradient-to-b from-amber-400 to-amber-600 border-2 border-white rounded-b-lg shadow-2xl flex items-center justify-center filter drop-shadow-lg transform transition-transform"
                                 id="wheelFlapper">
-                                <i class="fa-solid fa-caret-down text-slate-950 text-xl -mt-0.5"></i>
+                                <i class="fa-solid fa-caret-down text-slate-950 text-2xl -mt-0.5"></i>
                             </div>
                         </div>
 
-                        <!-- Wheel Circle Canvas Container (Responsive Max Viewport Bound) -->
+                        <!-- Wheel Circle Canvas Container (Enlarged Responsive Stage) -->
                         <div
-                            class="relative w-[280px] h-[280px] sm:w-[330px] sm:h-[330px] lg:w-[360px] lg:h-[360px] xl:w-[390px] xl:h-[390px] max-h-[44vh] max-w-[44vh] aspect-square flex items-center justify-center">
-                            <canvas id="wheelCanvas" width="460" height="460"
-                                class="w-full h-full drop-shadow-[0_16px_36px_rgba(0,0,0,0.35)]"></canvas>
+                            class="relative w-[340px] h-[340px] sm:w-[420px] sm:h-[420px] lg:w-[480px] lg:h-[480px] xl:w-[540px] xl:h-[540px] 2xl:w-[600px] 2xl:h-[600px] max-h-[58vh] max-w-[58vh] aspect-square flex items-center justify-center">
+                            <canvas id="wheelCanvas" width="600" height="600"
+                                class="w-full h-full drop-shadow-[0_20px_40px_rgba(0,0,0,0.4)]"></canvas>
 
                             <!-- Center SPIN Hub Button -->
                             <button type="button" id="centerSpinBtn" onclick="spinTheWheel()"
-                                class="absolute w-16 h-16 sm:w-20 sm:h-20 xl:w-22 xl:h-22 rounded-full bg-gradient-to-tr from-amber-500 via-yellow-300 to-amber-400 border-4 border-white text-slate-950 font-black text-xs sm:text-sm xl:text-base shadow-2xl flex flex-col items-center justify-center cursor-pointer transform hover:scale-105 active:scale-95 transition-all z-20 game-btn-3d">
+                                class="absolute w-20 h-20 sm:w-24 sm:h-24 xl:w-28 xl:h-28 rounded-full bg-gradient-to-tr from-amber-500 via-yellow-300 to-amber-400 border-4 border-white text-slate-950 font-black text-sm sm:text-base xl:text-lg shadow-2xl flex flex-col items-center justify-center cursor-pointer transform hover:scale-105 active:scale-95 transition-all z-20 game-btn-3d">
                                 <span>SPIN!</span>
                                 <i class="fa-solid fa-bolt text-[10px] text-amber-900 mt-0.5"></i>
                             </button>
@@ -702,8 +702,8 @@
                                 <span class="w-6 text-[10px] font-black text-slate-500 text-center flex-shrink-0">
                                     #${idx + 1}
                                 </span>
-                                <div class="w-7 h-7 rounded-full bg-amber-100 dark:bg-slate-700 border border-amber-400 flex items-center justify-center text-[10px] font-black text-amber-800 dark:text-amber-300 flex-shrink-0 overflow-hidden">
-                                    ${c.photo ? `<img src="${c.photo}" class="w-full h-full object-cover">` : (initials || 'P')}
+                                <div class="w-7 h-7 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-white font-black text-[11px] flex items-center justify-center flex-shrink-0 shadow-xs uppercase">
+                                    ${(c.name || 'P').trim().charAt(0).toUpperCase()}
                                 </div>
                                 <div class="truncate leading-tight">
                                     <span class="font-black text-slate-900 dark:text-white truncate block text-xs leading-tight">${escapeHtml(c.name)}</span>
@@ -748,8 +748,8 @@
                                 <span class="text-[10px] font-bold text-slate-500">${tierInfo.rule_text || ''}</span>
                             </div>
                             <div class="flex items-center space-x-3 mt-3">
-                                <div class="w-12 h-12 rounded-full bg-amber-400 border-2 border-amber-500 flex items-center justify-center text-xl text-slate-950 shadow-sm flex-shrink-0">
-                                    <i class="fa-solid fa-trophy"></i>
+                                <div class="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 border-2 border-white text-white font-black text-lg flex items-center justify-center shadow-sm flex-shrink-0 uppercase">
+                                    ${(win.name || 'P').trim().charAt(0).toUpperCase()}
                                 </div>
                                 <div class="truncate">
                                     <h5 class="font-black text-sm text-slate-950 dark:text-white truncate">${escapeHtml(win.name)}</h5>
@@ -794,8 +794,8 @@
                                 <span class="w-6 h-6 rounded-lg bg-purple-600 text-white font-black text-[11px] flex items-center justify-center flex-shrink-0">
                                     #${i}
                                 </span>
-                                <div class="w-7 h-7 rounded-full bg-purple-100 dark:bg-slate-700 border border-purple-400 flex items-center justify-center text-[10px] font-black text-purple-800 dark:text-purple-300 flex-shrink-0 overflow-hidden">
-                                    ${w.photo ? `<img src="${w.photo}" class="w-full h-full object-cover">` : initials}
+                                <div class="w-7 h-7 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-white font-black text-[11px] flex items-center justify-center flex-shrink-0 shadow-xs uppercase">
+                                    ${(w.name || 'P').trim().charAt(0).toUpperCase()}
                                 </div>
                                 <div class="truncate">
                                     <h6 class="font-extrabold text-slate-900 dark:text-white text-xs truncate leading-tight">${escapeHtml(w.name)}</h6>
@@ -935,7 +935,7 @@
                 ctx.rotate(angle + arc / 2);
                 ctx.textAlign = 'right';
                 ctx.fillStyle = '#ffffff';
-                ctx.font = '900 13px sans-serif';
+                ctx.font = '900 15px sans-serif';
                 ctx.shadowColor = 'rgba(0, 0, 0, 0.75)';
                 ctx.shadowBlur = 4;
 
@@ -1075,11 +1075,12 @@
             $('#winModalMeta').html(`${winner.department || 'Umum'} &bull; NIK: ${winner.nik || '-'}`);
             $('#winModalScore').text(winner.total_score + ' Poin');
 
-            if (winner.photo) {
-                $('#winModalAvatar').html(`<img src="${winner.photo}" class="w-full h-full object-cover">`);
-            } else {
-                $('#winModalAvatar').html(`<i class="fa-solid fa-user-astronaut text-4xl text-amber-950"></i>`);
-            }
+            const winInitial = (winner.name || 'P').trim().charAt(0).toUpperCase();
+            $('#winModalAvatar').html(`
+                <div class="w-full h-full rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-white font-black text-4xl flex items-center justify-center shadow-inner uppercase">
+                    ${winInitial}
+                </div>
+            `);
 
             $('#winnerCelebrationOverlay').removeClass('hidden');
         }
