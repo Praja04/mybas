@@ -602,31 +602,7 @@ class PoolQccBoothController extends Controller
             ->orderBy('total_voters', 'desc')
             ->get();
 
-        // Ambil daftar NIK & RFID juri aktif agar tidak masuk dalam nominasi reward dan takeover peserta
-        $judgeIdentifiers = PoolJudge::where('is_active', true)
-            ->get(['nik', 'rfid'])
-            ->flatMap(function ($j) {
-                $nik = (string)$j->nik;
-                $stripped = ltrim($nik, '0');
-                return array_filter([
-                    $nik,
-                    $stripped,
-                    '0' . $stripped,
-                    str_pad($stripped, 8, '0', STR_PAD_LEFT),
-                    str_pad($stripped, 9, '0', STR_PAD_LEFT),
-                    (string)$j->rfid,
-                ]);
-            })
-            ->unique()
-            ->values()
-            ->toArray();
-
-        $participants = PoolParticipant::whereNotIn('nik', $judgeIdentifiers)
-            ->where(function ($q) use ($judgeIdentifiers) {
-                $q->whereNull('rfid')
-                  ->orWhereNotIn('rfid', $judgeIdentifiers);
-            })
-            ->orderBy('total_score', 'desc')
+        $participants = PoolParticipant::orderBy('total_score', 'desc')
             ->orderBy('updated_at', 'asc')
             ->get();
 
@@ -776,31 +752,7 @@ class PoolQccBoothController extends Controller
      */
     public function spinWheel(Request $request)
     {
-        // Ambil daftar NIK & RFID juri aktif agar tidak masuk dalam undian lucky draw
-        $judgeIdentifiers = PoolJudge::where('is_active', true)
-            ->get(['nik', 'rfid'])
-            ->flatMap(function ($j) {
-                $nik = (string)$j->nik;
-                $stripped = ltrim($nik, '0');
-                return array_filter([
-                    $nik,
-                    $stripped,
-                    '0' . $stripped,
-                    str_pad($stripped, 8, '0', STR_PAD_LEFT),
-                    str_pad($stripped, 9, '0', STR_PAD_LEFT),
-                    (string)$j->rfid,
-                ]);
-            })
-            ->unique()
-            ->values()
-            ->toArray();
-
-        $participants = PoolParticipant::whereNotIn('nik', $judgeIdentifiers)
-            ->where(function ($q) use ($judgeIdentifiers) {
-                $q->whereNull('rfid')
-                  ->orWhereNotIn('rfid', $judgeIdentifiers);
-            })
-            ->orderBy('total_score', 'desc')
+        $participants = PoolParticipant::orderBy('total_score', 'desc')
             ->orderBy('updated_at', 'asc')
             ->get();
 
