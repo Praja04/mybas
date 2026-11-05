@@ -13,6 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\Validator;
 
 class PoolQccBoothController extends Controller
 {
@@ -50,9 +51,18 @@ class PoolQccBoothController extends Controller
      */
     public function scanRfidAtBooth(Request $request, $boothId)
     {
-        $request->validate([
-            'rfid' => 'required|string',
+        $validator = Validator::make($request->all(), [
+            'rfid' => 'nullable|string',
+            'nik' => 'nullable|string',
+            'name' => 'nullable|string',
         ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => $validator->errors()->first(),
+            ], 422);
+        }
 
         $booth = PoolBooth::findOrFail($boothId);
 
@@ -65,7 +75,32 @@ class PoolQccBoothController extends Controller
             ], 422);
         }
 
-        $rawInput = trim($request->rfid);
+        $rawInput = trim((string)($request->rfid ?: $request->nik));
+        $isManual = (bool)($request->is_manual || $request->filled('name'));
+        $manualName = trim((string)$request->name);
+
+        if ($isManual) {
+            if (empty($rawInput)) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Nomor NIK / Identitas peserta wajib diisi.',
+                ], 422);
+            }
+            if (empty($manualName)) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Nama lengkap peserta wajib diisi untuk input manual.',
+                ], 422);
+            }
+        } else {
+            if (empty($rawInput)) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Silakan tap kartu RFID atau ketik NIK peserta.',
+                ], 422);
+            }
+        }
+
         $numericInput = is_numeric($rawInput) ? (int)$rawInput : 0;
 
         // Generate variasi NIK (menangani cetakan ID card tanpa nol depan, misal 18000275 vs 018000275)
@@ -89,8 +124,30 @@ class PoolQccBoothController extends Controller
             })
             ->first();
 
-        if (!$participant) {
-            $employeeData = null;
+        if ($isManual) {
+            // Mode Input Manual: Tanpa pengecekan ke DB pusat (MSIDCARD), Dept default 'Peserta QCC'
+            if (!$participant) {
+                $participant = PoolParticipant::create([
+                    'rfid' => $rawInput,
+                    'nik' => $rawInput,
+                    'name' => $manualName,
+                    'department' => 'Peserta QCC',
+                    'photo' => null,
+                    'total_score' => 0,
+                    'booths_voted_count' => 0,
+                    'last_activity_at' => Carbon::now(),
+                ]);
+            } else {
+                $participant->update([
+                    'name' => $manualName ?: $participant->name,
+                    'department' => $participant->department ?: 'Peserta QCC',
+                    'last_activity_at' => Carbon::now(),
+                ]);
+            }
+        } else {
+            // Mode Scanner Normal: Cek ke DB Karyawan jika belum ada di tabel lokal pool_participants
+            if (!$participant) {
+                $employeeData = null;
 
             // 2a. Cari di MSIDCARD (192.168.178.44-admin)
             // Query kartu berdasarkan nomor RFID / Device No / NIK / Barcode (termasuk variasi leading-zero)
@@ -191,6 +248,7 @@ class PoolQccBoothController extends Controller
             $participant->update([
                 'last_activity_at' => Carbon::now(),
             ]);
+        }
         }
 
         // 3. Validasi: Apakah sudah pernah vote di booth ini?

@@ -19,6 +19,11 @@
                     booth, dan pastikan minimal 5 pertanyaan tersedia.</p>
             </div>
             <div class="mt-4 sm:mt-0 flex items-center space-x-3">
+                <button type="button" onclick="openImportBoothModal()"
+                    class="px-4 py-2.5 rounded-xl text-sm font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-600/20 transition flex items-center space-x-2 cursor-pointer">
+                    <i class="fa-solid fa-file-excel text-xs"></i>
+                    <span>Upload Excel</span>
+                </button>
                 <button onclick="$('#modalAddBooth').removeClass('hidden')"
                     class="px-4 py-2.5 rounded-xl text-sm font-bold bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-600/20 transition flex items-center space-x-2 cursor-pointer">
                     <i class="fa-solid fa-plus text-xs"></i>
@@ -47,6 +52,84 @@
 @endsection
 
 @section('modals')
+    <!-- Modal Import Excel Booth -->
+    <div id="modalImportBooth" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden" style="z-index: 9000;">
+        <div class="w-full h-full flex items-center justify-center p-3 sm:p-4 overflow-hidden">
+            <div class="glass-panel w-full max-w-lg rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 flex flex-col relative animate-scale-up"
+                style="max-height: calc(100vh - 2rem);">
+                <!-- Header -->
+                <div class="px-5 py-4 bg-gradient-to-r from-emerald-600 to-teal-600 text-white flex items-center justify-between flex-shrink-0">
+                    <div class="flex items-center space-x-2.5">
+                        <div class="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center text-sm">
+                            <i class="fa-solid fa-file-excel"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-extrabold text-base leading-tight">Import Data Booth dari Excel</h3>
+                            <p class="text-[11px] text-white/80">Upload massal data booth & inovasi QCC</p>
+                        </div>
+                    </div>
+                    <button type="button" onclick="closeImportBoothModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/25 flex items-center justify-center text-white text-xs transition">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+
+                <!-- Body -->
+                <form id="formImportBooth" onsubmit="handleImportBoothSubmit(event)" enctype="multipart/form-data" class="p-6 space-y-4 overflow-y-auto">
+                    <!-- Template Download Card -->
+                    <div class="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-xs">
+                        <div class="flex items-start justify-between gap-3">
+                            <div>
+                                <span class="font-extrabold text-emerald-900 dark:text-emerald-200 block mb-0.5">Format Template Import</span>
+                                <p class="text-[11px] text-emerald-700 dark:text-emerald-300">
+                                    Gunakan template resmi agar format kolom dan data terbaca sempurna oleh sistem.
+                                </p>
+                            </div>
+                            <a href="{{ route('pool-qcc.admin.booths.template') }}"
+                                class="px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs shadow-sm transition flex items-center space-x-1.5 flex-shrink-0 cursor-pointer">
+                                <i class="fa-solid fa-download text-[11px]"></i>
+                                <span>Download Template</span>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- File Input Box -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 uppercase tracking-wider">
+                            Pilih File Excel / CSV (.xlsx, .xls, .csv) <span class="text-rose-500">*</span>:
+                        </label>
+                        <div class="relative border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-2xl p-6 text-center hover:border-emerald-500 dark:hover:border-emerald-500 transition group cursor-pointer bg-slate-50/50 dark:bg-slate-800/40"
+                            onclick="$('#importBoothFileInput').click()">
+                            <i class="fa-solid fa-cloud-arrow-up text-3xl text-slate-400 group-hover:text-emerald-500 transition-colors mb-2 block"></i>
+                            <span id="importBoothFileName" class="text-xs font-bold text-slate-700 dark:text-slate-300 block">
+                                Klik untuk memilih file Excel dari komputer Anda
+                            </span>
+                            <span class="text-[11px] text-slate-400 block mt-1">Maksimal ukuran file: 5MB</span>
+                            <input type="file" id="importBoothFileInput" name="excel_file" accept=".xlsx,.xls,.csv" required class="hidden"
+                                onchange="onBoothFileSelected(this)">
+                        </div>
+                    </div>
+
+                    <!-- Notes -->
+                    <div class="text-[11px] text-slate-400 space-y-1">
+                        <p>&bull; Kolom <strong>Nama Booth</strong> dan <strong>Departemen</strong> wajib diisi.</p>
+                        <p>&bull; <strong>Kode Booth</strong> boleh dikosongkan untuk digenerate otomatis (B01, B02, dst).</p>
+                    </div>
+
+                    <!-- Footer -->
+                    <div class="pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end space-x-3">
+                        <button type="button" onclick="closeImportBoothModal()" class="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition">
+                            Batal
+                        </button>
+                        <button type="submit" id="btnSubmitImportBooth" class="px-5 py-2.5 rounded-xl text-xs font-extrabold bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-600/30 transition flex items-center space-x-2 cursor-pointer">
+                            <i class="fa-solid fa-upload"></i>
+                            <span>Upload & Proses Import</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal Tambah Booth -->
     <div id="modalAddBooth" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden" style="z-index: 9000;">
         <div class="w-full h-full flex items-center justify-center p-3 sm:p-4 overflow-hidden">
@@ -622,5 +705,85 @@ $(document).ready(function() {
         handleBoothAjaxSubmit('#formEditBooth', true);
     });
 });
+
+// ==============================================================
+// MODAL IMPORT EXCEL BOOTH HANDLERS
+// ==============================================================
+function openImportBoothModal() {
+    $('#formImportBooth')[0].reset();
+    $('#importBoothFileName').text('Klik untuk memilih file Excel dari komputer Anda');
+    $('#modalImportBooth').removeClass('hidden');
+}
+
+function closeImportBoothModal() {
+    $('#modalImportBooth').addClass('hidden');
+}
+
+function onBoothFileSelected(input) {
+    if (input.files && input.files[0]) {
+        const file = input.files[0];
+        $('#importBoothFileName').html(`
+            <span class="text-emerald-600 dark:text-emerald-400 font-extrabold flex items-center justify-center gap-1.5">
+                <i class="fa-solid fa-file-excel"></i> ${escapeHtml(file.name)} (${(file.size / 1024).toFixed(1)} KB)
+            </span>
+        `);
+    } else {
+        $('#importBoothFileName').text('Klik untuk memilih file Excel dari komputer Anda');
+    }
+}
+
+function handleImportBoothSubmit(e) {
+    e.preventDefault();
+    const fileInput = document.getElementById('importBoothFileInput');
+    if (!fileInput.files || !fileInput.files[0]) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'File Belum Dipilih',
+            text: 'Silakan pilih file Excel (.xlsx, .xls, .csv) terlebih dahulu.',
+            confirmButtonColor: '#059669'
+        });
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('_token', $('meta[name="csrf-token"]').attr('content'));
+    formData.append('excel_file', fileInput.files[0]);
+
+    const $btn = $('#btnSubmitImportBooth');
+    const origHtml = $btn.html();
+    $btn.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin mr-1.5"></i> Memproses...');
+
+    $.ajax({
+        url: "{{ route('pool-qcc.admin.booths.import') }}",
+        type: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        dataType: 'json',
+        success: function(res) {
+            $btn.prop('disabled', false).html(origHtml);
+            closeImportBoothModal();
+
+            Swal.fire({
+                icon: 'success',
+                title: 'Import Berhasil!',
+                text: res.message,
+                confirmButtonColor: '#059669'
+            });
+
+            loadBoothsData();
+        },
+        error: function(xhr) {
+            $btn.prop('disabled', false).html(origHtml);
+            const msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Gagal memproses file import.';
+            Swal.fire({
+                icon: 'error',
+                title: 'Import Gagal',
+                text: msg,
+                confirmButtonColor: '#059669'
+            });
+        }
+    });
+}
 </script>
 @endsection

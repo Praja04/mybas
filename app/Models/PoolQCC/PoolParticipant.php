@@ -35,7 +35,7 @@ class PoolParticipant extends Model
         return $this->votes()->pluck('booth_id')->toArray();
     }
 
-    public function canVoteMore($max = 3)
+    public function canVoteMore($max = 10)
     {
         return $this->booths_voted_count < $max;
     }

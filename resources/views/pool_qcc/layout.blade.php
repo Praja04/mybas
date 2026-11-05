@@ -216,6 +216,10 @@
                                                 <i class="fa-solid fa-user-tie w-5 text-indigo-500 mr-2"></i> Juri &
                                                 Manajemen VIP
                                             </a>
+                                            <a href="{{ route('pool-qcc.admin.criteria') }}"
+                                                class="flex items-center px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-white hover:bg-indigo-50 dark:hover:bg-indigo-600/20 transition-colors">
+                                                <i class="fa-solid fa-list-check w-5 text-emerald-500 mr-2"></i> Kriteria Penilaian
+                                            </a>
                                         </div>
                                     </div>
                                 </div>
@@ -258,6 +262,10 @@
                                                 class="flex items-center px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-white hover:bg-indigo-50 dark:hover:bg-indigo-600/30 transition-colors font-semibold">
                                                 <i class="fa-solid fa-user-tie w-5 text-purple-500 mr-2"></i> Juri &
                                                 Manajemen VIP
+                                            </a>
+                                            <a href="{{ route('pool-qcc.admin.criteria') }}"
+                                                class="flex items-center px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-white hover:bg-indigo-50 dark:hover:bg-indigo-600/30 transition-colors">
+                                                <i class="fa-solid fa-list-check w-5 text-emerald-500 mr-2"></i> Kriteria Penilaian
                                             </a>
                                             <div class="my-1 border-t border-slate-100 dark:border-slate-800"></div>
                                             <a href="{{ route('pool-qcc.admin.votes') }}"
@@ -390,6 +398,12 @@
                                     <i
                                         class="fa-solid fa-user-tie w-5 mr-2 {{ request()->routeIs('pool-qcc.admin.judges') ? 'text-white' : 'text-indigo-500' }}"></i>
                                     <span>Juri & Manajemen VIP</span>
+                                </a>
+                                <a href="{{ route('pool-qcc.admin.criteria') }}" onclick="closeMobileNav()"
+                                    class="flex items-center px-3 py-2.5 rounded-xl text-xs font-bold transition-all {{ request()->routeIs('pool-qcc.admin.criteria') ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30' : 'text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 hover:text-indigo-600' }}">
+                                    <i
+                                        class="fa-solid fa-list-check w-5 mr-2 {{ request()->routeIs('pool-qcc.admin.criteria') ? 'text-white' : 'text-emerald-500' }}"></i>
+                                    <span>Kriteria Penilaian Booth</span>
                                 </a>
                             </div>
                         </div>

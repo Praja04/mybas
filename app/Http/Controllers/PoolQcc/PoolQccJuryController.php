@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\PoolQCC\PoolBooth;
 use App\Models\PoolQCC\PoolJudge;
 use App\Models\PoolQCC\PoolJudgeEvaluation;
+use App\Models\PoolQCC\PoolEvaluationCriterion;
+use App\Models\PoolQCC\PoolJudgeEvaluationDetail;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -154,7 +156,43 @@ class PoolQccJuryController extends Controller
         // Cek apakah sudah pernah memberikan penilaian di booth ini
         $existingEval = PoolJudgeEvaluation::where('judge_id', $judge->id)
             ->where('booth_id', $booth->id)
+            ->with(['details'])
             ->first();
+
+        // Ambil kriteria penilaian aktif
+        $activeCriteria = PoolEvaluationCriterion::where('is_active', true)
+            ->orderBy('order', 'asc')
+            ->orderBy('id', 'asc')
+            ->get();
+
+        $existingDetails = $existingEval && $existingEval->details ? $existingEval->details->keyBy('criterion_id') : collect([]);
+        $existingScoresMap = [];
+        if ($existingEval && !empty($existingEval->criteria_scores) && is_array($existingEval->criteria_scores)) {
+            foreach ($existingEval->criteria_scores as $cs) {
+                if (isset($cs['criterion_id'])) {
+                    $existingScoresMap[$cs['criterion_id']] = (float)$cs['score'];
+                }
+            }
+        }
+
+        $criteriaData = $activeCriteria->map(function ($c) use ($existingDetails, $existingScoresMap) {
+            $savedScore = null;
+            if ($existingDetails->has($c->id)) {
+                $savedScore = (float)$existingDetails->get($c->id)->score;
+            } elseif (isset($existingScoresMap[$c->id])) {
+                $savedScore = (float)$existingScoresMap[$c->id];
+            }
+
+            return [
+                'id' => $c->id,
+                'name' => $c->name,
+                'description' => $c->description,
+                'weight' => (float)$c->weight,
+                'max_score' => (float)$c->max_score,
+                'order' => (int)$c->order,
+                'saved_score' => $savedScore,
+            ];
+        });
 
         return response()->json([
             'status' => 'success',
@@ -176,10 +214,12 @@ class PoolQccJuryController extends Controller
                     'location' => $booth->location,
                     'description' => $booth->description,
                 ],
+                'criteria' => $criteriaData,
                 'has_evaluated' => !is_null($existingEval),
                 'existing_evaluation' => $existingEval ? [
                     'id' => $existingEval->id,
                     'score' => (float)$existingEval->score,
+                    'criteria_scores' => $existingEval->criteria_scores,
                     'notes' => $existingEval->notes,
                     'evaluated_at' => $existingEval->evaluated_at ? $existingEval->evaluated_at->format('H:i d/m/Y') : null,
                 ] : null,
@@ -195,12 +235,12 @@ class PoolQccJuryController extends Controller
         $validator = Validator::make($request->all(), [
             'judge_id' => 'required|exists:pool_judges,id',
             'booth_id' => 'required|exists:pool_booths,id',
-            'score' => 'required|numeric|min:0|max:100',
+            'score' => 'nullable|numeric|min:0|max:100',
+            'criteria_scores' => 'nullable|array',
             'notes' => 'nullable|string|max:1000',
         ], [
             'judge_id.required' => 'Identitas Juri wajib disertakan.',
             'booth_id.required' => 'Booth yang dinilai wajib dipilih.',
-            'score.required' => 'Nilai skor wajib diisi.',
             'score.numeric' => 'Nilai skor harus berupa angka.',
             'score.min' => 'Nilai minimal adalah 0.',
             'score.max' => 'Nilai maksimal adalah 100.',
@@ -226,17 +266,77 @@ class PoolQccJuryController extends Controller
 
         $booth = PoolBooth::findOrFail($request->booth_id);
 
+        $activeCriteria = PoolEvaluationCriterion::where('is_active', true)->get()->keyBy('id');
+        $criteriaInput = $request->input('criteria_scores', []);
+
+        $finalScore = 0;
+        $criteriaSnapshot = [];
+
+        if (!empty($criteriaInput) && is_array($criteriaInput)) {
+            $totalWeightedScore = 0;
+            $totalWeight = 0;
+
+            foreach ($criteriaInput as $critId => $critVal) {
+                $criterion = $activeCriteria->get($critId);
+                if (!$criterion) continue;
+
+                $val = max(0, min((float)$critVal, (float)$criterion->max_score));
+                $weight = (float)$criterion->weight;
+
+                $scorePct = $criterion->max_score > 0 ? ($val / $criterion->max_score) * 100 : 0;
+                $weightedContrib = ($scorePct * ($weight / 100));
+
+                $totalWeightedScore += $weightedContrib;
+                $totalWeight += $weight;
+
+                $criteriaSnapshot[] = [
+                    'criterion_id' => $criterion->id,
+                    'name' => $criterion->name,
+                    'score' => round($val, 2),
+                    'max_score' => (float)$criterion->max_score,
+                    'weight' => $weight,
+                    'weighted_score' => round($weightedContrib, 2),
+                ];
+            }
+
+            if ($totalWeight > 0 && abs($totalWeight - 100) > 0.01) {
+                $finalScore = ($totalWeightedScore / $totalWeight) * 100;
+            } else {
+                $finalScore = $totalWeightedScore;
+            }
+            $finalScore = round(max(0, min(100, $finalScore)), 2);
+        } else {
+            $finalScore = round((float)$request->input('score', 0), 2);
+        }
+
         $evaluation = PoolJudgeEvaluation::updateOrCreate(
             [
                 'judge_id' => $judge->id,
                 'booth_id' => $booth->id,
             ],
             [
-                'score' => round((float)$request->score, 2),
+                'score' => $finalScore,
+                'criteria_scores' => !empty($criteriaSnapshot) ? $criteriaSnapshot : null,
                 'notes' => $request->notes ? trim($request->notes) : null,
                 'evaluated_at' => Carbon::now(),
             ]
         );
+
+        // Simpan / perbarui detail per kriteria
+        if (!empty($criteriaSnapshot)) {
+            foreach ($criteriaSnapshot as $snap) {
+                PoolJudgeEvaluationDetail::updateOrCreate(
+                    [
+                        'evaluation_id' => $evaluation->id,
+                        'criterion_id' => $snap['criterion_id'],
+                    ],
+                    [
+                        'score' => $snap['score'],
+                        'weight' => $snap['weight'],
+                    ]
+                );
+            }
+        }
 
         // Hitung ulang progress booth ini
         $boothEvaluationsCount = PoolJudgeEvaluation::where('booth_id', $booth->id)->count();
@@ -249,6 +349,7 @@ class PoolQccJuryController extends Controller
                 'booth_id' => $booth->id,
                 'judge_id' => $judge->id,
                 'score' => (float)$evaluation->score,
+                'criteria_scores' => $evaluation->criteria_scores,
                 'notes' => $evaluation->notes,
                 'booth_evaluations_count' => $boothEvaluationsCount,
             ],
@@ -309,6 +410,7 @@ class PoolQccJuryController extends Controller
                     'judge_name' => $eval->judge ? $eval->judge->name : '-',
                     'judge_dept' => $eval->judge ? $eval->judge->department : '-',
                     'score' => (float)$eval->score,
+                    'criteria_scores' => $eval->criteria_scores,
                     'notes' => $eval->notes,
                     'evaluated_at' => $eval->evaluated_at ? $eval->evaluated_at->format('H:i d/m/Y') : '-',
                 ];

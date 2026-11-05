@@ -50,6 +50,8 @@ Route::group(['middleware' => ['auth', 'access_log', 'rules:qcc_pool']], functio
                 // Booths
                 Route::get('/api/booths', 'PoolQcc\PoolQccAdminController@getBoothsData')->name('api.booths');
                 Route::get('/booths', 'PoolQcc\PoolQccAdminController@booths')->name('booths');
+                Route::get('/booths/template', 'PoolQcc\PoolQccAdminController@downloadBoothTemplate')->name('booths.template');
+                Route::post('/booths/import', 'PoolQcc\PoolQccAdminController@importBooths')->name('booths.import');
                 Route::post('/booths', 'PoolQcc\PoolQccAdminController@storeBooth')->name('booths.store');
                 Route::put('/booths/{id}', 'PoolQcc\PoolQccAdminController@updateBooth')->name('booths.update');
                 Route::delete('/booths/{id}', 'PoolQcc\PoolQccAdminController@destroyBooth')->name('booths.destroy');
@@ -57,6 +59,8 @@ Route::group(['middleware' => ['auth', 'access_log', 'rules:qcc_pool']], functio
                 // Questions
                 Route::get('/api/questions', 'PoolQcc\PoolQccAdminController@getQuestionsData')->name('api.questions');
                 Route::get('/questions', 'PoolQcc\PoolQccAdminController@questions')->name('questions');
+                Route::get('/questions/template', 'PoolQcc\PoolQccAdminController@downloadQuestionTemplate')->name('questions.template');
+                Route::post('/questions/import', 'PoolQcc\PoolQccAdminController@importQuestions')->name('questions.import');
                 Route::post('/questions', 'PoolQcc\PoolQccAdminController@storeQuestion')->name('questions.store');
                 Route::put('/questions/{id}', 'PoolQcc\PoolQccAdminController@updateQuestion')->name('questions.update');
                 Route::delete('/questions/{id}', 'PoolQcc\PoolQccAdminController@destroyQuestion')->name('questions.destroy');
@@ -70,6 +74,14 @@ Route::group(['middleware' => ['auth', 'access_log', 'rules:qcc_pool']], functio
                 Route::post('/judges/{id}/toggle', 'PoolQcc\PoolQccAdminController@toggleJudgeStatus')->name('judges.toggle');
                 Route::delete('/judges/{id}', 'PoolQcc\PoolQccAdminController@destroyJudge')->name('judges.destroy');
 
+
+                // Kriteria Penilaian Booth Dewan Juri
+                Route::get('/api/criteria', 'PoolQcc\PoolQccAdminController@getCriteriaData')->name('api.criteria');
+                Route::get('/criteria', 'PoolQcc\PoolQccAdminController@criteria')->name('criteria');
+                Route::post('/criteria', 'PoolQcc\PoolQccAdminController@storeCriterion')->name('criteria.store');
+                Route::put('/criteria/{id}', 'PoolQcc\PoolQccAdminController@updateCriterion')->name('criteria.update');
+                Route::post('/criteria/{id}/toggle', 'PoolQcc\PoolQccAdminController@toggleCriterionStatus')->name('criteria.toggle');
+                Route::delete('/criteria/{id}', 'PoolQcc\PoolQccAdminController@destroyCriterion')->name('criteria.destroy');
 
                 // Participants & Votes Log
                 Route::get('/api/participants', 'PoolQcc\PoolQccAdminController@getParticipantsData')->name('api.participants');

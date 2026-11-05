@@ -164,7 +164,7 @@
     <!-- MODAL STEP 2: FORM PENILAIAN SKOR & CATATAN DEWAN JURI          -->
     <!-- ============================================================== -->
     <div id="judgeScoreModal" class="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-sm hidden flex items-center justify-center p-4">
-        <div class="glass-panel w-full max-w-xl rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl p-6 sm:p-8 relative overflow-hidden animate-in fade-in zoom-in-95 duration-200 max-h-[92vh] overflow-y-auto">
+        <div class="glass-panel w-full max-w-2xl rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl p-6 sm:p-8 relative overflow-hidden animate-in fade-in zoom-in-95 duration-200 max-h-[92vh] overflow-y-auto">
             <!-- Close Button -->
             <button type="button" onclick="closeJudgeScoreModal()"
                 class="absolute top-5 right-5 w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-slate-700 dark:hover:text-white flex items-center justify-center transition">
@@ -225,49 +225,52 @@
                 <input type="hidden" id="formJudgeId" value="">
                 <input type="hidden" id="formBoothId" value="">
 
-                <!-- Score Slider & Digital Display -->
+                <!-- Total Score Summary Card (Kalkulasi Akumulasi) -->
+                <div class="p-5 rounded-2xl bg-gradient-to-br from-slate-50 via-slate-50 to-indigo-50/40 dark:from-slate-900/90 dark:via-slate-900/70 dark:to-indigo-950/30 border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div class="text-center sm:text-left">
+                        <span class="text-[11px] font-extrabold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider block">
+                            <i class="fa-solid fa-calculator mr-1"></i> Total Nilai Terkalkulasi
+                        </span>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5" id="criteriaCalculationNote">
+                            Akumulasi otomatis terbobot dari kriteria di bawah
+                        </p>
+                    </div>
+                    <div class="flex items-baseline space-x-2 bg-white dark:bg-slate-800 px-5 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                        <span id="scoreBigDisplay" class="text-4xl sm:text-5xl font-black text-indigo-600 dark:text-indigo-400 tracking-tight">
+                            85.0
+                        </span>
+                        <span class="text-sm font-bold text-slate-400">/ 100</span>
+                    </div>
+                </div>
+
+                <!-- Container Dynamic Kriteria Penilaian -->
                 <div>
-                    <div class="flex items-center justify-between mb-2">
-                        <label class="text-xs font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-                            Skor Penilaian (Maks 100 Poin)
+                    <div class="flex items-center justify-between mb-3">
+                        <label class="text-xs font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                            <i class="fa-solid fa-list-check text-indigo-500"></i>
+                            <span>Aspek & Kriteria Penilaian Booth</span>
                         </label>
-                        <span class="text-[11px] text-slate-400 font-semibold">Skala: 0 - 100</span>
+                        <span id="criteriaCountBadge" class="text-[11px] font-bold text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-lg">
+                            4 Kriteria
+                        </span>
                     </div>
 
-                    <div class="p-5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center text-center">
-                        <div class="flex items-baseline space-x-2">
-                            <span id="scoreBigDisplay" class="text-5xl font-black text-indigo-600 dark:text-indigo-400 tracking-tight">
-                                85
-                            </span>
-                            <span class="text-sm font-bold text-slate-400">/ 100</span>
-                        </div>
+                    <!-- List Criteria Cards -->
+                    <div id="criteriaListContainer" class="space-y-4">
+                        <!-- Populated dynamically via JS -->
+                    </div>
 
-                        <!-- Range Slider -->
-                        <div class="w-full mt-4 px-2">
-                            <input type="range" id="scoreRangeSlider" min="0" max="100" step="1" value="85"
-                                oninput="syncScore(this.value)"
-                                class="w-full h-3 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-600 focus:outline-none">
+                    <!-- Fallback Single Score Slider (Jika belum ada kriteria terdaftar) -->
+                    <div id="singleScoreFallback" class="hidden p-5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-bold text-slate-600 dark:text-slate-300">Skor Langsung (0 - 100):</span>
+                            <input type="number" id="scoreNumberInput" min="0" max="100" value="85"
+                                oninput="syncSingleScore(this.value)"
+                                class="w-16 px-2 py-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-center font-bold text-sm text-slate-900 dark:text-white">
                         </div>
-
-                        <!-- Direct Number Input & Quick Preset Chips -->
-                        <div class="w-full mt-4 flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
-                            <div class="flex items-center space-x-1.5">
-                                <span class="text-xs text-slate-400 font-bold">Ketik Angka:</span>
-                                <input type="number" id="scoreNumberInput" min="0" max="100" value="85"
-                                    oninput="syncScore(this.value)"
-                                    class="w-16 px-2 py-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-center font-bold text-sm text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500">
-                            </div>
-
-                            <div class="flex items-center space-x-1">
-                                <button type="button" onclick="syncScore(70)" class="preset-chip px-2 py-1 rounded-lg text-xs font-bold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-indigo-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition">70</button>
-                                <button type="button" onclick="syncScore(75)" class="preset-chip px-2 py-1 rounded-lg text-xs font-bold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-indigo-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition">75</button>
-                                <button type="button" onclick="syncScore(80)" class="preset-chip px-2 py-1 rounded-lg text-xs font-bold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-indigo-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition">80</button>
-                                <button type="button" onclick="syncScore(85)" class="preset-chip px-2 py-1 rounded-lg text-xs font-bold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-indigo-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition">85</button>
-                                <button type="button" onclick="syncScore(90)" class="preset-chip px-2 py-1 rounded-lg text-xs font-bold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-indigo-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition">90</button>
-                                <button type="button" onclick="syncScore(95)" class="preset-chip px-2 py-1 rounded-lg text-xs font-bold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-indigo-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition">95</button>
-                                <button type="button" onclick="syncScore(100)" class="preset-chip px-2 py-1 rounded-lg text-xs font-bold bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-300 dark:border-indigo-600 text-indigo-600 dark:text-indigo-400 transition">100</button>
-                            </div>
-                        </div>
+                        <input type="range" id="scoreRangeSlider" min="0" max="100" step="1" value="85"
+                            oninput="syncSingleScore(this.value)"
+                            class="w-full h-3 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-600">
                     </div>
                 </div>
 
@@ -571,14 +574,18 @@
         }
 
         // ==============================================================
-        // STEP 2: MODAL PENILAIAN SKOR & CATATAN
+        // STEP 2: MODAL PENILAIAN SKOR & KRITERIA DEWAN JURI
         // ==============================================================
+        let activeCriteriaList = [];
+        let computedTotalScore = 80;
+
         function openJudgeScoreModal(data) {
             verifiedJudgeData = data;
             const judge = data.judge;
             const booth = data.booth;
             const hasEvaluated = data.has_evaluated;
             const evalData = data.existing_evaluation;
+            activeCriteriaList = data.criteria || [];
 
             // Form Hidden
             $('#formJudgeId').val(judge.id);
@@ -600,28 +607,25 @@
             $('#scoreModalBoothCode').text(booth.code);
             $('#scoreModalBoothName').text(booth.name);
 
-            // Evaluation status badge & prefill
-            let defaultScore = 80;
-            let defaultNotes = '';
-
+            // Evaluation status badge
             if (hasEvaluated && evalData) {
-                defaultScore = evalData.score;
-                defaultNotes = evalData.notes || '';
                 $('#evaluationStatusBadge').html(`
                     <span class="inline-flex items-center px-2.5 py-1 rounded-xl text-xs font-black bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">
                         <i class="fa-solid fa-clock-rotate-left mr-1"></i> Pernah Dinilai (${evalData.score})
                     </span>
                 `);
+                $('#judgeNotesInput').val(evalData.notes || '');
             } else {
                 $('#evaluationStatusBadge').html(`
                     <span class="inline-flex items-center px-2.5 py-1 rounded-xl text-xs font-black bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
                         <i class="fa-solid fa-sparkles mr-1"></i> Penilaian Baru
                     </span>
                 `);
+                $('#judgeNotesInput').val('');
             }
 
-            syncScore(defaultScore);
-            $('#judgeNotesInput').val(defaultNotes);
+            // Render Criteria or Fallback
+            renderCriteriaInputs(activeCriteriaList, evalData);
 
             $('#judgeScoreModal').removeClass('hidden');
         }
@@ -638,22 +642,168 @@
             }
         }
 
-        function syncScore(val) {
+        function renderCriteriaInputs(criteria, evalData) {
+            const $container = $('#criteriaListContainer');
+            $container.empty();
+
+            if (!criteria || criteria.length === 0) {
+                $('#criteriaCountBadge').text('Mode Langsung');
+                $('#singleScoreFallback').removeClass('hidden');
+                syncSingleScore(evalData ? evalData.score : 80);
+                return;
+            }
+
+            $('#singleScoreFallback').addClass('hidden');
+            $('#criteriaCountBadge').text(criteria.length + ' Kriteria');
+
+            criteria.forEach((c, index) => {
+                const maxScore = c.max_score || 100;
+                let initScore = (c.saved_score !== null && c.saved_score !== undefined)
+                    ? parseFloat(c.saved_score)
+                    : (evalData ? parseFloat(evalData.score) : 80);
+
+                if (initScore > maxScore) initScore = maxScore;
+                if (initScore < 0) initScore = 0;
+
+                const cardHtml = `
+                    <div class="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs hover:border-indigo-300 dark:hover:border-indigo-800 transition">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2 pb-2 border-b border-slate-100 dark:border-slate-800">
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <span class="w-6 h-6 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 font-extrabold text-xs flex items-center justify-center">
+                                        ${index + 1}
+                                    </span>
+                                    <h5 class="text-sm font-extrabold text-slate-900 dark:text-white">
+                                        ${escapeHtml(c.name)}
+                                    </h5>
+                                </div>
+                                ${c.description ? `<p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1 pl-8">${escapeHtml(c.description)}</p>` : ''}
+                            </div>
+                            <div class="flex items-center justify-end space-x-2 pl-8 sm:pl-0 flex-shrink-0">
+                                <span class="px-2.5 py-0.5 rounded-full text-[11px] font-black bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800">
+                                    Bobot: ${c.weight}%
+                                </span>
+                                <div class="flex items-center space-x-1">
+                                    <input type="number" id="criterion_num_${c.id}" min="0" max="${maxScore}" value="${initScore}"
+                                        oninput="onCriterionInputChange(${c.id}, this.value, 'num')"
+                                        class="w-16 px-2 py-1 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-center font-black text-sm text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500">
+                                    <span class="text-[11px] text-slate-400 font-bold">/ ${maxScore}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Slider -->
+                        <div class="mt-3 px-1">
+                            <input type="range" id="criterion_range_${c.id}" min="0" max="${maxScore}" step="1" value="${initScore}"
+                                oninput="onCriterionInputChange(${c.id}, this.value, 'range')"
+                                class="w-full h-2.5 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-600 focus:outline-none">
+                        </div>
+
+                        <!-- Preset Chips & Contrib Preview -->
+                        <div class="mt-3 flex flex-wrap items-center justify-between gap-2 pt-2 text-[11px]">
+                            <div class="flex items-center space-x-1">
+                                <span class="text-[10px] font-bold text-slate-400 mr-1 hidden sm:inline">Pilihan:</span>
+                                <button type="button" onclick="setCriterionPreset(${c.id}, 70)" class="px-2 py-0.5 rounded-lg font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-indigo-50 transition">70</button>
+                                <button type="button" onclick="setCriterionPreset(${c.id}, 75)" class="px-2 py-0.5 rounded-lg font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-indigo-50 transition">75</button>
+                                <button type="button" onclick="setCriterionPreset(${c.id}, 80)" class="px-2 py-0.5 rounded-lg font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-indigo-50 transition">80</button>
+                                <button type="button" onclick="setCriterionPreset(${c.id}, 85)" class="px-2 py-0.5 rounded-lg font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-indigo-50 transition">85</button>
+                                <button type="button" onclick="setCriterionPreset(${c.id}, 90)" class="px-2 py-0.5 rounded-lg font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-indigo-50 transition">90</button>
+                                <button type="button" onclick="setCriterionPreset(${c.id}, 95)" class="px-2 py-0.5 rounded-lg font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-indigo-50 transition">95</button>
+                                <button type="button" onclick="setCriterionPreset(${c.id}, 100)" class="px-2 py-0.5 rounded-lg font-bold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 transition">100</button>
+                            </div>
+                            <div class="text-right text-slate-500 dark:text-slate-400 font-semibold">
+                                Kontribusi: <strong id="criterion_contrib_${c.id}" class="text-slate-800 dark:text-white font-extrabold">-</strong> Poin
+                            </div>
+                        </div>
+                    </div>
+                `;
+                $container.append(cardHtml);
+            });
+
+            calculateTotalScore();
+        }
+
+        function onCriterionInputChange(criterionId, val, source) {
+            let num = parseFloat(val);
+            if (isNaN(num)) num = 0;
+
+            const crit = activeCriteriaList.find(c => c.id == criterionId);
+            const max = crit ? (crit.max_score || 100) : 100;
+            if (num < 0) num = 0;
+            if (num > max) num = max;
+
+            if (source === 'range') {
+                $(`#criterion_num_${criterionId}`).val(num);
+            } else {
+                $(`#criterion_range_${criterionId}`).val(num);
+            }
+
+            calculateTotalScore();
+        }
+
+        function setCriterionPreset(criterionId, val) {
+            const crit = activeCriteriaList.find(c => c.id == criterionId);
+            const max = crit ? (crit.max_score || 100) : 100;
+            let num = Math.min(val, max);
+
+            $(`#criterion_num_${criterionId}`).val(num);
+            $(`#criterion_range_${criterionId}`).val(num);
+            calculateTotalScore();
+        }
+
+        function calculateTotalScore() {
+            if (!activeCriteriaList || activeCriteriaList.length === 0) {
+                return;
+            }
+
+            let totalWeighted = 0;
+            let totalWeight = 0;
+
+            activeCriteriaList.forEach(c => {
+                const val = parseFloat($(`#criterion_num_${c.id}`).val()) || 0;
+                const max = c.max_score || 100;
+                const weight = c.weight || 0;
+
+                const scorePct = max > 0 ? (val / max) * 100 : 0;
+                const contrib = scorePct * (weight / 100);
+
+                totalWeighted += contrib;
+                totalWeight += weight;
+
+                $(`#criterion_contrib_${c.id}`).text(contrib.toFixed(1));
+            });
+
+            if (totalWeight > 0 && Math.abs(totalWeight - 100) > 0.01) {
+                computedTotalScore = (totalWeighted / totalWeight) * 100;
+            } else {
+                computedTotalScore = totalWeighted;
+            }
+
+            computedTotalScore = Math.min(100, Math.max(0, computedTotalScore));
+            updateScoreDisplay(computedTotalScore);
+        }
+
+        function syncSingleScore(val) {
             let num = parseFloat(val);
             if (isNaN(num)) num = 0;
             if (num < 0) num = 0;
             if (num > 100) num = 100;
 
-            $('#scoreBigDisplay').text(num);
-            $('#scoreRangeSlider').val(num);
+            computedTotalScore = num;
             $('#scoreNumberInput').val(num);
+            $('#scoreRangeSlider').val(num);
+            updateScoreDisplay(num);
+        }
 
-            // Dynamic color
+        function updateScoreDisplay(score) {
+            const rounded = Math.round(score * 10) / 10;
             const $disp = $('#scoreBigDisplay');
+            $disp.text(rounded.toFixed(1));
+
             $disp.removeClass('text-emerald-600 dark:text-emerald-400 text-indigo-600 dark:text-indigo-400 text-amber-500');
-            if (num >= 85) {
+            if (rounded >= 85) {
                 $disp.addClass('text-emerald-600 dark:text-emerald-400');
-            } else if (num >= 70) {
+            } else if (rounded >= 70) {
                 $disp.addClass('text-indigo-600 dark:text-indigo-400');
             } else {
                 $disp.addClass('text-amber-500');
@@ -664,7 +814,6 @@
             e.preventDefault();
             const judgeId = $('#formJudgeId').val();
             const boothId = $('#formBoothId').val();
-            const score = $('#scoreNumberInput').val();
             const notes = $('#judgeNotesInput').val();
 
             if (!judgeId || !boothId) {
@@ -676,9 +825,17 @@
                 return;
             }
 
+            // Kumpulkan nilai per kriteria
+            const criteriaScores = {};
+            if (activeCriteriaList && activeCriteriaList.length > 0) {
+                activeCriteriaList.forEach(c => {
+                    criteriaScores[c.id] = parseFloat($(`#criterion_num_${c.id}`).val()) || 0;
+                });
+            }
+
             const $btn = $('#btnSaveScore');
             const originalBtnHtml = $btn.html();
-            $btn.prop('disabled', true).html('<i class="fa-solid fa-circle-notch fa-spin"></i><span>Menyimpan...</span>');
+            $btn.prop('disabled', true).html('<i class="fa-solid fa-circle-notch fa-spin mr-1.5"></i><span>Menyimpan...</span>');
 
             $.ajax({
                 url: "{{ route('pool-qcc.jury.save-score') }}",
@@ -689,7 +846,8 @@
                 data: {
                     judge_id: judgeId,
                     booth_id: boothId,
-                    score: score,
+                    score: computedTotalScore,
+                    criteria_scores: criteriaScores,
                     notes: notes
                 },
                 dataType: 'json',
