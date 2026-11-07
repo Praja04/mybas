@@ -67,3 +67,4 @@ class TemplateParticipantExport implements FromArray, WithHeadings, ShouldAutoSi
         ];
     }
 }
+
