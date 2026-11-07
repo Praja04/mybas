@@ -421,9 +421,14 @@
                             <span class="text-base font-black text-emerald-600 dark:text-emerald-400">${totalScore} Pts</span>
                         </td>
                         <td class="py-3.5 px-4 text-center">
-                            <button type="button" onclick="confirmResetParticipant(${p.id}, '${escapeHtml(p.name)}')" class="px-2.5 py-1 rounded-xl text-xs font-bold bg-rose-50 hover:bg-rose-100 text-rose-600 dark:bg-rose-500/10 dark:hover:bg-rose-500/20 dark:text-rose-400 border border-rose-200 dark:border-rose-500/30 transition shadow-xs cursor-pointer" title="Reset Kuota & Vote Peserta">
-                                <i class="fa-solid fa-rotate-left mr-1"></i> Reset
-                            </button>
+                            <div class="flex items-center justify-center space-x-1.5">
+                                <button type="button" onclick="confirmResetParticipant(${p.id}, '${escapeHtml(p.name)}')" class="px-2.5 py-1 rounded-xl text-xs font-bold bg-amber-50 hover:bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:hover:bg-amber-500/20 dark:text-amber-400 border border-amber-200 dark:border-amber-500/30 transition shadow-xs cursor-pointer" title="Reset Kuota & Vote Peserta">
+                                    <i class="fa-solid fa-rotate-left mr-1"></i> Reset
+                                </button>
+                                <button type="button" onclick="confirmDeleteParticipant(${p.id}, '${escapeHtml(p.name)}')" class="px-2.5 py-1 rounded-xl text-xs font-bold bg-rose-50 hover:bg-rose-100 text-rose-600 dark:bg-rose-500/10 dark:hover:bg-rose-500/20 dark:text-rose-400 border border-rose-200 dark:border-rose-500/30 transition shadow-xs cursor-pointer" title="Hapus Permanen Peserta">
+                                    <i class="fa-solid fa-trash-can mr-1"></i> Hapus
+                                </button>
+                            </div>
                         </td>
                     </tr>
                 `;
@@ -490,6 +495,57 @@
                         icon: 'success',
                         title: 'Berhasil di-reset!',
                         text: result.value?.message || 'Riwayat vote peserta berhasil di-reset.',
+                        timer: 1500,
+                        showConfirmButton: false,
+                        customClass: {
+                            popup: 'rounded-2xl dark:bg-slate-900 dark:text-white border border-slate-200 dark:border-slate-800'
+                        }
+                    });
+                }
+            });
+        }
+
+        function confirmDeleteParticipant(id, name) {
+            Swal.fire({
+                title: 'Hapus Peserta?',
+                html: `Apakah Anda yakin ingin menghapus peserta <b>"${name}"</b>?<br><span class="text-rose-500 text-xs font-semibold mt-1.5 block">Data peserta beserta riwayat vote akan dihapus secara permanen dari database.</span>`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#e11d48',
+                cancelButtonColor: '#64748b',
+                confirmButtonText: '<i class="fa-solid fa-trash-can mr-1"></i> Ya, Hapus!',
+                cancelButtonText: 'Batal',
+                reverseButtons: true,
+                showLoaderOnConfirm: true,
+                preConfirm: () => {
+                    return $.ajax({
+                        url: `/pool-qcc/admin/participants/${id}`,
+                        type: 'DELETE',
+                        data: {
+                            _token: '{{ csrf_token() }}'
+                        },
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Accept': 'application/json'
+                        }
+                    }).catch(xhr => {
+                        Swal.showValidationMessage(xhr.responseJSON?.message || 'Gagal menghapus peserta.');
+                    });
+                },
+                allowOutsideClick: () => !Swal.isLoading(),
+                customClass: {
+                    popup: 'rounded-2xl dark:bg-slate-900 dark:text-white border border-slate-200 dark:border-slate-800',
+                    confirmButton: 'rounded-xl font-bold px-4 py-2 text-xs',
+                    cancelButton: 'rounded-xl font-bold px-4 py-2 text-xs'
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    loadParticipantsData(currentPage, currentSearch, currentStatus);
+
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Berhasil Dihapus!',
+                        text: result.value?.message || 'Data peserta berhasil dihapus permanen.',
                         timer: 1500,
                         showConfirmButton: false,
                         customClass: {

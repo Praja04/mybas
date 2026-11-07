@@ -676,6 +676,36 @@ class PoolQccAdminController extends Controller
     }
 
     /**
+     * Hapus Permanen Data Peserta beserta Riwayat Vote
+     */
+    public function destroyParticipant(Request $request, $id)
+    {
+        $participant = PoolParticipant::findOrFail($id);
+
+        DB::transaction(function () use ($participant) {
+            $votes = PoolVote::where('participant_id', $participant->id)->get();
+            foreach ($votes as $vote) {
+                if ($vote->is_correct && $vote->points_awarded > 0) {
+                    PoolBooth::where('id', $vote->booth_id)->decrement('total_points', $vote->points_awarded);
+                }
+                PoolBooth::where('id', $vote->booth_id)->decrement('total_voters', 1);
+                $vote->delete();
+            }
+
+            $participant->delete();
+        });
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'status' => 'success',
+                'message' => "Data peserta {$participant->name} berhasil dihapus permanen!",
+            ]);
+        }
+
+        return redirect()->back()->with('success', "Data peserta {$participant->name} berhasil dihapus!");
+    }
+
+    /**
      * Halaman Manajemen Dewan Juri
      */
     public function judges()
