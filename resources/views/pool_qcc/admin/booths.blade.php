@@ -94,19 +94,19 @@
 
                     <!-- File Input Box -->
                     <div>
-                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 uppercase tracking-wider">
+                        <span class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 uppercase tracking-wider">
                             Pilih File Excel / CSV (.xlsx, .xls, .csv) <span class="text-rose-500">*</span>:
-                        </label>
-                        <div class="relative border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-2xl p-6 text-center hover:border-emerald-500 dark:hover:border-emerald-500 transition group cursor-pointer bg-slate-50/50 dark:bg-slate-800/40"
-                            onclick="$('#importBoothFileInput').click()">
+                        </span>
+                        <label for="importBoothFileInput"
+                            class="block relative border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-2xl p-6 text-center hover:border-emerald-500 dark:hover:border-emerald-500 transition group cursor-pointer bg-slate-50/50 dark:bg-slate-800/40">
                             <i class="fa-solid fa-cloud-arrow-up text-3xl text-slate-400 group-hover:text-emerald-500 transition-colors mb-2 block"></i>
                             <span id="importBoothFileName" class="text-xs font-bold text-slate-700 dark:text-slate-300 block">
                                 Klik untuk memilih file Excel dari komputer Anda
                             </span>
                             <span class="text-[11px] text-slate-400 block mt-1">Maksimal ukuran file: 5MB</span>
                             <input type="file" id="importBoothFileInput" name="excel_file" accept=".xlsx,.xls,.csv" required class="hidden"
-                                onchange="onBoothFileSelected(this)">
-                        </div>
+                                onchange="onBoothFileSelected(this)" onclick="event.stopPropagation()">
+                        </label>
                     </div>
 
                     <!-- Notes -->

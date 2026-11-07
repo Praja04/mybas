@@ -50,7 +50,7 @@
                         </span>
                     @endif
                     <span>Peserta: <strong class="text-slate-900 dark:text-white font-bold">{{ $participant->name }}</strong>
-                    (Booth ke-{{ $participant->booths_voted_count + 1 }} dari 10)</span>
+                    (Booth ke-{{ $participant->booths_voted_count + 1 }} dari {{ $totalBooths ?? 10 }})</span>
                 </span>
             </div>
 

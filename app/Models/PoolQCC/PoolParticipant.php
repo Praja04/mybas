@@ -35,8 +35,15 @@ class PoolParticipant extends Model
         return $this->votes()->pluck('booth_id')->toArray();
     }
 
-    public function canVoteMore($max = 10)
+    public function canVoteMore($max = null)
     {
+        if ($max === null) {
+            $max = PoolBooth::where('is_active', true)->count();
+            if ($max <= 0) {
+                $max = PoolBooth::count();
+            }
+            $max = max(1, $max);
+        }
         return $this->booths_voted_count < $max;
     }
 

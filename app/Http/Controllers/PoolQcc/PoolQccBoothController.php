@@ -43,7 +43,13 @@ class PoolQccBoothController extends Controller
             $q->where('is_active', true);
         }])->findOrFail($boothId);
 
-        return view('pool_qcc.booth.station', compact('booth'));
+        $totalBooths = PoolBooth::where('is_active', true)->count();
+        if ($totalBooths <= 0) {
+            $totalBooths = PoolBooth::count();
+        }
+        $totalBooths = max(1, $totalBooths);
+
+        return view('pool_qcc.booth.station', compact('booth', 'totalBooths'));
     }
 
     /**
@@ -276,11 +282,17 @@ class PoolQccBoothController extends Controller
             ], 422);
         }
 
-        // 4. Validasi: Apakah sudah mencapai maksimal 10 booth?
-        if ($participant->booths_voted_count >= 10) {
+        $totalBooths = PoolBooth::where('is_active', true)->count();
+        if ($totalBooths <= 0) {
+            $totalBooths = PoolBooth::count();
+        }
+        $maxVotes = max(1, $totalBooths);
+
+        // 4. Validasi: Apakah sudah mencapai maksimal booth (dinamis sesuai total booth)?
+        if ($participant->booths_voted_count >= $maxVotes) {
             return response()->json([
                 'status' => 'error',
-                'message' => "Mohon maaf {$participant->name}, kuota pooling Anda sudah habis (Maksimal 10 Booth). Terima kasih atas partisipasi Anda!",
+                'message' => "Mohon maaf {$participant->name}, kuota pooling Anda sudah habis (Maksimal {$maxVotes} Booth). Terima kasih atas partisipasi Anda!",
             ], 422);
         }
 
@@ -316,7 +328,7 @@ class PoolQccBoothController extends Controller
 
         $welcomeMsg = $isJudge
             ? "{$judgeTitle} terverifikasi! Selamat datang, {$participant->name} (Vote bernilai +{$judgeVoteWeight} Poin)"
-            : "Kartu terverifikasi! Selamat datang, {$participant->name} (Booth ke-" . ($participant->booths_voted_count + 1) . " dari 10)";
+            : "Kartu terverifikasi! Selamat datang, {$participant->name} (Booth ke-" . ($participant->booths_voted_count + 1) . " dari {$maxVotes})";
 
         return response()->json([
             'status' => 'success',
@@ -439,7 +451,13 @@ class PoolQccBoothController extends Controller
             }
         }
 
-        return view('pool_qcc.booth.challenge', compact('booth', 'participant', 'question', 'shuffledOptions', 'isJudge', 'judgeTitle', 'judgeVoteWeight'));
+        $totalBooths = PoolBooth::where('is_active', true)->count();
+        if ($totalBooths <= 0) {
+            $totalBooths = PoolBooth::count();
+        }
+        $totalBooths = max(1, $totalBooths);
+
+        return view('pool_qcc.booth.challenge', compact('booth', 'participant', 'question', 'shuffledOptions', 'isJudge', 'judgeTitle', 'judgeVoteWeight', 'totalBooths'));
     }
 
     /**
@@ -465,10 +483,16 @@ class PoolQccBoothController extends Controller
         $participant = PoolParticipant::findOrFail($participantId);
         $question = PoolQuestion::findOrFail($request->question_id);
 
-        if ($participant->booths_voted_count >= 10) {
+        $totalBooths = PoolBooth::where('is_active', true)->count();
+        if ($totalBooths <= 0) {
+            $totalBooths = PoolBooth::count();
+        }
+        $maxVotes = max(1, $totalBooths);
+
+        if ($participant->booths_voted_count >= $maxVotes) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Anda sudah mencapai batas maksimal 10 booth pooling!',
+                'message' => "Anda sudah mencapai batas maksimal {$maxVotes} booth pooling!",
             ], 422);
         }
 
@@ -581,7 +605,7 @@ class PoolQccBoothController extends Controller
                 'name' => $participant->name,
                 'total_score' => $participant->total_score,
                 'booths_voted_count' => $participant->booths_voted_count,
-                'remaining_quota' => max(0, 10 - $participant->booths_voted_count),
+                'remaining_quota' => max(0, $maxVotes - $participant->booths_voted_count),
             ],
             'booth' => [
                 'code' => $booth->code,
