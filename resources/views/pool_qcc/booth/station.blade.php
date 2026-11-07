@@ -91,8 +91,8 @@
                 <!-- Autofocused Scanner Input -->
                 <form id="rfidBoothForm" onsubmit="event.preventDefault(); processBoothScan();" class="relative mb-4">
                     <div class="relative flex items-center">
-                        <input type="text" id="rfidBoothInput" name="rfid" placeholder="Tap Kartu RFID atau Ketik NIK lalu Enter..."
-                            autocomplete="off" autofocus
+                        <input type="number" id="rfidBoothInput" name="rfid"
+                            placeholder="Tap Kartu RFID atau Ketik NIK lalu Enter..." autocomplete="off" autofocus
                             class="w-full pl-12 pr-4 py-3.5 rounded-2xl bg-white dark:bg-slate-900 border-2 border-indigo-400 dark:border-indigo-500/50 text-slate-900 dark:text-white placeholder-slate-400 text-center font-mono text-base tracking-wider focus:outline-none focus:border-indigo-600 shadow-inner">
                         <div class="absolute left-4 text-indigo-500">
                             <i class="fa-solid fa-barcode text-xl"></i>
@@ -125,7 +125,8 @@
             <div
                 class="mt-8 pt-4 border-t border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-center gap-6 text-xs text-slate-500 dark:text-slate-400">
                 <span class="flex items-center"><i
-                        class="fa-solid fa-check text-emerald-600 dark:text-emerald-400 mr-1.5 font-bold"></i> Maksimal {{ $totalBooths ?? 10 }}
+                        class="fa-solid fa-check text-emerald-600 dark:text-emerald-400 mr-1.5 font-bold"></i> Maksimal
+                    {{ $totalBooths ?? 10 }}
                     Booth / Peserta</span>
                 <span class="flex items-center"><i
                         class="fa-solid fa-1 text-indigo-600 dark:text-indigo-400 mr-1.5 font-bold"></i> 1x Vote per
@@ -139,8 +140,10 @@
     <!-- ============================================================== -->
     <!-- MODAL: INPUT MANUAL PESERTA QCC (NIK + NAMA)                  -->
     <!-- ============================================================== -->
-    <div id="modalManualInput" class="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-sm hidden flex items-center justify-center p-4">
-        <div class="glass-panel w-full max-w-md rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl p-6 sm:p-8 relative overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+    <div id="modalManualInput"
+        class="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div
+            class="glass-panel w-full max-w-md rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl p-6 sm:p-8 relative overflow-hidden animate-in fade-in zoom-in-95 duration-200">
             <!-- Close Button -->
             <button type="button" onclick="closeManualModal()"
                 class="absolute top-5 right-5 w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-slate-700 dark:hover:text-white flex items-center justify-center transition cursor-pointer">
@@ -149,7 +152,8 @@
 
             <!-- Header -->
             <div class="flex items-center space-x-3 mb-5 pb-4 border-b border-slate-100 dark:border-slate-800">
-                <div class="w-10 h-10 rounded-2xl bg-indigo-600 text-white flex items-center justify-center text-lg shadow-md shadow-indigo-600/30 flex-shrink-0">
+                <div
+                    class="w-10 h-10 rounded-2xl bg-indigo-600 text-white flex items-center justify-center text-lg shadow-md shadow-indigo-600/30 flex-shrink-0">
                     <i class="fa-solid fa-user-pen"></i>
                 </div>
                 <div>
@@ -163,15 +167,18 @@
             </div>
 
             <!-- Notice -->
-            <div class="mb-4 p-3 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800/60 text-xs text-indigo-700 dark:text-indigo-300 flex items-start space-x-2">
+            <div
+                class="mb-4 p-3 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800/60 text-xs text-indigo-700 dark:text-indigo-300 flex items-start space-x-2">
                 <i class="fa-solid fa-circle-info mt-0.5 text-indigo-500 flex-shrink-0"></i>
                 <span class="leading-relaxed">
-                    Masukkan NIK dan Nama lengkap peserta. Data otomatis terdaftar sebagai <strong>Peserta QCC</strong> tanpa pengecekan database pusat.
+                    Masukkan NIK dan Nama lengkap peserta. Data otomatis terdaftar sebagai <strong>Peserta QCC</strong>
+                    tanpa pengecekan database pusat.
                 </span>
             </div>
 
             <!-- Error Banner -->
-            <div id="manualInputError" class="hidden mb-4 p-3 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-xs text-rose-700 dark:text-rose-300 font-bold flex items-start space-x-2">
+            <div id="manualInputError"
+                class="hidden mb-4 p-3 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-xs text-rose-700 dark:text-rose-300 font-bold flex items-start space-x-2">
                 <i class="fa-solid fa-circle-exclamation mt-0.5 text-rose-500 flex-shrink-0"></i>
                 <span id="manualInputErrorMessage" class="leading-relaxed">Terjadi kesalahan.</span>
             </div>
@@ -181,16 +188,19 @@
                 <input type="hidden" id="manualRfidInput" value="">
 
                 <!-- RFID Terdeteksi Box (Muncul jika dibuka via Tapping RFID) -->
-                <div id="manualRfidBox" class="hidden p-3 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800/60 flex items-center justify-between">
+                <div id="manualRfidBox"
+                    class="hidden p-3 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800/60 flex items-center justify-between">
                     <div class="flex items-center space-x-2">
                         <i class="fa-solid fa-id-card text-indigo-600 dark:text-indigo-400 text-sm"></i>
                         <span class="text-xs font-bold text-slate-700 dark:text-slate-300">RFID Terdeteksi:</span>
                     </div>
-                    <span id="manualRfidDisplay" class="font-mono font-black text-xs text-indigo-700 dark:text-indigo-300 bg-white dark:bg-slate-900 px-2.5 py-1 rounded-lg border border-indigo-200 dark:border-indigo-800"></span>
+                    <span id="manualRfidDisplay"
+                        class="font-mono font-black text-xs text-indigo-700 dark:text-indigo-300 bg-white dark:bg-slate-900 px-2.5 py-1 rounded-lg border border-indigo-200 dark:border-indigo-800"></span>
                 </div>
 
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 uppercase tracking-wider">
+                    <label
+                        class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 uppercase tracking-wider">
                         Nomor NIK / ID Peserta <span class="text-rose-500">*</span>
                     </label>
                     <input type="text" id="manualNikInput" required autocomplete="off"
@@ -199,7 +209,8 @@
                 </div>
 
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 uppercase tracking-wider">
+                    <label
+                        class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 uppercase tracking-wider">
                         Nama Lengkap Peserta <span class="text-rose-500">*</span>
                     </label>
                     <input type="text" id="manualNameInput" required autocomplete="off"
@@ -208,7 +219,8 @@
                 </div>
 
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 uppercase tracking-wider">
+                    <label
+                        class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 uppercase tracking-wider">
                         Departemen
                     </label>
                     <input type="text" value="Peserta QCC" readonly
@@ -241,8 +253,10 @@
         setInterval(() => {
             const modal = document.getElementById('modalManualInput');
             const isModalOpen = modal && !modal.classList.contains('hidden');
-            const isSwalOpen = (typeof Swal !== 'undefined' && typeof Swal.isVisible === 'function' && Swal.isVisible());
-            if (!isModalOpen && !isSwalOpen && document.activeElement !== rfidInput && !document.querySelector('input:focus')) {
+            const isSwalOpen = (typeof Swal !== 'undefined' && typeof Swal.isVisible === 'function' && Swal
+                .isVisible());
+            if (!isModalOpen && !isSwalOpen && document.activeElement !== rfidInput && !document.querySelector(
+                    'input:focus')) {
                 rfidInput.focus();
             }
         }, 2000);
@@ -277,8 +291,14 @@
                         rfid: rfidVal
                     })
                 })
-                .then(res => res.json().then(data => ({ httpStatus: res.status, data })))
-                .then(({ httpStatus, data }) => {
+                .then(res => res.json().then(data => ({
+                    httpStatus: res.status,
+                    data
+                })))
+                .then(({
+                    httpStatus,
+                    data
+                }) => {
                     rfidInput.disabled = false;
 
                     if (data.status === 'success') {
@@ -409,49 +429,57 @@
             document.getElementById('manualInputError').classList.add('hidden');
 
             fetch(`/pool-qcc/booth/${boothId}/scan-rfid`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                },
-                body: JSON.stringify({
-                    rfid: rfid || nik,
-                    nik: nik,
-                    name: name,
-                    is_manual: true
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    },
+                    body: JSON.stringify({
+                        rfid: rfid || nik,
+                        nik: nik,
+                        name: name,
+                        is_manual: true
+                    })
                 })
-            })
-            .then(res => res.json().then(data => ({ httpStatus: res.status, data })))
-            .then(({ httpStatus, data }) => {
-                btn.disabled = false;
-                btn.innerHTML = origHtml;
+                .then(res => res.json().then(data => ({
+                    httpStatus: res.status,
+                    data
+                })))
+                .then(({
+                    httpStatus,
+                    data
+                }) => {
+                    btn.disabled = false;
+                    btn.innerHTML = origHtml;
 
-                if (data.status === 'success') {
-                    closeManualModal();
-                    scanStatus.className =
-                        'my-4 p-4 rounded-2xl text-xs sm:text-sm font-bold bg-emerald-50 text-emerald-800 border border-emerald-300 shadow-sm';
-                    scanStatus.innerHTML =
-                        `<i class="fa-solid fa-circle-check text-emerald-600 mr-2"></i> ${data.message} &bull; Memuat kuis...`;
-                    scanStatus.classList.remove('hidden');
+                    if (data.status === 'success') {
+                        closeManualModal();
+                        scanStatus.className =
+                            'my-4 p-4 rounded-2xl text-xs sm:text-sm font-bold bg-emerald-50 text-emerald-800 border border-emerald-300 shadow-sm';
+                        scanStatus.innerHTML =
+                            `<i class="fa-solid fa-circle-check text-emerald-600 mr-2"></i> ${data.message} &bull; Memuat kuis...`;
+                        scanStatus.classList.remove('hidden');
 
-                    confetti({
-                        particleCount: 50,
-                        spread: 60,
-                        origin: { y: 0.6 }
-                    });
+                        confetti({
+                            particleCount: 50,
+                            spread: 60,
+                            origin: {
+                                y: 0.6
+                            }
+                        });
 
-                    setTimeout(() => {
-                        window.location.href = data.redirect_url;
-                    }, 600);
-                } else {
-                    showManualError(data.message || 'Gagal memproses peserta.');
-                }
-            })
-            .catch(err => {
-                btn.disabled = false;
-                btn.innerHTML = origHtml;
-                showManualError(err.message || 'Terjadi kesalahan jaringan.');
-            });
+                        setTimeout(() => {
+                            window.location.href = data.redirect_url;
+                        }, 600);
+                    } else {
+                        showManualError(data.message || 'Gagal memproses peserta.');
+                    }
+                })
+                .catch(err => {
+                    btn.disabled = false;
+                    btn.innerHTML = origHtml;
+                    showManualError(err.message || 'Terjadi kesalahan jaringan.');
+                });
         }
 
         function showManualError(msg) {
