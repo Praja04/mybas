@@ -86,6 +86,8 @@ Route::group(['middleware' => ['auth', 'access_log', 'rules:qcc_pool']], functio
                 // Participants & Votes Log
                 Route::get('/api/participants', 'PoolQcc\PoolQccAdminController@getParticipantsData')->name('api.participants');
                 Route::get('/participants', 'PoolQcc\PoolQccAdminController@participants')->name('participants');
+                Route::get('/participants/template', 'PoolQcc\PoolQccAdminController@downloadParticipantTemplate')->name('participants.template');
+                Route::post('/participants/import', 'PoolQcc\PoolQccAdminController@importParticipants')->name('participants.import');
                 Route::post('/participants/{id}/reset', 'PoolQcc\PoolQccAdminController@resetParticipantVotes')->name('participants.reset');
                 Route::get('/api/votes', 'PoolQcc\PoolQccAdminController@getVotesData')->name('api.votes');
                 Route::get('/votes', 'PoolQcc\PoolQccAdminController@votes')->name('votes');

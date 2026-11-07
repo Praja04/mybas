@@ -15,6 +15,7 @@ use RealRashid\SweetAlert\Facades\Alert;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\PoolQCC\TemplateBoothExport;
 use App\Exports\PoolQCC\TemplateQuestionExport;
+use App\Exports\PoolQCC\TemplateParticipantExport;
 use App\Models\PoolQCC\PoolJudge;
 use App\Models\PoolQCC\PoolJudgeEvaluation;
 use App\Models\PoolQCC\PoolEvaluationCriterion;
@@ -507,11 +508,23 @@ class PoolQccAdminController extends Controller
      */
     public function participants()
     {
-        return view('pool_qcc.admin.participants');
+        $totalBooths = PoolBooth::where('is_active', true)->count();
+        if ($totalBooths <= 0) {
+            $totalBooths = PoolBooth::count();
+        }
+        $totalBooths = max(1, $totalBooths);
+
+        return view('pool_qcc.admin.participants', compact('totalBooths'));
     }
 
     public function getParticipantsData(Request $request)
     {
+        $totalBooths = PoolBooth::where('is_active', true)->count();
+        if ($totalBooths <= 0) {
+            $totalBooths = PoolBooth::count();
+        }
+        $maxBooths = max(1, $totalBooths);
+
         $query = PoolParticipant::with(['votes.booth'])->latest('last_activity_at');
 
         if ($request->filled('search')) {
@@ -526,9 +539,9 @@ class PoolQccAdminController extends Controller
 
         if ($request->filled('status')) {
             if ($request->status === 'completed') {
-                $query->where('booths_voted_count', '>=', 10);
+                $query->where('booths_voted_count', '>=', $maxBooths);
             } elseif ($request->status === 'in_progress') {
-                $query->where('booths_voted_count', '<', 10);
+                $query->where('booths_voted_count', '<', $maxBooths);
             }
         }
 
@@ -563,6 +576,7 @@ class PoolQccAdminController extends Controller
 
         return response()->json([
             'status' => 'success',
+            'max_booths' => $maxBooths,
             'data' => $items,
             'pagination' => [
                 'current_page' => $paginated->currentPage(),
@@ -1418,6 +1432,140 @@ class PoolQccAdminController extends Controller
             ]);
         } catch (\Exception $e) {
             Log::error('Error import questions excel: ' . $e->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Terjadi kesalahan saat memproses file Excel: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Download Template Excel untuk Import Peserta
+     */
+    public function downloadParticipantTemplate()
+    {
+        return Excel::download(new TemplateParticipantExport, 'template_import_peserta_qcc.xlsx');
+    }
+
+    /**
+     * Import Data Peserta dari File Excel / CSV
+     */
+    public function importParticipants(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'excel_file' => 'required|file|mimes:xlsx,xls,csv,txt|max:5120',
+        ], [
+            'excel_file.required' => 'File Excel wajib dipilih.',
+            'excel_file.mimes' => 'Format file harus berupa .xlsx, .xls, atau .csv.',
+            'excel_file.max' => 'Ukuran file maksimal adalah 5MB.',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => $validator->errors()->first(),
+            ], 422);
+        }
+
+        try {
+            $sheets = Excel::toArray([], $request->file('excel_file'));
+            if (empty($sheets) || empty($sheets[0])) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'File Excel kosong atau tidak terbaca.',
+                ], 422);
+            }
+
+            $rows = $sheets[0];
+            $createdCount = 0;
+            $updatedCount = 0;
+            $errors = [];
+
+            for ($i = 1; $i < count($rows); $i++) {
+                $row = $rows[$i];
+                if (empty($row)) continue;
+
+                $nik = isset($row[0]) ? trim((string)$row[0]) : '';
+                $name = isset($row[1]) ? trim((string)$row[1]) : '';
+                $dept = isset($row[2]) ? trim((string)$row[2]) : '';
+                $rfid = isset($row[3]) ? trim((string)$row[3]) : '';
+
+                // Lewati baris kosong
+                if (empty($nik) && empty($name)) {
+                    continue;
+                }
+
+                $rowNumber = $i + 1;
+
+                if (empty($nik)) {
+                    $errors[] = "Baris {$rowNumber}: NIK karyawan wajib diisi.";
+                    continue;
+                }
+
+                if (empty($name)) {
+                    $errors[] = "Baris {$rowNumber}: Nama karyawan wajib diisi.";
+                    continue;
+                }
+
+                $department = !empty($dept) ? $dept : 'Umum';
+
+                // Cari apakah peserta sudah ada berdasarkan NIK atau RFID
+                $participant = PoolParticipant::where('nik', $nik)->first();
+                if (!$participant && !empty($rfid)) {
+                    $participant = PoolParticipant::where('rfid', $rfid)->first();
+                }
+
+                if ($participant) {
+                    $updateData = [
+                        'name' => $name,
+                        'department' => $department,
+                    ];
+                    if (!empty($rfid)) {
+                        $updateData['rfid'] = $rfid;
+                    }
+                    $participant->update($updateData);
+                    $updatedCount++;
+                } else {
+                    PoolParticipant::create([
+                        'nik' => $nik,
+                        'name' => $name,
+                        'department' => $department,
+                        'rfid' => !empty($rfid) ? $rfid : null,
+                        'photo' => null,
+                        'total_score' => 0,
+                        'booths_voted_count' => 0,
+                        'last_activity_at' => null,
+                    ]);
+                    $createdCount++;
+                }
+            }
+
+            $totalProcessed = $createdCount + $updatedCount;
+            if ($totalProcessed === 0 && !empty($errors)) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Gagal memproses peserta: ' . implode(' ', array_slice($errors, 0, 3)),
+                    'errors' => $errors,
+                ], 422);
+            }
+
+            $msg = "Import berhasil! {$totalProcessed} data diproses ({$createdCount} peserta baru, {$updatedCount} diperbarui).";
+            if (!empty($errors)) {
+                $msg .= " Catatan: " . count($errors) . " baris dilewati karena ada data yang tidak valid.";
+            }
+
+            return response()->json([
+                'status' => 'success',
+                'message' => $msg,
+                'data' => [
+                    'created' => $createdCount,
+                    'updated' => $updatedCount,
+                    'total' => $totalProcessed,
+                    'errors' => $errors,
+                ]
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error import participants excel: ' . $e->getMessage());
             return response()->json([
                 'status' => 'error',
                 'message' => 'Terjadi kesalahan saat memproses file Excel: ' . $e->getMessage(),

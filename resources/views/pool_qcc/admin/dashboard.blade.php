@@ -306,7 +306,7 @@ function loadDashboardData() {
                             </div>
                             <div class="text-right">
                                 <div class="text-base font-black text-indigo-600 dark:text-indigo-400">${Number(tp.total_score || 0).toLocaleString()} Pts</div>
-                                <div class="text-xs text-slate-500 dark:text-slate-400">${tp.booths_voted_count || 0} / 10 Booth Selesai</div>
+                                <div class="text-xs text-slate-500 dark:text-slate-400">${tp.booths_voted_count || 0} / ${data.totalBooths || 10} Booth Selesai</div>
                             </div>
                         </div>
                     `;

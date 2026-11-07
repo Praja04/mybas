@@ -13,9 +13,14 @@
                 <span class="text-slate-500">Peserta</span>
             </div>
             <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white">Data Peserta & Riwayat Tap</h1>
-            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Daftar seluruh peserta yang telah melakukan tapping ID card RFID dan progres pooling 10 booth mereka.</p>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Daftar seluruh peserta yang telah melakukan tapping ID card RFID dan progres pooling {{ $totalBooths ?? 10 }} booth mereka.</p>
         </div>
-        <div class="mt-4 sm:mt-0">
+        <div class="mt-4 sm:mt-0 flex items-center space-x-3">
+            <button type="button" onclick="openImportParticipantModal()"
+                class="px-4 py-2.5 rounded-xl text-sm font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-600/20 transition flex items-center space-x-2 cursor-pointer">
+                <i class="fa-solid fa-file-excel text-xs"></i>
+                <span>Upload Excel</span>
+            </button>
             <span id="totalParticipantsBadge" class="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700 shadow-sm">
                 Total: Memuat...
             </span>
@@ -34,8 +39,8 @@
             <div class="flex items-center space-x-2">
                 <select id="filter_participant_status" class="px-3.5 py-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white text-xs font-medium focus:outline-none focus:border-indigo-500 shadow-sm">
                     <option value="">-- Semua Status Kuota --</option>
-                    <option value="completed">Selesai (10/10 Booth)</option>
-                    <option value="in_progress">Belum Selesai (&lt; 10 Booth)</option>
+                    <option value="completed">Selesai ({{ $totalBooths ?? 10 }}/{{ $totalBooths ?? 10 }} Booth)</option>
+                    <option value="in_progress">Belum Selesai (&lt; {{ $totalBooths ?? 10 }} Booth)</option>
                 </select>
 
                 <button type="button" id="btnResetParticipantFilter" class="px-3.5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold border border-slate-200 dark:border-slate-700 transition cursor-pointer flex items-center space-x-1" title="Reset Filter">
@@ -71,6 +76,87 @@
     <!-- Custom Tailwind Pagination Container -->
     <div id="participantsPagination" class="mt-6"></div>
 </div>
+@endsection
+
+@section('modals')
+    <!-- Modal Import Excel Peserta -->
+    <div id="modalImportParticipant" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden" style="z-index: 9000;">
+        <div class="w-full h-full flex items-center justify-center p-3 sm:p-4 overflow-hidden">
+            <div class="glass-panel w-full max-w-lg rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 flex flex-col relative animate-scale-up"
+                style="max-height: calc(100vh - 2rem);">
+                <!-- Header -->
+                <div class="px-5 py-4 bg-gradient-to-r from-emerald-600 to-teal-600 text-white flex items-center justify-between flex-shrink-0">
+                    <div class="flex items-center space-x-2.5">
+                        <div class="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center text-sm">
+                            <i class="fa-solid fa-users-line"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-extrabold text-base leading-tight">Import Data Peserta dari Excel</h3>
+                            <p class="text-[11px] text-white/80">Upload massal data karyawan / peserta QCC</p>
+                        </div>
+                    </div>
+                    <button type="button" onclick="closeImportParticipantModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/25 flex items-center justify-center text-white text-xs transition">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+
+                <!-- Body -->
+                <form id="formImportParticipant" onsubmit="handleImportParticipantSubmit(event)" enctype="multipart/form-data" class="p-6 space-y-4 overflow-y-auto">
+                    <!-- Template Download Card -->
+                    <div class="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-xs">
+                        <div class="flex items-start justify-between gap-3">
+                            <div>
+                                <span class="font-extrabold text-emerald-900 dark:text-emerald-200 block mb-0.5">Format Template Import</span>
+                                <p class="text-[11px] text-emerald-700 dark:text-emerald-300">
+                                    Unduh template resmi peserta untuk upload massal karyawan yang belum terdaftar.
+                                </p>
+                            </div>
+                            <a href="{{ route('pool-qcc.admin.participants.template') }}"
+                                class="px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs shadow-sm transition flex items-center space-x-1.5 flex-shrink-0 cursor-pointer">
+                                <i class="fa-solid fa-download text-[11px]"></i>
+                                <span>Download Template</span>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- File Input Box -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 uppercase tracking-wider">
+                            Pilih File Excel / CSV (.xlsx, .xls, .csv) <span class="text-rose-500">*</span>:
+                        </label>
+                        <div class="relative border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-2xl p-6 text-center hover:border-emerald-500 dark:hover:border-emerald-500 transition group cursor-pointer bg-slate-50/50 dark:bg-slate-800/40"
+                            onclick="$('#importParticipantFileInput').click()">
+                            <i class="fa-solid fa-cloud-arrow-up text-3xl text-slate-400 group-hover:text-emerald-500 transition-colors mb-2 block"></i>
+                            <span id="importParticipantFileName" class="text-xs font-bold text-slate-700 dark:text-slate-300 block">
+                                Klik untuk memilih file Excel dari komputer Anda
+                            </span>
+                            <span class="text-[11px] text-slate-400 block mt-1">Maksimal ukuran file: 5MB</span>
+                            <input type="file" id="importParticipantFileInput" name="excel_file" accept=".xlsx,.xls,.csv" required class="hidden"
+                                onchange="onParticipantFileSelected(this)">
+                        </div>
+                    </div>
+
+                    <!-- Notes -->
+                    <div class="text-[11px] text-slate-400 space-y-1">
+                        <p>&bull; Kolom <strong>NIK</strong> dan <strong>Nama Karyawan</strong> wajib diisi.</p>
+                        <p>&bull; Kolom <strong>Departemen</strong> dan <strong>Kode RFID Card</strong> bersifat opsional.</p>
+                        <p>&bull; Jika data NIK sudah ada, nama dan RFID akan diperbarui otomatis tanpa mereset skor vote.</p>
+                    </div>
+
+                    <!-- Footer -->
+                    <div class="pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end space-x-3">
+                        <button type="button" onclick="closeImportParticipantModal()" class="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition">
+                            Batal
+                        </button>
+                        <button type="submit" id="btnSubmitImportParticipant" class="px-5 py-2.5 rounded-xl text-xs font-extrabold bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-600/30 transition flex items-center space-x-2 cursor-pointer">
+                            <i class="fa-solid fa-upload"></i>
+                            <span>Upload & Proses Import</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 @endsection
 
 @section('scripts')
@@ -250,18 +336,20 @@ function loadParticipantsData(page = 1, search = '', status = '') {
                 return;
             }
 
+            const maxBooths = res.max_booths || {{ $totalBooths ?? 10 }};
+
             let rowsHtml = '';
             items.forEach(function(p) {
                 const avatarHtml = p.photo
                     ? `<img src="${p.photo}" alt="${escapeHtml(p.name)}" class="w-9 h-9 rounded-full object-cover border border-slate-300 dark:border-slate-700">`
                     : `<div class="w-9 h-9 rounded-full bg-indigo-50 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-400 flex items-center justify-center font-bold text-xs border border-indigo-200 dark:border-indigo-500/30">${p.initials}</div>`;
 
-                const quotaBadge = p.booths_voted_count >= 10
+                const quotaBadge = p.booths_voted_count >= maxBooths
                     ? `<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30">
-                           <i class="fa-solid fa-circle-check mr-1"></i> Selesai (10/10)
+                           <i class="fa-solid fa-circle-check mr-1"></i> Selesai (${maxBooths}/${maxBooths})
                        </span>`
                     : `<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-300 border border-amber-200 dark:border-amber-500/30">
-                           ${p.booths_voted_count} / 10 Booth
+                           ${p.booths_voted_count} / ${maxBooths} Booth
                        </span>`;
 
                 let votesHtml = '';
@@ -377,6 +465,86 @@ function confirmResetParticipant(id, name) {
                 customClass: {
                     popup: 'rounded-2xl dark:bg-slate-900 dark:text-white border border-slate-200 dark:border-slate-800'
                 }
+            });
+        }
+    });
+}
+
+// ==============================================================
+// MODAL IMPORT EXCEL PESERTA HANDLERS
+// ==============================================================
+function openImportParticipantModal() {
+    $('#formImportParticipant')[0].reset();
+    $('#importParticipantFileName').text('Klik untuk memilih file Excel dari komputer Anda');
+    $('#modalImportParticipant').removeClass('hidden');
+}
+
+function closeImportParticipantModal() {
+    $('#modalImportParticipant').addClass('hidden');
+}
+
+function onParticipantFileSelected(input) {
+    if (input.files && input.files[0]) {
+        const file = input.files[0];
+        $('#importParticipantFileName').html(`
+            <span class="text-emerald-600 dark:text-emerald-400 font-extrabold flex items-center justify-center gap-1.5">
+                <i class="fa-solid fa-file-excel"></i> ${escapeHtml(file.name)} (${(file.size / 1024).toFixed(1)} KB)
+            </span>
+        `);
+    } else {
+        $('#importParticipantFileName').text('Klik untuk memilih file Excel dari komputer Anda');
+    }
+}
+
+function handleImportParticipantSubmit(e) {
+    e.preventDefault();
+    const fileInput = document.getElementById('importParticipantFileInput');
+    if (!fileInput.files || !fileInput.files[0]) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'File Belum Dipilih',
+            text: 'Silakan pilih file Excel (.xlsx, .xls, .csv) terlebih dahulu.',
+            customClass: { popup: 'rounded-2xl dark:bg-slate-900 dark:text-white border border-slate-200 dark:border-slate-800' }
+        });
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('_token', $('meta[name="csrf-token"]').attr('content') || '{{ csrf_token() }}');
+    formData.append('excel_file', fileInput.files[0]);
+
+    const $btn = $('#btnSubmitImportParticipant');
+    const origHtml = $btn.html();
+    $btn.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin mr-1.5"></i> Memproses...');
+
+    $.ajax({
+        url: '{{ route('pool-qcc.admin.participants.import') }}',
+        type: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        dataType: 'json',
+        success: function(res) {
+            $btn.prop('disabled', false).html(origHtml);
+            closeImportParticipantModal();
+
+            Swal.fire({
+                icon: 'success',
+                title: 'Import Peserta Berhasil!',
+                text: res.message,
+                customClass: { popup: 'rounded-2xl dark:bg-slate-900 dark:text-white border border-slate-200 dark:border-slate-800' }
+            });
+
+            loadParticipantsData(1, currentSearch, currentStatus);
+        },
+        error: function(xhr) {
+            $btn.prop('disabled', false).html(origHtml);
+            const msg = xhr.responseJSON?.message || 'Gagal memproses file Excel.';
+            Swal.fire({
+                icon: 'error',
+                title: 'Import Gagal',
+                text: msg,
+                customClass: { popup: 'rounded-2xl dark:bg-slate-900 dark:text-white border border-slate-200 dark:border-slate-800' }
             });
         }
     });

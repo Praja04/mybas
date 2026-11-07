@@ -125,7 +125,7 @@
             <div
                 class="mt-8 pt-4 border-t border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-center gap-6 text-xs text-slate-500 dark:text-slate-400">
                 <span class="flex items-center"><i
-                        class="fa-solid fa-check text-emerald-600 dark:text-emerald-400 mr-1.5 font-bold"></i> Maksimal 10
+                        class="fa-solid fa-check text-emerald-600 dark:text-emerald-400 mr-1.5 font-bold"></i> Maksimal {{ $totalBooths ?? 10 }}
                     Booth / Peserta</span>
                 <span class="flex items-center"><i
                         class="fa-solid fa-1 text-indigo-600 dark:text-indigo-400 mr-1.5 font-bold"></i> 1x Vote per
