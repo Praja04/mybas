@@ -295,7 +295,7 @@ class PoolQccAdminController extends Controller
      */
     public function questions(Request $request)
     {
-        $booths = PoolBooth::orderBy('name', 'asc')->get();
+        $booths = PoolBooth::orderBy('code', 'asc')->get();
         $selectedBoothId = $request->get('booth_id');
 
         return view('pool_qcc.admin.questions', compact('booths', 'selectedBoothId'));

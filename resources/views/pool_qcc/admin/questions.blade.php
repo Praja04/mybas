@@ -42,7 +42,7 @@
                         class="px-4 py-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-indigo-500 flex-1 max-w-md shadow-sm">
                         <option value="">-- Semua Booth --</option>
                         @foreach ($booths as $b)
-                            <option value="{{ $b->id }}" {{ ($selectedBoothId == $b->id) ? 'selected' : '' }}>
+                            <option value="{{ $b->id }}" {{ $selectedBoothId == $b->id ? 'selected' : '' }}>
                                 [{{ $b->code }}] {{ $b->name }}
                             </option>
                         @endforeach
@@ -99,8 +99,7 @@
                                 class="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 text-sm shadow-sm">
                                 <option value="">-- Pilih Booth --</option>
                                 @foreach ($booths as $b)
-                                    <option value="{{ $b->id }}"
-                                        {{ $selectedBoothId == $b->id ? 'selected' : '' }}>
+                                    <option value="{{ $b->id }}" {{ $selectedBoothId == $b->id ? 'selected' : '' }}>
                                         [{{ $b->code }}] {{ $b->name }}
                                     </option>
                                 @endforeach
@@ -215,7 +214,8 @@
             <div class="glass-panel w-full max-w-lg rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 flex flex-col relative animate-scale-up"
                 style="max-height: calc(100vh - 2rem);">
                 <!-- Header -->
-                <div class="px-5 py-4 bg-gradient-to-r from-emerald-600 to-teal-600 text-white flex items-center justify-between flex-shrink-0">
+                <div
+                    class="px-5 py-4 bg-gradient-to-r from-emerald-600 to-teal-600 text-white flex items-center justify-between flex-shrink-0">
                     <div class="flex items-center space-x-2.5">
                         <div class="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center text-sm">
                             <i class="fa-solid fa-file-excel"></i>
@@ -225,20 +225,25 @@
                             <p class="text-[11px] text-white/80">Upload massal bank soal kuis per booth</p>
                         </div>
                     </div>
-                    <button type="button" onclick="closeImportQuestionModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/25 flex items-center justify-center text-white text-xs transition">
+                    <button type="button" onclick="closeImportQuestionModal()"
+                        class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/25 flex items-center justify-center text-white text-xs transition">
                         <i class="fa-solid fa-xmark"></i>
                     </button>
                 </div>
 
                 <!-- Body -->
-                <form id="formImportQuestion" onsubmit="handleImportQuestionSubmit(event)" enctype="multipart/form-data" class="p-6 space-y-4 overflow-y-auto">
+                <form id="formImportQuestion" onsubmit="handleImportQuestionSubmit(event)" enctype="multipart/form-data"
+                    class="p-6 space-y-4 overflow-y-auto">
                     <!-- Template Download Card -->
-                    <div class="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-xs">
+                    <div
+                        class="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-xs">
                         <div class="flex items-start justify-between gap-3">
                             <div>
-                                <span class="font-extrabold text-emerald-900 dark:text-emerald-200 block mb-0.5">Format Template Soal</span>
+                                <span class="font-extrabold text-emerald-900 dark:text-emerald-200 block mb-0.5">Format
+                                    Template Soal</span>
                                 <p class="text-[11px] text-emerald-700 dark:text-emerald-300">
-                                    Unduh template resmi agar penulisan kode booth, opsi pilihan, dan kunci jawaban sesuai format.
+                                    Unduh template resmi agar penulisan kode booth, opsi pilihan, dan kunci jawaban sesuai
+                                    format.
                                 </p>
                             </div>
                             <a href="{{ route('pool-qcc.admin.questions.template') }}"
@@ -251,34 +256,42 @@
 
                     <!-- File Input Box -->
                     <div>
-                        <span class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 uppercase tracking-wider">
+                        <span
+                            class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 uppercase tracking-wider">
                             Pilih File Excel / CSV (.xlsx, .xls, .csv) <span class="text-rose-500">*</span>:
                         </span>
                         <label for="importQuestionFileInput"
                             class="block relative border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-2xl p-6 text-center hover:border-emerald-500 dark:hover:border-emerald-500 transition group cursor-pointer bg-slate-50/50 dark:bg-slate-800/40">
-                            <i class="fa-solid fa-cloud-arrow-up text-3xl text-slate-400 group-hover:text-emerald-500 transition-colors mb-2 block"></i>
-                            <span id="importQuestionFileName" class="text-xs font-bold text-slate-700 dark:text-slate-300 block">
+                            <i
+                                class="fa-solid fa-cloud-arrow-up text-3xl text-slate-400 group-hover:text-emerald-500 transition-colors mb-2 block"></i>
+                            <span id="importQuestionFileName"
+                                class="text-xs font-bold text-slate-700 dark:text-slate-300 block">
                                 Klik untuk memilih file Excel dari komputer Anda
                             </span>
                             <span class="text-[11px] text-slate-400 block mt-1">Maksimal ukuran file: 5MB</span>
-                            <input type="file" id="importQuestionFileInput" name="excel_file" accept=".xlsx,.xls,.csv" required class="hidden"
-                                onchange="onQuestionFileSelected(this)" onclick="event.stopPropagation()">
+                            <input type="file" id="importQuestionFileInput" name="excel_file"
+                                accept=".xlsx,.xls,.csv" required class="hidden" onchange="onQuestionFileSelected(this)"
+                                onclick="event.stopPropagation()">
                         </label>
                     </div>
 
                     <!-- Notes -->
                     <div class="text-[11px] text-slate-400 space-y-1">
-                        <p>&bull; Kolom <strong>Kode Booth</strong> harus sesuai dengan kode booth terdaftar (contoh: B01, B02).</p>
+                        <p>&bull; Kolom <strong>Kode Booth</strong> harus sesuai dengan kode booth terdaftar (contoh: B01,
+                            B02).</p>
                         <p>&bull; Kolom <strong>Kunci Jawaban</strong> harus huruf <strong>A, B, C, D, atau E</strong>.</p>
                         <p>&bull; Pastikan setiap booth memiliki <strong>minimal 5 soal aktif</strong>.</p>
                     </div>
 
                     <!-- Footer -->
-                    <div class="pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end space-x-3">
-                        <button type="button" onclick="closeImportQuestionModal()" class="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition">
+                    <div
+                        class="pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end space-x-3">
+                        <button type="button" onclick="closeImportQuestionModal()"
+                            class="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition">
                             Batal
                         </button>
-                        <button type="submit" id="btnSubmitImportQuestion" class="px-5 py-2.5 rounded-xl text-xs font-extrabold bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-600/30 transition flex items-center space-x-2 cursor-pointer">
+                        <button type="submit" id="btnSubmitImportQuestion"
+                            class="px-5 py-2.5 rounded-xl text-xs font-extrabold bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-600/30 transition flex items-center space-x-2 cursor-pointer">
                             <i class="fa-solid fa-upload"></i>
                             <span>Upload & Proses Import</span>
                         </button>
@@ -424,32 +437,33 @@
 @endsection
 
 @section('scripts')
-<script>
-let questionsCache = [];
-let currentPage = 1;
-let currentBoothId = "{{ $selectedBoothId ?? '' }}";
+    <script>
+        let questionsCache = [];
+        let currentPage = 1;
+        let currentBoothId = "{{ $selectedBoothId ?? '' }}";
 
-function escapeHtml(str) {
-    if (!str) return '';
-    return $('<div>').text(str).html();
-}
+        function escapeHtml(str) {
+            if (!str) return '';
+            return $('<div>').text(str).html();
+        }
 
-function escapeAttr(str) {
-    if (!str) return '';
-    return String(str).replace(/'/g, "\\'").replace(/"/g, '&quot;');
-}
+        function escapeAttr(str) {
+            if (!str) return '';
+            return String(str).replace(/'/g, "\\'").replace(/"/g, '&quot;');
+        }
 
-const assetBaseUrl = "{{ asset('') }}";
-function getImageUrl(path) {
-    if (!path) return '';
-    if (path.startsWith('http://') || path.startsWith('https://')) return path;
-    return assetBaseUrl + path.replace(/^\/+/, '');
-}
+        const assetBaseUrl = "{{ asset('') }}";
 
-function renderSkeletonQuestions() {
-    let skeletons = '';
-    for (let i = 0; i < 4; i++) {
-        skeletons += `
+        function getImageUrl(path) {
+            if (!path) return '';
+            if (path.startsWith('http://') || path.startsWith('https://')) return path;
+            return assetBaseUrl + path.replace(/^\/+/, '');
+        }
+
+        function renderSkeletonQuestions() {
+            let skeletons = '';
+            for (let i = 0; i < 4; i++) {
+                skeletons += `
             <div class="glass-card rounded-2xl p-6 border border-slate-200 dark:border-slate-800 animate-pulse space-y-4">
                 <div class="flex items-center space-x-3">
                     <div class="w-8 h-8 rounded-xl bg-slate-200 dark:bg-slate-800"></div>
@@ -462,121 +476,125 @@ function renderSkeletonQuestions() {
                 </div>
             </div>
         `;
-    }
-    $('#questionsContainer').html(skeletons);
-    $('#questionsPagination').empty();
-}
+            }
+            $('#questionsContainer').html(skeletons);
+            $('#questionsPagination').empty();
+        }
 
-function updateBoothSummary(totalCount) {
-    if (!currentBoothId) {
-        $('#selectedBoothSummary').empty();
-        return;
-    }
+        function updateBoothSummary(totalCount) {
+            if (!currentBoothId) {
+                $('#selectedBoothSummary').empty();
+                return;
+            }
 
-    if (totalCount >= 5) {
-        $('#selectedBoothSummary').html(`
+            if (totalCount >= 5) {
+                $('#selectedBoothSummary').html(`
             <span class="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/30 flex items-center space-x-1.5 shadow-sm">
                 <i class="fa-solid fa-circle-check text-emerald-600 dark:text-emerald-400"></i>
                 <span>Syarat Minimal Terpenuhi (${totalCount} / 5 Soal)</span>
             </span>
         `);
-    } else {
-        const needed = 5 - totalCount;
-        $('#selectedBoothSummary').html(`
+            } else {
+                const needed = 5 - totalCount;
+                $('#selectedBoothSummary').html(`
             <span class="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200 dark:bg-amber-500/20 dark:text-amber-300 dark:border-amber-500/30 flex items-center space-x-1.5 shadow-sm">
                 <i class="fa-solid fa-triangle-exclamation text-amber-600 dark:text-amber-400"></i>
                 <span>Belum Cukup Soal (${totalCount} / 5 Soal) - Butuh ${needed} soal lagi!</span>
             </span>
         `);
-    }
-}
+            }
+        }
 
-function renderPagination(pagination) {
-    if (!pagination || pagination.total === 0) {
-        $('#questionsPagination').empty();
-        return;
-    }
+        function renderPagination(pagination) {
+            if (!pagination || pagination.total === 0) {
+                $('#questionsPagination').empty();
+                return;
+            }
 
-    const current = pagination.current_page;
-    const last = pagination.last_page;
-    const from = pagination.from || 0;
-    const to = pagination.to || 0;
-    const total = pagination.total || 0;
+            const current = pagination.current_page;
+            const last = pagination.last_page;
+            const from = pagination.from || 0;
+            const to = pagination.to || 0;
+            const total = pagination.total || 0;
 
-    let pagesHtml = '';
+            let pagesHtml = '';
 
-    // Tombol Sebelumnya
-    if (current > 1) {
-        pagesHtml += `
+            // Tombol Sebelumnya
+            if (current > 1) {
+                pagesHtml += `
             <button type="button" onclick="goToPage(${current - 1})"
                 class="px-3 py-2 rounded-xl text-xs font-bold bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 shadow-sm transition flex items-center gap-1 cursor-pointer">
                 <i class="fa-solid fa-chevron-left text-[10px]"></i>
                 <span class="hidden sm:inline">Sebelumnya</span>
             </button>
         `;
-    } else {
-        pagesHtml += `
+            } else {
+                pagesHtml += `
             <span class="px-3 py-2 rounded-xl text-xs font-bold bg-slate-100 dark:bg-slate-800/50 text-slate-400 dark:text-slate-600 border border-slate-200 dark:border-slate-800 cursor-not-allowed flex items-center gap-1">
                 <i class="fa-solid fa-chevron-left text-[10px]"></i>
                 <span class="hidden sm:inline">Sebelumnya</span>
             </span>
         `;
-    }
+            }
 
-    // Numbered buttons
-    let startPage = Math.max(1, current - 2);
-    let endPage = Math.min(last, current + 2);
+            // Numbered buttons
+            let startPage = Math.max(1, current - 2);
+            let endPage = Math.min(last, current + 2);
 
-    if (startPage > 1) {
-        pagesHtml += `<button type="button" onclick="goToPage(1)" class="w-8 h-8 rounded-xl text-xs font-bold bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer">1</button>`;
-        if (startPage > 2) {
-            pagesHtml += `<span class="w-8 h-8 flex items-center justify-center text-xs font-bold text-slate-400">...</span>`;
-        }
-    }
+            if (startPage > 1) {
+                pagesHtml +=
+                    `<button type="button" onclick="goToPage(1)" class="w-8 h-8 rounded-xl text-xs font-bold bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer">1</button>`;
+                if (startPage > 2) {
+                    pagesHtml +=
+                        `<span class="w-8 h-8 flex items-center justify-center text-xs font-bold text-slate-400">...</span>`;
+                }
+            }
 
-    for (let p = startPage; p <= endPage; p++) {
-        if (p === current) {
-            pagesHtml += `
+            for (let p = startPage; p <= endPage; p++) {
+                if (p === current) {
+                    pagesHtml += `
                 <span class="w-8 h-8 rounded-xl text-xs font-black bg-indigo-600 text-white shadow-md shadow-indigo-600/30 flex items-center justify-center">
                     ${p}
                 </span>
             `;
-        } else {
-            pagesHtml += `
+                } else {
+                    pagesHtml += `
                 <button type="button" onclick="goToPage(${p})"
                     class="w-8 h-8 rounded-xl text-xs font-bold bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer">
                     ${p}
                 </button>
             `;
-        }
-    }
+                }
+            }
 
-    if (endPage < last) {
-        if (endPage < last - 1) {
-            pagesHtml += `<span class="w-8 h-8 flex items-center justify-center text-xs font-bold text-slate-400">...</span>`;
-        }
-        pagesHtml += `<button type="button" onclick="goToPage(${last})" class="w-8 h-8 rounded-xl text-xs font-bold bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer">${last}</button>`;
-    }
+            if (endPage < last) {
+                if (endPage < last - 1) {
+                    pagesHtml +=
+                        `<span class="w-8 h-8 flex items-center justify-center text-xs font-bold text-slate-400">...</span>`;
+                }
+                pagesHtml +=
+                    `<button type="button" onclick="goToPage(${last})" class="w-8 h-8 rounded-xl text-xs font-bold bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer">${last}</button>`;
+            }
 
-    // Tombol Berikutnya
-    if (current < last) {
-        pagesHtml += `
+            // Tombol Berikutnya
+            if (current < last) {
+                pagesHtml += `
             <button type="button" onclick="goToPage(${current + 1})"
                 class="px-3 py-2 rounded-xl text-xs font-bold bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 shadow-sm transition flex items-center gap-1 cursor-pointer">
                 <span class="hidden sm:inline">Berikutnya</span>
                 <i class="fa-solid fa-chevron-right text-[10px]"></i>
             </button>
         `;
-    } else {
-        pagesHtml += `
+            } else {
+                pagesHtml += `
             <span class="px-3 py-2 rounded-xl text-xs font-bold bg-slate-100 dark:bg-slate-800/50 text-slate-400 dark:text-slate-600 border border-slate-200 dark:border-slate-800 cursor-not-allowed flex items-center gap-1">
                 <span class="hidden sm:inline">Berikutnya</span>
                 <i class="fa-solid fa-chevron-right text-[10px]"></i>
             </span>
         `;
-    }
+            }
 
-    const html = `
+            const html = `
         <div class="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-2xl glass-panel">
             <div class="text-xs text-slate-600 dark:text-slate-400">
                 Menampilkan <span class="font-bold text-slate-900 dark:text-white">${from}</span> sampai <span class="font-bold text-slate-900 dark:text-white">${to}</span> dari <span class="font-bold text-slate-900 dark:text-white">${total}</span> soal
@@ -587,119 +605,137 @@ function renderPagination(pagination) {
         </div>
     `;
 
-    $('#questionsPagination').html(html);
-}
+            $('#questionsPagination').html(html);
+        }
 
-function goToPage(page) {
-    currentPage = page;
-    loadQuestionsData(page, currentBoothId);
-    $('html, body').animate({ scrollTop: $('#questionsContainer').offset().top - 80 }, 200);
-}
+        function goToPage(page) {
+            currentPage = page;
+            loadQuestionsData(page, currentBoothId);
+            $('html, body').animate({
+                scrollTop: $('#questionsContainer').offset().top - 80
+            }, 200);
+        }
 
-function loadQuestionsData(page = 1, boothId = '') {
-    renderSkeletonQuestions();
+        function loadQuestionsData(page = 1, boothId = '') {
+            renderSkeletonQuestions();
 
-    $.ajax({
-        url: "{{ route('pool-qcc.admin.api.questions') }}",
-        type: 'GET',
-        data: {
-            page: page,
-            booth_id: boothId
-        },
-        dataType: 'json',
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest',
-            'Accept': 'application/json'
-        },
-        success: function(response) {
-            questionsCache = response.data || [];
-            const pagination = response.pagination || {};
-            currentPage = pagination.current_page || page;
+            $.ajax({
+                url: "{{ route('pool-qcc.admin.api.questions') }}",
+                type: 'GET',
+                data: {
+                    page: page,
+                    booth_id: boothId
+                },
+                dataType: 'json',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                },
+                success: function(response) {
+                    questionsCache = response.data || [];
+                    const pagination = response.pagination || {};
+                    currentPage = pagination.current_page || page;
 
-            updateBoothSummary(pagination.total || 0);
+                    updateBoothSummary(pagination.total || 0);
 
-            if (questionsCache.length === 0) {
-                $('#questionsContainer').html(`
+                    if (questionsCache.length === 0) {
+                        $('#questionsContainer').html(`
                     <div class="py-16 text-center glass-panel rounded-2xl">
                         <i class="fa-solid fa-clipboard-question text-5xl text-slate-400 mb-3 block"></i>
                         <h3 class="text-lg font-bold text-slate-800 dark:text-white">Belum Ada Pertanyaan</h3>
                         <p class="text-sm text-slate-500 mt-1 max-w-md mx-auto">Klik tombol "Tambah Pertanyaan Baru" untuk mengisi bank soal bagi booth ini.</p>
                     </div>
                 `);
-                $('#questionsPagination').empty();
-                return;
-            }
+                        $('#questionsPagination').empty();
+                        return;
+                    }
 
-            let questionsHtml = '';
-            const startIndex = pagination.from || 1;
+                    let questionsHtml = '';
+                    const startIndex = pagination.from || 1;
 
-            questionsCache.forEach(function(q, idx) {
-                const itemNum = startIndex + idx;
-                const boothCode = q.booth ? escapeHtml(q.booth.code) : 'N/A';
-                const boothName = q.booth ? escapeHtml(q.booth.name) : 'Booth';
-                const points = q.points || 1;
-                const questionText = escapeHtml(q.question_text);
-                const explanation = q.explanation ? escapeHtml(q.explanation) : '';
+                    questionsCache.forEach(function(q, idx) {
+                        const itemNum = startIndex + idx;
+                        const boothCode = q.booth ? escapeHtml(q.booth.code) : 'N/A';
+                        const boothName = q.booth ? escapeHtml(q.booth.name) : 'Booth';
+                        const points = q.points || 1;
+                        const questionText = escapeHtml(q.question_text);
+                        const explanation = q.explanation ? escapeHtml(q.explanation) : '';
 
-                let statusBadge = '';
-                if (!q.is_active) {
-                    statusBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-300">Nonaktif</span>';
-                }
+                        let statusBadge = '';
+                        if (!q.is_active) {
+                            statusBadge =
+                                '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-300">Nonaktif</span>';
+                        }
 
-                let imgHtml = '';
-                if (q.image) {
-                    imgHtml = `
+                        let imgHtml = '';
+                        if (q.image) {
+                            imgHtml = `
                         <div class="mt-3 mb-2 max-w-md rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700">
                             <img src="${getImageUrl(q.image)}" alt="Lampiran Pertanyaan" class="max-h-48 w-auto object-cover">
                         </div>
                     `;
-                }
+                        }
 
-                // Render options A, B, C, D, E
-                const opts = [
-                    { key: 'A', text: q.option_a },
-                    { key: 'B', text: q.option_b },
-                    { key: 'C', text: q.option_c },
-                    { key: 'D', text: q.option_d },
-                ];
-                if (q.option_e) {
-                    opts.push({ key: 'E', text: q.option_e, isSpan2: true });
-                }
+                        // Render options A, B, C, D, E
+                        const opts = [{
+                                key: 'A',
+                                text: q.option_a
+                            },
+                            {
+                                key: 'B',
+                                text: q.option_b
+                            },
+                            {
+                                key: 'C',
+                                text: q.option_c
+                            },
+                            {
+                                key: 'D',
+                                text: q.option_d
+                            },
+                        ];
+                        if (q.option_e) {
+                            opts.push({
+                                key: 'E',
+                                text: q.option_e,
+                                isSpan2: true
+                            });
+                        }
 
-                let optionsHtml = '';
-                opts.forEach(function(opt) {
-                    const isCorrect = q.correct_answer === opt.key;
-                    const containerClass = isCorrect
-                        ? 'bg-emerald-50 border-emerald-300 text-emerald-900 font-bold dark:bg-emerald-500/20 dark:border-emerald-500/50 dark:text-emerald-200'
-                        : 'bg-slate-50 border-slate-200 text-slate-700 dark:bg-slate-900/60 dark:border-slate-800 dark:text-slate-300';
-                    const badgeClass = isCorrect
-                        ? 'bg-emerald-600 text-white'
-                        : 'bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-400';
-                    const spanClass = opt.isSpan2 ? 'sm:col-span-2' : '';
-                    const checkIcon = isCorrect
-                        ? '<i class="fa-solid fa-circle-check ml-auto text-emerald-600 dark:text-emerald-400 text-base"></i>'
-                        : '';
+                        let optionsHtml = '';
+                        opts.forEach(function(opt) {
+                            const isCorrect = q.correct_answer === opt.key;
+                            const containerClass = isCorrect ?
+                                'bg-emerald-50 border-emerald-300 text-emerald-900 font-bold dark:bg-emerald-500/20 dark:border-emerald-500/50 dark:text-emerald-200' :
+                                'bg-slate-50 border-slate-200 text-slate-700 dark:bg-slate-900/60 dark:border-slate-800 dark:text-slate-300';
+                            const badgeClass = isCorrect ?
+                                'bg-emerald-600 text-white' :
+                                'bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-400';
+                            const spanClass = opt.isSpan2 ? 'sm:col-span-2' : '';
+                            const checkIcon = isCorrect ?
+                                '<i class="fa-solid fa-circle-check ml-auto text-emerald-600 dark:text-emerald-400 text-base"></i>' :
+                                '';
 
-                    optionsHtml += `
+                            optionsHtml += `
                         <div class="p-3 rounded-xl border flex items-center space-x-2.5 ${containerClass} ${spanClass}">
                             <span class="w-6 h-6 rounded-lg flex items-center justify-center font-black ${badgeClass}">${opt.key}</span>
                             <span>${escapeHtml(opt.text)}</span>
                             ${checkIcon}
                         </div>
                     `;
-                });
+                        });
 
-                let explanationHtml = '';
-                if (explanation) {
-                    explanationHtml = `
+                        let explanationHtml = '';
+                        if (explanation) {
+                            explanationHtml = `
                         <div class="mt-3.5 p-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800/80 text-xs text-slate-600 dark:text-slate-400 flex items-start space-x-2">
                             <i class="fa-solid fa-lightbulb text-amber-500 mt-0.5"></i>
                             <span><strong>Penjelasan:</strong> ${explanation}</span>
                         </div>
                     `;
-                }
+                        }
 
-                questionsHtml += `
+                        questionsHtml += `
                     <div class="glass-card rounded-2xl p-6 border border-slate-200 dark:border-slate-800">
                         <div class="flex flex-col md:flex-row md:items-start justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-800">
                             <div class="flex items-start space-x-3">
@@ -746,317 +782,322 @@ function loadQuestionsData(page = 1, boothId = '') {
                         ${explanationHtml}
                     </div>
                 `;
-            });
+                    });
 
-            $('#questionsContainer').html(questionsHtml);
-            renderPagination(pagination);
-        },
-        error: function(xhr) {
-            $('#questionsContainer').html(`
+                    $('#questionsContainer').html(questionsHtml);
+                    renderPagination(pagination);
+                },
+                error: function(xhr) {
+                    $('#questionsContainer').html(`
                 <div class="py-12 text-center text-rose-500 glass-panel rounded-2xl">
                     <i class="fa-solid fa-triangle-exclamation text-4xl mb-2"></i>
                     <p class="font-bold">Gagal memuat daftar pertanyaan</p>
                     <button onclick="loadQuestionsData(currentPage, currentBoothId)" class="mt-3 px-4 py-1.5 text-xs bg-indigo-600 text-white rounded-xl cursor-pointer">Coba Lagi</button>
                 </div>
             `);
-            $('#questionsPagination').empty();
-        }
-    });
-}
-
-function editQuestionById(id) {
-    const q = questionsCache.find(item => item.id == id);
-    if (!q) return;
-
-    $('#formEditQuestion').find('.border-rose-500').removeClass('border-rose-500');
-    $('#formEditQuestion').find('.field-error-msg').remove();
-
-    $('#formEditQuestion').attr('action', `/pool-qcc/admin/questions/${q.id}`);
-    $('#edit_q_booth_id').val(q.booth_id);
-    $('#edit_question_text').val(q.question_text);
-    $('#edit_option_a').val(q.option_a);
-    $('#edit_option_b').val(q.option_b);
-    $('#edit_option_c').val(q.option_c);
-    $('#edit_option_d').val(q.option_d);
-    $('#edit_option_e').val(q.option_e || '');
-    $('#edit_correct_answer').val(q.correct_answer);
-    $('#edit_points').val(q.points || 1);
-    $('#edit_explanation').val(q.explanation || '');
-    $('#edit_q_is_active').prop('checked', Boolean(q.is_active));
-
-    $('#modalEditQuestion').removeClass('hidden');
-}
-
-function handleQuestionAjaxSubmit(formSelector, isEdit = false) {
-    const $form = $(formSelector);
-    const $submitBtn = $form.find('button[type="submit"]');
-    const originalBtnText = $submitBtn.html();
-
-    $form.find('.border-rose-500').removeClass('border-rose-500');
-    $form.find('.field-error-msg').remove();
-
-    $submitBtn.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin mr-1.5"></i> Menyimpan...');
-
-    const formData = new FormData($form[0]);
-
-    $.ajax({
-        url: $form.attr('action'),
-        type: 'POST',
-        data: formData,
-        processData: false,
-        contentType: false,
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest',
-            'Accept': 'application/json'
-        },
-        success: function(response) {
-            $submitBtn.prop('disabled', false).html(originalBtnText);
-
-            if (isEdit) {
-                $('#modalEditQuestion').addClass('hidden');
-            } else {
-                $('#modalAddQuestion').addClass('hidden');
-                $form[0].reset();
-                if (currentBoothId) {
-                    $('#add_q_booth_id').val(currentBoothId);
-                }
-            }
-
-            // Client-side reload via jQuery
-            loadQuestionsData(currentPage, currentBoothId);
-
-            Swal.fire({
-                icon: 'success',
-                title: isEdit ? 'Berhasil Diperbarui!' : 'Soal Ditambahkan!',
-                text: response.message || 'Pertanyaan berhasil disimpan.',
-                timer: 1500,
-                showConfirmButton: false,
-                customClass: {
-                    popup: 'rounded-2xl dark:bg-slate-900 dark:text-white border border-slate-200 dark:border-slate-800'
+                    $('#questionsPagination').empty();
                 }
             });
-        },
-        error: function(xhr) {
-            $submitBtn.prop('disabled', false).html(originalBtnText);
-
-            if (xhr.status === 422 && xhr.responseJSON && xhr.responseJSON.errors) {
-                const errors = xhr.responseJSON.errors;
-                let errorHtml = '<ul class="text-left text-xs text-rose-600 dark:text-rose-400 space-y-1.5 mt-2 list-disc list-inside">';
-
-                for (const field in errors) {
-                    const message = errors[field][0];
-                    errorHtml += `<li><b>${field.toUpperCase()}</b>: ${message}</li>`;
-
-                    const $input = $form.find(`[name="${field}"]`);
-                    if ($input.length) {
-                        $input.addClass('border-rose-500 focus:border-rose-500');
-                        $input.after(`<p class="field-error-msg text-[11px] text-rose-500 font-bold mt-1 flex items-center"><i class="fa-solid fa-circle-exclamation mr-1"></i> ${message}</p>`);
-                    }
-                }
-                errorHtml += '</ul>';
-
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Validasi Gagal!',
-                    html: `Periksa kolom yang ditandai merah:<br>${errorHtml}`,
-                    confirmButtonColor: '#ef4444',
-                    confirmButtonText: 'Perbaiki',
-                    customClass: {
-                        popup: 'rounded-2xl dark:bg-slate-900 dark:text-white border border-slate-200 dark:border-slate-800',
-                        confirmButton: 'rounded-xl font-bold px-4 py-2 text-xs'
-                    }
-                });
-            } else {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Gagal Menyimpan!',
-                    text: xhr.responseJSON?.message || 'Terjadi kesalahan saat memproses soal.',
-                    confirmButtonColor: '#ef4444',
-                    customClass: {
-                        popup: 'rounded-2xl dark:bg-slate-900 dark:text-white border border-slate-200 dark:border-slate-800',
-                        confirmButton: 'rounded-xl font-bold px-4 py-2 text-xs'
-                    }
-                });
-            }
         }
-    });
-}
 
-function confirmDeleteQuestion(id) {
-    Swal.fire({
-        title: 'Hapus Soal?',
-        html: `Apakah Anda yakin ingin menghapus soal ini dari bank pertanyaan booth?<br><span class="text-rose-500 text-xs font-semibold mt-1.5 block">Tindakan ini tidak dapat dibatalkan.</span>`,
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#ef4444',
-        cancelButtonColor: '#64748b',
-        confirmButtonText: '<i class="fa-solid fa-trash-can mr-1"></i> Ya, Hapus!',
-        cancelButtonText: 'Batal',
-        reverseButtons: true,
-        showLoaderOnConfirm: true,
-        preConfirm: () => {
-            return $.ajax({
-                url: `/pool-qcc/admin/questions/${id}`,
+        function editQuestionById(id) {
+            const q = questionsCache.find(item => item.id == id);
+            if (!q) return;
+
+            $('#formEditQuestion').find('.border-rose-500').removeClass('border-rose-500');
+            $('#formEditQuestion').find('.field-error-msg').remove();
+
+            $('#formEditQuestion').attr('action', `/pool-qcc/admin/questions/${q.id}`);
+            $('#edit_q_booth_id').val(q.booth_id);
+            $('#edit_question_text').val(q.question_text);
+            $('#edit_option_a').val(q.option_a);
+            $('#edit_option_b').val(q.option_b);
+            $('#edit_option_c').val(q.option_c);
+            $('#edit_option_d').val(q.option_d);
+            $('#edit_option_e').val(q.option_e || '');
+            $('#edit_correct_answer').val(q.correct_answer);
+            $('#edit_points').val(q.points || 1);
+            $('#edit_explanation').val(q.explanation || '');
+            $('#edit_q_is_active').prop('checked', Boolean(q.is_active));
+
+            $('#modalEditQuestion').removeClass('hidden');
+        }
+
+        function handleQuestionAjaxSubmit(formSelector, isEdit = false) {
+            const $form = $(formSelector);
+            const $submitBtn = $form.find('button[type="submit"]');
+            const originalBtnText = $submitBtn.html();
+
+            $form.find('.border-rose-500').removeClass('border-rose-500');
+            $form.find('.field-error-msg').remove();
+
+            $submitBtn.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin mr-1.5"></i> Menyimpan...');
+
+            const formData = new FormData($form[0]);
+
+            $.ajax({
+                url: $form.attr('action'),
                 type: 'POST',
-                data: {
-                    _token: '{{ csrf_token() }}',
-                    _method: 'DELETE'
-                },
+                data: formData,
+                processData: false,
+                contentType: false,
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest',
                     'Accept': 'application/json'
+                },
+                success: function(response) {
+                    $submitBtn.prop('disabled', false).html(originalBtnText);
+
+                    if (isEdit) {
+                        $('#modalEditQuestion').addClass('hidden');
+                    } else {
+                        $('#modalAddQuestion').addClass('hidden');
+                        $form[0].reset();
+                        if (currentBoothId) {
+                            $('#add_q_booth_id').val(currentBoothId);
+                        }
+                    }
+
+                    // Client-side reload via jQuery
+                    loadQuestionsData(currentPage, currentBoothId);
+
+                    Swal.fire({
+                        icon: 'success',
+                        title: isEdit ? 'Berhasil Diperbarui!' : 'Soal Ditambahkan!',
+                        text: response.message || 'Pertanyaan berhasil disimpan.',
+                        timer: 1500,
+                        showConfirmButton: false,
+                        customClass: {
+                            popup: 'rounded-2xl dark:bg-slate-900 dark:text-white border border-slate-200 dark:border-slate-800'
+                        }
+                    });
+                },
+                error: function(xhr) {
+                    $submitBtn.prop('disabled', false).html(originalBtnText);
+
+                    if (xhr.status === 422 && xhr.responseJSON && xhr.responseJSON.errors) {
+                        const errors = xhr.responseJSON.errors;
+                        let errorHtml =
+                            '<ul class="text-left text-xs text-rose-600 dark:text-rose-400 space-y-1.5 mt-2 list-disc list-inside">';
+
+                        for (const field in errors) {
+                            const message = errors[field][0];
+                            errorHtml += `<li><b>${field.toUpperCase()}</b>: ${message}</li>`;
+
+                            const $input = $form.find(`[name="${field}"]`);
+                            if ($input.length) {
+                                $input.addClass('border-rose-500 focus:border-rose-500');
+                                $input.after(
+                                    `<p class="field-error-msg text-[11px] text-rose-500 font-bold mt-1 flex items-center"><i class="fa-solid fa-circle-exclamation mr-1"></i> ${message}</p>`
+                                    );
+                            }
+                        }
+                        errorHtml += '</ul>';
+
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Validasi Gagal!',
+                            html: `Periksa kolom yang ditandai merah:<br>${errorHtml}`,
+                            confirmButtonColor: '#ef4444',
+                            confirmButtonText: 'Perbaiki',
+                            customClass: {
+                                popup: 'rounded-2xl dark:bg-slate-900 dark:text-white border border-slate-200 dark:border-slate-800',
+                                confirmButton: 'rounded-xl font-bold px-4 py-2 text-xs'
+                            }
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Gagal Menyimpan!',
+                            text: xhr.responseJSON?.message || 'Terjadi kesalahan saat memproses soal.',
+                            confirmButtonColor: '#ef4444',
+                            customClass: {
+                                popup: 'rounded-2xl dark:bg-slate-900 dark:text-white border border-slate-200 dark:border-slate-800',
+                                confirmButton: 'rounded-xl font-bold px-4 py-2 text-xs'
+                            }
+                        });
+                    }
                 }
-            }).catch(xhr => {
-                Swal.showValidationMessage(xhr.responseJSON?.message || 'Gagal menghapus pertanyaan.');
             });
-        },
-        allowOutsideClick: () => !Swal.isLoading(),
-        customClass: {
-            popup: 'rounded-2xl dark:bg-slate-900 dark:text-white border border-slate-200 dark:border-slate-800',
-            confirmButton: 'rounded-xl font-bold px-4 py-2 text-xs',
-            cancelButton: 'rounded-xl font-bold px-4 py-2 text-xs'
         }
-    }).then((result) => {
-        if (result.isConfirmed) {
-            // Client-side reload via jQuery
+
+        function confirmDeleteQuestion(id) {
+            Swal.fire({
+                title: 'Hapus Soal?',
+                html: `Apakah Anda yakin ingin menghapus soal ini dari bank pertanyaan booth?<br><span class="text-rose-500 text-xs font-semibold mt-1.5 block">Tindakan ini tidak dapat dibatalkan.</span>`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#64748b',
+                confirmButtonText: '<i class="fa-solid fa-trash-can mr-1"></i> Ya, Hapus!',
+                cancelButtonText: 'Batal',
+                reverseButtons: true,
+                showLoaderOnConfirm: true,
+                preConfirm: () => {
+                    return $.ajax({
+                        url: `/pool-qcc/admin/questions/${id}`,
+                        type: 'POST',
+                        data: {
+                            _token: '{{ csrf_token() }}',
+                            _method: 'DELETE'
+                        },
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Accept': 'application/json'
+                        }
+                    }).catch(xhr => {
+                        Swal.showValidationMessage(xhr.responseJSON?.message ||
+                            'Gagal menghapus pertanyaan.');
+                    });
+                },
+                allowOutsideClick: () => !Swal.isLoading(),
+                customClass: {
+                    popup: 'rounded-2xl dark:bg-slate-900 dark:text-white border border-slate-200 dark:border-slate-800',
+                    confirmButton: 'rounded-xl font-bold px-4 py-2 text-xs',
+                    cancelButton: 'rounded-xl font-bold px-4 py-2 text-xs'
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Client-side reload via jQuery
+                    loadQuestionsData(currentPage, currentBoothId);
+
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Terhapus!',
+                        text: result.value?.message || 'Pertanyaan berhasil dihapus.',
+                        timer: 1500,
+                        showConfirmButton: false,
+                        customClass: {
+                            popup: 'rounded-2xl dark:bg-slate-900 dark:text-white border border-slate-200 dark:border-slate-800'
+                        }
+                    });
+                }
+            });
+        }
+
+        $(document).ready(function() {
+            // Initial client-side load via jQuery
             loadQuestionsData(currentPage, currentBoothId);
 
-            Swal.fire({
-                icon: 'success',
-                title: 'Terhapus!',
-                text: result.value?.message || 'Pertanyaan berhasil dihapus.',
-                timer: 1500,
-                showConfirmButton: false,
-                customClass: {
-                    popup: 'rounded-2xl dark:bg-slate-900 dark:text-white border border-slate-200 dark:border-slate-800'
+            // Filter booth change
+            $('#filter_booth').on('change', function() {
+                currentBoothId = $(this).val();
+                currentPage = 1;
+
+                if (currentBoothId) {
+                    $('#btnResetFilter').removeClass('hidden');
+                    $('#add_q_booth_id').val(currentBoothId);
+                } else {
+                    $('#btnResetFilter').addClass('hidden');
                 }
+
+                const url = new URL(window.location.href);
+                if (currentBoothId) {
+                    url.searchParams.set('booth_id', currentBoothId);
+                } else {
+                    url.searchParams.delete('booth_id');
+                }
+                url.searchParams.delete('page');
+                window.history.pushState({}, '', url.toString());
+
+                loadQuestionsData(1, currentBoothId);
             });
+
+            // Reset filter button
+            $('#btnResetFilter').on('click', function() {
+                $('#filter_booth').val('').trigger('change');
+            });
+
+            $('#formAddQuestion').on('submit', function(e) {
+                e.preventDefault();
+                handleQuestionAjaxSubmit('#formAddQuestion', false);
+            });
+
+            $('#formEditQuestion').on('submit', function(e) {
+                e.preventDefault();
+                handleQuestionAjaxSubmit('#formEditQuestion', true);
+            });
+        });
+
+        // ==============================================================
+        // MODAL IMPORT EXCEL PERTANYAAN HANDLERS
+        // ==============================================================
+        function openImportQuestionModal() {
+            $('#formImportQuestion')[0].reset();
+            $('#importQuestionFileName').text('Klik untuk memilih file Excel dari komputer Anda');
+            $('#modalImportQuestion').removeClass('hidden');
         }
-    });
-}
 
-$(document).ready(function() {
-    // Initial client-side load via jQuery
-    loadQuestionsData(currentPage, currentBoothId);
-
-    // Filter booth change
-    $('#filter_booth').on('change', function() {
-        currentBoothId = $(this).val();
-        currentPage = 1;
-
-        if (currentBoothId) {
-            $('#btnResetFilter').removeClass('hidden');
-            $('#add_q_booth_id').val(currentBoothId);
-        } else {
-            $('#btnResetFilter').addClass('hidden');
+        function closeImportQuestionModal() {
+            $('#modalImportQuestion').addClass('hidden');
         }
 
-        const url = new URL(window.location.href);
-        if (currentBoothId) {
-            url.searchParams.set('booth_id', currentBoothId);
-        } else {
-            url.searchParams.delete('booth_id');
-        }
-        url.searchParams.delete('page');
-        window.history.pushState({}, '', url.toString());
-
-        loadQuestionsData(1, currentBoothId);
-    });
-
-    // Reset filter button
-    $('#btnResetFilter').on('click', function() {
-        $('#filter_booth').val('').trigger('change');
-    });
-
-    $('#formAddQuestion').on('submit', function(e) {
-        e.preventDefault();
-        handleQuestionAjaxSubmit('#formAddQuestion', false);
-    });
-
-    $('#formEditQuestion').on('submit', function(e) {
-        e.preventDefault();
-        handleQuestionAjaxSubmit('#formEditQuestion', true);
-    });
-});
-
-// ==============================================================
-// MODAL IMPORT EXCEL PERTANYAAN HANDLERS
-// ==============================================================
-function openImportQuestionModal() {
-    $('#formImportQuestion')[0].reset();
-    $('#importQuestionFileName').text('Klik untuk memilih file Excel dari komputer Anda');
-    $('#modalImportQuestion').removeClass('hidden');
-}
-
-function closeImportQuestionModal() {
-    $('#modalImportQuestion').addClass('hidden');
-}
-
-function onQuestionFileSelected(input) {
-    if (input.files && input.files[0]) {
-        const file = input.files[0];
-        $('#importQuestionFileName').html(`
+        function onQuestionFileSelected(input) {
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                $('#importQuestionFileName').html(`
             <span class="text-emerald-600 dark:text-emerald-400 font-extrabold flex items-center justify-center gap-1.5">
                 <i class="fa-solid fa-file-excel"></i> ${escapeHtml(file.name)} (${(file.size / 1024).toFixed(1)} KB)
             </span>
         `);
-    } else {
-        $('#importQuestionFileName').text('Klik untuk memilih file Excel dari komputer Anda');
-    }
-}
+            } else {
+                $('#importQuestionFileName').text('Klik untuk memilih file Excel dari komputer Anda');
+            }
+        }
 
-function handleImportQuestionSubmit(e) {
-    e.preventDefault();
-    const fileInput = document.getElementById('importQuestionFileInput');
-    if (!fileInput.files || !fileInput.files[0]) {
-        Swal.fire({
-            icon: 'warning',
-            title: 'File Belum Dipilih',
-            text: 'Silakan pilih file Excel (.xlsx, .xls, .csv) terlebih dahulu.',
-            confirmButtonColor: '#059669'
-        });
-        return;
-    }
+        function handleImportQuestionSubmit(e) {
+            e.preventDefault();
+            const fileInput = document.getElementById('importQuestionFileInput');
+            if (!fileInput.files || !fileInput.files[0]) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'File Belum Dipilih',
+                    text: 'Silakan pilih file Excel (.xlsx, .xls, .csv) terlebih dahulu.',
+                    confirmButtonColor: '#059669'
+                });
+                return;
+            }
 
-    const formData = new FormData();
-    formData.append('_token', $('meta[name="csrf-token"]').attr('content'));
-    formData.append('excel_file', fileInput.files[0]);
+            const formData = new FormData();
+            formData.append('_token', $('meta[name="csrf-token"]').attr('content'));
+            formData.append('excel_file', fileInput.files[0]);
 
-    const $btn = $('#btnSubmitImportQuestion');
-    const origHtml = $btn.html();
-    $btn.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin mr-1.5"></i> Memproses...');
+            const $btn = $('#btnSubmitImportQuestion');
+            const origHtml = $btn.html();
+            $btn.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin mr-1.5"></i> Memproses...');
 
-    $.ajax({
-        url: "{{ route('pool-qcc.admin.questions.import') }}",
-        type: 'POST',
-        data: formData,
-        processData: false,
-        contentType: false,
-        dataType: 'json',
-        success: function(res) {
-            $btn.prop('disabled', false).html(origHtml);
-            closeImportQuestionModal();
+            $.ajax({
+                url: "{{ route('pool-qcc.admin.questions.import') }}",
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                dataType: 'json',
+                success: function(res) {
+                    $btn.prop('disabled', false).html(origHtml);
+                    closeImportQuestionModal();
 
-            Swal.fire({
-                icon: 'success',
-                title: 'Import Berhasil!',
-                text: res.message,
-                confirmButtonColor: '#059669'
-            });
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Import Berhasil!',
+                        text: res.message,
+                        confirmButtonColor: '#059669'
+                    });
 
-            loadQuestionsData(1, currentBoothId);
-        },
-        error: function(xhr) {
-            $btn.prop('disabled', false).html(origHtml);
-            const msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Gagal memproses file import.';
-            Swal.fire({
-                icon: 'error',
-                title: 'Import Gagal',
-                text: msg,
-                confirmButtonColor: '#059669'
+                    loadQuestionsData(1, currentBoothId);
+                },
+                error: function(xhr) {
+                    $btn.prop('disabled', false).html(origHtml);
+                    const msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message :
+                        'Gagal memproses file import.';
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Import Gagal',
+                        text: msg,
+                        confirmButtonColor: '#059669'
+                    });
+                }
             });
         }
-    });
-}
-</script>
+    </script>
 @endsection
