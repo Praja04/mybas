@@ -682,6 +682,9 @@
 
             if (response.participant_ranks && !isFirstLoad) {
                 response.participant_ranks.forEach(p => {
+                    // Jangan pernah munculkan notifikasi / animasi takeover untuk Dewan Juri / Manajemen
+                    if (p.is_judge) return;
+
                     const oldRank = previousParticipantRanks[p.id];
                     if (oldRank && p.rank < oldRank) {
                         // Hanya daftarkan takeover jika peserta tersebut memang tampil di kolom Award Nominees DOM!

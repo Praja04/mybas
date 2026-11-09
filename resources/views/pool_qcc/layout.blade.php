@@ -175,107 +175,146 @@
                             </a>
                         </div>
 
+                        @php
+                            $isUserJudge = false;
+                            if (Auth::check()) {
+                                $user = Auth::user();
+                                $isUserJudge =
+                                    !is_null($user->poolJudge) ||
+                                    \App\Models\PoolQCC\PoolJudge::where('is_active', true)
+                                        ->where(function ($q) use ($user) {
+                                            $q->where('user_id', $user->id)->orWhere('nik', $user->username);
+                                        })
+                                        ->exists();
+                            }
+                            $hasAdminPerm = in_array('qcc_pool_admin', $permissions ?? []);
+                        @endphp
+
                         <!-- Desktop Navigation Tabs (Clean & Balanced for Large Screens) -->
                         <nav class="hidden lg:flex items-center space-x-1.5 font-medium text-sm">
-                            <a href="{{ route('pool-qcc.booths-index') }}"
-                                class="px-3.5 py-2 rounded-xl transition-all {{ request()->routeIs('pool-qcc.booth*') ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30 font-semibold' : 'text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60' }}">
-                                <i class="fa-solid fa-store mr-1.5 text-indigo-500"></i> Layar Booth
-                            </a>
-                            <a href="{{ route('pool-qcc.leaderboard') }}"
-                                class="px-3.5 py-2 rounded-xl transition-all {{ request()->routeIs('pool-qcc.leaderboard') ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30 font-semibold' : 'text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60' }}">
-                                <i class="fa-solid fa-ranking-star mr-1.5 text-amber-500"></i> Leaderboard
-                            </a>
-                            @if (in_array('qcc_pool_admin', $permissions))
-                                <!-- Dewan Juri Dropdown -->
-                                <div class="relative group" id="juryDropdownContainer">
-                                    <a href="{{ route('pool-qcc.jury.scoring') }}" id="juryDropdownBtn"
-                                        class="px-3.5 py-2 rounded-xl transition-all flex items-center space-x-1 {{ request()->routeIs('pool-qcc.jury.*') ? 'bg-purple-50 text-purple-700 dark:bg-slate-800 dark:text-purple-300 border border-purple-200 dark:border-purple-500/30 font-semibold' : 'text-slate-600 dark:text-slate-300 hover:text-purple-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60' }}">
-                                        <i class="fa-solid fa-scale-balanced mr-1.5 text-purple-500"></i>
-                                        <span>Dewan Juri</span>
-                                        <i
-                                            class="fa-solid fa-chevron-down text-xs ml-1 text-slate-400 transition-transform duration-200 group-hover:rotate-180"></i>
-                                    </a>
-                                    <div id="juryDropdownMenu"
-                                        class="absolute left-0 top-full pt-2 w-60 z-50 hidden group-hover:block transition-all">
-                                        <div
-                                            class="rounded-2xl glass-panel shadow-2xl py-2 border border-slate-200 dark:border-slate-700/80 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md">
-                                            <a href="{{ route('pool-qcc.jury.scoring') }}"
-                                                class="flex items-center px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:text-purple-600 dark:hover:text-white hover:bg-purple-50 dark:hover:bg-purple-600/20 transition-colors">
-                                                <i class="fa-solid fa-scale-balanced w-5 text-purple-500 mr-2"></i>
-                                                Input
-                                                Nilai Juri (0-100)
-                                            </a>
-                                            <a href="{{ route('pool-qcc.jury.recap') }}"
-                                                class="flex items-center px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:text-amber-600 dark:hover:text-white hover:bg-amber-50 dark:hover:bg-amber-600/20 transition-colors">
-                                                <i class="fa-solid fa-crown w-5 text-amber-500 mr-2"></i> Rekap Pemenang
-                                                Juri
-                                            </a>
-                                            <div class="my-1 border-t border-slate-100 dark:border-slate-800"></div>
-                                            <a href="{{ route('pool-qcc.admin.judges') }}"
-                                                class="flex items-center px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-white hover:bg-indigo-50 dark:hover:bg-indigo-600/20 transition-colors">
-                                                <i class="fa-solid fa-user-tie w-5 text-indigo-500 mr-2"></i> Juri &
-                                                Manajemen VIP
-                                            </a>
-                                            <a href="{{ route('pool-qcc.admin.criteria') }}"
-                                                class="flex items-center px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-white hover:bg-indigo-50 dark:hover:bg-indigo-600/20 transition-colors">
-                                                <i class="fa-solid fa-list-check w-5 text-emerald-500 mr-2"></i> Kriteria Penilaian
-                                            </a>
-                                        </div>
-                                    </div>
-                                </div>
+                            @if ($isUserJudge)
+                                <!-- KHUSUS USER DEWAN JURI: Hanya Leaderboard & Penilaian (Tanpa Layar Booth & Tanpa Admin Panel) -->
+                                {{-- <a href="{{ route('pool-qcc.leaderboard') }}"
+                                    class="px-3.5 py-2 rounded-xl transition-all {{ request()->routeIs('pool-qcc.leaderboard') ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30 font-semibold' : 'text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60' }}">
+                                    <i class="fa-solid fa-ranking-star mr-1.5 text-amber-500"></i> Leaderboard
+                                </a> --}}
+                                <a href="{{ route('pool-qcc.jury.scoring') }}"
+                                    class="px-3.5 py-2 rounded-xl transition-all {{ request()->routeIs('pool-qcc.jury.scoring') ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30 font-semibold' : 'text-slate-600 dark:text-slate-300 hover:text-purple-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60' }}">
+                                    <i class="fa-solid fa-scale-balanced mr-1.5 text-purple-500"></i> Penilaian
+                                </a>
+                                <a href="{{ route('pool-qcc.jury.recap') }}"
+                                    class="px-3.5 py-2 rounded-xl transition-all {{ request()->routeIs('pool-qcc.jury.recap') ? 'bg-amber-600 text-white shadow-md shadow-amber-600/30 font-semibold' : 'text-slate-600 dark:text-slate-300 hover:text-amber-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60' }}">
+                                    <i class="fa-solid fa-crown mr-1.5 text-amber-500"></i> Rekap Nilai
+                                </a>
+                            @else
+                                <!-- REGULER / ADMIN: Tampilkan Layar Booth & Leaderboard -->
+                                <a href="{{ route('pool-qcc.booths-index') }}"
+                                    class="px-3.5 py-2 rounded-xl transition-all {{ request()->routeIs('pool-qcc.booth*') ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30 font-semibold' : 'text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60' }}">
+                                    <i class="fa-solid fa-store mr-1.5 text-indigo-500"></i> Layar Booth
+                                </a>
+                                <a href="{{ route('pool-qcc.leaderboard') }}"
+                                    class="px-3.5 py-2 rounded-xl transition-all {{ request()->routeIs('pool-qcc.leaderboard') ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30 font-semibold' : 'text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60' }}">
+                                    <i class="fa-solid fa-ranking-star mr-1.5 text-amber-500"></i> Leaderboard
+                                </a>
 
-                                <!-- Admin Dropdown -->
-                                <div class="relative group" id="adminDropdownContainer">
-                                    <a href="{{ route('pool-qcc.admin.dashboard') }}" id="adminDropdownBtn"
-                                        class="px-3.5 py-2 rounded-xl transition-all flex items-center space-x-1 {{ request()->routeIs('pool-qcc.admin.*') ? 'bg-indigo-50 text-indigo-700 dark:bg-slate-800 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-500/30 font-semibold' : 'text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60' }}">
-                                        <i class="fa-solid fa-sliders mr-1.5 text-cyan-600 dark:text-cyan-400"></i>
-                                        <span>Admin Panel</span>
-                                        <i
-                                            class="fa-solid fa-chevron-down text-xs ml-1 text-slate-400 transition-transform duration-200 group-hover:rotate-180"></i>
-                                    </a>
-                                    <div id="adminDropdownMenu"
-                                        class="absolute right-0 top-full pt-2 w-64 z-50 hidden group-hover:block transition-all">
-                                        <div
-                                            class="rounded-2xl glass-panel shadow-2xl py-2 border border-slate-200 dark:border-slate-700/80 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md">
-                                            <a href="{{ route('pool-qcc.admin.dashboard') }}"
-                                                class="flex items-center px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-white hover:bg-indigo-50 dark:hover:bg-indigo-600/30 transition-colors">
-                                                <i class="fa-solid fa-chart-pie w-5 text-indigo-500 mr-2"></i> Dashboard
-                                                Overview
-                                            </a>
-                                            <a href="{{ route('pool-qcc.admin.booths') }}"
-                                                class="flex items-center px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-white hover:bg-indigo-50 dark:hover:bg-indigo-600/30 transition-colors">
-                                                <i class="fa-solid fa-store w-5 text-cyan-500 mr-2"></i> Kelola Booth
-                                            </a>
-                                            <a href="{{ route('pool-qcc.admin.questions') }}"
-                                                class="flex items-center px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-white hover:bg-indigo-50 dark:hover:bg-indigo-600/30 transition-colors">
-                                                <i class="fa-solid fa-clipboard-question w-5 text-amber-500 mr-2"></i>
-                                                Bank
-                                                Soal Booth
-                                            </a>
-                                            <a href="{{ route('pool-qcc.admin.participants') }}"
-                                                class="flex items-center px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-white hover:bg-indigo-50 dark:hover:bg-indigo-600/30 transition-colors">
-                                                <i class="fa-solid fa-users w-5 text-emerald-500 mr-2"></i> Data Peserta
-                                                &
-                                                Kuota
-                                            </a>
-                                            <a href="{{ route('pool-qcc.admin.judges') }}"
-                                                class="flex items-center px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-white hover:bg-indigo-50 dark:hover:bg-indigo-600/30 transition-colors font-semibold">
-                                                <i class="fa-solid fa-user-tie w-5 text-purple-500 mr-2"></i> Juri &
-                                                Manajemen VIP
-                                            </a>
-                                            <a href="{{ route('pool-qcc.admin.criteria') }}"
-                                                class="flex items-center px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-white hover:bg-indigo-50 dark:hover:bg-indigo-600/30 transition-colors">
-                                                <i class="fa-solid fa-list-check w-5 text-emerald-500 mr-2"></i> Kriteria Penilaian
-                                            </a>
-                                            <div class="my-1 border-t border-slate-100 dark:border-slate-800"></div>
-                                            <a href="{{ route('pool-qcc.admin.votes') }}"
-                                                class="flex items-center px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-white hover:bg-indigo-50 dark:hover:bg-indigo-600/30 transition-colors">
-                                                <i class="fa-solid fa-receipt w-5 text-rose-500 mr-2"></i> Log Jawaban /
-                                                Votes
-                                            </a>
+                                @if ($hasAdminPerm)
+                                    <!-- Dewan Juri Dropdown -->
+                                    <div class="relative group" id="juryDropdownContainer">
+                                        <a href="{{ route('pool-qcc.jury.scoring') }}" id="juryDropdownBtn"
+                                            class="px-3.5 py-2 rounded-xl transition-all flex items-center space-x-1 {{ request()->routeIs('pool-qcc.jury.*') ? 'bg-purple-50 text-purple-700 dark:bg-slate-800 dark:text-purple-300 border border-purple-200 dark:border-purple-500/30 font-semibold' : 'text-slate-600 dark:text-slate-300 hover:text-purple-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60' }}">
+                                            <i class="fa-solid fa-scale-balanced mr-1.5 text-purple-500"></i>
+                                            <span>Dewan Juri</span>
+                                            <i
+                                                class="fa-solid fa-chevron-down text-xs ml-1 text-slate-400 transition-transform duration-200 group-hover:rotate-180"></i>
+                                        </a>
+                                        <div id="juryDropdownMenu"
+                                            class="absolute left-0 top-full pt-2 w-60 z-50 hidden group-hover:block transition-all">
+                                            <div
+                                                class="rounded-2xl glass-panel shadow-2xl py-2 border border-slate-200 dark:border-slate-700/80 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md">
+                                                <a href="{{ route('pool-qcc.jury.scoring') }}"
+                                                    class="flex items-center px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:text-purple-600 dark:hover:text-white hover:bg-purple-50 dark:hover:bg-purple-600/20 transition-colors">
+                                                    <i class="fa-solid fa-scale-balanced w-5 text-purple-500 mr-2"></i>
+                                                    Input Nilai Juri (1-100)
+                                                </a>
+                                                <a href="{{ route('pool-qcc.jury.recap') }}"
+                                                    class="flex items-center px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:text-amber-600 dark:hover:text-white hover:bg-amber-50 dark:hover:bg-amber-600/20 transition-colors">
+                                                    <i class="fa-solid fa-crown w-5 text-amber-500 mr-2"></i> Rekap
+                                                    Pemenang Juri
+                                                </a>
+                                                <div class="my-1 border-t border-slate-100 dark:border-slate-800"></div>
+                                                <a href="{{ route('pool-qcc.admin.judges') }}"
+                                                    class="flex items-center px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-white hover:bg-indigo-50 dark:hover:bg-indigo-600/20 transition-colors">
+                                                    <i class="fa-solid fa-user-tie w-5 text-indigo-500 mr-2"></i> Juri &
+                                                    Manajemen VIP
+                                                </a>
+                                                <a href="{{ route('pool-qcc.admin.criteria') }}"
+                                                    class="flex items-center px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-white hover:bg-indigo-50 dark:hover:bg-indigo-600/20 transition-colors">
+                                                    <i class="fa-solid fa-list-check w-5 text-indigo-500 mr-2"></i>
+                                                    Kriteria Penilaian Booth
+                                                </a>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
+
+                                    <!-- Admin Dropdown -->
+                                    <div class="relative group" id="adminDropdownContainer">
+                                        <a href="{{ route('pool-qcc.admin.dashboard') }}" id="adminDropdownBtn"
+                                            class="px-3.5 py-2 rounded-xl transition-all flex items-center space-x-1 {{ request()->routeIs('pool-qcc.admin.*') ? 'bg-indigo-50 text-indigo-700 dark:bg-slate-800 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-500/30 font-semibold' : 'text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60' }}">
+                                            <i class="fa-solid fa-sliders mr-1.5 text-cyan-600 dark:text-cyan-400"></i>
+                                            <span>Admin Panel</span>
+                                            <i
+                                                class="fa-solid fa-chevron-down text-xs ml-1 text-slate-400 transition-transform duration-200 group-hover:rotate-180"></i>
+                                        </a>
+                                        <div id="adminDropdownMenu"
+                                            class="absolute right-0 top-full pt-2 w-64 z-50 hidden group-hover:block transition-all">
+                                            <div
+                                                class="rounded-2xl glass-panel shadow-2xl py-2 border border-slate-200 dark:border-slate-700/80 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md">
+                                                <a href="{{ route('pool-qcc.admin.dashboard') }}"
+                                                    class="flex items-center px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-white hover:bg-indigo-50 dark:hover:bg-indigo-600/30 transition-colors">
+                                                    <i class="fa-solid fa-chart-pie w-5 text-indigo-500 mr-2"></i>
+                                                    Dashboard
+                                                    Overview
+                                                </a>
+                                                <a href="{{ route('pool-qcc.admin.booths') }}"
+                                                    class="flex items-center px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-white hover:bg-indigo-50 dark:hover:bg-indigo-600/30 transition-colors">
+                                                    <i class="fa-solid fa-store w-5 text-cyan-500 mr-2"></i> Kelola
+                                                    Booth
+                                                </a>
+                                                <a href="{{ route('pool-qcc.admin.questions') }}"
+                                                    class="flex items-center px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-white hover:bg-indigo-50 dark:hover:bg-indigo-600/30 transition-colors">
+                                                    <i
+                                                        class="fa-solid fa-clipboard-question w-5 text-amber-500 mr-2"></i>
+                                                    Bank
+                                                    Soal Booth
+                                                </a>
+                                                <a href="{{ route('pool-qcc.admin.participants') }}"
+                                                    class="flex items-center px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-white hover:bg-indigo-50 dark:hover:bg-indigo-600/30 transition-colors">
+                                                    <i class="fa-solid fa-users w-5 text-emerald-500 mr-2"></i> Data
+                                                    Peserta
+                                                    &
+                                                    Kuota
+                                                </a>
+                                                <a href="{{ route('pool-qcc.admin.judges') }}"
+                                                    class="flex items-center px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-white hover:bg-indigo-50 dark:hover:bg-indigo-600/30 transition-colors font-semibold">
+                                                    <i class="fa-solid fa-user-tie w-5 text-purple-500 mr-2"></i> Juri &
+                                                    Manajemen VIP
+                                                </a>
+                                                <a href="{{ route('pool-qcc.admin.criteria') }}"
+                                                    class="flex items-center px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-white hover:bg-indigo-50 dark:hover:bg-indigo-600/30 transition-colors">
+                                                    <i class="fa-solid fa-list-check w-5 text-emerald-500 mr-2"></i>
+                                                    Kriteria Penilaian
+                                                </a>
+                                                <div class="my-1 border-t border-slate-100 dark:border-slate-800"></div>
+                                                <a href="{{ route('pool-qcc.admin.votes') }}"
+                                                    class="flex items-center px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-white hover:bg-indigo-50 dark:hover:bg-indigo-600/30 transition-colors">
+                                                    <i class="fa-solid fa-receipt w-5 text-rose-500 mr-2"></i> Log
+                                                    Jawaban /
+                                                    Votes
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endif
                             @endif
                         </nav>
 
@@ -352,12 +391,14 @@
                             <i class="fa-solid fa-store mr-1 text-indigo-500"></i> Kontes & Booth
                         </span>
                         <div class="space-y-1">
-                            <a href="{{ route('pool-qcc.booths-index') }}" onclick="closeMobileNav()"
-                                class="flex items-center px-3 py-2.5 rounded-xl text-xs font-bold transition-all {{ request()->routeIs('pool-qcc.booth*') ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30' : 'text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 hover:text-indigo-600' }}">
-                                <i
-                                    class="fa-solid fa-store w-5 mr-2 {{ request()->routeIs('pool-qcc.booth*') ? 'text-white' : 'text-indigo-500' }}"></i>
-                                <span>Layar Standby Booth</span>
-                            </a>
+                            @if (!$isUserJudge)
+                                <a href="{{ route('pool-qcc.booths-index') }}" onclick="closeMobileNav()"
+                                    class="flex items-center px-3 py-2.5 rounded-xl text-xs font-bold transition-all {{ request()->routeIs('pool-qcc.booth*') ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30' : 'text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 hover:text-indigo-600' }}">
+                                    <i
+                                        class="fa-solid fa-store w-5 mr-2 {{ request()->routeIs('pool-qcc.booth*') ? 'text-white' : 'text-indigo-500' }}"></i>
+                                    <span>Layar Standby Booth</span>
+                                </a>
+                            @endif
                             <a href="{{ route('pool-qcc.leaderboard') }}" onclick="closeMobileNav()"
                                 class="flex items-center px-3 py-2.5 rounded-xl text-xs font-bold transition-all {{ request()->routeIs('pool-qcc.leaderboard') ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30' : 'text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 hover:text-indigo-600' }}">
                                 <i
@@ -373,7 +414,7 @@
                         </div>
                     </div>
 
-                    @if (in_array('qcc_pool_admin', $permissions))
+                    @if ($hasAdminPerm || $isUserJudge)
                         <!-- SECTION 2: DEWAN JURI -->
                         <div>
                             <span
@@ -382,32 +423,36 @@
                             </span>
                             <div class="space-y-1">
                                 <a href="{{ route('pool-qcc.jury.scoring') }}" onclick="closeMobileNav()"
-                                    class="flex items-center px-3 py-2.5 rounded-xl text-xs font-bold transition-all {{ request()->routeIs('pool-qcc.jury.scoring') ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30' : 'text-slate-700 dark:text-slate-300 hover:bg-purple-50 dark:hover:bg-purple-950/40 hover:text-purple-600' }}">
+                                    class="flex items-center px-3 py-2.5 rounded-xl text-xs font-bold transition-all {{ request()->routeIs('pool-qcc.jury.scoring') ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30' : 'text-slate-700 dark:text-slate-300 hover:bg-purple-50 dark:hover:bg-purple-950/40 hover:text-purple-600' }}">
                                     <i
                                         class="fa-solid fa-scale-balanced w-5 mr-2 {{ request()->routeIs('pool-qcc.jury.scoring') ? 'text-white' : 'text-purple-500' }}"></i>
-                                    <span>Input Nilai Juri (0-100)</span>
+                                    <span>Penilaian Booth (1-100)</span>
                                 </a>
                                 <a href="{{ route('pool-qcc.jury.recap') }}" onclick="closeMobileNav()"
-                                    class="flex items-center px-3 py-2.5 rounded-xl text-xs font-bold transition-all {{ request()->routeIs('pool-qcc.jury.recap') ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30' : 'text-slate-700 dark:text-slate-300 hover:bg-amber-50 dark:hover:bg-amber-950/40 hover:text-amber-600' }}">
+                                    class="flex items-center px-3 py-2.5 rounded-xl text-xs font-bold transition-all {{ request()->routeIs('pool-qcc.jury.recap') ? 'bg-amber-600 text-white shadow-md shadow-amber-600/30' : 'text-slate-700 dark:text-slate-300 hover:bg-amber-50 dark:hover:bg-amber-950/40 hover:text-amber-600' }}">
                                     <i
                                         class="fa-solid fa-crown w-5 mr-2 {{ request()->routeIs('pool-qcc.jury.recap') ? 'text-white' : 'text-amber-500' }}"></i>
                                     <span>Rekap Pemenang Juri</span>
                                 </a>
-                                <a href="{{ route('pool-qcc.admin.judges') }}" onclick="closeMobileNav()"
-                                    class="flex items-center px-3 py-2.5 rounded-xl text-xs font-bold transition-all {{ request()->routeIs('pool-qcc.admin.judges') ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30' : 'text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 hover:text-indigo-600' }}">
-                                    <i
-                                        class="fa-solid fa-user-tie w-5 mr-2 {{ request()->routeIs('pool-qcc.admin.judges') ? 'text-white' : 'text-indigo-500' }}"></i>
-                                    <span>Juri & Manajemen VIP</span>
-                                </a>
-                                <a href="{{ route('pool-qcc.admin.criteria') }}" onclick="closeMobileNav()"
-                                    class="flex items-center px-3 py-2.5 rounded-xl text-xs font-bold transition-all {{ request()->routeIs('pool-qcc.admin.criteria') ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30' : 'text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 hover:text-indigo-600' }}">
-                                    <i
-                                        class="fa-solid fa-list-check w-5 mr-2 {{ request()->routeIs('pool-qcc.admin.criteria') ? 'text-white' : 'text-emerald-500' }}"></i>
-                                    <span>Kriteria Penilaian Booth</span>
-                                </a>
+                                @if ($hasAdminPerm && !$isUserJudge)
+                                    <a href="{{ route('pool-qcc.admin.judges') }}" onclick="closeMobileNav()"
+                                        class="flex items-center px-3 py-2.5 rounded-xl text-xs font-bold transition-all {{ request()->routeIs('pool-qcc.admin.judges') ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30' : 'text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 hover:text-indigo-600' }}">
+                                        <i
+                                            class="fa-solid fa-user-tie w-5 mr-2 {{ request()->routeIs('pool-qcc.admin.judges') ? 'text-white' : 'text-indigo-500' }}"></i>
+                                        <span>Juri & Manajemen VIP</span>
+                                    </a>
+                                    <a href="{{ route('pool-qcc.admin.criteria') }}" onclick="closeMobileNav()"
+                                        class="flex items-center px-3 py-2.5 rounded-xl text-xs font-bold transition-all {{ request()->routeIs('pool-qcc.admin.criteria') ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30' : 'text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 hover:text-indigo-600' }}">
+                                        <i
+                                            class="fa-solid fa-list-check w-5 mr-2 {{ request()->routeIs('pool-qcc.admin.criteria') ? 'text-white' : 'text-emerald-500' }}"></i>
+                                        <span>Kriteria Penilaian Booth</span>
+                                    </a>
+                                @endif
                             </div>
                         </div>
+                    @endif
 
+                    @if ($hasAdminPerm && !$isUserJudge)
                         <!-- SECTION 3: ADMIN MANAGEMENT -->
                         <div>
                             <span

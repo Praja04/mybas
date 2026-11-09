@@ -710,7 +710,8 @@ class PoolQccAdminController extends Controller
      */
     public function judges()
     {
-        return view('pool_qcc.admin.judges');
+        $usersList = \App\User::select('id', 'username', 'name')->orderBy('name', 'asc')->get();
+        return view('pool_qcc.admin.judges', compact('usersList'));
     }
 
     /**
@@ -718,13 +719,20 @@ class PoolQccAdminController extends Controller
      */
     public function getJudgesData(Request $request)
     {
-        $judges = PoolJudge::withCount('evaluations')
+        $judges = PoolJudge::with(['user:id,username,name'])
+            ->withCount('evaluations')
             ->orderBy('is_active', 'desc')
             ->orderBy('name', 'asc')
             ->get()
             ->map(function ($j) {
                 return [
                     'id' => $j->id,
+                    'user_id' => $j->user_id,
+                    'linked_user' => $j->user ? [
+                        'id' => $j->user->id,
+                        'username' => $j->user->username,
+                        'name' => $j->user->name,
+                    ] : null,
                     'rfid' => $j->rfid,
                     'nik' => $j->nik,
                     'name' => $j->name,
@@ -918,6 +926,7 @@ class PoolQccAdminController extends Controller
             'title' => 'required|string|max:100',
             'vote_weight' => 'nullable|integer|min:1|max:100',
             'rfid' => 'nullable|string|max:50',
+            'user_id' => 'nullable|integer',
         ]);
 
         if ($validator->fails()) {
@@ -927,9 +936,18 @@ class PoolQccAdminController extends Controller
             ], 422);
         }
 
+        $userId = $request->filled('user_id') ? (int)$request->user_id : null;
+        if (!$userId) {
+            $matchedUser = \App\User::where('username', trim($request->nik))->first();
+            if ($matchedUser) {
+                $userId = $matchedUser->id;
+            }
+        }
+
         $judge = PoolJudge::updateOrCreate(
             ['nik' => trim($request->nik)],
             [
+                'user_id' => $userId,
                 'rfid' => $request->rfid ? trim($request->rfid) : null,
                 'name' => trim($request->name),
                 'department' => $request->department ? trim($request->department) : 'Umum',
@@ -978,6 +996,9 @@ class PoolQccAdminController extends Controller
         $judge->vote_weight = (int)$request->vote_weight;
         if ($request->has('department') && !empty($request->department)) {
             $judge->department = trim($request->department);
+        }
+        if ($request->has('user_id')) {
+            $judge->user_id = $request->filled('user_id') ? (int)$request->user_id : null;
         }
         if ($request->has('is_active')) {
             $judge->is_active = (bool)$request->is_active;

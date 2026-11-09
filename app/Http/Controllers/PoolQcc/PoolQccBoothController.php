@@ -633,6 +633,32 @@ class PoolQccBoothController extends Controller
         $totalVotes = PoolVote::count();
         $totalParticipants = PoolParticipant::count();
 
+        // Identifikasi ID peserta yang merupakan Dewan Juri / Manajemen aktif
+        // Digunakan agar animasi Takeover di leaderboard tidak tertrigger untuk Juri
+        $judgeNikOrRfids = PoolJudge::where('is_active', true)
+            ->get(['nik', 'rfid'])
+            ->flatMap(function ($j) {
+                $nik = (string)$j->nik;
+                $stripped = ltrim($nik, '0');
+                return array_filter([
+                    $nik,
+                    $stripped,
+                    '0' . $stripped,
+                    str_pad($stripped, 8, '0', STR_PAD_LEFT),
+                    str_pad($stripped, 9, '0', STR_PAD_LEFT),
+                    (string)$j->rfid,
+                    ltrim((string)$j->rfid, '0'),
+                ]);
+            })
+            ->unique()
+            ->values()
+            ->toArray();
+
+        $judgeParticipantIds = PoolParticipant::where(function ($q) use ($judgeNikOrRfids) {
+            $q->whereIn('nik', $judgeNikOrRfids)
+                ->orWhereIn('rfid', $judgeNikOrRfids);
+        })->pluck('id')->toArray();
+
         // Kelompokkan peserta berdasarkan 5 Reward Tiers
         // Format nominasi persis sesuai acuan:
         // 1. Reward 1: > 8 booth (dipilih 1 pemenang)
@@ -755,12 +781,13 @@ class PoolQccBoothController extends Controller
                         'points' => (int) $b->total_points,
                     ];
                 }),
-                'participant_ranks' => $participants->values()->map(function ($p, $idx) {
+                'participant_ranks' => $participants->values()->map(function ($p, $idx) use ($judgeParticipantIds) {
                     return [
                         'id' => $p->id,
                         'name' => $p->name,
                         'rank' => $idx + 1,
                         'score' => (int) $p->total_score,
+                        'is_judge' => in_array($p->id, $judgeParticipantIds),
                     ];
                 }),
                 'reward_candidates' => $rewardCandidates,

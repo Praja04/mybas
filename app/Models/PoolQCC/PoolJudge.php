@@ -9,6 +9,7 @@ class PoolJudge extends Model
     protected $table = 'pool_judges';
 
     protected $fillable = [
+        'user_id',
         'rfid',
         'nik',
         'name',
@@ -20,9 +21,15 @@ class PoolJudge extends Model
     ];
 
     protected $casts = [
+        'user_id' => 'integer',
         'is_active' => 'boolean',
         'vote_weight' => 'integer',
     ];
+
+    public function user()
+    {
+        return $this->belongsTo(\App\User::class, 'user_id');
+    }
 
     public function evaluations()
     {
