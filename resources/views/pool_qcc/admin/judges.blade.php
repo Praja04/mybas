@@ -261,6 +261,26 @@
                             10).</span>
                     </div>
                 </div>
+
+                <!-- Tautkan Akun Login BAS (User ID) -->
+                <div class="mb-5">
+                    <label for="modalJudgeUserId"
+                        class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 uppercase tracking-wider">
+                        Tautkan Akun Login BAS (User ID):
+                    </label>
+                    <select id="modalJudgeUserId"
+                        class="w-full px-4 py-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs text-slate-900 dark:text-white font-medium focus:outline-none focus:border-indigo-500">
+                        <option value="">-- Hubungkan Otomatis Sesuai NIK / Pilih Akun --</option>
+                        @if (isset($usersList))
+                            @foreach ($usersList as $u)
+                                <option value="{{ $u->id }}">{{ $u->username }} - {{ $u->name }}</option>
+                            @endforeach
+                        @endif
+                    </select>
+                    <span class="text-[11px] text-slate-400 mt-1 block">
+                        Memungkinkan juri login dengan akun BAS sendiri dan langsung menilai booth secara independen tanpa perlu tap RFID.
+                    </span>
+                </div>
             </div>
 
             <!-- Modal Footer -->
@@ -356,6 +376,26 @@
                     </label>
                     <input type="text" id="editJudgeDept"
                         class="w-full px-4 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs text-slate-900 dark:text-white font-medium focus:outline-none focus:border-amber-500">
+                </div>
+
+                <!-- Tautkan Akun Login BAS (User ID) -->
+                <div>
+                    <label for="editJudgeUserId"
+                        class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 uppercase tracking-wider">
+                        Akun User Login BAS:
+                    </label>
+                    <select id="editJudgeUserId"
+                        class="w-full px-4 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs text-slate-900 dark:text-white font-medium focus:outline-none focus:border-amber-500">
+                        <option value="">-- Belum Ditautkan ke Akun User --</option>
+                        @if (isset($usersList))
+                            @foreach ($usersList as $u)
+                                <option value="{{ $u->id }}">{{ $u->username }} - {{ $u->name }}</option>
+                            @endforeach
+                        @endif
+                    </select>
+                    <span class="text-[11px] text-slate-400 mt-1 block">
+                        Juri dapat login mandiri dengan akun ini dan langsung menilai booth.
+                    </span>
                 </div>
 
                 <!-- Status Aktif -->
@@ -490,6 +530,23 @@
                     </div>
                 </div>
 
+                <!-- Tautkan Akun Login BAS (User ID) -->
+                <div>
+                    <label for="manualJudgeUserId"
+                        class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 uppercase tracking-wider">
+                        Tautkan Akun Login BAS (User ID):
+                    </label>
+                    <select id="manualJudgeUserId"
+                        class="w-full px-3 py-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs text-slate-900 dark:text-white font-medium focus:outline-none focus:border-amber-500">
+                        <option value="">-- Hubungkan Otomatis Sesuai NIK / Pilih Akun --</option>
+                        @if (isset($usersList))
+                            @foreach ($usersList as $u)
+                                <option value="{{ $u->id }}">{{ $u->username }} - {{ $u->name }}</option>
+                            @endforeach
+                        @endif
+                    </select>
+                </div>
+
                 <div
                     class="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-[11px] text-amber-800 dark:text-amber-300 flex items-start space-x-2">
                     <i class="fa-solid fa-triangle-exclamation text-amber-500 mt-0.5"></i>
@@ -617,6 +674,13 @@
                     `<span class="px-2.5 py-1 rounded-full text-xs font-extrabold bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-800" title="Progress evaluasi booth">${j.evaluations_count} Booth</span>` :
                     `<span class="text-[11px] text-slate-400 italic">Khusus Vote Kuis</span>`;
 
+                let linkedUserHtml = '';
+                if (j.linked_user) {
+                    linkedUserHtml = `<div class="mt-1"><span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800" title="Akun User: ${escapeHtml(j.linked_user.name)}"><i class="fa-solid fa-user-check"></i> ${escapeHtml(j.linked_user.username)}</span></div>`;
+                } else {
+                    linkedUserHtml = `<div class="mt-1 text-[10px] text-slate-400 italic"><i class="fa-solid fa-link-slash mr-1"></i>Belum link akun</div>`;
+                }
+
                 const tr = `
             <tr class="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition">
                 <td class="py-3.5 px-4 text-center font-bold text-xs text-slate-400">${index + 1}</td>
@@ -634,6 +698,7 @@
                 <td class="py-3.5 px-4">
                     <div class="font-mono text-xs font-extrabold text-slate-800 dark:text-slate-200">${escapeHtml(j.nik || '-')}</div>
                     <div class="text-[10px] font-mono text-slate-400">RFID: ${escapeHtml(j.rfid || '-')}</div>
+                    ${linkedUserHtml}
                 </td>
                 <td class="py-3.5 px-4">
                     <span class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
@@ -783,6 +848,7 @@
                 photo: pendingJudgeData.photo,
                 title: $('#modalJudgeTitle').val() || 'Juri',
                 vote_weight: $('#modalJudgeVoteWeight').val() || 10,
+                user_id: $('#modalJudgeUserId').val() || null,
             };
 
             $.ajax({
@@ -828,6 +894,7 @@
             $('#editJudgeNik').text('NIK: ' + (judge.nik || '-') + ' | RFID: ' + (judge.rfid || '-'));
             $('#editJudgeDept').val(judge.department || '');
             $('#editJudgeVoteWeight').val(judge.vote_weight || 10);
+            $('#editJudgeUserId').val(judge.user_id || '');
             $('#editJudgeIsActive').prop('checked', judge.is_active);
 
             // Set dropdown gelar
@@ -868,6 +935,7 @@
                 title: $('#editJudgeTitle').val(),
                 vote_weight: $('#editJudgeVoteWeight').val(),
                 department: $('#editJudgeDept').val(),
+                user_id: $('#editJudgeUserId').val() || null,
                 is_active: $('#editJudgeIsActive').is(':checked') ? 1 : 0
             };
 
@@ -1017,7 +1085,8 @@
                     department: dept,
                     title: title,
                     vote_weight: weight,
-                    rfid: rfid
+                    rfid: rfid,
+                    user_id: $('#manualJudgeUserId').val() || null
                 },
                 dataType: 'json',
                 success: function(res) {

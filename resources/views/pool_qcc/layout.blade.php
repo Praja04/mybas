@@ -185,7 +185,11 @@
                                 class="px-3.5 py-2 rounded-xl transition-all {{ request()->routeIs('pool-qcc.leaderboard') ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30 font-semibold' : 'text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60' }}">
                                 <i class="fa-solid fa-ranking-star mr-1.5 text-amber-500"></i> Leaderboard
                             </a>
-                            @if (in_array('qcc_pool_admin', $permissions))
+                            @php
+                                $isUserJudge = Auth::check() && (Auth::user()->poolJudge || \App\Models\PoolQCC\PoolJudge::where('is_active', true)->where('nik', Auth::user()->username)->exists());
+                                $hasAdminPerm = in_array('qcc_pool_admin', $permissions);
+                            @endphp
+                            @if ($hasAdminPerm || $isUserJudge)
                                 <!-- Dewan Juri Dropdown -->
                                 <div class="relative group" id="juryDropdownContainer">
                                     <a href="{{ route('pool-qcc.jury.scoring') }}" id="juryDropdownBtn"
@@ -202,22 +206,27 @@
                                             <a href="{{ route('pool-qcc.jury.scoring') }}"
                                                 class="flex items-center px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:text-purple-600 dark:hover:text-white hover:bg-purple-50 dark:hover:bg-purple-600/20 transition-colors">
                                                 <i class="fa-solid fa-scale-balanced w-5 text-purple-500 mr-2"></i>
-                                                Input
-                                                Nilai Juri (0-100)
+                                                Input Nilai Juri (0-100)
                                             </a>
                                             <a href="{{ route('pool-qcc.jury.recap') }}"
                                                 class="flex items-center px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:text-amber-600 dark:hover:text-white hover:bg-amber-50 dark:hover:bg-amber-600/20 transition-colors">
-                                                <i class="fa-solid fa-crown w-5 text-amber-500 mr-2"></i> Rekap Pemenang
-                                                Juri
+                                                <i class="fa-solid fa-crown w-5 text-amber-500 mr-2"></i> Rekap Pemenang Juri
                                             </a>
-                                            <div class="my-1 border-t border-slate-100 dark:border-slate-800"></div>
-                                            <a href="{{ route('pool-qcc.admin.judges') }}"
-                                                class="flex items-center px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-white hover:bg-indigo-50 dark:hover:bg-indigo-600/20 transition-colors">
-                                                <i class="fa-solid fa-user-tie w-5 text-indigo-500 mr-2"></i> Juri &
-                                                Manajemen VIP
-                                            </a>
-                                            <a href="{{ route('pool-qcc.admin.criteria') }}"
-                                                class="flex items-center px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-white hover:bg-indigo-50 dark:hover:bg-indigo-600/20 transition-colors">
+                                            @if ($hasAdminPerm)
+                                                <div class="my-1 border-t border-slate-100 dark:border-slate-800"></div>
+                                                <a href="{{ route('pool-qcc.admin.judges') }}"
+                                                    class="flex items-center px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-white hover:bg-indigo-50 dark:hover:bg-indigo-600/20 transition-colors">
+                                                    <i class="fa-solid fa-user-tie w-5 text-indigo-500 mr-2"></i> Juri & Manajemen VIP
+                                                </a>
+                                                <a href="{{ route('pool-qcc.admin.criteria') }}"
+                                                    class="flex items-center px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-white hover:bg-indigo-50 dark:hover:bg-indigo-600/20 transition-colors">
+                                                    <i class="fa-solid fa-list-check w-5 text-indigo-500 mr-2"></i> Kriteria Penilaian Booth
+                                                </a>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
+                            @endif
                                                 <i class="fa-solid fa-list-check w-5 text-emerald-500 mr-2"></i> Kriteria Penilaian
                                             </a>
                                         </div>
@@ -373,7 +382,7 @@
                         </div>
                     </div>
 
-                    @if (in_array('qcc_pool_admin', $permissions))
+                    @if ($hasAdminPerm || $isUserJudge)
                         <!-- SECTION 2: DEWAN JURI -->
                         <div>
                             <span
@@ -393,20 +402,23 @@
                                         class="fa-solid fa-crown w-5 mr-2 {{ request()->routeIs('pool-qcc.jury.recap') ? 'text-white' : 'text-amber-500' }}"></i>
                                     <span>Rekap Pemenang Juri</span>
                                 </a>
-                                <a href="{{ route('pool-qcc.admin.judges') }}" onclick="closeMobileNav()"
-                                    class="flex items-center px-3 py-2.5 rounded-xl text-xs font-bold transition-all {{ request()->routeIs('pool-qcc.admin.judges') ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30' : 'text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 hover:text-indigo-600' }}">
-                                    <i
-                                        class="fa-solid fa-user-tie w-5 mr-2 {{ request()->routeIs('pool-qcc.admin.judges') ? 'text-white' : 'text-indigo-500' }}"></i>
-                                    <span>Juri & Manajemen VIP</span>
-                                </a>
-                                <a href="{{ route('pool-qcc.admin.criteria') }}" onclick="closeMobileNav()"
-                                    class="flex items-center px-3 py-2.5 rounded-xl text-xs font-bold transition-all {{ request()->routeIs('pool-qcc.admin.criteria') ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30' : 'text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 hover:text-indigo-600' }}">
-                                    <i
-                                        class="fa-solid fa-list-check w-5 mr-2 {{ request()->routeIs('pool-qcc.admin.criteria') ? 'text-white' : 'text-emerald-500' }}"></i>
-                                    <span>Kriteria Penilaian Booth</span>
-                                </a>
+                                @if ($hasAdminPerm)
+                                    <a href="{{ route('pool-qcc.admin.judges') }}" onclick="closeMobileNav()"
+                                        class="flex items-center px-3 py-2.5 rounded-xl text-xs font-bold transition-all {{ request()->routeIs('pool-qcc.admin.judges') ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30' : 'text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 hover:text-indigo-600' }}">
+                                        <i
+                                            class="fa-solid fa-user-tie w-5 mr-2 {{ request()->routeIs('pool-qcc.admin.judges') ? 'text-white' : 'text-indigo-500' }}"></i>
+                                        <span>Juri & Manajemen VIP</span>
+                                    </a>
+                                    <a href="{{ route('pool-qcc.admin.criteria') }}" onclick="closeMobileNav()"
+                                        class="flex items-center px-3 py-2.5 rounded-xl text-xs font-bold transition-all {{ request()->routeIs('pool-qcc.admin.criteria') ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30' : 'text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 hover:text-indigo-600' }}">
+                                        <i
+                                            class="fa-solid fa-list-check w-5 mr-2 {{ request()->routeIs('pool-qcc.admin.criteria') ? 'text-white' : 'text-emerald-500' }}"></i>
+                                        <span>Kriteria Penilaian Booth</span>
+                                    </a>
+                                @endif
                             </div>
                         </div>
+                    @endif
 
                         <!-- SECTION 3: ADMIN MANAGEMENT -->
                         <div>

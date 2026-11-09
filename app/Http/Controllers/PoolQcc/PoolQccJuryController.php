@@ -10,6 +10,7 @@ use App\Models\PoolQCC\PoolEvaluationCriterion;
 use App\Models\PoolQCC\PoolJudgeEvaluationDetail;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Validator;
@@ -17,12 +18,66 @@ use Illuminate\Support\Facades\Validator;
 class PoolQccJuryController extends Controller
 {
     /**
+     * Helper untuk mengambil data Dewan Juri yang sedang login (berdasarkan user_id atau NIK/username)
+     */
+    private function getLoggedInJudge()
+    {
+        $user = Auth::user();
+        if (!$user) {
+            return null;
+        }
+
+        // 1. Cek relasi langsung user_id
+        $judge = PoolJudge::where('is_active', true)->where('user_id', $user->id)->first();
+        if ($judge) {
+            return $judge;
+        }
+
+        // 2. Fallback pencocokan NIK berdasarkan username akun login
+        $username = trim((string)$user->username);
+        if ($username !== '') {
+            $stripped = ltrim($username, '0');
+            $candidates = array_values(array_unique(array_filter([
+                $username,
+                $stripped,
+                '0' . $stripped,
+                str_pad($stripped, 8, '0', STR_PAD_LEFT),
+                str_pad($stripped, 9, '0', STR_PAD_LEFT),
+            ])));
+
+            $judge = PoolJudge::where('is_active', true)
+                ->whereIn('nik', $candidates)
+                ->first();
+
+            // Auto-link user_id jika cocok agar seterusnya tersambung
+            if ($judge && !$judge->user_id) {
+                $judge->user_id = $user->id;
+                $judge->save();
+            }
+            return $judge;
+        }
+
+        return null;
+    }
+
+    /**
      * Layar Penilaian Booth oleh Dewan Juri (Shell Blade Client-Side)
      * Alur: Pilih Booth -> Tap / Input NIK Juri -> Verifikasi Data Juri -> Munculkan Penilaian & Catatan
      */
     public function scoringView(Request $request)
     {
-        return view('pool_qcc.jury.scoring');
+        $loggedInJudge = $this->getLoggedInJudge();
+        $isJudgeAccount = !is_null($loggedInJudge);
+
+        $evaluatedBoothIds = [];
+        $totalBoothsCount = PoolBooth::where('is_active', true)->count();
+        if ($loggedInJudge) {
+            $evaluatedBoothIds = PoolJudgeEvaluation::where('judge_id', $loggedInJudge->id)
+                ->pluck('booth_id')
+                ->toArray();
+        }
+
+        return view('pool_qcc.jury.scoring', compact('loggedInJudge', 'isJudgeAccount', 'evaluatedBoothIds', 'totalBoothsCount'));
     }
 
     /**
@@ -38,15 +93,18 @@ class PoolQccJuryController extends Controller
             })
             ->get();
         $totalActiveJudges = $judges->count();
+        $loggedInJudge = $this->getLoggedInJudge();
 
         $booths = PoolBooth::where('is_active', true)
             ->with(['judgeEvaluations.judge'])
             ->orderBy('code', 'asc')
             ->get()
-            ->map(function ($b) use ($totalActiveJudges) {
+            ->map(function ($b) use ($totalActiveJudges, $loggedInJudge) {
                 $evals = $b->judgeEvaluations->filter(function ($e) {
                     return $e->judge && $e->judge->is_active;
                 });
+
+                $myEval = $loggedInJudge ? $evals->firstWhere('judge_id', $loggedInJudge->id) : null;
 
                 return [
                     'id' => $b->id,
@@ -66,6 +124,10 @@ class PoolQccJuryController extends Controller
                             'score' => (float)$e->score,
                         ];
                     })->values(),
+                    'my_evaluation' => $myEval ? [
+                        'score' => (float)$myEval->score,
+                        'evaluated_at' => $myEval->evaluated_at ? $myEval->evaluated_at->format('H:i d/m/Y') : null,
+                    ] : null,
                 ];
             });
 
@@ -75,6 +137,12 @@ class PoolQccJuryController extends Controller
                 'booths' => $booths,
                 'total_booths' => $booths->count(),
                 'total_active_judges' => $totalActiveJudges,
+                'is_judge_account' => !is_null($loggedInJudge),
+                'logged_in_judge' => $loggedInJudge ? [
+                    'id' => $loggedInJudge->id,
+                    'name' => $loggedInJudge->name,
+                    'title' => $loggedInJudge->title ?: 'Dewan Juri',
+                ] : null,
             ]
         ]);
     }
@@ -87,18 +155,12 @@ class PoolQccJuryController extends Controller
     {
         $boothId = $request->input('booth_id');
         $rawInput = trim((string)($request->input('rfid_or_nik') ?: $request->input('input') ?: $request->input('nik') ?: $request->input('rfid')));
+        $requestedJudgeId = $request->input('judge_id');
 
         if (!$boothId) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'Booth yang akan dinilai wajib dipilih terlebih dahulu.',
-            ], 422);
-        }
-
-        if (empty($rawInput)) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Silakan tap kartu RFID atau ketikkan NIK Dewan Juri.',
             ], 422);
         }
 
@@ -110,35 +172,53 @@ class PoolQccJuryController extends Controller
             ], 404);
         }
 
-        // Generate kandidat NIK (dengan variasi leading zero dsb)
-        $numericInput = is_numeric($rawInput) ? (int)$rawInput : 0;
-        $candidates = [$rawInput];
-        if (is_numeric($rawInput)) {
-            $stripped = ltrim($rawInput, '0');
-            if ($stripped !== '') {
-                $candidates[] = $stripped;
-                $candidates[] = '0' . $stripped;
-                $candidates[] = str_pad($stripped, 8, '0', STR_PAD_LEFT);
-                $candidates[] = str_pad($stripped, 9, '0', STR_PAD_LEFT);
-            }
-        }
-        $candidates = array_values(array_unique(array_filter($candidates)));
+        $loggedInJudge = $this->getLoggedInJudge();
+        $judge = null;
 
-        // Cocokkan dengan data judge yang sudah didaftarkan di master pool_judges
-        $judge = PoolJudge::where('is_active', true)
-            ->where(function ($q) use ($rawInput, $candidates, $numericInput) {
-                $q->where('rfid', $rawInput)
-                    ->orWhereIn('nik', $candidates)
-                    ->when($numericInput > 0, function ($sq) use ($numericInput) {
-                        $sq->orWhere('rfid', (string)$numericInput);
-                    });
-            })
-            ->first();
+        // 1. Jika juri sedang login akun sendiri, atau judge_id disertakan langsung
+        if ($requestedJudgeId) {
+            $judge = PoolJudge::where('is_active', true)->find($requestedJudgeId);
+        } elseif ($loggedInJudge) {
+            $judge = $loggedInJudge;
+        } else {
+            // 2. Mode Kiosk/Admin Kiosk: Wajib tap RFID atau input NIK
+            if (empty($rawInput)) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Silakan tap kartu RFID atau ketikkan NIK Dewan Juri.',
+                ], 422);
+            }
+
+            // Generate kandidat NIK (dengan variasi leading zero dsb)
+            $numericInput = is_numeric($rawInput) ? (int)$rawInput : 0;
+            $candidates = [$rawInput];
+            if (is_numeric($rawInput)) {
+                $stripped = ltrim($rawInput, '0');
+                if ($stripped !== '') {
+                    $candidates[] = $stripped;
+                    $candidates[] = '0' . $stripped;
+                    $candidates[] = str_pad($stripped, 8, '0', STR_PAD_LEFT);
+                    $candidates[] = str_pad($stripped, 9, '0', STR_PAD_LEFT);
+                }
+            }
+            $candidates = array_values(array_unique(array_filter($candidates)));
+
+            // Cocokkan dengan data judge yang sudah didaftarkan di master pool_judges
+            $judge = PoolJudge::where('is_active', true)
+                ->where(function ($q) use ($rawInput, $candidates, $numericInput) {
+                    $q->where('rfid', $rawInput)
+                        ->orWhereIn('nik', $candidates)
+                        ->when($numericInput > 0, function ($sq) use ($numericInput) {
+                            $sq->orWhere('rfid', (string)$numericInput);
+                        });
+                })
+                ->first();
+        }
 
         if (!$judge) {
             return response()->json([
                 'status' => 'error',
-                'message' => "Kartu / NIK '{$rawInput}' tidak terdaftar di sistem. Pastikan kartu telah didaftarkan di Manajemen Juri & Manajemen.",
+                'message' => $rawInput ? "Kartu / NIK '{$rawInput}' tidak terdaftar di sistem. Pastikan kartu telah didaftarkan di Manajemen Juri & Manajemen." : "Data Dewan Juri tidak ditemukan.",
             ], 403);
         }
 
@@ -232,8 +312,10 @@ class PoolQccJuryController extends Controller
      */
     public function saveScore(Request $request)
     {
+        $loggedInJudge = $this->getLoggedInJudge();
+
         $validator = Validator::make($request->all(), [
-            'judge_id' => 'required|exists:pool_judges,id',
+            'judge_id' => $loggedInJudge ? 'nullable' : 'required|exists:pool_judges,id',
             'booth_id' => 'required|exists:pool_booths,id',
             'score' => 'nullable|numeric|min:0|max:100',
             'criteria_scores' => 'nullable|array',
@@ -253,7 +335,7 @@ class PoolQccJuryController extends Controller
             ], 422);
         }
 
-        $judge = PoolJudge::findOrFail($request->judge_id);
+        $judge = $loggedInJudge ?: PoolJudge::findOrFail($request->judge_id);
 
         $judgeTitleLower = strtolower(trim((string)$judge->title));
         $isOfficialScorer = ($judgeTitleLower === 'juri' || $judgeTitleLower === 'dewan juri' || strpos($judgeTitleLower, 'juri') !== false);

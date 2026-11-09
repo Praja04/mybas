@@ -28,20 +28,20 @@ Route::group(['middleware' => ['auth', 'access_log', 'rules:qcc_pool']], functio
             return redirect()->route('pool-qcc.booths-index');
         })->name('portal');
 
+        // Penilaian Dewan Juri (Jury Booth Scoring & Recap Pemenang)
+        // Dapat diakses oleh Admin Pool QCC maupun Dewan Juri yang login akun BAS
+        Route::group(['prefix' => 'jury', 'as' => 'jury.'], function () {
+            Route::get('/scoring', 'PoolQcc\PoolQccJuryController@scoringView')->name('scoring');
+            Route::get('/api/booths', 'PoolQcc\PoolQccJuryController@getBoothsList')->name('api.booths');
+            Route::post('/verify-judge', 'PoolQcc\PoolQccJuryController@verifyJudgeAndGetEvaluation')->name('verify-judge');
+            Route::get('/api/scoring-data', 'PoolQcc\PoolQccJuryController@getScoringData')->name('api.scoring-data');
+            Route::post('/switch', 'PoolQcc\PoolQccJuryController@switchJudge')->name('switch');
+            Route::post('/score', 'PoolQcc\PoolQccJuryController@saveScore')->name('save-score');
+            Route::get('/recap', 'PoolQcc\PoolQccJuryController@recapView')->name('recap');
+            Route::get('/api/recap', 'PoolQcc\PoolQccJuryController@getRecapData')->name('api.recap');
+        });
+
         Route::group(['middleware' => ['rules:qcc_pool_admin']], function () {
-            // Penilaian Dewan Juri (Jury Booth Scoring & Recap Pemenang)
-            Route::group(['prefix' => 'jury', 'as' => 'jury.'], function () {
-                Route::get('/scoring', 'PoolQcc\PoolQccJuryController@scoringView')->name('scoring');
-                Route::get('/api/booths', 'PoolQcc\PoolQccJuryController@getBoothsList')->name('api.booths');
-                Route::post('/verify-judge', 'PoolQcc\PoolQccJuryController@verifyJudgeAndGetEvaluation')->name('verify-judge');
-                Route::get('/api/scoring-data', 'PoolQcc\PoolQccJuryController@getScoringData')->name('api.scoring-data');
-                Route::post('/switch', 'PoolQcc\PoolQccJuryController@switchJudge')->name('switch');
-                Route::post('/score', 'PoolQcc\PoolQccJuryController@saveScore')->name('save-score');
-                Route::get('/recap', 'PoolQcc\PoolQccJuryController@recapView')->name('recap');
-                Route::get('/api/recap', 'PoolQcc\PoolQccJuryController@getRecapData')->name('api.recap');
-            });
-
-
             // Admin Management (Booth & Soal & Peserta & Dewan Juri)
             Route::group(['prefix' => 'admin', 'as' => 'admin.'], function () {
                 Route::get('/', 'PoolQcc\PoolQccAdminController@index')->name('dashboard');

@@ -34,6 +34,11 @@ class User extends Authenticatable
         return $this->belongsTo('App\Department', 'dept_id');
     }
 
+    public function poolJudge()
+    {
+        return $this->hasOne(\App\Models\PoolQCC\PoolJudge::class, 'user_id');
+    }
+
     /**
      * Permission yang langsung attach ke user (di luar group).
      */

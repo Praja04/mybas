@@ -34,13 +34,74 @@
                     <i class="fa-solid fa-trophy"></i>
                     <span>Lihat Rekap & Pemenang</span>
                 </a>
-                <a href="{{ route('pool-qcc.admin.judges') }}"
-                    class="px-4 py-2.5 rounded-2xl text-xs font-bold bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/60 transition flex items-center space-x-1.5">
-                    <i class="fa-solid fa-sliders text-indigo-500"></i>
-                    <span>Kelola Juri</span>
-                </a>
+                @if (in_array('qcc_pool_admin', $permissions ?? []))
+                    <a href="{{ route('pool-qcc.admin.judges') }}"
+                        class="px-4 py-2.5 rounded-2xl text-xs font-bold bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/60 transition flex items-center space-x-1.5">
+                        <i class="fa-solid fa-sliders text-indigo-500"></i>
+                        <span>Kelola Juri</span>
+                    </a>
+                @endif
             </div>
         </div>
+
+        @if (!empty($isJudgeAccount) && !empty($loggedInJudge))
+            @php
+                $evalCount = count($evaluatedBoothIds ?? []);
+                $totalBooths = $totalBoothsCount ?? 0;
+                $evalPercent = $totalBooths > 0 ? min(100, round(($evalCount / $totalBooths) * 100)) : 0;
+                $judgeInit = strtoupper(mb_substr(trim($loggedInJudge->name), 0, 1)) ?: 'J';
+            @endphp
+            <!-- PERSONAL JUDGE WELCOME BANNER -->
+            <div class="mb-8 p-6 rounded-3xl bg-gradient-to-r from-purple-900 via-indigo-900 to-slate-900 text-white shadow-2xl border border-purple-500/30 relative overflow-hidden">
+                <div class="absolute -right-10 -bottom-10 w-48 h-48 bg-purple-500/10 rounded-full blur-3xl pointer-events-none"></div>
+                <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative z-10">
+                    <div class="flex items-center space-x-4">
+                        <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-amber-400 to-amber-200 text-slate-950 font-black text-2xl flex items-center justify-center shadow-lg border-2 border-white/80 flex-shrink-0">
+                            @if ($loggedInJudge->photo)
+                                <img src="{{ $loggedInJudge->photo }}" alt="{{ $loggedInJudge->name }}" class="w-full h-full object-cover rounded-2xl">
+                            @else
+                                <span>{{ $judgeInit }}</span>
+                            @endif
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-amber-400 text-slate-950 uppercase tracking-wider shadow-xs">
+                                    <i class="fa-solid fa-crown mr-1"></i> {{ $loggedInJudge->title ?: 'Dewan Juri' }}
+                                </span>
+                                <span class="text-xs text-purple-200 font-mono">
+                                    NIK: {{ $loggedInJudge->nik }}
+                                </span>
+                            </div>
+                            <h2 class="text-xl sm:text-2xl font-black text-white leading-tight">
+                                Selamat datang, {{ $loggedInJudge->name }}!
+                            </h2>
+                            <p class="text-xs text-purple-200/80 mt-1">
+                                Anda login dengan akun Dewan Juri. Anda dapat langsung memilih booth dan memberikan nilai (0-100) secara independen tanpa perlu tap ID Card.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Evaluation Progress Box -->
+                    <div class="w-full md:w-72 bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/15 shadow-inner">
+                        <div class="flex items-center justify-between text-xs font-bold mb-1.5">
+                            <span class="text-purple-200">Progres Penilaian:</span>
+                            <span class="text-amber-300 font-black" id="judgeProgressText">{{ $evalCount }} / {{ $totalBooths }} Booth</span>
+                        </div>
+                        <div class="w-full h-2.5 rounded-full bg-slate-950/50 overflow-hidden mb-1.5">
+                            <div id="judgeProgressBar" class="h-full rounded-full bg-gradient-to-r from-amber-400 to-emerald-400 transition-all duration-500" style="width: {{ $evalPercent }}%"></div>
+                        </div>
+                        <div class="flex items-center justify-between text-[10px] text-purple-200/80 font-semibold" id="judgeProgressSubtext">
+                            <span>{{ $evalPercent }}% selesai dinilai</span>
+                            @if ($evalCount >= $totalBooths && $totalBooths > 0)
+                                <span class="text-emerald-300 font-black"><i class="fa-solid fa-circle-check"></i> Lengkap</span>
+                            @else
+                                <span class="text-amber-300 font-black">{{ max(0, $totalBooths - $evalCount) }} booth tersisa</span>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endif
 
         <!-- Filter & Search Toolbar -->
         <div class="glass-panel rounded-2xl p-4 sm:p-5 mb-8 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -195,11 +256,13 @@
                     </div>
                 </div>
 
-                <button type="button" onclick="reopenScanModalForCurrentBooth()" title="Ganti Juri"
-                    class="px-2.5 py-1.5 rounded-xl text-xs font-bold bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition flex items-center space-x-1">
-                    <i class="fa-solid fa-repeat text-indigo-500"></i>
-                    <span class="hidden sm:inline">Ganti</span>
-                </button>
+                @if (empty($isJudgeAccount))
+                    <button type="button" id="switchJudgeBtn" onclick="reopenScanModalForCurrentBooth()" title="Ganti Juri"
+                        class="px-2.5 py-1.5 rounded-xl text-xs font-bold bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition flex items-center space-x-1">
+                        <i class="fa-solid fa-repeat text-indigo-500"></i>
+                        <span class="hidden sm:inline">Ganti Juri</span>
+                    </button>
+                @endif
             </div>
 
             <!-- Target Booth Context -->
@@ -309,6 +372,9 @@
 
 @section('scripts')
     <script>
+        window.isJudgeAccount = {{ !empty($isJudgeAccount) ? 'true' : 'false' }};
+        window.loggedInJudgeId = {{ !empty($loggedInJudge) ? $loggedInJudge->id : 'null' }};
+
         let allBooths = [];
         let totalActiveJudges = 0;
         let selectedBoothForEvaluation = null;
@@ -348,6 +414,20 @@
 
                         $('#statTotalBooths').text(res.data.total_booths || allBooths.length);
                         $('#statTotalJudges').text(totalActiveJudges);
+
+                        // Update personal judge progress banner if logged in
+                        if (window.isJudgeAccount) {
+                            const myEvaluatedCount = allBooths.filter(b => b.my_evaluation).length;
+                            const totalB = allBooths.length;
+                            const pct = totalB > 0 ? Math.min(100, Math.round((myEvaluatedCount / totalB) * 100)) : 0;
+                            $('#judgeProgressText').text(`${myEvaluatedCount} / ${totalB} Booth`);
+                            $('#judgeProgressBar').css('width', `${pct}%`);
+                            if (myEvaluatedCount >= totalB && totalB > 0) {
+                                $('#judgeProgressSubtext').html(`<span>${pct}% selesai dinilai</span><span class="text-emerald-300 font-black"><i class="fa-solid fa-circle-check"></i> Lengkap</span>`);
+                            } else {
+                                $('#judgeProgressSubtext').html(`<span>${pct}% selesai dinilai</span><span class="text-amber-300 font-black">${Math.max(0, totalB - myEvaluatedCount)} booth tersisa</span>`);
+                            }
+                        }
 
                         renderBoothsGrid(allBooths);
                     } else {
@@ -398,6 +478,52 @@
                             <i class="fa-solid fa-crown text-[9px] mr-1"></i> ${escapeHtml(j.judge_name)}: <strong>${j.score}</strong>
                         </span>
                     `).join('');
+                }
+
+                // Action button depending on logged in judge account vs admin/kiosk
+                let actionBtnHtml = '';
+                if (window.isJudgeAccount) {
+                    if (b.my_evaluation) {
+                        actionBtnHtml = `
+                            <div class="mb-3 px-3 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 flex items-center justify-between">
+                                <span class="text-xs font-black text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
+                                    <i class="fa-solid fa-circle-check"></i> Sudah Anda Nilai
+                                </span>
+                                <span class="text-xs font-black text-emerald-800 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-900/60 px-2 py-0.5 rounded-lg">
+                                    Skor: ${b.my_evaluation.score}
+                                </span>
+                            </div>
+                            <button type="button" onclick="openDirectJudgeScoringModal(${b.id})"
+                                class="w-full py-3 rounded-2xl text-xs font-black bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-700 hover:to-teal-800 text-white shadow-lg shadow-emerald-600/25 transition duration-150 flex items-center justify-center space-x-2 group cursor-pointer">
+                                <i class="fa-solid fa-pen-to-square group-hover:scale-110 transition-transform"></i>
+                                <span>Ubah Nilai (${b.my_evaluation.score})</span>
+                            </button>
+                        `;
+                    } else {
+                        actionBtnHtml = `
+                            <div class="mb-3 px-3 py-2 rounded-xl bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 flex items-center justify-between">
+                                <span class="text-xs font-bold text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
+                                    <i class="fa-regular fa-clock"></i> Belum Anda Nilai
+                                </span>
+                                <span class="text-[10px] font-extrabold uppercase tracking-wider text-amber-600 dark:text-amber-400">
+                                    Perlu Dinilai
+                                </span>
+                            </div>
+                            <button type="button" onclick="openDirectJudgeScoringModal(${b.id})"
+                                class="w-full py-3 rounded-2xl text-xs font-black bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 hover:from-indigo-700 hover:to-purple-800 text-white shadow-lg shadow-indigo-600/25 transition duration-150 flex items-center justify-center space-x-2 group cursor-pointer">
+                                <i class="fa-solid fa-star group-hover:scale-110 transition-transform"></i>
+                                <span>Beri Nilai Booth Ini</span>
+                            </button>
+                        `;
+                    }
+                } else {
+                    actionBtnHtml = `
+                        <button type="button" onclick="openJudgeScanModal(${b.id})"
+                            class="w-full py-3 rounded-2xl text-xs font-black bg-gradient-to-r from-indigo-600 via-indigo-700 to-indigo-800 hover:from-indigo-700 hover:to-indigo-900 text-white shadow-lg shadow-indigo-600/25 transition duration-150 flex items-center justify-center space-x-2 group cursor-pointer">
+                            <i class="fa-solid fa-id-card group-hover:scale-110 transition-transform"></i>
+                            <span>Nilai Booth Ini (Tap ID Card)</span>
+                        </button>
+                    `;
                 }
 
                 html += `
@@ -452,18 +578,66 @@
                                 </div>
                             </div>
 
-                            <!-- Action Button -->
-                            <button type="button" onclick="openJudgeScanModal(${b.id})"
-                                class="w-full py-3 rounded-2xl text-xs font-black bg-gradient-to-r from-indigo-600 via-indigo-700 to-indigo-800 hover:from-indigo-700 hover:to-indigo-900 text-white shadow-lg shadow-indigo-600/25 transition duration-150 flex items-center justify-center space-x-2 group">
-                                <i class="fa-solid fa-id-card group-hover:scale-110 transition-transform"></i>
-                                <span>Nilai Booth Ini (Tap ID Card)</span>
-                            </button>
+                            <!-- Action Button Area -->
+                            ${actionBtnHtml}
                         </div>
                     </div>
                 `;
             });
 
             $('#boothsGrid').html(html);
+        }
+
+        // Direct scoring modal trigger when judge is logged in directly
+        function openDirectJudgeScoringModal(boothId) {
+            const booth = allBooths.find(b => b.id == boothId);
+            if (!booth) return;
+            selectedBoothForEvaluation = booth;
+
+            Swal.fire({
+                title: 'Menyiapkan Form Penilaian...',
+                text: 'Memuat data kriteria untuk ' + booth.name,
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            $.ajax({
+                url: "{{ route('pool-qcc.jury.verify-judge') }}",
+                type: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                data: {
+                    booth_id: booth.id,
+                    judge_id: window.loggedInJudgeId || ''
+                },
+                dataType: 'json',
+                success: function(res) {
+                    Swal.close();
+                    if (res.status === 'success' && res.data) {
+                        openJudgeScoreModal(res.data);
+                    } else {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Pemberitahuan',
+                            text: res.message || 'Gagal memuat form penilaian booth.',
+                            confirmButtonColor: '#4f46e5'
+                        });
+                    }
+                },
+                error: function(xhr) {
+                    Swal.close();
+                    let errMsg = xhr.responseJSON && xhr.responseJSON.message ? xhr.responseJSON.message : 'Terjadi kesalahan sistem saat memuat form penilaian.';
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Akses Ditolak',
+                        text: errMsg,
+                        confirmButtonColor: '#4f46e5'
+                    });
+                }
+            });
         }
 
         // 3. Search Filter in Client-side
