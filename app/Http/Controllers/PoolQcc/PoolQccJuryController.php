@@ -317,14 +317,14 @@ class PoolQccJuryController extends Controller
         $validator = Validator::make($request->all(), [
             'judge_id' => $loggedInJudge ? 'nullable' : 'required|exists:pool_judges,id',
             'booth_id' => 'required|exists:pool_booths,id',
-            'score' => 'nullable|numeric|min:0|max:100',
+            'score' => 'nullable|numeric|min:1|max:100',
             'criteria_scores' => 'nullable|array',
             'notes' => 'nullable|string|max:1000',
         ], [
             'judge_id.required' => 'Identitas Juri wajib disertakan.',
             'booth_id.required' => 'Booth yang dinilai wajib dipilih.',
             'score.numeric' => 'Nilai skor harus berupa angka.',
-            'score.min' => 'Nilai minimal adalah 0.',
+            'score.min' => 'Nilai minimal adalah 1.',
             'score.max' => 'Nilai maksimal adalah 100.',
         ]);
 
@@ -362,7 +362,7 @@ class PoolQccJuryController extends Controller
                 $criterion = $activeCriteria->get($critId);
                 if (!$criterion) continue;
 
-                $val = max(0, min((float)$critVal, (float)$criterion->max_score));
+                $val = max(1, min((float)$critVal, (float)$criterion->max_score));
                 $weight = (float)$criterion->weight;
 
                 $scorePct = $criterion->max_score > 0 ? ($val / $criterion->max_score) * 100 : 0;
@@ -387,9 +387,9 @@ class PoolQccJuryController extends Controller
             } else {
                 $finalScore = $totalWeightedScore;
             }
-            $finalScore = round(max(0, min(100, $finalScore)), 2);
+            $finalScore = round(max(1, min(100, $finalScore)), 2);
         } else {
-            $finalScore = round((float)$request->input('score', 0), 2);
+            $finalScore = round(max(1, min(100, (float)$request->input('score', 1))), 2);
         }
 
         $evaluation = PoolJudgeEvaluation::updateOrCreate(
@@ -489,6 +489,7 @@ class PoolQccJuryController extends Controller
 
             $evaluationsList = $evaluations->map(function ($eval) {
                 return [
+                    'id' => $eval->id,
                     'judge_id' => $eval->judge_id,
                     'judge_name' => $eval->judge ? $eval->judge->name : '-',
                     'judge_dept' => $eval->judge ? $eval->judge->department : '-',
@@ -551,5 +552,118 @@ class PoolQccJuryController extends Controller
             }),
             'last_updated' => Carbon::now()->format('H:i:s d/m/Y'),
         ];
+    }
+
+    /**
+     * Helper validasi hak akses admin (permission qcc_pool_admin)
+     */
+    private function authorizeAdminPermission()
+    {
+        $user = Auth::user();
+        if (!$user) {
+            abort(401, 'Unauthenticated.');
+        }
+
+        $permissions = [];
+        if ($user->auth_group_id) {
+            $group = \App\AuthGroup::find($user->auth_group_id);
+            if ($group) {
+                $permissions = $group->permissions()->pluck('codename')->toArray();
+            }
+        }
+
+        if (method_exists($user, 'getAllPermissionCodenames')) {
+            $permissions = array_values(array_unique(array_merge(
+                $permissions,
+                $user->getAllPermissionCodenames()
+            )));
+        }
+
+        if (!in_array('qcc_pool_admin', $permissions)) {
+            abort(403, 'Akses Ditolak: Anda memerlukan permission qcc_pool_admin untuk mereset penilaian juri.');
+        }
+    }
+
+    /**
+     * Reset / Hapus Penilaian Juri Tertentu
+     * Permission: qcc_pool_admin
+     */
+    public function resetEvaluation(Request $request, $id)
+    {
+        $this->authorizeAdminPermission();
+
+        $evaluation = PoolJudgeEvaluation::with(['judge', 'booth'])->find($id);
+        if (!$evaluation) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Data penilaian juri tidak ditemukan atau sudah direset sebelumnya.',
+            ], 404);
+        }
+
+        $judgeName = $evaluation->judge ? $evaluation->judge->name : 'Juri';
+        $boothName = $evaluation->booth ? ($evaluation->booth->code . ' - ' . $evaluation->booth->name) : 'Booth';
+
+        DB::transaction(function () use ($evaluation) {
+            $evaluation->details()->delete();
+            $evaluation->delete();
+        });
+
+        return response()->json([
+            'status' => 'success',
+            'message' => "Nilai dari {$judgeName} untuk {$boothName} berhasil direset.",
+        ]);
+    }
+
+    /**
+     * Reset / Hapus Seluruh Penilaian Juri pada Booth Tertentu
+     * Permission: qcc_pool_admin
+     */
+    public function resetBoothEvaluations(Request $request, $boothId)
+    {
+        $this->authorizeAdminPermission();
+
+        $booth = PoolBooth::find($boothId);
+        if (!$booth) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Booth tidak ditemukan.',
+            ], 404);
+        }
+
+        $evaluations = PoolJudgeEvaluation::where('booth_id', $booth->id)->get();
+        $count = $evaluations->count();
+
+        DB::transaction(function () use ($evaluations) {
+            foreach ($evaluations as $eval) {
+                $eval->details()->delete();
+                $eval->delete();
+            }
+        });
+
+        return response()->json([
+            'status' => 'success',
+            'message' => "Seluruh penilaian juri ({$count} penilaian) untuk Booth {$booth->code} ({$booth->name}) berhasil direset.",
+        ]);
+    }
+
+    /**
+     * Reset / Hapus Seluruh Penilaian Dewan Juri Secara Keseluruhan (Global Reset)
+     * Permission: qcc_pool_admin
+     */
+    public function resetAllEvaluations(Request $request)
+    {
+        $this->authorizeAdminPermission();
+
+        $count = PoolJudgeEvaluation::count();
+
+        DB::transaction(function () {
+            PoolJudgeEvaluationDetail::query()->delete();
+            PoolJudgeEvaluation::query()->delete();
+        });
+
+        return response()->json([
+            'status' => 'success',
+            'message' => "Seluruh data penilaian juri ({$count} penilaian) berhasil direset.",
+        ]);
     }
 }

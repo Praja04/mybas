@@ -2,6 +2,10 @@
 
 @section('title', 'Rekap Pemenang Penilaian Dewan Juri - Pool QCC')
 
+@php
+    $canReset = in_array('qcc_pool_admin', $permissions ?? []);
+@endphp
+
 @section('content')
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8" id="juryRecapWrapper">
         <!-- Header -->
@@ -18,11 +22,21 @@
                     <span>Pemenang Penilaian Dewan Juri</span>
                 </h1>
                 <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
-                    Hasil evaluasi independen dewan juri (skor 0 - 100), terpisah dari voting publik/leaderboard.
+                    Hasil evaluasi independen dewan juri (skor 1 - 100), terpisah dari voting publik/leaderboard.
                 </p>
             </div>
 
             <div class="flex items-center space-x-3">
+                @if ($canReset)
+                    <!-- Global Reset Button for qcc_pool_admin -->
+                    <button type="button" onclick="confirmResetAllJuryEvaluations()" id="btnResetAll"
+                        class="px-4 py-2.5 rounded-2xl text-xs font-bold bg-rose-50 text-rose-600 dark:bg-rose-500/10 dark:text-rose-400 border border-rose-200 dark:border-rose-500/30 hover:bg-rose-100 dark:hover:bg-rose-500/20 transition flex items-center space-x-1.5 shadow-sm cursor-pointer"
+                        title="Reset Seluruh Penilaian Juri">
+                        <i class="fa-solid fa-rotate-left"></i>
+                        <span class="hidden sm:inline">Reset Semua Nilai</span>
+                    </button>
+                @endif
+
                 <!-- Fullscreen Button -->
                 <button type="button" onclick="toggleFullscreen()" id="btnFullscreen"
                     class="px-4 py-2.5 rounded-2xl text-xs font-bold bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 transition flex items-center space-x-1.5 shadow-sm cursor-pointer"
@@ -125,7 +139,7 @@
                 <div>
                     <h3 class="text-lg font-black text-slate-900 dark:text-white">Klasemen Lengkap Penilaian Juri</h3>
                     <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Urutan peringkat booth berdasarkan
-                        rata-rata skor evaluasi 0-100 dari seluruh dewan juri.</p>
+                        rata-rata skor evaluasi 1-100 dari seluruh dewan juri.</p>
                 </div>
                 <div class="flex items-center space-x-2">
                     <span class="text-xs text-slate-400 hidden sm:inline">Auto-refresh aktif</span>
@@ -143,7 +157,7 @@
                             <th class="py-4 px-5">Rata-Rata Skor</th>
                             <th class="py-4 px-5 text-center">Partisipasi Juri</th>
                             <th class="py-4 px-5 text-center">Rentang Nilai</th>
-                            <th class="py-4 px-5 text-center">Detail Nilai</th>
+                            <th class="py-4 px-5 text-center">Aksi / Nilai</th>
                         </tr>
                     </thead>
                     <tbody id="recapTableBody" class="divide-y divide-slate-100 dark:divide-slate-800/60">
@@ -183,9 +197,12 @@
             </div>
 
             <div
-                class="px-6 py-4 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800 text-right">
+                class="px-6 py-4 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                <div id="modalResetBoothContainer">
+                    <!-- Populated dynamically via JS if canReset -->
+                </div>
                 <button type="button" onclick="closeDetailModal()"
-                    class="px-5 py-2 rounded-xl text-xs font-extrabold bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-800 dark:text-white transition">
+                    class="px-5 py-2 rounded-xl text-xs font-extrabold bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-800 dark:text-white transition cursor-pointer">
                     Tutup
                 </button>
             </div>
@@ -195,8 +212,21 @@
 
 @section('scripts')
     <script>
+        const canReset = {{ $canReset ? 'true' : 'false' }};
         let autoRefreshTimer = null;
         let cachedBoothsData = [];
+        let currentModalBoothId = null;
+        let currentModalBoothName = '';
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
 
         $(document).ready(function() {
             // Initial load via AJAX
@@ -207,7 +237,7 @@
         });
 
         // Load data rekap dewan juri secara client-side
-        function loadRecapData() {
+        function loadRecapData(callback) {
             const $icon = $('#reloadIcon');
             $icon.addClass('fa-spin');
 
@@ -219,6 +249,9 @@
                     $icon.removeClass('fa-spin');
                     if (res.status === 'success' && res.data) {
                         renderRecapData(res.data);
+                        if (typeof callback === 'function') {
+                            callback(res.data);
+                        }
                     }
                 },
                 error: function() {
@@ -241,16 +274,16 @@
                 $('#bestBoothContainer').html(`
             <div class="flex items-start space-x-4 mb-5">
                 <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-amber-500 to-amber-600 text-white font-black text-xl flex items-center justify-center shadow-md flex-shrink-0">
-                    ${b.code}
+                    ${escapeHtml(b.code)}
                 </div>
                 <div>
                     <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/30 uppercase tracking-wider">
-                        ${b.category || 'Kaizen Circle'}
+                        ${escapeHtml(b.category || 'Kaizen Circle')}
                     </span>
                     <h2 class="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white mt-1 leading-tight">
-                        ${b.name}
+                        ${escapeHtml(b.name)}
                     </h2>
-                    ${b.location ? `<span class="text-xs text-slate-400 block mt-0.5"><i class="fa-solid fa-location-dot text-rose-500 mr-1"></i> ${b.location}</span>` : ''}
+                    ${b.location ? `<span class="text-xs text-slate-400 block mt-0.5"><i class="fa-solid fa-location-dot text-rose-500 mr-1"></i> ${escapeHtml(b.location)}</span>` : ''}
                 </div>
             </div>
 
@@ -290,16 +323,16 @@
                 $('#runnerUpContainer').html(`
             <div class="flex items-start space-x-4 mb-5">
                 <div class="w-16 h-16 rounded-2xl bg-slate-600 dark:bg-slate-700 text-white font-black text-xl flex items-center justify-center shadow-md flex-shrink-0">
-                    ${r.code}
+                    ${escapeHtml(r.code)}
                 </div>
                 <div>
                     <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 uppercase tracking-wider">
-                        ${r.category || 'Kaizen Circle'}
+                        ${escapeHtml(r.category || 'Kaizen Circle')}
                     </span>
                     <h2 class="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white mt-1 leading-tight">
-                        ${r.name}
+                        ${escapeHtml(r.name)}
                     </h2>
-                    ${r.location ? `<span class="text-xs text-slate-400 block mt-0.5"><i class="fa-solid fa-location-dot text-rose-500 mr-1"></i> ${r.location}</span>` : ''}
+                    ${r.location ? `<span class="text-xs text-slate-400 block mt-0.5"><i class="fa-solid fa-location-dot text-rose-500 mr-1"></i> ${escapeHtml(r.location)}</span>` : ''}
                 </div>
             </div>
 
@@ -375,15 +408,15 @@
                 <td class="py-4 px-5">
                     <div class="flex items-center space-x-3">
                         <div class="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-white font-black text-xs flex items-center justify-center border border-slate-200 dark:border-slate-700 flex-shrink-0">
-                            ${b.code}
+                            ${escapeHtml(b.code)}
                         </div>
                         <div>
                             <div class="font-extrabold text-slate-900 dark:text-white flex items-center space-x-2">
-                                <span>${b.name}</span>
+                                <span>${escapeHtml(b.name)}</span>
                                 ${isBest ? '<span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-500 text-white">THE BEST BOOTH</span>' : ''}
                                 ${isRunner ? '<span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-slate-600 text-white">RUNNER UP</span>' : ''}
                             </div>
-                            <span class="text-xs text-slate-500 dark:text-slate-400">${b.category || 'Kaizen Circle'}</span>
+                            <span class="text-xs text-slate-500 dark:text-slate-400">${escapeHtml(b.category || 'Kaizen Circle')}</span>
                         </div>
                     </div>
                 </td>
@@ -406,10 +439,19 @@
                     ${b.judges_evaluated_count > 0 ? `<span class="text-slate-400 font-mono">Min: <strong class="text-slate-700 dark:text-slate-300">${b.min_score}</strong> &bull; Max: <strong class="text-slate-700 dark:text-slate-300">${b.max_score}</strong></span>` : '<span class="text-slate-400">-</span>'}
                 </td>
                 <td class="py-4 px-5 text-center">
-                    <button type="button" onclick="showJudgeDetailModal(${b.id})"
-                        class="px-3 py-1.5 rounded-xl text-xs font-bold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 transition cursor-pointer">
-                        <i class="fa-solid fa-list-check mr-1"></i> Rincian Nilai
-                    </button>
+                    <div class="flex items-center justify-center space-x-1.5">
+                        <button type="button" onclick="showJudgeDetailModal(${b.id})"
+                            class="px-3 py-1.5 rounded-xl text-xs font-bold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 transition cursor-pointer">
+                            <i class="fa-solid fa-list-check mr-1"></i> Rincian Nilai
+                        </button>
+                        ${canReset && b.judges_evaluated_count > 0 ? `
+                            <button type="button" onclick="confirmResetBooth(${b.id}, '${escapeHtml(b.code)} - ${escapeHtml(b.name)}')"
+                                class="p-1.5 rounded-xl text-xs font-bold bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-500/20 border border-rose-200 dark:border-rose-500/30 transition cursor-pointer"
+                                title="Reset seluruh nilai booth ini">
+                                <i class="fa-solid fa-rotate-left"></i>
+                            </button>
+                        ` : ''}
+                    </div>
                 </td>
             </tr>
         `;
@@ -421,9 +463,25 @@
             const booth = cachedBoothsData.find(item => item.id == boothId);
             if (!booth) return;
 
+            currentModalBoothId = booth.id;
+            currentModalBoothName = `${booth.code} - ${booth.name}`;
+
             $('#modalDetailBoothTitle').text(`${booth.code} - ${booth.name}`);
             const $list = $('#modalDetailList');
             $list.empty();
+
+            // Populate Reset Booth Button in Modal Footer if Admin
+            if (canReset && booth.evaluations && booth.evaluations.length > 0) {
+                $('#modalResetBoothContainer').html(`
+                    <button type="button" onclick="confirmResetBooth(${booth.id}, '${escapeHtml(booth.code)} - ${escapeHtml(booth.name)}')"
+                        class="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-rose-50 hover:bg-rose-100 dark:bg-rose-500/15 dark:hover:bg-rose-500/25 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-500/30 transition flex items-center space-x-1.5 cursor-pointer">
+                        <i class="fa-solid fa-rotate-left"></i>
+                        <span>Reset Nilai Booth Ini</span>
+                    </button>
+                `);
+            } else {
+                $('#modalResetBoothContainer').empty();
+            }
 
             if (!booth.evaluations || booth.evaluations.length === 0) {
                 $list.html(`
@@ -441,10 +499,10 @@
                             const titleText = cs.description ? `${cs.name} - ${cs.description}` : cs.name;
                             const displayText = cs.description ? `${cs.description}` : cs.name;
                             criteriaHtml += `
-                                <div class="px-2 py-1.5 rounded-lg bg-white/80 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800 text-[10px] flex items-center justify-between gap-1" title="${titleText}">
+                                <div class="px-2 py-1.5 rounded-lg bg-white/80 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800 text-[10px] flex items-center justify-between gap-1" title="${escapeHtml(titleText)}">
                                     <div class="truncate">
-                                        <span class="font-bold text-slate-800 dark:text-slate-200 block truncate">${displayText}</span>
-                                        ${cs.description ? `<span class="text-[9px] text-slate-400 truncate block">${cs.name} (${cs.weight}%)</span>` : `<span class="text-[9px] text-slate-400">Bobot: ${cs.weight}%</span>`}
+                                        <span class="font-bold text-slate-800 dark:text-slate-200 block truncate">${escapeHtml(displayText)}</span>
+                                        ${cs.description ? `<span class="text-[9px] text-slate-400 truncate block">${escapeHtml(cs.name)} (${cs.weight}%)</span>` : `<span class="text-[9px] text-slate-400">Bobot: ${cs.weight}%</span>`}
                                     </div>
                                     <span class="font-black text-indigo-600 dark:text-indigo-400 font-mono text-xs flex-shrink-0">${cs.score}</span>
                                 </div>
@@ -458,21 +516,28 @@
                     <div class="flex items-center justify-between mb-1.5">
                         <div class="flex items-center space-x-2">
                             <span class="w-7 h-7 rounded-lg bg-indigo-600 text-white font-extrabold text-xs flex items-center justify-center">
-                                ${e.judge_name.charAt(0).toUpperCase()}
+                                ${escapeHtml(e.judge_name.charAt(0).toUpperCase())}
                             </span>
                             <div>
-                                <h5 class="text-xs font-extrabold text-slate-900 dark:text-white">${e.judge_name}</h5>
-                                <span class="text-[10px] text-slate-400">${e.judge_dept} &bull; ${e.evaluated_at}</span>
+                                <h5 class="text-xs font-extrabold text-slate-900 dark:text-white">${escapeHtml(e.judge_name)}</h5>
+                                <span class="text-[10px] text-slate-400">${escapeHtml(e.judge_dept)} &bull; ${escapeHtml(e.evaluated_at)}</span>
                             </div>
                         </div>
-                        <div class="text-right">
+                        <div class="flex items-center space-x-2">
                             <span class="px-2.5 py-1 rounded-xl text-xs font-black bg-emerald-500 text-white shadow-xs">
                                 ${Number(e.score).toFixed(2)}
                             </span>
+                            ${canReset ? `
+                                <button type="button" onclick="confirmResetEvaluation(${e.id}, '${escapeHtml(e.judge_name)}', '${escapeHtml(booth.name)}')"
+                                    class="p-1.5 rounded-lg text-rose-500 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-500/20 transition cursor-pointer"
+                                    title="Reset nilai dari juri ini">
+                                    <i class="fa-solid fa-trash-can text-xs"></i>
+                                </button>
+                            ` : ''}
                         </div>
                     </div>
                     ${criteriaHtml}
-                    ${e.notes ? `<div class="mt-2 text-xs italic text-slate-600 dark:text-slate-400 p-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800">"${e.notes}"</div>` : ''}
+                    ${e.notes ? `<div class="mt-2 text-xs italic text-slate-600 dark:text-slate-400 p-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800">"${escapeHtml(e.notes)}"</div>` : ''}
                 </div>
             `);
                 });
@@ -483,6 +548,135 @@
 
         function closeDetailModal() {
             $('#modalDetailBooth').addClass('hidden');
+            currentModalBoothId = null;
+            currentModalBoothName = '';
+        }
+
+        // 4. RESET ACTIONS (Permission: qcc_pool_admin)
+        function confirmResetEvaluation(evaluationId, judgeName, boothName) {
+            Swal.fire({
+                title: 'Reset Nilai Juri?',
+                html: `Apakah Anda yakin ingin mereset penilaian dari <b>${escapeHtml(judgeName)}</b> untuk booth <b>${escapeHtml(boothName)}</b>?<br><span class="text-rose-500 text-xs font-semibold mt-1.5 block">Juri tersebut dapat melakukan penilaian ulang kembali.</span>`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#e11d48',
+                cancelButtonColor: '#64748b',
+                confirmButtonText: '<i class="fa-solid fa-rotate-left mr-1"></i> Ya, Reset',
+                cancelButtonText: 'Batal',
+                showLoaderOnConfirm: true,
+                preConfirm: () => {
+                    return $.ajax({
+                        url: `/pool-qcc/admin/jury/evaluations/${evaluationId}`,
+                        type: 'DELETE',
+                        headers: {
+                            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                        },
+                        dataType: 'json'
+                    }).catch(error => {
+                        Swal.showValidationMessage(
+                            error.responseJSON?.message || 'Gagal mereset penilaian juri.'
+                        );
+                    });
+                },
+                allowOutsideClick: () => !Swal.isLoading()
+            }).then((result) => {
+                if (result.isConfirmed && result.value) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Berhasil di-reset!',
+                        text: result.value.message || 'Penilaian juri berhasil direset.',
+                        timer: 1500,
+                        showConfirmButton: false
+                    });
+                    loadRecapData(function() {
+                        if (currentModalBoothId) {
+                            showJudgeDetailModal(currentModalBoothId);
+                        }
+                    });
+                }
+            });
+        }
+
+        function confirmResetBooth(boothId, boothName) {
+            Swal.fire({
+                title: 'Reset Semua Nilai Booth?',
+                html: `Apakah Anda yakin ingin mereset <b>seluruh penilaian dewan juri</b> untuk booth <b>"${escapeHtml(boothName)}"</b>?<br><span class="text-rose-500 text-xs font-semibold mt-1.5 block">Semua juri yang pernah menilai booth ini harus menilai ulang dari awal.</span>`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#e11d48',
+                cancelButtonColor: '#64748b',
+                confirmButtonText: '<i class="fa-solid fa-rotate-left mr-1"></i> Ya, Reset Nilai Booth',
+                cancelButtonText: 'Batal',
+                showLoaderOnConfirm: true,
+                preConfirm: () => {
+                    return $.ajax({
+                        url: `/pool-qcc/admin/jury/booths/${boothId}/reset`,
+                        type: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                        },
+                        dataType: 'json'
+                    }).catch(error => {
+                        Swal.showValidationMessage(
+                            error.responseJSON?.message || 'Gagal mereset nilai booth.'
+                        );
+                    });
+                },
+                allowOutsideClick: () => !Swal.isLoading()
+            }).then((result) => {
+                if (result.isConfirmed && result.value) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Berhasil di-reset!',
+                        text: result.value.message || 'Penilaian booth berhasil direset.',
+                        timer: 1500,
+                        showConfirmButton: false
+                    });
+                    closeDetailModal();
+                    loadRecapData();
+                }
+            });
+        }
+
+        function confirmResetAllJuryEvaluations() {
+            Swal.fire({
+                title: 'RESET SEMUA NILAI JURI?',
+                html: `Perhatian: Aksi ini akan <b>menghapus seluruh hasil evaluasi & nilai</b> yang telah diberikan oleh seluruh Dewan Juri untuk semua booth!<br><span class="text-rose-500 text-xs font-black mt-2 block">Tindakan ini tidak dapat dibatalkan!</span>`,
+                icon: 'error',
+                showCancelButton: true,
+                confirmButtonColor: '#dc2626',
+                cancelButtonColor: '#64748b',
+                confirmButtonText: '<i class="fa-solid fa-triangle-exclamation mr-1"></i> Ya, Reset SEMUA Nilai',
+                cancelButtonText: 'Batal',
+                showLoaderOnConfirm: true,
+                preConfirm: () => {
+                    return $.ajax({
+                        url: "{{ route('pool-qcc.admin.jury.reset-all') }}",
+                        type: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                        },
+                        dataType: 'json'
+                    }).catch(error => {
+                        Swal.showValidationMessage(
+                            error.responseJSON?.message || 'Gagal mereset seluruh penilaian juri.'
+                        );
+                    });
+                },
+                allowOutsideClick: () => !Swal.isLoading()
+            }).then((result) => {
+                if (result.isConfirmed && result.value) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Semua Nilai Juri Direset!',
+                        text: result.value.message || 'Seluruh data penilaian juri berhasil direset.',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                    closeDetailModal();
+                    loadRecapData();
+                }
+            });
         }
 
         function toggleFullscreen() {

@@ -92,6 +92,11 @@ Route::group(['middleware' => ['auth', 'access_log', 'rules:qcc_pool']], functio
                 Route::delete('/participants/{id}', 'PoolQcc\PoolQccAdminController@destroyParticipant')->name('participants.destroy');
                 Route::get('/api/votes', 'PoolQcc\PoolQccAdminController@getVotesData')->name('api.votes');
                 Route::get('/votes', 'PoolQcc\PoolQccAdminController@votes')->name('votes');
+
+                // Reset Penilaian Dewan Juri
+                Route::delete('/jury/evaluations/{id}', 'PoolQcc\PoolQccJuryController@resetEvaluation')->name('jury.evaluations.destroy');
+                Route::post('/jury/booths/{boothId}/reset', 'PoolQcc\PoolQccJuryController@resetBoothEvaluations')->name('jury.booths.reset');
+                Route::post('/jury/reset-all', 'PoolQcc\PoolQccJuryController@resetAllEvaluations')->name('jury.reset-all');
             });
         });
     });

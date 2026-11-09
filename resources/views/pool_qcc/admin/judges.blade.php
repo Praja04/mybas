@@ -24,7 +24,7 @@
                     </span>
                 </h1>
                 <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
-                    Kelola Dewan Juri (penilai booth skala 0-100) serta Pimpinan / Manajemen (Factory Manager, Direktur)
+                    Kelola Dewan Juri (penilai booth skala 1-100) serta Pimpinan / Manajemen (Factory Manager, Direktur)
                     dengan bobot poin vote dinamis.
                 </p>
             </div>
@@ -78,7 +78,7 @@
                 <div>
                     <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block">Aturan Penilaian</span>
                     <span class="text-xs font-bold text-slate-700 dark:text-slate-300 block mt-0.5">Hanya 'Juri' yang
-                        menilai booth (0-100)</span>
+                        menilai booth (1-100)</span>
                 </div>
             </div>
         </div>
@@ -244,7 +244,7 @@
                         <option value="Direktur">Direktur (Khusus Vote Kuis)</option>
                     </select>
                     <span class="text-[11px] text-slate-400 mt-1 block">
-                        Hanya gelar <strong>Juri</strong> yang berhak memberikan penilaian evaluasi booth (0-100).
+                        Hanya gelar <strong>Juri</strong> yang berhak memberikan penilaian evaluasi booth (1-100).
                     </span>
                 </div>
 
@@ -350,7 +350,7 @@
                         <option value="Direktur">Direktur (Khusus Vote Kuis)</option>
                     </select>
                     <span class="text-[11px] text-slate-400 mt-1 block">
-                        Peran <strong>Juri</strong> dapat menilai booth 0-100. Peran lain hanya melakukan vote kuis.
+                        Peran <strong>Juri</strong> dapat menilai booth 1-100. Peran lain hanya melakukan vote kuis.
                     </span>
                 </div>
 
