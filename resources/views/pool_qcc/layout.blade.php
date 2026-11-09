@@ -227,12 +227,8 @@
                                     </div>
                                 </div>
                             @endif
-                                                <i class="fa-solid fa-list-check w-5 text-emerald-500 mr-2"></i> Kriteria Penilaian
-                                            </a>
-                                        </div>
-                                    </div>
-                                </div>
 
+                            @if ($hasAdminPerm)
                                 <!-- Admin Dropdown -->
                                 <div class="relative group" id="adminDropdownContainer">
                                     <a href="{{ route('pool-qcc.admin.dashboard') }}" id="adminDropdownBtn"
@@ -420,6 +416,7 @@
                         </div>
                     @endif
 
+                    @if ($hasAdminPerm)
                         <!-- SECTION 3: ADMIN MANAGEMENT -->
                         <div>
                             <span
