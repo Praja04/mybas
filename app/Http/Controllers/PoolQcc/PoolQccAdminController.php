@@ -645,6 +645,42 @@ class PoolQccAdminController extends Controller
         ]);
     }
 
+    /**
+     * Reset Seluruh Riwayat Vote & Nilai Peserta (Global Reset)
+     * Juga mereset total poin dan jumlah voters di seluruh booth ke 0
+     */
+    public function resetAllParticipantsVotes(Request $request)
+    {
+        $participantsCount = PoolParticipant::count();
+        $votesCount = PoolVote::count();
+
+        DB::transaction(function () {
+            // 1. Hapus seluruh data vote peserta
+            PoolVote::query()->delete();
+
+            // 2. Reset perolehan skor dan kuota vote seluruh peserta ke 0
+            PoolParticipant::query()->update([
+                'total_score' => 0,
+                'booths_voted_count' => 0,
+            ]);
+
+            // 3. Reset total poin dan total voters pada seluruh stand booth ke 0
+            PoolBooth::query()->update([
+                'total_points' => 0,
+                'total_voters' => 0,
+            ]);
+        });
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'status' => 'success',
+                'message' => "Seluruh nilai peserta ({$participantsCount} peserta, {$votesCount} riwayat vote) berhasil di-reset, dan poin/voter seluruh booth telah kembali ke 0!",
+            ]);
+        }
+
+        return redirect()->back()->with('success', "Seluruh nilai peserta berhasil di-reset dan poin booth kembali ke 0!");
+    }
+
     public function resetParticipantVotes(Request $request, $id)
     {
         $participant = PoolParticipant::findOrFail($id);
@@ -652,10 +688,14 @@ class PoolQccAdminController extends Controller
         DB::transaction(function () use ($participant) {
             $votes = PoolVote::where('participant_id', $participant->id)->get();
             foreach ($votes as $vote) {
-                if ($vote->is_correct && $vote->points_awarded > 0) {
-                    PoolBooth::where('id', $vote->booth_id)->decrement('total_points', $vote->points_awarded);
+                $booth = PoolBooth::find($vote->booth_id);
+                if ($booth) {
+                    $deductPoints = ($vote->is_correct && $vote->points_awarded > 0) ? $vote->points_awarded : 0;
+                    $booth->update([
+                        'total_points' => max(0, $booth->total_points - $deductPoints),
+                        'total_voters' => max(0, $booth->total_voters - 1),
+                    ]);
                 }
-                PoolBooth::where('id', $vote->booth_id)->decrement('total_voters', 1);
                 $vote->delete();
             }
 
@@ -668,7 +708,7 @@ class PoolQccAdminController extends Controller
         if ($request->ajax() || $request->wantsJson()) {
             return response()->json([
                 'status' => 'success',
-                'message' => "Riwayat vote peserta {$participant->name} berhasil di-reset!",
+                'message' => "Riwayat vote peserta {$participant->name} berhasil di-reset dan poin booth terkait telah disesuaikan!",
             ]);
         }
 
@@ -685,10 +725,14 @@ class PoolQccAdminController extends Controller
         DB::transaction(function () use ($participant) {
             $votes = PoolVote::where('participant_id', $participant->id)->get();
             foreach ($votes as $vote) {
-                if ($vote->is_correct && $vote->points_awarded > 0) {
-                    PoolBooth::where('id', $vote->booth_id)->decrement('total_points', $vote->points_awarded);
+                $booth = PoolBooth::find($vote->booth_id);
+                if ($booth) {
+                    $deductPoints = ($vote->is_correct && $vote->points_awarded > 0) ? $vote->points_awarded : 0;
+                    $booth->update([
+                        'total_points' => max(0, $booth->total_points - $deductPoints),
+                        'total_voters' => max(0, $booth->total_voters - 1),
+                    ]);
                 }
-                PoolBooth::where('id', $vote->booth_id)->decrement('total_voters', 1);
                 $vote->delete();
             }
 
@@ -698,7 +742,7 @@ class PoolQccAdminController extends Controller
         if ($request->ajax() || $request->wantsJson()) {
             return response()->json([
                 'status' => 'success',
-                'message' => "Data peserta {$participant->name} berhasil dihapus permanen!",
+                'message' => "Data peserta {$participant->name} berhasil dihapus permanen dan poin booth telah disesuaikan!",
             ]);
         }
 

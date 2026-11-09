@@ -19,7 +19,13 @@
                 <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Daftar seluruh peserta yang telah melakukan
                     tapping ID card RFID dan progres pooling {{ $totalBooths ?? 10 }} booth mereka.</p>
             </div>
-            <div class="mt-4 sm:mt-0 flex items-center space-x-3">
+            <div class="mt-4 sm:mt-0 flex flex-wrap items-center gap-2 sm:gap-3">
+                <button type="button" onclick="confirmResetAllParticipants()"
+                    class="px-4 py-2.5 rounded-xl text-sm font-bold bg-rose-50 hover:bg-rose-100 dark:bg-rose-500/10 dark:hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-500/30 transition flex items-center space-x-2 cursor-pointer shadow-sm"
+                    title="Reset seluruh nilai dan riwayat vote peserta, serta sinkronisasi poin booth">
+                    <i class="fa-solid fa-rotate-left text-xs"></i>
+                    <span>Reset Nilai Peserta</span>
+                </button>
                 <button type="button" onclick="openImportParticipantModal()"
                     class="px-4 py-2.5 rounded-xl text-sm font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-600/20 transition flex items-center space-x-2 cursor-pointer">
                     <i class="fa-solid fa-file-excel text-xs"></i>
@@ -452,6 +458,64 @@
                 </tr>
             `);
                     $('#participantsPagination').empty();
+                }
+            });
+        }
+
+        function confirmResetAllParticipants() {
+            Swal.fire({
+                title: 'RESET SEMUA NILAI PESERTA?',
+                html: `Perhatian: Aksi ini akan <b>mereset seluruh nilai, kuota vote, dan riwayat jawaban</b> dari seluruh peserta.<br><br>
+                <div class="p-3.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-xl text-left text-xs text-amber-800 dark:text-amber-200 leading-relaxed">
+                    <i class="fa-solid fa-circle-info mr-1 text-amber-600"></i>
+                    <strong>Dampak pada Booth:</strong> Seluruh poin perolehan kuis (<code>total_points</code>) dan jumlah pemilih (<code>total_voters</code>) pada setiap stand booth akan <b>otomatis kembali ke 0</b>.
+                </div>
+                <span class="text-rose-500 text-xs font-black mt-2.5 block">Tindakan ini tidak dapat dibatalkan!</span>`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc2626',
+                cancelButtonColor: '#64748b',
+                confirmButtonText: '<i class="fa-solid fa-rotate-left mr-1"></i> Ya, Reset SEMUA Nilai',
+                cancelButtonText: 'Batal',
+                reverseButtons: true,
+                showLoaderOnConfirm: true,
+                preConfirm: () => {
+                    return $.ajax({
+                        url: "{{ route('pool-qcc.admin.participants.reset-all') }}",
+                        type: 'POST',
+                        data: {
+                            _token: '{{ csrf_token() }}'
+                        },
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Accept': 'application/json'
+                        }
+                    }).catch(xhr => {
+                        Swal.showValidationMessage(xhr.responseJSON?.message ||
+                            'Gagal mereset semua nilai peserta.');
+                    });
+                },
+                allowOutsideClick: () => !Swal.isLoading(),
+                customClass: {
+                    popup: 'rounded-2xl dark:bg-slate-900 dark:text-white border border-slate-200 dark:border-slate-800',
+                    confirmButton: 'rounded-xl font-bold px-4 py-2 text-xs',
+                    cancelButton: 'rounded-xl font-bold px-4 py-2 text-xs'
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    loadParticipantsData(currentPage, currentSearch, currentStatus);
+
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Semua Nilai Direset!',
+                        text: result.value?.message ||
+                            'Seluruh nilai peserta & poin booth berhasil direset ke 0.',
+                        timer: 2000,
+                        showConfirmButton: false,
+                        customClass: {
+                            popup: 'rounded-2xl dark:bg-slate-900 dark:text-white border border-slate-200 dark:border-slate-800'
+                        }
+                    });
                 }
             });
         }
