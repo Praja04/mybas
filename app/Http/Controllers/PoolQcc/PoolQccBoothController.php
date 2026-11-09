@@ -806,6 +806,29 @@ class PoolQccBoothController extends Controller
             ->orderBy('updated_at', 'asc')
             ->get();
 
+        // Ambil data Tipe Karyawan dari hr_master_employee untuk matching pembobotan
+        $employeeTypeMap = [];
+        try {
+            $employees = DB::table('hr_master_employee')
+                ->select('NIK', 'Tipe Karyawan')
+                ->get();
+
+            foreach ($employees as $emp) {
+                $rawNik = trim((string) $emp->NIK);
+                $tipe = trim((string) ($emp->{'Tipe Karyawan'} ?? ''));
+                if ($rawNik !== '') {
+                    $employeeTypeMap[$rawNik] = $tipe;
+                    $unpadded = ltrim($rawNik, '0');
+                    if ($unpadded !== '') {
+                        $employeeTypeMap[$unpadded] = $tipe;
+                        $employeeTypeMap[str_pad($unpadded, 8, '0', STR_PAD_LEFT)] = $tipe;
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            Log::warning('Gagal memuat hr_master_employee untuk undian: ' . $e->getMessage());
+        }
+
         $rewardTiers = [
             'reward_1' => [
                 'id' => 'reward_1',
@@ -864,7 +887,7 @@ class PoolQccBoothController extends Controller
             ],
         ];
 
-        $rewardCandidates = collect($rewardTiers)->mapWithKeys(function ($tier, $key) {
+        $rewardCandidates = collect($rewardTiers)->mapWithKeys(function ($tier, $key) use ($employeeTypeMap) {
             return [
                 $key => [
                     'id' => $tier['id'],
@@ -875,12 +898,30 @@ class PoolQccBoothController extends Controller
                     'quota_winners' => $tier['quota_winners'],
                     'color' => $tier['color'],
                     'icon' => $tier['icon'],
-                    'candidates' => $tier['participants']->map(function ($p) {
+                    'candidates' => $tier['participants']->map(function ($p) use ($employeeTypeMap) {
+                        $nik = trim((string) ($p->nik ?? ''));
+                        $unpadded = ltrim($nik, '0');
+                        $padded8 = $unpadded !== '' ? str_pad($unpadded, 8, '0', STR_PAD_LEFT) : '';
+
+                        $tipeKaryawan = $employeeTypeMap[$nik]
+                            ?? ($employeeTypeMap[$unpadded]
+                            ?? ($employeeTypeMap[$padded8] ?? null));
+
+                        // Tipe selain Staff (Non Staff, Fortuna, KMJ, dsb) mendapat peluang/bobot lebih besar
+                        $isStaff = $tipeKaryawan ? (strcasecmp($tipeKaryawan, 'Staff') === 0) : false;
+                        $isNonStaff = $tipeKaryawan ? !$isStaff : false;
+
+                        // Bobot peluang menang: Non-Staff / Fortuna / KMJ = 4x lipat lebih besar dibanding Staff (weight 1)
+                        $weight = $isNonStaff ? 4 : 1;
+
                         return [
                             'id' => $p->id,
                             'name' => $p->name,
                             'nik' => $p->nik ?? '-',
                             'department' => $p->department ?? 'Umum',
+                            'employee_type' => $tipeKaryawan ?: ($isStaff ? 'Staff' : ''),
+                            'is_non_staff' => $isNonStaff,
+                            'weight' => $weight,
                             'total_score' => (int) $p->total_score,
                             'booths_voted_count' => (int) $p->booths_voted_count,
                         ];
