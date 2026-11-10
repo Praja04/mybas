@@ -919,8 +919,8 @@ class PoolQccBoothController extends Controller
                         $isStaff = $tipeKaryawan ? (strcasecmp($tipeKaryawan, 'Staff') === 0) : false;
                         $isNonStaff = $tipeKaryawan ? !$isStaff : false;
 
-                        // Bobot peluang menang: Non-Staff / Fortuna / KMJ = 4x lipat lebih besar dibanding Staff (weight 1)
-                        $weight = $isNonStaff ? 4 : 1;
+                        // Bobot peluang menang: Non-Staff / Fortuna / KMJ = 2x lipat lebih besar dibanding Staff (weight 1)
+                        $weight = $isNonStaff ? 2 : 1;
 
                         return [
                             'id' => $p->id,
