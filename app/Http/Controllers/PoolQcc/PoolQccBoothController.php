@@ -61,6 +61,7 @@ class PoolQccBoothController extends Controller
             'rfid' => 'nullable|string',
             'nik' => 'nullable|string',
             'name' => 'nullable|string',
+            'department' => 'nullable|string',
         ]);
 
         if ($validator->fails()) {
@@ -86,6 +87,7 @@ class PoolQccBoothController extends Controller
         $manualRfid = trim((string)$request->rfid);
         $manualNik = trim((string)($request->nik ?: $request->rfid));
         $manualName = trim((string)$request->name);
+        $manualDept = trim((string)$request->department);
 
         if ($isManual) {
             if (empty($manualNik)) {
@@ -98,6 +100,12 @@ class PoolQccBoothController extends Controller
                 return response()->json([
                     'status' => 'error',
                     'message' => 'Nama lengkap peserta wajib diisi untuk input manual.',
+                ], 422);
+            }
+            if (empty($manualDept)) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Departemen peserta wajib dipilih.',
                 ], 422);
             }
         } else {
@@ -134,8 +142,8 @@ class PoolQccBoothController extends Controller
 
         if ($isManual) {
             // Mode Input Manual: Simpan HANYA di database lokal PoolParticipant (jangan ke DB pusat 192.168)
-            // Dept default 'Peserta QCC'
             $rfidToSave = !empty($manualRfid) ? $manualRfid : $manualNik;
+            $deptToSave = !empty($manualDept) ? $manualDept : 'Peserta QCC';
 
             if (!$participant) {
                 $participant = PoolParticipant::where('nik', $manualNik)
@@ -148,7 +156,7 @@ class PoolQccBoothController extends Controller
                     'rfid' => $rfidToSave,
                     'nik' => $manualNik,
                     'name' => $manualName,
-                    'department' => 'Peserta QCC',
+                    'department' => $deptToSave,
                     'photo' => null,
                     'total_score' => 0,
                     'booths_voted_count' => 0,
@@ -157,7 +165,7 @@ class PoolQccBoothController extends Controller
             } else {
                 $updateData = [
                     'name' => $manualName ?: $participant->name,
-                    'department' => $participant->department ?: 'Peserta QCC',
+                    'department' => $deptToSave ?: ($participant->department ?: 'Peserta QCC'),
                     'last_activity_at' => Carbon::now(),
                 ];
                 if (!empty($manualRfid)) {
