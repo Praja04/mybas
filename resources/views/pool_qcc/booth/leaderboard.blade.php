@@ -7,8 +7,8 @@
 @section('styles')
     <style>
         /* ========================================================
-                                                                                   CASUAL 3D MOBILE GAME THEME (Royal Match / Arcade Style)
-                                                                                   ======================================================== */
+                                                                                       CASUAL 3D MOBILE GAME THEME (Royal Match / Arcade Style)
+                                                                                       ======================================================== */
         @keyframes floatSlow {
 
             0%,
@@ -142,10 +142,13 @@
         /* RACE TAKEOVER / MENYALIP ANIMATION STYLES                */
         /* ======================================================== */
         @keyframes flameAura {
-            0%, 100% {
+
+            0%,
+            100% {
                 box-shadow: 0 0 25px 6px rgba(245, 158, 11, 0.85), 0 0 50px 12px rgba(239, 68, 68, 0.4), 0 10px 30px rgba(0, 0, 0, 0.5);
                 border-color: #fbbf24;
             }
+
             50% {
                 box-shadow: 0 0 40px 10px rgba(251, 191, 36, 1), 0 0 75px 20px rgba(249, 115, 22, 0.65), 0 12px 35px rgba(0, 0, 0, 0.6);
                 border-color: #f97316;
@@ -176,12 +179,29 @@
 
         /* Screen Shake effect on takeover dock */
         @keyframes screenRumble {
-            0% { transform: translate(0, 0); }
-            20% { transform: translate(-3px, 2px); }
-            40% { transform: translate(3px, -2px); }
-            60% { transform: translate(-2px, -1px); }
-            80% { transform: translate(2px, 1px); }
-            100% { transform: translate(0, 0); }
+            0% {
+                transform: translate(0, 0);
+            }
+
+            20% {
+                transform: translate(-3px, 2px);
+            }
+
+            40% {
+                transform: translate(3px, -2px);
+            }
+
+            60% {
+                transform: translate(-2px, -1px);
+            }
+
+            80% {
+                transform: translate(2px, 1px);
+            }
+
+            100% {
+                transform: translate(0, 0);
+            }
         }
 
         .anim-screen-shake {
@@ -194,14 +214,17 @@
                 transform: scale(0.6) rotate(-15deg);
                 opacity: 0.5;
             }
+
             50% {
                 transform: scale(1.4) rotate(8deg);
                 background-color: #f59e0b;
                 color: #000;
             }
+
             75% {
                 transform: scale(0.95) rotate(-3deg);
             }
+
             100% {
                 transform: scale(1) rotate(0deg);
                 opacity: 1;
@@ -344,20 +367,20 @@
                 </a>
 
                 <!-- Simulasi Tes Takeover Booth -->
-                <button type="button" onclick="testTakeoverSimulation('booth')"
+                {{-- <button type="button" onclick="testTakeoverSimulation('booth')"
                     class="p-2 sm:px-3 sm:py-1.5 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-400 to-amber-600 hover:from-amber-400 hover:to-orange-300 text-slate-950 font-black text-xs border-2 border-amber-700 game-btn-3d flex items-center space-x-1.5 cursor-pointer shadow-md"
                     title="Simulasi Efek Takeover Peringkat Stand Booth">
                     <i class="fa-solid fa-store text-amber-950"></i>
                     <span class="hidden sm:inline text-[11px]">Tes Booth</span>
-                </button>
+                </button> --}}
 
                 <!-- Simulasi Tes Takeover Peserta -->
-                <button type="button" onclick="testTakeoverSimulation('participant')"
+                {{-- <button type="button" onclick="testTakeoverSimulation('participant')"
                     class="p-2 sm:px-3 sm:py-1.5 rounded-2xl bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-400 hover:to-pink-400 text-white font-black text-xs border-2 border-rose-700 game-btn-3d flex items-center space-x-1.5 cursor-pointer shadow-md"
                     title="Simulasi Efek Takeover Peringkat Peserta">
                     <i class="fa-solid fa-bolt text-yellow-300"></i>
                     <span class="hidden sm:inline text-[11px]">Tes Peserta</span>
-                </button>
+                </button> --}}
             </div>
 
             <!-- TENGAH: SIGNBOARD JUDUR UTAMA -->
@@ -892,7 +915,10 @@
                             spread: 55,
                             startVelocity: 18,
                             ticks: 45,
-                            origin: { x: posX, y: posY },
+                            origin: {
+                                x: posX,
+                                y: posY
+                            },
                             colors: ['#fbbf24', '#f59e0b', '#ef4444', '#ffffff'],
                             zIndex: 999999
                         });
@@ -935,7 +961,9 @@
                         }).removeClass('takeover-overtaken-active');
 
                         // Transform badge to celebratory TAKEOVER
-                        $turboBadge.html('🔥 TAKEOVER!').removeClass('anim-nitro-pulse').addClass('bg-gradient-to-r from-yellow-300 via-amber-400 to-orange-500 border-amber-300 shadow-xl');
+                        $turboBadge.html('🔥 TAKEOVER!').removeClass('anim-nitro-pulse').addClass(
+                            'bg-gradient-to-r from-yellow-300 via-amber-400 to-orange-500 border-amber-300 shadow-xl'
+                            );
                         setTimeout(() => {
                             $turboBadge.fadeOut(500, function() {
                                 $(this).remove();
@@ -971,8 +999,10 @@
                         const pRank1 = $overtaker.attr('data-participant-rank');
                         const pRank2 = $overtaken.attr('data-participant-rank');
                         if (pRank1 !== undefined && pRank2 !== undefined) {
-                            $overtaker.attr('data-participant-rank', pRank2).data('participant-rank', pRank2);
-                            $overtaken.attr('data-participant-rank', pRank1).data('participant-rank', pRank1);
+                            $overtaker.attr('data-participant-rank', pRank2).data(
+                                'participant-rank', pRank2);
+                            $overtaken.attr('data-participant-rank', pRank1).data(
+                                'participant-rank', pRank1);
                         }
 
                         // Victory confetti celebration
@@ -1058,7 +1088,8 @@
             let isBooth = (targetType === 'booth');
 
             if (isBooth) {
-                const $boothListCards = $('[data-scroll-key="booth-list"] .infinite-scroll-content').children('[data-booth-id]:not(.infinite-clone-item)');
+                const $boothListCards = $('[data-scroll-key="booth-list"] .infinite-scroll-content').children(
+                    '[data-booth-id]:not(.infinite-clone-item)');
                 if ($boothListCards.length >= 2) {
                     $cards = $boothListCards;
                 } else {
@@ -1088,7 +1119,8 @@
                         }
                     });
                 } else {
-                    const $boothListCards = $('[data-scroll-key="booth-list"] .infinite-scroll-content').children('[data-booth-id]:not(.infinite-clone-item)');
+                    const $boothListCards = $('[data-scroll-key="booth-list"] .infinite-scroll-content').children(
+                        '[data-booth-id]:not(.infinite-clone-item)');
                     if ($boothListCards.length >= 2) {
                         $cards = $boothListCards;
                         isBooth = true;
