@@ -1386,7 +1386,7 @@
 
         // Weighted Random Picker:
         // Gives candidates with type other than Staff (Non Staff, Fortuna, KMJ, etc.)
-        // a significantly higher probability of winning (weight 4x vs 1x for Staff).
+        // a higher probability of winning (weight 2x vs 1x for Staff).
         function pickWeightedWinner(candidates) {
             if (!candidates || candidates.length === 0) return null;
             let totalWeight = 0;
