@@ -196,6 +196,17 @@
                                                 data-id="{{ $sp->id }}" title="Ajukan Pembatalan (Cancel SP)">
                                                 <i class="ri-ban-line me-1"></i> Ajukan Cancel
                                             </button>
+                                            <a href="{{ route('sp_pelanggaran.export_sp_pdf', $sp->id) }}"
+                                                class="btn btn-sm btn-outline-danger py-1 px-2 text-nowrap"
+                                                title="Lihat / Download Surat Peringatan Resmi (PDF)" target="_blank">
+                                                <i class="ri-file-pdf-line me-1"></i> PDF
+                                            </a>
+                                        @elseif($isIrRole || $isAdmin)
+                                            <a href="{{ route('sp_pelanggaran.export_sp_pdf', $sp->id) }}"
+                                                class="btn btn-sm btn-outline-secondary py-1 px-2 text-nowrap"
+                                                title="Preview Draf PDF" target="_blank">
+                                                <i class="ri-file-pdf-line me-1"></i> Preview PDF
+                                            </a>
                                         @endif
 
                                         <button class="btn btn-sm btn-outline-primary btnDetailSp py-1 px-2 text-nowrap"
@@ -489,6 +500,11 @@
                             `<a href="/${sp.file_konseling}" target="_blank" class="btn btn-sm btn-success text-white fw-bold"><i class="ri-file-pdf-line me-1"></i> PDF Hasil Konseling</a>` :
                             `<span class="text-muted small"><i class="ri-close-circle-line me-1"></i> Belum ada file konseling</span>`;
 
+                        let isApproved = sp.current_status === 'APPROVED' || sp.nomor_sp_generated;
+                        let lampiranOfficialPdf = isApproved ?
+                            `<a href="/sp-pelanggaran/${sp.id}/export-pdf" target="_blank" class="btn btn-sm btn-danger text-white fw-bold"><i class="ri-file-pdf-line me-1"></i> Buka Surat Peringatan (PDF)</a>` :
+                            `<a href="/sp-pelanggaran/${sp.id}/export-pdf" target="_blank" class="btn btn-sm btn-outline-secondary fw-bold"><i class="ri-file-pdf-line me-1"></i> Preview Draf PDF</a>`;
+
                         let html = `
                     <div class="row mb-3">
                         <div class="col-md-6">
@@ -516,24 +532,30 @@
                         <p class="p-2 bg-light rounded">${sp.alasan || '-'}</p>
                     </div>
                     <div class="mb-3">
-                        <label class="fw-bold d-block mb-2"><i class="ri-attachment-2 me-1"></i> File Bukti & Dokumen (Pelanggaran, Pembatalan & Konseling):</label>
+                        <label class="fw-bold d-block mb-2"><i class="ri-attachment-2 me-1"></i> File Bukti & Dokumen (Pelanggaran, Pembatalan, Konseling & Surat SP):</label>
                         <div class="row g-2">
-                            <div class="col-md-4">
-                                <div class="p-2 border rounded bg-light">
+                            <div class="col-md-3">
+                                <div class="p-2 border rounded bg-light h-100">
                                      <strong class="d-block small text-primary mb-1"><i class="ri-file-text-line me-1"></i> 1. Bukti Pelanggaran:</strong>
                                     ${lampiranPelanggaran}
                                 </div>
                             </div>
-                            <div class="col-md-4">
-                                <div class="p-2 border rounded bg-light">
+                            <div class="col-md-3">
+                                <div class="p-2 border rounded bg-light h-100">
                                     <strong class="d-block small text-dark mb-1"><i class="ri-file-warning-line me-1 text-warning"></i> 2. Bukti Pembatalan:</strong>
                                     ${lampiranCancel}
                                 </div>
                             </div>
-                            <div class="col-md-4">
-                                <div class="p-2 border rounded bg-light">
-                                    <strong class="d-block small text-success mb-1"><i class="ri-file-certificate-line me-1"></i> 3. PDF Hasil Konseling:</strong>
+                            <div class="col-md-3">
+                                <div class="p-2 border rounded bg-light h-100">
+                                    <strong class="d-block small text-success mb-1"><i class="ri-file-certificate-line me-1"></i> 3. Hasil Konseling:</strong>
                                     ${lampiranKonseling}
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="p-2 border rounded bg-light h-100">
+                                    <strong class="d-block small text-danger mb-1"><i class="ri-file-pdf-line me-1"></i> 4. Surat SP Resmi:</strong>
+                                    ${lampiranOfficialPdf}
                                 </div>
                             </div>
                         </div>

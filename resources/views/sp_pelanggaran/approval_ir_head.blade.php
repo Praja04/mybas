@@ -346,18 +346,26 @@ $(document).ready(function() {
                     ? '<a href="/' + data.lampiran_cancel + '" target="_blank" class="btn btn-sm btn-outline-warning text-dark fw-bold"><i class="ri-file-download-line me-1"></i> Bukti Pembatalan (Saat Cancel SP)</a>'
                     : '<span class="text-muted small"><i class="ri-close-circle-line me-1"></i> Tidak ada lampiran pembatalan</span>';
 
+                let lampiranOfficialPdf = `<a href="/sp-pelanggaran/${data.id}/export-pdf" target="_blank" class="btn btn-sm btn-danger text-white fw-bold"><i class="ri-file-pdf-line me-1"></i> Preview Dokumen SP (PDF)</a>`;
+
                 let lampiranHtml = `
                     <div class="row g-2">
-                        <div class="col-md-6">
-                            <div class="p-2 border rounded bg-light">
-                                <strong class="d-block small text-primary mb-1"><i class="ri-file-text-line me-1"></i> 1. Lampiran Bukti Pelanggaran:</strong>
+                        <div class="col-md-4">
+                            <div class="p-2 border rounded bg-light h-100">
+                                <strong class="d-block small text-primary mb-1"><i class="ri-file-text-line me-1"></i> 1. Bukti Pelanggaran:</strong>
                                 ${lampiranPelanggaran}
                             </div>
                         </div>
-                        <div class="col-md-6">
-                            <div class="p-2 border rounded bg-light">
-                                <strong class="d-block small text-dark mb-1"><i class="ri-file-warning-line me-1 text-warning"></i> 2. Lampiran Bukti Pembatalan:</strong>
+                        <div class="col-md-4">
+                            <div class="p-2 border rounded bg-light h-100">
+                                <strong class="d-block small text-dark mb-1"><i class="ri-file-warning-line me-1 text-warning"></i> 2. Bukti Pembatalan:</strong>
                                 ${lampiranCancel}
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="p-2 border rounded bg-light h-100">
+                                <strong class="d-block small text-danger mb-1"><i class="ri-file-pdf-line me-1"></i> 3. Surat SP Resmi:</strong>
+                                ${lampiranOfficialPdf}
                             </div>
                         </div>
                     </div>

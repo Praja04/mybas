@@ -1036,8 +1036,13 @@ class SpPelanggaranController extends Controller
         $sp = SpPelanggaran::with(['employee', 'deptHead', 'irStaff', 'dates', 'approvalLogs'])
             ->findOrFail($id);
 
-        // Hanya SP yang sudah APPROVED yang bisa di-download PDF-nya
-        if ($sp->current_status !== SpPelanggaran::STATUS_APPROVED) {
+        $permissions = view()->shared('permissions') ?: (session('permissions') ?: []);
+        $isIrOrAdmin = in_array('sp_pelanggaran_ir_staff', $permissions) ||
+                       in_array('sp_pelanggaran_ir_head', $permissions) ||
+                       in_array('sp_pelanggaran_admin', $permissions);
+
+        // Hanya SP yang sudah APPROVED yang bisa diakses (kecuali IR Staff / IR Head / Admin yang boleh preview draf/pending)
+        if ($sp->current_status !== SpPelanggaran::STATUS_APPROVED && !$isIrOrAdmin) {
             if (request()->ajax() || request()->wantsJson()) {
                 return response()->json([
                     'status'  => 'error',
@@ -1054,10 +1059,14 @@ class SpPelanggaranController extends Controller
             $pdf = \PDF::loadHTML($htmlContent);
             $pdf->setPaper('a4', 'portrait');
 
-            $spNum = $sp->nomor_sp_generated ?: 'DRAFT';
+            $spNum = $sp->nomor_sp_generated ?: 'DRAFT_' . $sp->id;
             $pdfFileName = 'Surat_Peringatan_' . str_replace(['/', '\\', ' '], '_', $spNum) . '.pdf';
 
-            return $pdf->download($pdfFileName);
+            // Stream jika dibuka langsung di browser (preview), atau download jika dipanggil dengan parameter ?download=1
+            if (request()->has('download')) {
+                return $pdf->download($pdfFileName);
+            }
+            return $pdf->stream($pdfFileName);
         } catch (\Exception $e) {
             \Log::error('Export SP PDF Error ID #' . $id . ': ' . $e->getMessage());
             if (request()->ajax() || request()->wantsJson()) {
