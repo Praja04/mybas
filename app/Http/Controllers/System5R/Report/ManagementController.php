@@ -92,7 +92,7 @@ class ManagementController extends Controller
                             'id_group'   => $g->id_group,
                             'id_periode' => $p->id_periode,
                             'status'     => 'approved'
-                        ])->first();
+                        ])->orderByDesc('id_jawaban_group')->first();
 
                         $g->totalNilai = 0;
                         $g->nilaiAkhir = 0;
@@ -140,7 +140,15 @@ class ManagementController extends Controller
                             : 1.00;
 
                         $p->nilaiAkhir = round(($nilaiGroupSum + 28) * $bobot, 2);
+                        $p->bobot = $bobot;
                     }
+
+                    $p->juri = $groups
+                        ->pluck('submit_by')
+                        ->filter()
+                        ->unique()
+                        ->values()
+                        ->toArray();
 
                     $dept->periode = collect([$p]);
                     $dept->__total = round($p->nilaiAkhir ?? 0, 2);

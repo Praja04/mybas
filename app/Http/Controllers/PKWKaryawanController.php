@@ -37,42 +37,126 @@ class PKWKaryawanController extends Controller
 
     public function uploadSecureAccess(Request $request)
     {
-        // http://localhost/newpas/images/foto/
-        $karyawan = PKWKaryawan::find($request->id);
-        $nik = $karyawan->nik;
-        $foto_name = $karyawan->foto_diri;
+        $t0 = microtime(true);
+        \Log::info("=== [uploadSecureAccess] START (ID: {$request->id}) ===");
 
-        $url = 'http://172.21.5.105/images/foto/' . $foto_name;
-        $image = file_get_contents($url);
-        // return $url;
-        // $image = $request->file('image');
-        // $contents = $image->openFile()->fread($image->getSize());
+        try {
+            $karyawan = PKWKaryawan::find($request->id);
+            if (!$karyawan) {
+                return response()->json([
+                    'success' => 0,
+                    'message' => 'Data karyawan tidak ditemukan.'
+                ], 404);
+            }
 
-        $data = DB::connection('192.168.178.44-admin')
-            ->table('MSIDCARD')
-            ->select('EMPCARDID')
-            ->where(DB::raw('CAST(BARCODE AS SIGNED)'), $nik)
-            // ->where('STATUS', 'X')
-            // ->where('RFID', '899976977')
-            ->orderBy('CREATEDON', 'desc')
-            ->first();
+            $nik = $karyawan->nik;
+            $foto_name = $karyawan->foto_diri;
 
-        $user = DB::connection('192.168.178.44-admin')
-            ->table('MSIDCARD')
-            ->where('EMPCARDID', $data->EMPCARDID)
-            ->update([
-                'FOTOTYPE' => 'image/jpg',
-                'FOTOBLOB' => $image
+            if (empty($foto_name)) {
+                return response()->json([
+                    'success' => 0,
+                    'message' => 'Foto karyawan belum ada.'
+                ], 422);
+            }
+
+            $image = null;
+            $localPath = public_path('images/foto/' . $foto_name);
+
+            \Log::info("=== [uploadSecureAccess] Cek foto local: {$localPath} ===");
+
+            if (file_exists($localPath)) {
+                $image = file_get_contents($localPath);
+                \Log::info("=== [uploadSecureAccess] Foto lokal ditemukan (" . strlen($image) . " bytes) ===");
+            } else {
+                \Log::info("=== [uploadSecureAccess] Foto lokal TIDAK ADA, coba fallback 172.21.5.105 ===");
+                // Fallback ke server 172.21.5.105 dengan timeout ketat agar tidak hang
+                $url = 'http://172.21.5.105/images/foto/' . $foto_name;
+                $ch = curl_init();
+                curl_setopt($ch, CURLOPT_URL, $url);
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+                curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 3);
+                curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+                $image = curl_exec($ch);
+                $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                curl_close($ch);
+
+                if ($httpCode !== 200 || empty($image)) {
+                    $image = null;
+                }
+                \Log::info("=== [uploadSecureAccess] Fallback HTTP code: {$httpCode}, size: " . strlen($image ?? '') . " bytes ===");
+            }
+
+            if (!$image) {
+                return response()->json([
+                    'success' => 0,
+                    'message' => 'File foto karyawan tidak ditemukan di server lokal maupun server 172.21.5.105.'
+                ], 404);
+            }
+
+            \Log::info("=== [uploadSecureAccess] Query DB SMU untuk NIK: {$nik} ===");
+
+            $data = DB::connection('smu')
+                ->table('MSIDCARD')
+                ->select('EMPCARDID')
+                ->where('BARCODE', (string) $nik)
+                ->orderBy('CREATEDON', 'desc')
+                ->first();
+
+            if (!$data) {
+                $data = DB::connection('smu')
+                    ->table('MSIDCARD')
+                    ->select('EMPCARDID')
+                    ->where('NIK', (string) $nik)
+                    ->orderBy('CREATEDON', 'desc')
+                    ->first();
+            }
+
+            \Log::info("=== [uploadSecureAccess] Query DB SMU selesai, EMPCARDID: " . ($data->EMPCARDID ?? 'null') . " ===");
+
+            if (!$data) {
+                return response()->json([
+                    'success' => 0,
+                    'message' => 'Data NIK ' . $nik . ' tidak ditemukan di database Secure Access (MSIDCARD).'
+                ], 404);
+            }
+
+            \Log::info("=== [uploadSecureAccess] Update FOTOBLOB ke MSIDCARD (EMPCARDID: {$data->EMPCARDID}, size: " . strlen($image) . " bytes)... ===");
+
+            try {
+                DB::connection('smu')->statement("SET innodb_lock_wait_timeout = 10");
+            } catch (\Throwable $e) {
+                // ignore
+            }
+
+            $pdo = DB::connection('smu')->getPdo();
+            $stmt = $pdo->prepare("UPDATE MSIDCARD SET FOTOTYPE = ?, FOTOBLOB = ? WHERE EMPCARDID = ?");
+            $fototype = 'image/jpg';
+            $empcardid = (int) $data->EMPCARDID;
+            $stmt->bindParam(1, $fototype, \PDO::PARAM_STR);
+            $stmt->bindParam(2, $image, \PDO::PARAM_LOB);
+            $stmt->bindParam(3, $empcardid, \PDO::PARAM_INT);
+            $stmt->execute();
+
+            \Log::info("=== [uploadSecureAccess] Update FOTOBLOB selesai ===");
+
+            $karyawan->upload_secure_access = 'sudah';
+            $karyawan->upload_secure_access_time = date('Y-m-d H:i:s');
+            $karyawan->save();
+
+            $elapsed = round(microtime(true) - $t0, 2);
+            \Log::info("=== [uploadSecureAccess] SELESAI SUKSES dalam {$elapsed} detik ===");
+
+            return response()->json([
+                'success' => 1,
+                'message' => "Upload image to secure access succeed ({$elapsed}s)"
             ]);
-
-        $karyawan->upload_secure_access = 'sudah';
-        $karyawan->upload_secure_access_time = date('Y-m-d H:i:s');
-        $karyawan->save();
-
-        return response()->json([
-            'success' => 1,
-            'message' => 'Upload image to secure access succeed'
-        ]);
+        } catch (\Throwable $th) {
+            \Log::error("=== [uploadSecureAccess] ERROR: " . $th->getMessage() . " ===");
+            return response()->json([
+                'success' => 0,
+                'message' => 'Gagal upload ke secure access: ' . $th->getMessage()
+            ], 500);
+        }
     }
 
     public function exportPayroll($ids)
@@ -186,34 +270,46 @@ class PKWKaryawanController extends Controller
     public function uploadImage(Request $request)
     {
         $karyawan = PKWKaryawan::find($request->id_user);
-        // dd($request->all());
+        if (!$karyawan) {
+            return response()->json(['success' => 0, 'message' => 'Data karyawan tidak ditemukan.'], 404);
+        }
+
+        $pathFoto = public_path('images/foto');
+        $pathKtp  = public_path('images/ktp');
+        $pathNpwp = public_path('images/npwp');
+        $pathKk   = public_path('images/kk');
+
+        if (!file_exists($pathFoto)) mkdir($pathFoto, 0755, true);
+        if (!file_exists($pathKtp))  mkdir($pathKtp, 0755, true);
+        if (!file_exists($pathNpwp)) mkdir($pathNpwp, 0755, true);
+        if (!file_exists($pathKk))   mkdir($pathKk, 0755, true);
 
         if ($request->file('file_foto')) {
             $foto = $request->file('file_foto');
             $foto_name = 'foto-' . time() . uniqid() . '.jpg';
             Image::make($foto)->resize(null, 1000, function ($constraint) {
                 $constraint->aspectRatio();
-            })->save('images/foto/' . $foto_name);
+            })->save($pathFoto . '/' . $foto_name);
             $karyawan->foto_diri = $foto_name;
         }
         if ($request->file('file_ktp')) {
             $ktp = $request->file('file_ktp');
             $ktp_name = 'ktp-' . time() . uniqid() . '.jpg';
-            Image::make($ktp)->save('images/ktp/' . $ktp_name);
+            Image::make($ktp)->save($pathKtp . '/' . $ktp_name);
             $karyawan->foto_ktp = $ktp_name;
         }
 
         if ($request->file('file_npwp')) {
             $npwp = $request->file('file_npwp');
             $npwp_name = 'npwp-' . time() . uniqid() . '.jpg';
-            Image::make($npwp)->save('images/npwp/' . $npwp_name);
+            Image::make($npwp)->save($pathNpwp . '/' . $npwp_name);
             $karyawan->foto_npwp = $npwp_name;
         }
 
         if ($request->file('file_kk')) {
             $kk = $request->file('file_kk');
             $kk_name = 'kk-' . time() . uniqid() . '.jpg';
-            Image::make($kk)->save('images/kk/' . $kk_name);
+            Image::make($kk)->save($pathKk . '/' . $kk_name);
             $karyawan->foto_kk = $kk_name;
         }
 
@@ -224,6 +320,16 @@ class PKWKaryawanController extends Controller
 
     public function uploadImages(Request $request)
     {
+        $pathFoto = public_path('images/foto');
+        $pathKtp  = public_path('images/ktp');
+        $pathNpwp = public_path('images/npwp');
+        $pathKk   = public_path('images/kk');
+
+        if (!file_exists($pathFoto)) mkdir($pathFoto, 0755, true);
+        if (!file_exists($pathKtp))  mkdir($pathKtp, 0755, true);
+        if (!file_exists($pathNpwp)) mkdir($pathNpwp, 0755, true);
+        if (!file_exists($pathKk))   mkdir($pathKk, 0755, true);
+
         $array = [];
         $employees = Excel::toArray(new PKWEmployeeImport, $request->file('file'));
         foreach ($employees[0] as $key => $employee) {
@@ -247,28 +353,28 @@ class PKWKaryawanController extends Controller
                                 $foto_name = 'foto-' . time() . uniqid() . '.jpg';
                                 Image::make($foto_url)->resize(null, 1000, function ($constraint) {
                                     $constraint->aspectRatio();
-                                })->save('images/foto/' . $foto_name);
+                                })->save($pathFoto . '/' . $foto_name);
                             } else {
                                 $foto_name = '';
                             }
 
                             if ($ktp_url != '') {
                                 $ktp_name = 'ktp-' . time() . uniqid() . '.jpg';
-                                Image::make($ktp_url)->save('images/ktp/' . $ktp_name);
+                                Image::make($ktp_url)->save($pathKtp . '/' . $ktp_name);
                             } else {
                                 $ktp_name = '';
                             }
 
                             if ($npwp_url != '') {
                                 $npwp_name = 'npwp-' . time() . uniqid() . '.jpg';
-                                Image::make($npwp_url)->save('images/npwp/' . $npwp_name);
+                                Image::make($npwp_url)->save($pathNpwp . '/' . $npwp_name);
                             } else {
                                 $npwp_name = '';
                             }
 
                             if ($kk_url != '') {
                                 $kk_name = 'kk-' . time() . uniqid() . '.jpg';
-                                Image::make($kk_url)->save('images/kk/' . $kk_name);
+                                Image::make($kk_url)->save($pathKk . '/' . $kk_name);
                             } else {
                                 $kk_name = '';
                             }
