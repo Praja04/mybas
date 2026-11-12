@@ -2606,10 +2606,25 @@ class SpPelanggaranController extends Controller
             }
         }
 
-        // 2. Cari user berdasarkan departemen jika ada di database
+        // 2. Cari user di departemen yang terdaftar aktif di sp_digital_signatures sebagai dept_head
         $cleanKode = strtoupper(trim($kodeDept));
         $deptObj = DB::table('departments')->whereRaw('UPPER(TRIM(name)) = ?', [$cleanKode])->first();
         if ($deptObj) {
+            $userWithSign = User::where('dept_id', $deptObj->id)
+                ->whereIn('id', function($q) {
+                    $q->select('user_id')->from('sp_digital_signatures')->where('role', 'dept_head')->where('is_active', true);
+                })
+                ->whereNotNull('email')->where('email', '!=', '')
+                ->first();
+
+            if ($userWithSign) {
+                if ($hardcodedEmail) {
+                    $userWithSign->email = $hardcodedEmail;
+                }
+                return $userWithSign;
+            }
+
+            // Fallback: user mana pun di departemen jika tidak ada TTD digital terdaftar
             $user = User::where('dept_id', $deptObj->id)
                 ->whereNotNull('email')->where('email', '!=', '')
                 ->first();

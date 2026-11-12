@@ -29,7 +29,7 @@ return [
         'ITE' => env('SP_DH_EMAIL_ITE', 'edy.santoso@pt-bas-id.com'),
         'PRD' => env('SP_DH_EMAIL_PRD', 'indra.prasasti2@pt-bas-id.com'),
         'QCB' => env('SP_DH_EMAIL_QCB', 'sriwahyuningsih.ongkokusumo@pt-bas-id.com'),
-        'WRH' => env('SP_DH_EMAIL_WRH', 'endro.juniarto2@pt-bas-id.com'),
+        'WRH' => env('SP_DH_EMAIL_WRH', 'endro.juniarto@pt-pas-id.com'),
         'GA'  => env('SP_DH_EMAIL_GA',  'yongki.yeremia@pt-pas-id.com'),
         'HSE' => env('SP_DH_EMAIL_HSE', 'sutopo.sejati@pt-bas-id.com'),
         'XPE' => env('SP_DH_EMAIL_XPE', 'linawati.l@pt-pas-id.com'),
