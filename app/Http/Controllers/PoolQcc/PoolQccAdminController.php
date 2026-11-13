@@ -16,6 +16,7 @@ use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\PoolQCC\TemplateBoothExport;
 use App\Exports\PoolQCC\TemplateQuestionExport;
 use App\Exports\PoolQCC\TemplateParticipantExport;
+use App\Exports\PoolQCC\ParticipantVotesExport;
 use App\Models\PoolQCC\PoolJudge;
 use App\Models\PoolQCC\PoolJudgeEvaluation;
 use App\Models\PoolQCC\PoolEvaluationCriterion;
@@ -587,6 +588,15 @@ class PoolQccAdminController extends Controller
                 'to' => $paginated->lastItem(),
             ]
         ]);
+    }
+
+    /**
+     * Download Rekap Peserta & Riwayat Voting Peserta ke Excel
+     */
+    public function exportVotes(Request $request)
+    {
+        $fileName = 'data_peserta_dan_voting_qcc_' . date('Ymd_His') . '.xlsx';
+        return Excel::download(new ParticipantVotesExport(), $fileName);
     }
 
     public function votes(Request $request)

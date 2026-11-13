@@ -14,6 +14,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Validator;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\PoolQCC\JuryRecapExport;
 
 class PoolQccJuryController extends Controller
 {
@@ -457,6 +459,16 @@ class PoolQccJuryController extends Controller
             'status' => 'success',
             'data' => $recap,
         ]);
+    }
+
+    /**
+     * Download Rekapitulasi Penilaian Dewan Juri ke Excel
+     */
+    public function exportExcel(Request $request)
+    {
+        $recap = $this->calculateJuryRecap();
+        $fileName = 'rekap_penilaian_juri_qcc_' . date('Ymd_His') . '.xlsx';
+        return Excel::download(new JuryRecapExport($recap), $fileName);
     }
 
     /**

@@ -26,35 +26,35 @@
                 </p>
             </div>
 
-            <div class="flex items-center space-x-3">
+            <div class="flex items-center space-x-2">
                 @if ($canReset)
                     <!-- Global Reset Button for qcc_pool_admin -->
                     <button type="button" onclick="confirmResetAllJuryEvaluations()" id="btnResetAll"
-                        class="px-4 py-2.5 rounded-2xl text-xs font-bold bg-rose-50 text-rose-600 dark:bg-rose-500/10 dark:text-rose-400 border border-rose-200 dark:border-rose-500/30 hover:bg-rose-100 dark:hover:bg-rose-500/20 transition flex items-center space-x-1.5 shadow-sm cursor-pointer"
+                        class="px-3 py-1.5 rounded-xl text-xs font-bold bg-rose-50 text-rose-600 dark:bg-rose-500/10 dark:text-rose-400 border border-rose-200 dark:border-rose-500/30 hover:bg-rose-100 dark:hover:bg-rose-500/20 transition flex items-center space-x-1.5 shadow-sm cursor-pointer"
                         title="Reset Seluruh Penilaian Juri">
                         <i class="fa-solid fa-rotate-left"></i>
                         <span class="hidden sm:inline">Reset Semua Nilai</span>
                     </button>
                 @endif
 
-                <!-- Fullscreen Button -->
-                <button type="button" onclick="toggleFullscreen()" id="btnFullscreen"
-                    class="px-4 py-2.5 rounded-2xl text-xs font-bold bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 transition flex items-center space-x-1.5 shadow-sm cursor-pointer"
-                    title="Mode Layar Penuh">
-                    <i class="fa-solid fa-expand"></i>
-                    <span class="hidden sm:inline">Layar Penuh</span>
-                </button>
+                <!-- Download to Excel Button -->
+                <a href="{{ route('pool-qcc.jury.recap.export') }}" id="btnExportExcel"
+                    class="px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition flex items-center space-x-1.5 cursor-pointer"
+                    title="Download Rekapitulasi Penilaian Dewan Juri ke File Excel">
+                    <i class="fa-solid fa-file-excel"></i>
+                    <span class="hidden sm:inline">Download Excel</span>
+                </a>
 
                 <!-- Scoring Input Link -->
                 <a href="{{ route('pool-qcc.jury.scoring') }}"
-                    class="px-4 py-2.5 rounded-2xl text-xs font-bold bg-indigo-600 text-white hover:bg-indigo-700 shadow-md shadow-indigo-600/20 transition flex items-center space-x-1.5">
+                    class="px-3 py-1.5 rounded-xl text-xs font-bold bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm transition flex items-center space-x-1.5">
                     <i class="fa-solid fa-scale-balanced"></i>
                     <span>Layar Penilaian</span>
                 </a>
 
                 <!-- Refresh Button -->
                 <button type="button" onclick="loadRecapData()" id="btnReload"
-                    class="w-10 h-10 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition flex items-center justify-center cursor-pointer"
+                    class="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition flex items-center justify-center cursor-pointer"
                     title="Segarkan Data">
                     <i class="fa-solid fa-rotate text-sm" id="reloadIcon"></i>
                 </button>
@@ -445,12 +445,12 @@
                             <i class="fa-solid fa-list-check mr-1"></i> Rincian Nilai
                         </button>
                         ${canReset && b.judges_evaluated_count > 0 ? `
-                            <button type="button" onclick="confirmResetBooth(${b.id}, '${escapeHtml(b.code)} - ${escapeHtml(b.name)}')"
-                                class="p-1.5 rounded-xl text-xs font-bold bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-500/20 border border-rose-200 dark:border-rose-500/30 transition cursor-pointer"
-                                title="Reset seluruh nilai booth ini">
-                                <i class="fa-solid fa-rotate-left"></i>
-                            </button>
-                        ` : ''}
+                                <button type="button" onclick="confirmResetBooth(${b.id}, '${escapeHtml(b.code)} - ${escapeHtml(b.name)}')"
+                                    class="p-1.5 rounded-xl text-xs font-bold bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-500/20 border border-rose-200 dark:border-rose-500/30 transition cursor-pointer"
+                                    title="Reset seluruh nilai booth ini">
+                                    <i class="fa-solid fa-rotate-left"></i>
+                                </button>
+                            ` : ''}
                     </div>
                 </td>
             </tr>
@@ -494,7 +494,8 @@
                 booth.evaluations.forEach(e => {
                     let criteriaHtml = '';
                     if (e.criteria_scores && Array.isArray(e.criteria_scores) && e.criteria_scores.length > 0) {
-                        criteriaHtml = '<div class="mt-2.5 pt-2 border-t border-slate-200/60 dark:border-slate-700/60 grid grid-cols-1 sm:grid-cols-2 gap-1.5">';
+                        criteriaHtml =
+                            '<div class="mt-2.5 pt-2 border-t border-slate-200/60 dark:border-slate-700/60 grid grid-cols-1 sm:grid-cols-2 gap-1.5">';
                         e.criteria_scores.forEach(cs => {
                             const titleText = cs.description ? `${cs.name} - ${cs.description}` : cs.name;
                             const displayText = cs.description ? `${cs.description}` : cs.name;
@@ -528,12 +529,12 @@
                                 ${Number(e.score).toFixed(2)}
                             </span>
                             ${canReset ? `
-                                <button type="button" onclick="confirmResetEvaluation(${e.id}, '${escapeHtml(e.judge_name)}', '${escapeHtml(booth.name)}')"
-                                    class="p-1.5 rounded-lg text-rose-500 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-500/20 transition cursor-pointer"
-                                    title="Reset nilai dari juri ini">
-                                    <i class="fa-solid fa-trash-can text-xs"></i>
-                                </button>
-                            ` : ''}
+                                    <button type="button" onclick="confirmResetEvaluation(${e.id}, '${escapeHtml(e.judge_name)}', '${escapeHtml(booth.name)}')"
+                                        class="p-1.5 rounded-lg text-rose-500 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-500/20 transition cursor-pointer"
+                                        title="Reset nilai dari juri ini">
+                                        <i class="fa-solid fa-trash-can text-xs"></i>
+                                    </button>
+                                ` : ''}
                         </div>
                     </div>
                     ${criteriaHtml}

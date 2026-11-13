@@ -38,6 +38,7 @@ Route::group(['middleware' => ['auth', 'access_log', 'rules:qcc_pool']], functio
             Route::post('/switch', 'PoolQcc\PoolQccJuryController@switchJudge')->name('switch');
             Route::post('/score', 'PoolQcc\PoolQccJuryController@saveScore')->name('save-score');
             Route::get('/recap', 'PoolQcc\PoolQccJuryController@recapView')->name('recap');
+            Route::get('/recap/export', 'PoolQcc\PoolQccJuryController@exportExcel')->name('recap.export');
             Route::get('/api/recap', 'PoolQcc\PoolQccJuryController@getRecapData')->name('api.recap');
         });
 
@@ -86,6 +87,7 @@ Route::group(['middleware' => ['auth', 'access_log', 'rules:qcc_pool']], functio
                 // Participants & Votes Log
                 Route::get('/api/participants', 'PoolQcc\PoolQccAdminController@getParticipantsData')->name('api.participants');
                 Route::get('/participants', 'PoolQcc\PoolQccAdminController@participants')->name('participants');
+                Route::get('/participants/export-votes', 'PoolQcc\PoolQccAdminController@exportVotes')->name('participants.export-votes');
                 Route::get('/participants/template', 'PoolQcc\PoolQccAdminController@downloadParticipantTemplate')->name('participants.template');
                 Route::post('/participants/import', 'PoolQcc\PoolQccAdminController@importParticipants')->name('participants.import');
                 Route::post('/participants/reset-all', 'PoolQcc\PoolQccAdminController@resetAllParticipantsVotes')->name('participants.reset-all');
@@ -93,6 +95,7 @@ Route::group(['middleware' => ['auth', 'access_log', 'rules:qcc_pool']], functio
                 Route::delete('/participants/{id}', 'PoolQcc\PoolQccAdminController@destroyParticipant')->name('participants.destroy')->where('id', '[0-9]+');
                 Route::get('/api/votes', 'PoolQcc\PoolQccAdminController@getVotesData')->name('api.votes');
                 Route::get('/votes', 'PoolQcc\PoolQccAdminController@votes')->name('votes');
+                Route::get('/votes/export', 'PoolQcc\PoolQccAdminController@exportVotes')->name('votes.export');
 
                 // Reset Penilaian Dewan Juri
                 Route::delete('/jury/evaluations/{id}', 'PoolQcc\PoolQccJuryController@resetEvaluation')->name('jury.evaluations.destroy');
