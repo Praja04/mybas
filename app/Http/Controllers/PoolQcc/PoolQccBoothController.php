@@ -634,12 +634,22 @@ class PoolQccBoothController extends Controller
             ->orderBy('total_voters', 'desc')
             ->get();
 
-        $participants = PoolParticipant::orderBy('total_score', 'desc')
+        // Exclude peserta dengan nama yang mengandung 'Tamu' atau 'tkbm' (case-insensitive)
+        $participants = PoolParticipant::where(function ($q) {
+                $q->whereRaw('LOWER(name) NOT LIKE ?', ['%tamu%'])
+                  ->whereRaw('LOWER(name) NOT LIKE ?', ['%tkbm%']);
+            })
+            ->orderBy('total_score', 'desc')
             ->orderBy('updated_at', 'asc')
-            ->get();
+            ->get()
+            ->reject(function ($p) {
+                $name = strtolower($p->name ?? '');
+                return strpos($name, 'tamu') !== false || strpos($name, 'tkbm') !== false;
+            })
+            ->values();
 
         $totalVotes = PoolVote::count();
-        $totalParticipants = PoolParticipant::count();
+        $totalParticipants = $participants->count();
 
         // Identifikasi ID peserta yang merupakan Dewan Juri / Manajemen aktif
         // Digunakan agar animasi Takeover di leaderboard tidak tertrigger untuk Juri
@@ -810,9 +820,19 @@ class PoolQccBoothController extends Controller
      */
     public function spinWheel(Request $request)
     {
-        $participants = PoolParticipant::orderBy('total_score', 'desc')
+        // Exclude peserta dengan nama yang mengandung 'Tamu' atau 'tkbm' (case-insensitive)
+        $participants = PoolParticipant::where(function ($q) {
+                $q->whereRaw('LOWER(name) NOT LIKE ?', ['%tamu%'])
+                  ->whereRaw('LOWER(name) NOT LIKE ?', ['%tkbm%']);
+            })
+            ->orderBy('total_score', 'desc')
             ->orderBy('updated_at', 'asc')
-            ->get();
+            ->get()
+            ->reject(function ($p) {
+                $name = strtolower($p->name ?? '');
+                return strpos($name, 'tamu') !== false || strpos($name, 'tkbm') !== false;
+            })
+            ->values();
 
         // Ambil data Tipe Karyawan dari hr_master_employee untuk matching pembobotan
         $employeeTypeMap = [];
