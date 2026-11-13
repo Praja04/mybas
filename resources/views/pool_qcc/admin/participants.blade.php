@@ -19,22 +19,24 @@
                 <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Daftar seluruh peserta yang telah melakukan
                     tapping ID card RFID dan progres pooling {{ $totalBooths ?? 10 }} booth mereka.</p>
             </div>
-            <div class="mt-4 sm:mt-0 flex flex-wrap items-center gap-2 sm:gap-3">
+            <div class="mt-4 sm:mt-0 flex flex-wrap items-center gap-2">
                 <button type="button" onclick="confirmResetAllParticipants()"
-                    class="px-4 py-2.5 rounded-xl text-sm font-bold bg-rose-50 hover:bg-rose-100 dark:bg-rose-500/10 dark:hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-500/30 transition flex items-center space-x-2 cursor-pointer shadow-sm"
+                    class="px-3 py-1.5 rounded-lg text-xs font-bold bg-rose-50 hover:bg-rose-100 dark:bg-rose-500/10 dark:hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-500/30 transition flex items-center space-x-1.5 cursor-pointer shadow-sm"
                     title="Reset seluruh nilai dan riwayat vote peserta, serta sinkronisasi poin booth">
-                    <i class="fa-solid fa-rotate-left text-xs"></i>
+                    <i class="fa-solid fa-rotate-left text-[11px]"></i>
                     <span>Reset Nilai Peserta</span>
                 </button>
                 <button type="button" onclick="openImportParticipantModal()"
-                    class="px-4 py-2.5 rounded-xl text-sm font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-600/20 transition flex items-center space-x-2 cursor-pointer">
-                    <i class="fa-solid fa-file-excel text-xs"></i>
+                    class="px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm transition flex items-center space-x-1.5 cursor-pointer">
+                    <i class="fa-solid fa-file-excel text-[11px]"></i>
                     <span>Upload Excel</span>
                 </button>
-                <span id="totalParticipantsBadge"
-                    class="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700 shadow-sm">
-                    Total: Memuat...
-                </span>
+                <a href="{{ route('pool-qcc.admin.participants.export-votes') }}"
+                    class="px-3 py-1.5 rounded-lg text-xs font-bold bg-teal-600 hover:bg-teal-500 text-white shadow-sm transition flex items-center space-x-1.5 cursor-pointer"
+                    title="Download Data Peserta & Riwayat Voting Lengkap ke Excel">
+                    <i class="fa-solid fa-file-arrow-down text-[11px]"></i>
+                    <span>Download Data</span>
+                </a>
             </div>
         </div>
 
@@ -206,21 +208,21 @@
             let skeletons = '';
             for (let i = 0; i < 6; i++) {
                 skeletons += `
-            <tr class="animate-pulse">
-                <td class="py-3.5 px-4">
-                    <div class="flex items-center space-x-3">
-                        <div class="w-9 h-9 rounded-full bg-slate-200 dark:bg-slate-800"></div>
-                        <div><div class="h-4 bg-slate-200 dark:bg-slate-800 rounded w-28 mb-1"></div><div class="h-3 bg-slate-200 dark:bg-slate-800 rounded w-16"></div></div>
-                    </div>
-                </td>
-                <td class="py-3.5 px-4"><div class="h-4 bg-slate-200 dark:bg-slate-800 rounded w-20"></div></td>
-                <td class="py-3.5 px-4"><div class="h-4 bg-slate-200 dark:bg-slate-800 rounded w-24"></div></td>
-                <td class="py-3.5 px-4 text-center"><div class="h-6 bg-slate-200 dark:bg-slate-800 rounded-full w-24 mx-auto"></div></td>
-                <td class="py-3.5 px-4"><div class="h-5 bg-slate-200 dark:bg-slate-800 rounded w-32"></div></td>
-                <td class="py-3.5 px-4 text-right"><div class="h-5 bg-slate-200 dark:bg-slate-800 rounded w-14 ml-auto"></div></td>
-                <td class="py-3.5 px-4 text-center"><div class="h-7 bg-slate-200 dark:bg-slate-800 rounded-xl w-16 mx-auto"></div></td>
-            </tr>
-        `;
+                    <tr class="animate-pulse">
+                        <td class="py-3.5 px-4">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-9 h-9 rounded-full bg-slate-200 dark:bg-slate-800"></div>
+                                <div><div class="h-4 bg-slate-200 dark:bg-slate-800 rounded w-28 mb-1"></div><div class="h-3 bg-slate-200 dark:bg-slate-800 rounded w-16"></div></div>
+                            </div>
+                        </td>
+                        <td class="py-3.5 px-4"><div class="h-4 bg-slate-200 dark:bg-slate-800 rounded w-20"></div></td>
+                        <td class="py-3.5 px-4"><div class="h-4 bg-slate-200 dark:bg-slate-800 rounded w-24"></div></td>
+                        <td class="py-3.5 px-4 text-center"><div class="h-6 bg-slate-200 dark:bg-slate-800 rounded-full w-24 mx-auto"></div></td>
+                        <td class="py-3.5 px-4"><div class="h-5 bg-slate-200 dark:bg-slate-800 rounded w-32"></div></td>
+                        <td class="py-3.5 px-4 text-right"><div class="h-5 bg-slate-200 dark:bg-slate-800 rounded w-14 ml-auto"></div></td>
+                        <td class="py-3.5 px-4 text-center"><div class="h-7 bg-slate-200 dark:bg-slate-800 rounded-xl w-16 mx-auto"></div></td>
+                    </tr>
+                `;
             }
             $('#participantsTableBody').html(skeletons);
             $('#participantsPagination').empty();
@@ -243,19 +245,19 @@
             // Tombol Sebelumnya
             if (current > 1) {
                 pagesHtml += `
-            <button type="button" onclick="goToParticipantPage(${current - 1})"
-                class="px-3 py-2 rounded-xl text-xs font-bold bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 shadow-sm transition flex items-center gap-1 cursor-pointer">
-                <i class="fa-solid fa-chevron-left text-[10px]"></i>
-                <span class="hidden sm:inline">Sebelumnya</span>
-            </button>
-        `;
+                    <button type="button" onclick="goToParticipantPage(${current - 1})"
+                        class="px-3 py-2 rounded-xl text-xs font-bold bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 shadow-sm transition flex items-center gap-1 cursor-pointer">
+                        <i class="fa-solid fa-chevron-left text-[10px]"></i>
+                        <span class="hidden sm:inline">Sebelumnya</span>
+                    </button>
+                `;
             } else {
                 pagesHtml += `
-            <span class="px-3 py-2 rounded-xl text-xs font-bold bg-slate-100 dark:bg-slate-800/50 text-slate-400 dark:text-slate-600 border border-slate-200 dark:border-slate-800 cursor-not-allowed flex items-center gap-1">
-                <i class="fa-solid fa-chevron-left text-[10px]"></i>
-                <span class="hidden sm:inline">Sebelumnya</span>
-            </span>
-        `;
+                    <span class="px-3 py-2 rounded-xl text-xs font-bold bg-slate-100 dark:bg-slate-800/50 text-slate-400 dark:text-slate-600 border border-slate-200 dark:border-slate-800 cursor-not-allowed flex items-center gap-1">
+                        <i class="fa-solid fa-chevron-left text-[10px]"></i>
+                        <span class="hidden sm:inline">Sebelumnya</span>
+                    </span>
+                `;
             }
 
             // Numbered buttons
@@ -274,17 +276,17 @@
             for (let p = startPage; p <= endPage; p++) {
                 if (p === current) {
                     pagesHtml += `
-                <span class="w-8 h-8 rounded-xl text-xs font-black bg-indigo-600 text-white shadow-md shadow-indigo-600/30 flex items-center justify-center">
-                    ${p}
-                </span>
-            `;
+                        <span class="w-8 h-8 rounded-xl text-xs font-black bg-indigo-600 text-white shadow-md shadow-indigo-600/30 flex items-center justify-center">
+                            ${p}
+                        </span>
+                    `;
                 } else {
                     pagesHtml += `
-                <button type="button" onclick="goToParticipantPage(${p})"
-                    class="w-8 h-8 rounded-xl text-xs font-bold bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer">
-                    ${p}
-                </button>
-            `;
+                        <button type="button" onclick="goToParticipantPage(${p})"
+                            class="w-8 h-8 rounded-xl text-xs font-bold bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer">
+                            ${p}
+                        </button>
+                    `;
                 }
             }
 
@@ -300,31 +302,31 @@
             // Tombol Berikutnya
             if (current < last) {
                 pagesHtml += `
-            <button type="button" onclick="goToParticipantPage(${current + 1})"
-                class="px-3 py-2 rounded-xl text-xs font-bold bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 shadow-sm transition flex items-center gap-1 cursor-pointer">
-                <span class="hidden sm:inline">Berikutnya</span>
-                <i class="fa-solid fa-chevron-right text-[10px]"></i>
-            </button>
-        `;
+                    <button type="button" onclick="goToParticipantPage(${current + 1})"
+                        class="px-3 py-2 rounded-xl text-xs font-bold bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 shadow-sm transition flex items-center gap-1 cursor-pointer">
+                        <span class="hidden sm:inline">Berikutnya</span>
+                        <i class="fa-solid fa-chevron-right text-[10px]"></i>
+                    </button>
+                `;
             } else {
                 pagesHtml += `
-            <span class="px-3 py-2 rounded-xl text-xs font-bold bg-slate-100 dark:bg-slate-800/50 text-slate-400 dark:text-slate-600 border border-slate-200 dark:border-slate-800 cursor-not-allowed flex items-center gap-1">
-                <span class="hidden sm:inline">Berikutnya</span>
-                <i class="fa-solid fa-chevron-right text-[10px]"></i>
-            </span>
-        `;
+                    <span class="px-3 py-2 rounded-xl text-xs font-bold bg-slate-100 dark:bg-slate-800/50 text-slate-400 dark:text-slate-600 border border-slate-200 dark:border-slate-800 cursor-not-allowed flex items-center gap-1">
+                        <span class="hidden sm:inline">Berikutnya</span>
+                        <i class="fa-solid fa-chevron-right text-[10px]"></i>
+                    </span>
+                `;
             }
 
             const html = `
-        <div class="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-2xl glass-panel">
-            <div class="text-xs text-slate-600 dark:text-slate-400">
-                Menampilkan <span class="font-bold text-slate-900 dark:text-white">${from}</span> sampai <span class="font-bold text-slate-900 dark:text-white">${to}</span> dari <span class="font-bold text-slate-900 dark:text-white">${total}</span> peserta
-            </div>
-            <div class="flex items-center space-x-1.5">
-                ${pagesHtml}
-            </div>
-        </div>
-    `;
+                <div class="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-2xl glass-panel">
+                    <div class="text-xs text-slate-600 dark:text-slate-400">
+                        Menampilkan <span class="font-bold text-slate-900 dark:text-white">${from}</span> sampai <span class="font-bold text-slate-900 dark:text-white">${to}</span> dari <span class="font-bold text-slate-900 dark:text-white">${total}</span> peserta
+                    </div>
+                    <div class="flex items-center space-x-1.5">
+                        ${pagesHtml}
+                    </div>
+                </div>
+            `;
 
             $('#participantsPagination').html(html);
         }
@@ -362,13 +364,13 @@
 
                     if (items.length === 0) {
                         $('#participantsTableBody').html(`
-                    <tr>
-                        <td colspan="7" class="py-12 text-center text-slate-500">
-                            <i class="fa-solid fa-users text-4xl mb-2 block text-slate-400"></i>
-                            Belum ada peserta yang cocok dengan kriteria pencarian.
-                        </td>
-                    </tr>
-                `);
+                            <tr>
+                                <td colspan="7" class="py-12 text-center text-slate-500">
+                                    <i class="fa-solid fa-users text-4xl mb-2 block text-slate-400"></i>
+                                    Belum ada peserta yang cocok dengan kriteria pencarian.
+                                </td>
+                            </tr>
+                        `);
                         $('#participantsPagination').empty();
                         return;
                     }
@@ -407,41 +409,41 @@
                         const totalScore = Number(p.total_score || 0).toLocaleString();
 
                         rowsHtml += `
-                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
-                        <td class="py-3.5 px-4">
-                            <div class="flex items-center space-x-3">
-                                ${avatarHtml}
-                                <div>
-                                    <div class="font-bold text-slate-900 dark:text-white">${escapeHtml(p.name)}</div>
-                                    <div class="text-xs text-slate-500 dark:text-slate-400">NIK: ${escapeHtml(p.nik || '-')}</div>
-                                </div>
-                            </div>
-                        </td>
-                        <td class="py-3.5 px-4 font-mono text-xs text-slate-600 dark:text-slate-400 font-bold">${escapeHtml(p.rfid || '-')}</td>
-                        <td class="py-3.5 px-4 text-xs font-medium">${escapeHtml(p.department || '-')}</td>
-                        <td class="py-3.5 px-4 text-center">
-                            ${quotaBadge}
-                        </td>
-                        <td class="py-3.5 px-4">
-                            <div class="flex flex-wrap gap-1 max-w-xs">
-                                ${votesHtml}
-                            </div>
-                        </td>
-                        <td class="py-3.5 px-4 text-right">
-                            <span class="text-base font-black text-emerald-600 dark:text-emerald-400">${totalScore} Pts</span>
-                        </td>
-                        <td class="py-3.5 px-4 text-center">
-                            <div class="flex items-center justify-center space-x-1.5">
-                                <button type="button" onclick="confirmResetParticipant(${p.id}, '${escapeHtml(p.name)}')" class="px-2.5 py-1 rounded-xl text-xs font-bold bg-amber-50 hover:bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:hover:bg-amber-500/20 dark:text-amber-400 border border-amber-200 dark:border-amber-500/30 transition shadow-xs cursor-pointer" title="Reset Kuota & Vote Peserta">
-                                    <i class="fa-solid fa-rotate-left mr-1"></i> Reset
-                                </button>
-                                <button type="button" onclick="confirmDeleteParticipant(${p.id}, '${escapeHtml(p.name)}')" class="px-2.5 py-1 rounded-xl text-xs font-bold bg-rose-50 hover:bg-rose-100 text-rose-600 dark:bg-rose-500/10 dark:hover:bg-rose-500/20 dark:text-rose-400 border border-rose-200 dark:border-rose-500/30 transition shadow-xs cursor-pointer" title="Hapus Permanen Peserta">
-                                    <i class="fa-solid fa-trash-can mr-1"></i> Hapus
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                `;
+                            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
+                                <td class="py-3.5 px-4">
+                                    <div class="flex items-center space-x-3">
+                                        ${avatarHtml}
+                                        <div>
+                                            <div class="font-bold text-slate-900 dark:text-white">${escapeHtml(p.name)}</div>
+                                            <div class="text-xs text-slate-500 dark:text-slate-400">NIK: ${escapeHtml(p.nik || '-')}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="py-3.5 px-4 font-mono text-xs text-slate-600 dark:text-slate-400 font-bold">${escapeHtml(p.rfid || '-')}</td>
+                                <td class="py-3.5 px-4 text-xs font-medium">${escapeHtml(p.department || '-')}</td>
+                                <td class="py-3.5 px-4 text-center">
+                                    ${quotaBadge}
+                                </td>
+                                <td class="py-3.5 px-4">
+                                    <div class="flex flex-wrap gap-1 max-w-xs">
+                                        ${votesHtml}
+                                    </div>
+                                </td>
+                                <td class="py-3.5 px-4 text-right">
+                                    <span class="text-base font-black text-emerald-600 dark:text-emerald-400">${totalScore} Pts</span>
+                                </td>
+                                <td class="py-3.5 px-4 text-center">
+                                    <div class="flex items-center justify-center space-x-1.5">
+                                        <button type="button" onclick="confirmResetParticipant(${p.id}, '${escapeHtml(p.name)}')" class="px-2.5 py-1 rounded-xl text-xs font-bold bg-amber-50 hover:bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:hover:bg-amber-500/20 dark:text-amber-400 border border-amber-200 dark:border-amber-500/30 transition shadow-xs cursor-pointer" title="Reset Kuota & Vote Peserta">
+                                            <i class="fa-solid fa-rotate-left mr-1"></i> Reset
+                                        </button>
+                                        <button type="button" onclick="confirmDeleteParticipant(${p.id}, '${escapeHtml(p.name)}')" class="px-2.5 py-1 rounded-xl text-xs font-bold bg-rose-50 hover:bg-rose-100 text-rose-600 dark:bg-rose-500/10 dark:hover:bg-rose-500/20 dark:text-rose-400 border border-rose-200 dark:border-rose-500/30 transition shadow-xs cursor-pointer" title="Hapus Permanen Peserta">
+                                            <i class="fa-solid fa-trash-can mr-1"></i> Hapus
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        `;
                     });
 
                     $('#participantsTableBody').html(rowsHtml);
@@ -449,14 +451,14 @@
                 },
                 error: function(xhr) {
                     $('#participantsTableBody').html(`
-                <tr>
-                    <td colspan="7" class="py-12 text-center text-rose-500">
-                        <i class="fa-solid fa-triangle-exclamation text-3xl mb-2 block"></i>
-                        Gagal memuat data peserta.
-                        <button onclick="loadParticipantsData(currentPage, currentSearch, currentStatus)" class="mt-2 block mx-auto px-3 py-1 bg-indigo-600 text-white rounded-lg text-xs">Coba Lagi</button>
-                    </td>
-                </tr>
-            `);
+                        <tr>
+                            <td colspan="7" class="py-12 text-center text-rose-500">
+                                <i class="fa-solid fa-triangle-exclamation text-3xl mb-2 block"></i>
+                                Gagal memuat data peserta.
+                                <button onclick="loadParticipantsData(currentPage, currentSearch, currentStatus)" class="mt-2 block mx-auto px-3 py-1 bg-indigo-600 text-white rounded-lg text-xs">Coba Lagi</button>
+                            </td>
+                        </tr>
+                    `);
                     $('#participantsPagination').empty();
                 }
             });

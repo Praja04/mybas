@@ -18,7 +18,13 @@
                 <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Audit trail seluruh jawaban pertanyaan yang
                     diberikan oleh peserta untuk setiap booth.</p>
             </div>
-            <div class="mt-4 sm:mt-0">
+            <div class="mt-4 sm:mt-0 flex items-center space-x-2">
+                <a href="{{ route('pool-qcc.admin.votes.export') }}"
+                    class="px-3 py-1.5 rounded-lg text-xs font-bold bg-teal-600 hover:bg-teal-500 text-white shadow-sm transition flex items-center space-x-1.5 cursor-pointer"
+                    title="Download Seluruh Log Riwayat Voting ke File Excel">
+                    <i class="fa-solid fa-file-arrow-down text-[11px]"></i>
+                    <span>Download Excel</span>
+                </a>
                 <span id="totalVotesBadge"
                     class="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700 shadow-sm">
                     Total Vote: Memuat...
