@@ -92,6 +92,7 @@ Route::group(['middleware' => ['auth', 'access_log', 'rules:qcc_pool']], functio
                 Route::post('/participants/import', 'PoolQcc\PoolQccAdminController@importParticipants')->name('participants.import');
                 Route::post('/participants/reset-all', 'PoolQcc\PoolQccAdminController@resetAllParticipantsVotes')->name('participants.reset-all');
                 Route::post('/participants/{id}/reset', 'PoolQcc\PoolQccAdminController@resetParticipantVotes')->name('participants.reset')->where('id', '[0-9]+');
+                Route::post('/participants/{id}/toggle-spin-exclusion', 'PoolQcc\PoolQccAdminController@toggleSpinExclusion')->name('participants.toggle-spin-exclusion')->where('id', '[0-9]+');
                 Route::delete('/participants/{id}', 'PoolQcc\PoolQccAdminController@destroyParticipant')->name('participants.destroy')->where('id', '[0-9]+');
                 Route::get('/api/votes', 'PoolQcc\PoolQccAdminController@getVotesData')->name('api.votes');
                 Route::get('/votes', 'PoolQcc\PoolQccAdminController@votes')->name('votes');

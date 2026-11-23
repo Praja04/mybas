@@ -57,6 +57,8 @@
                         <option value="">-- Semua Status Kuota --</option>
                         <option value="completed">Selesai ({{ $totalBooths ?? 10 }}/{{ $totalBooths ?? 10 }} Booth)</option>
                         <option value="in_progress">Belum Selesai (&lt; {{ $totalBooths ?? 10 }} Booth)</option>
+                        <option value="spin_eligible">Peserta Ikut Spin Wheel</option>
+                        <option value="spin_excluded">Peserta Dikecualikan Spin</option>
                     </select>
 
                     <button type="button" id="btnResetParticipantFilter"
@@ -414,7 +416,10 @@
                                     <div class="flex items-center space-x-3">
                                         ${avatarHtml}
                                         <div>
-                                            <div class="font-bold text-slate-900 dark:text-white">${escapeHtml(p.name)}</div>
+                                            <div class="font-bold text-slate-900 dark:text-white flex items-center gap-1.5 flex-wrap">
+                                                <span>${escapeHtml(p.name)}</span>
+                                                ${p.is_spin_excluded ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-300 dark:border-rose-700/60" title="Peserta ini dikecualikan dari undian Spin Wheel"><i class="fa-solid fa-ban text-[9px] mr-1"></i>Exclude Spin</span>` : ''}
+                                            </div>
                                             <div class="text-xs text-slate-500 dark:text-slate-400">NIK: ${escapeHtml(p.nik || '-')}</div>
                                         </div>
                                     </div>
@@ -434,6 +439,15 @@
                                 </td>
                                 <td class="py-3.5 px-4 text-center">
                                     <div class="flex items-center justify-center space-x-1.5">
+                                        ${p.is_spin_excluded ? `
+                                            <button type="button" onclick="confirmToggleSpinExclusion(${p.id}, '${escapeHtml(p.name)}', false)" class="px-2.5 py-1 rounded-xl text-xs font-bold bg-purple-50 hover:bg-purple-100 text-purple-700 dark:bg-purple-500/10 dark:hover:bg-purple-500/20 dark:text-purple-400 border border-purple-200 dark:border-purple-500/30 transition shadow-xs cursor-pointer" title="Peserta sedang dikecualikan dari undian. Klik untuk mengikutsertakan kembali ke Spin Wheel">
+                                                <i class="fa-solid fa-arrow-rotate-left mr-1"></i> Ikutkan Spin
+                                            </button>
+                                        ` : `
+                                            <button type="button" onclick="confirmToggleSpinExclusion(${p.id}, '${escapeHtml(p.name)}', true)" class="px-2.5 py-1 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-600 transition shadow-xs cursor-pointer" title="Kecualikan peserta ini dari undian Spin Wheel">
+                                                <i class="fa-solid fa-ban mr-1 text-rose-500"></i> Kecualikan Spin
+                                            </button>
+                                        `}
                                         <button type="button" onclick="confirmResetParticipant(${p.id}, '${escapeHtml(p.name)}')" class="px-2.5 py-1 rounded-xl text-xs font-bold bg-amber-50 hover:bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:hover:bg-amber-500/20 dark:text-amber-400 border border-amber-200 dark:border-amber-500/30 transition shadow-xs cursor-pointer" title="Reset Kuota & Vote Peserta">
                                             <i class="fa-solid fa-rotate-left mr-1"></i> Reset
                                         </button>
@@ -618,6 +632,63 @@
                         title: 'Berhasil Dihapus!',
                         text: result.value?.message || 'Data peserta berhasil dihapus permanen.',
                         timer: 1500,
+                        showConfirmButton: false,
+                        customClass: {
+                            popup: 'rounded-2xl dark:bg-slate-900 dark:text-white border border-slate-200 dark:border-slate-800'
+                        }
+                    });
+                }
+            });
+        }
+
+        function confirmToggleSpinExclusion(id, name, exclude) {
+            const actionText = exclude ? 'mengecualikan' : 'mengikutsertakan kembali';
+            const actionTarget = exclude ? 'dari undian Spin Wheel' : 'ke dalam undian Spin Wheel';
+            const confirmBtnText = exclude ? '<i class="fa-solid fa-ban mr-1"></i> Ya, Kecualikan!' : '<i class="fa-solid fa-check mr-1"></i> Ya, Ikutkan!';
+            const confirmBtnColor = exclude ? '#e11d48' : '#7c3aed';
+
+            Swal.fire({
+                title: `${exclude ? 'Kecualikan' : 'Ikutkan'} Peserta?`,
+                html: `Apakah Anda yakin ingin <b>${actionText}</b> peserta:<br><b class="text-indigo-600 dark:text-indigo-400 text-sm mt-1 block">${name}</b> ${actionTarget}?`,
+                icon: exclude ? 'warning' : 'question',
+                showCancelButton: true,
+                confirmButtonColor: confirmBtnColor,
+                cancelButtonColor: '#64748b',
+                confirmButtonText: confirmBtnText,
+                cancelButtonText: 'Batal',
+                reverseButtons: true,
+                showLoaderOnConfirm: true,
+                preConfirm: () => {
+                    return $.ajax({
+                        url: `/pool-qcc/admin/participants/${id}/toggle-spin-exclusion`,
+                        type: 'POST',
+                        data: {
+                            _token: '{{ csrf_token() }}'
+                        },
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Accept': 'application/json'
+                        }
+                    }).catch(xhr => {
+                        Swal.showValidationMessage(xhr.responseJSON?.message ||
+                            'Gagal mengubah status pengecualian peserta.');
+                    });
+                },
+                allowOutsideClick: () => !Swal.isLoading(),
+                customClass: {
+                    popup: 'rounded-2xl dark:bg-slate-900 dark:text-white border border-slate-200 dark:border-slate-800',
+                    confirmButton: 'rounded-xl font-bold px-4 py-2 text-xs',
+                    cancelButton: 'rounded-xl font-bold px-4 py-2 text-xs'
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    loadParticipantsData(currentPage, currentSearch, currentStatus);
+
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Berhasil!',
+                        text: result.value?.message || 'Status undian peserta berhasil diperbarui.',
+                        timer: 1800,
                         showConfirmButton: false,
                         customClass: {
                             popup: 'rounded-2xl dark:bg-slate-900 dark:text-white border border-slate-200 dark:border-slate-800'
