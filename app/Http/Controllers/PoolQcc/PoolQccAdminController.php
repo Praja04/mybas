@@ -22,6 +22,8 @@ use App\Models\PoolQCC\PoolJudgeEvaluation;
 use App\Models\PoolQCC\PoolEvaluationCriterion;
 use App\Models\PoolQCC\PoolJudgeEvaluationDetail;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Schema\Blueprint;
 use Carbon\Carbon;
 
 class PoolQccAdminController extends Controller
@@ -543,6 +545,12 @@ class PoolQccAdminController extends Controller
                 $query->where('booths_voted_count', '>=', $maxBooths);
             } elseif ($request->status === 'in_progress') {
                 $query->where('booths_voted_count', '<', $maxBooths);
+            } elseif ($request->status === 'spin_excluded') {
+                $query->where('is_spin_excluded', true);
+            } elseif ($request->status === 'spin_eligible') {
+                $query->where(function ($q) {
+                    $q->where('is_spin_excluded', false)->orWhereNull('is_spin_excluded');
+                });
             }
         }
 
@@ -569,6 +577,7 @@ class PoolQccAdminController extends Controller
                 'department' => $p->department,
                 'photo' => $p->photo,
                 'booths_voted_count' => (int) $p->booths_voted_count,
+                'is_spin_excluded' => (bool) $p->is_spin_excluded,
                 'total_score' => (int) $p->total_score,
                 'votes' => $votes,
                 'initials' => strtoupper(substr($p->name ?? 'P', 0, 2)),
@@ -723,6 +732,39 @@ class PoolQccAdminController extends Controller
         }
 
         return redirect()->back()->with('success', "Riwayat vote peserta {$participant->name} berhasil di-reset!");
+    }
+
+    /**
+     * Toggle Kecualikan / Ikutkan Peserta dari Undian Spin Wheel
+     */
+    public function toggleSpinExclusion(Request $request, $id)
+    {
+        $participant = PoolParticipant::findOrFail($id);
+
+        try {
+            if (!Schema::hasColumn('pool_participants', 'is_spin_excluded')) {
+                Schema::table('pool_participants', function (Blueprint $table) {
+                    $table->boolean('is_spin_excluded')->default(false)->after('booths_voted_count')->index();
+                });
+            }
+        } catch (\Throwable $e) {
+            Log::warning('Auto migrate is_spin_excluded failed: ' . $e->getMessage());
+        }
+
+        $participant->is_spin_excluded = !$participant->is_spin_excluded;
+        $participant->save();
+
+        $statusText = $participant->is_spin_excluded ? 'dikecualikan dari' : 'diikutsertakan kembali ke';
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'status' => 'success',
+                'is_spin_excluded' => (bool)$participant->is_spin_excluded,
+                'message' => "Peserta {$participant->name} berhasil {$statusText} undian Spin Wheel!",
+            ]);
+        }
+
+        return redirect()->back()->with('success', "Peserta {$participant->name} berhasil {$statusText} Spin Wheel!");
     }
 
     /**

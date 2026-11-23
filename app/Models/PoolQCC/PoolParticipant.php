@@ -16,12 +16,14 @@ class PoolParticipant extends Model
         'photo',
         'total_score',
         'booths_voted_count',
+        'is_spin_excluded',
         'last_activity_at',
     ];
 
     protected $casts = [
         'total_score' => 'integer',
         'booths_voted_count' => 'integer',
+        'is_spin_excluded' => 'boolean',
         'last_activity_at' => 'datetime',
     ];
 

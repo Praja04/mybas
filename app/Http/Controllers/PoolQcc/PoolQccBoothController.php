@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Schema;
 
 class PoolQccBoothController extends Controller
 {
@@ -821,16 +822,31 @@ class PoolQccBoothController extends Controller
     public function spinWheel(Request $request)
     {
         // Exclude peserta dengan nama yang mengandung 'Tamu' atau 'tkbm' (case-insensitive)
-        $participants = PoolParticipant::where(function ($q) {
+        // Dan exclude peserta yang ditandai 'is_spin_excluded' = true
+        $hasSpinExcludedCol = false;
+        try {
+            $hasSpinExcludedCol = Schema::hasColumn('pool_participants', 'is_spin_excluded');
+        } catch (\Throwable $e) {}
+
+        $participantsQuery = PoolParticipant::where(function ($q) {
                 $q->whereRaw('LOWER(name) NOT LIKE ?', ['%tamu%'])
                   ->whereRaw('LOWER(name) NOT LIKE ?', ['%tkbm%']);
-            })
+            });
+
+        if ($hasSpinExcludedCol) {
+            $participantsQuery->where(function ($q) {
+                $q->where('is_spin_excluded', false)
+                  ->orWhereNull('is_spin_excluded');
+            });
+        }
+
+        $participants = $participantsQuery
             ->orderBy('total_score', 'desc')
             ->orderBy('updated_at', 'asc')
             ->get()
             ->reject(function ($p) {
                 $name = strtolower($p->name ?? '');
-                return strpos($name, 'tamu') !== false || strpos($name, 'tkbm') !== false;
+                return strpos($name, 'tamu') !== false || strpos($name, 'tkbm') !== false || (bool)($p->is_spin_excluded ?? false);
             })
             ->values();
 
