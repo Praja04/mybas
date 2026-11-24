@@ -19,6 +19,10 @@ Route::group(['middleware' => ['auth', 'access_log', 'rules:qcc_pool']], functio
         Route::post('/booth/{boothId}/submit', 'PoolQcc\PoolQccBoothController@submitAnswerAtBooth')->name('booth-submit');
         Route::get('/leaderboard', 'PoolQcc\PoolQccBoothController@leaderboard')->name('leaderboard');
         Route::get('/spin-wheel', 'PoolQcc\PoolQccBoothController@spinWheel')->name('spin-wheel');
+        Route::post('/spin-wheel/save-winner', 'PoolQcc\PoolQccBoothController@saveWinnerToDatabase')->name('spin-wheel.save-winner');
+        Route::post('/spin-wheel/remove-winner', 'PoolQcc\PoolQccBoothController@removeWinnerFromDatabase')->name('spin-wheel.remove-winner');
+        Route::post('/spin-wheel/reset-tier', 'PoolQcc\PoolQccBoothController@resetTierWinnersInDatabase')->name('spin-wheel.reset-tier');
+        Route::post('/spin-wheel/reset-all', 'PoolQcc\PoolQccBoothController@resetAllWinnersInDatabase')->name('spin-wheel.reset-all');
 
         // Compatibility redirects
         Route::get('/kiosk', function () {

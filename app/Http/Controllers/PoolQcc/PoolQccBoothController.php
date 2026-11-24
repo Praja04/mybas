@@ -8,6 +8,7 @@ use App\Models\PoolQCC\PoolQuestion;
 use App\Models\PoolQCC\PoolParticipant;
 use App\Models\PoolQCC\PoolVote;
 use App\Models\PoolQCC\PoolJudge;
+use App\Models\PoolQCC\PoolSpinWinner;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -974,8 +975,208 @@ class PoolQccBoothController extends Controller
             ];
         });
 
+        $dbWinners = [];
+        try {
+            if (Schema::hasTable('pool_spin_winners')) {
+                $rawWinners = PoolSpinWinner::orderBy('order', 'asc')->get();
+                foreach ($rawWinners as $w) {
+                    $dbWinners[$w->tier_key][] = [
+                        'db_id' => $w->id,
+                        'id' => (int)($w->participant_id ?: $w->id),
+                        'name' => $w->name,
+                        'nik' => $w->nik ?? '-',
+                        'department' => $w->department ?? 'Umum',
+                        'employee_type' => $w->employee_type ?? '',
+                        'is_non_staff' => (bool)$w->is_non_staff,
+                        'weight' => (int)$w->weight,
+                        'total_score' => (int)$w->total_score,
+                        'booths_voted_count' => (int)$w->booths_voted_count,
+                        'order' => (int)$w->order,
+                        'won_at' => $w->won_at ?? ($w->created_at ? $w->created_at->format('H:i') : '-'),
+                    ];
+                }
+            }
+        } catch (\Throwable $e) {
+            Log::warning('Gagal memuat pool_spin_winners: ' . $e->getMessage());
+        }
+
         $activeTier = $request->get('tier', 'reward_1');
 
-        return view('pool_qcc.booth.spin_wheel', compact('rewardTiers', 'rewardCandidates', 'activeTier'));
+        return view('pool_qcc.booth.spin_wheel', compact('rewardTiers', 'rewardCandidates', 'activeTier', 'dbWinners'));
+    }
+
+    /**
+     * Endpoint API / AJAX untuk Menyimpan Pemenang Sah ke Database
+     */
+    public function saveWinnerToDatabase(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'tier_key' => 'required|string',
+            'name' => 'required|string',
+            'participant_id' => 'nullable|integer',
+            'nik' => 'nullable|string',
+            'department' => 'nullable|string',
+            'employee_type' => 'nullable|string',
+            'is_non_staff' => 'nullable',
+            'weight' => 'nullable|integer',
+            'total_score' => 'nullable|integer',
+            'booths_voted_count' => 'nullable|integer',
+            'order' => 'nullable|integer',
+            'won_at' => 'nullable|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => $validator->errors()->first(),
+            ], 422);
+        }
+
+        try {
+            if (!Schema::hasTable('pool_spin_winners')) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Tabel pool_spin_winners belum tersedia di database.',
+                ], 500);
+            }
+
+            $tierKey = trim((string)$request->tier_key);
+            $participantId = $request->filled('participant_id') ? (int)$request->participant_id : null;
+            $nik = trim((string)$request->nik);
+
+            // Cek apakah sudah tersimpan di tier ini
+            $existsQuery = PoolSpinWinner::where('tier_key', $tierKey);
+            if ($participantId) {
+                $existsQuery->where(function ($q) use ($participantId, $nik) {
+                    $q->where('participant_id', $participantId);
+                    if (!empty($nik) && $nik !== '-') {
+                        $q->orWhere('nik', $nik);
+                    }
+                });
+            } elseif (!empty($nik) && $nik !== '-') {
+                $existsQuery->where('nik', $nik);
+            } else {
+                $existsQuery->where('name', trim((string)$request->name));
+            }
+
+            $existing = $existsQuery->first();
+            if ($existing) {
+                return response()->json([
+                    'status' => 'success',
+                    'message' => 'Pemenang sudah tersimpan sebelumnya di database.',
+                    'winner' => $existing,
+                ]);
+            }
+
+            $currentCount = PoolSpinWinner::where('tier_key', $tierKey)->count();
+            $order = $request->filled('order') ? (int)$request->order : ($currentCount + 1);
+
+            $winner = PoolSpinWinner::create([
+                'tier_key' => $tierKey,
+                'participant_id' => $participantId,
+                'name' => trim((string)$request->name),
+                'nik' => $nik ?: '-',
+                'department' => trim((string)$request->department) ?: 'Umum',
+                'employee_type' => trim((string)$request->employee_type) ?: null,
+                'is_non_staff' => (bool)$request->is_non_staff,
+                'weight' => (int)($request->weight ?: 1),
+                'total_score' => (int)($request->total_score ?: 0),
+                'booths_voted_count' => (int)($request->booths_voted_count ?: 0),
+                'order' => $order,
+                'won_at' => $request->won_at ?: now()->format('H:i'),
+            ]);
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Pemenang sah berhasil disimpan ke database.',
+                'winner' => $winner,
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('Error saving spin winner: ' . $e->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Gagal menyimpan ke database: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Endpoint API / AJAX untuk Menghapus 1 Pemenang dari Database (Undi Ulang)
+     */
+    public function removeWinnerFromDatabase(Request $request)
+    {
+        $tierKey = trim((string)$request->tier_key);
+        $winnerId = $request->winner_id;
+
+        try {
+            if (Schema::hasTable('pool_spin_winners')) {
+                PoolSpinWinner::where('tier_key', $tierKey)
+                    ->where(function ($q) use ($winnerId) {
+                        $q->where('id', $winnerId)
+                          ->orWhere('participant_id', $winnerId);
+                    })
+                    ->delete();
+
+                // Re-order urutan sisa di tier ini
+                $remaining = PoolSpinWinner::where('tier_key', $tierKey)->orderBy('order', 'asc')->get();
+                foreach ($remaining as $idx => $item) {
+                    $item->update(['order' => $idx + 1]);
+                }
+            }
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Pemenang berhasil dihapus dari database.',
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('Error removing spin winner: ' . $e->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Gagal menghapus dari database: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Endpoint API / AJAX untuk Mereset Pemenang pada 1 Tier Tertentu
+     */
+    public function resetTierWinnersInDatabase(Request $request)
+    {
+        $tierKey = trim((string)$request->tier_key);
+        try {
+            if (Schema::hasTable('pool_spin_winners')) {
+                PoolSpinWinner::where('tier_key', $tierKey)->delete();
+            }
+            return response()->json([
+                'status' => 'success',
+                'message' => "Seluruh pemenang tier {$tierKey} berhasil direset dari database.",
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Gagal mereset tier dari database: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Endpoint API / AJAX untuk Mereset Seluruh Pemenang Undian di Database
+     */
+    public function resetAllWinnersInDatabase()
+    {
+        try {
+            if (Schema::hasTable('pool_spin_winners')) {
+                PoolSpinWinner::truncate();
+            }
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Semua pemenang undian berhasil direset dari database.',
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Gagal mereset semua pemenang dari database: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 }
