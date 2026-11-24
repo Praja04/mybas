@@ -66,5 +66,7 @@ class Kernel extends HttpKernel
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
         'rules' => \App\Http\Middleware\Rules::class,
         'access_log' => \App\Http\Middleware\AccessLogMiddleware::class,
+        'pms.activity_log' => \App\Http\Middleware\PmsActivityLogMiddleware::class,
+        'pms.access_otp' => \App\Http\Middleware\PmsAccessOtpMiddleware::class,
     ];
 }

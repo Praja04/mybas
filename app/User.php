@@ -22,6 +22,7 @@ class User extends Authenticatable
         'dept_id',
         'auth_group_id',
         'email',
+        'nik',
     ];
 
     public function group()

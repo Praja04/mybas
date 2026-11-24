@@ -51,6 +51,7 @@
                 }
             }
         </style>
+        <link rel="stylesheet" href="{{ asset('portal/assets/css/selectize/selectize.css') }}">
         @stack('styles')
     </head>
     <!--end::Head-->
@@ -392,6 +393,7 @@
         <script src="{{ url('/') }}/assets/plugins/global/plugins.bundle.js?v=7.0.5"></script>
         <script src="{{ url('/') }}/assets/plugins/custom/prismjs/prismjs.bundle.js?v=7.0.5"></script>
         <script src="{{ url('/') }}/assets/js/scripts.bundle.js?v=7.0.5"></script>
+        <script src="{{ url('/') }}/portal/assets/js/selectize/selectize.min.js"></script>
         {{-- <script src="{{ url('/') }}/assets/js/sweetalert.min.js"></script> --}}
         <!--end::Global Theme Bundle-->
         <!--begin::Page Vendors(used by this page)-->
@@ -409,6 +411,14 @@
             });
 
             $(document).ajaxError(function(event, xhr) {
+                var res = xhr.responseJSON || {};
+
+                // 401 dari gate OTP PMS bukan sesi login habis.
+                // Biarkan modal OTP (hr.partials.pms-access-otp) yang menangani.
+                if (xhr.status === 401 && res.otp_required) {
+                    return;
+                }
+
                 if (xhr.status === 401 || xhr.status === 419) {
                     window.location.href = "{{ route('login') }}";
                 }
@@ -504,6 +514,13 @@
                 });
             });
         </script>
+        @if (config('pms.access_otp.enabled') && (request()->attributes->get('pms_access_otp') || request()->attributes->get('pms_access_otp_context')))
+            @include('hr.partials.pms-access-otp', [
+                'pmsOtpExpiresAt' => (int) request()->attributes->get('pms_access_otp_expires_at'),
+                'pmsOtpServerTime' => now()->timestamp,
+                'pmsOtpDeferred' => (bool) request()->attributes->get('pms_access_otp_deferred'),
+            ])
+        @endif
         @stack('scripts')
     </body>
     <!--end::Body-->

@@ -1526,6 +1526,104 @@
                                 </div>
                             </li>
                         @endif
+                        {{-- Performance Management System (IPP & PK) --}}
+                        @if (!empty($pmsNav['show']))
+                            <li class="menu-item menu-item-submenu menu-item-rel" data-menu-toggle="click"
+                                aria-haspopup="true">
+                                <a href="javascript:" class="menu-link menu-toggle">
+                                    <span class="menu-text">PMS <i
+                                            class="ml-1 ki ki-bold-triangle-bottom icon-xs text-dark-50"></i></span>
+                                </a>
+                                <div class="menu-submenu menu-submenu-classic menu-submenu-left">
+                                    <ul class="menu-subnav">
+                                        @if (empty($pmsNav['admin']))
+                                            @if (!empty($pmsNav['self']))
+                                                <li class="menu-item" aria-haspopup="true">
+                                                    <a href="{{ url('/hr/ipp-aktual') }}" class="menu-link">
+                                                        <i class="menu-bullet menu-bullet-line"><span></span></i>
+                                                        <span class="menu-text">Isi Aktual IPP</span>
+                                                    </a>
+                                                </li>
+                                                <li class="menu-item" aria-haspopup="true">
+                                                    <a href="{{ url('/hr/pk-assessment') }}" class="menu-link">
+                                                        <i class="menu-bullet menu-bullet-line"><span></span></i>
+                                                        <span class="menu-text">Penilaian Karya &mdash; Self</span>
+                                                    </a>
+                                                </li>
+                                            @endif
+                                            @if (!empty($pmsNav['approver']))
+                                                <li class="menu-item" aria-haspopup="true">
+                                                    <a href="{{ url('/hr/ipp-user-approval') }}" class="menu-link">
+                                                        <i class="menu-bullet menu-bullet-line"><span></span></i>
+                                                        <span class="menu-text">Approval IPP</span>
+                                                    </a>
+                                                </li>
+                                            @endif
+                                            @if (!empty($pmsNav['leader']))
+                                                <li class="menu-item" aria-haspopup="true">
+                                                    <a href="{{ url('/hr/pk-assessment') }}?tab=leader" class="menu-link">
+                                                        <i class="menu-bullet menu-bullet-line"><span></span></i>
+                                                        <span class="menu-text">Penilaian Karya &mdash; Leader</span>
+                                                    </a>
+                                                </li>
+                                                <li class="menu-item" aria-haspopup="true">
+                                                    <a href="{{ url('/hr/upload-file-template-ipp-user') }}" class="menu-link">
+                                                        <i class="menu-bullet menu-bullet-line"><span></span></i>
+                                                        <span class="menu-text">Buat Template IPP</span>
+                                                    </a>
+                                                </li>
+                                            @endif
+                                            @if (!empty($pmsNav['manager']))
+                                                <li class="menu-item" aria-haspopup="true">
+                                                    <a href="{{ url('/hr/pms-total-scoring') }}" class="menu-link">
+                                                        <i class="menu-bullet menu-bullet-line"><span></span></i>
+                                                        <span class="menu-text">Total Scoring &mdash; Tim Saya</span>
+                                                    </a>
+                                                </li>
+                                            @endif
+                                        @endif
+                                        @if (!empty($pmsNav['admin']))
+                                            <li class="menu-item" aria-haspopup="true">
+                                                <a href="{{ url('/hr/pms-total-scoring') }}" class="menu-link">
+                                                    <i class="menu-bullet menu-bullet-line"><span></span></i>
+                                                    <span class="menu-text">PMS Total Scoring</span>
+                                                </a>
+                                            </li>
+                                            <li class="menu-item" aria-haspopup="true">
+                                                <a href="{{ url('/hr/upload-file-template-ipp') }}" class="menu-link">
+                                                    <i class="menu-bullet menu-bullet-line"><span></span></i>
+                                                    <span class="menu-text">Template IPP</span>
+                                                </a>
+                                            </li>
+                                            <li class="menu-item" aria-haspopup="true">
+                                                <a href="{{ url('/hr/upload-file-template-pk') }}" class="menu-link">
+                                                    <i class="menu-bullet menu-bullet-line"><span></span></i>
+                                                    <span class="menu-text">Template Penilaian Karya</span>
+                                                </a>
+                                            </li>
+                                            <li class="menu-item" aria-haspopup="true">
+                                                <a href="{{ url('/hr/ipp-approval') }}" class="menu-link">
+                                                    <i class="menu-bullet menu-bullet-line"><span></span></i>
+                                                    <span class="menu-text">Approval IPP</span>
+                                                </a>
+                                            </li>
+                                            <li class="menu-item" aria-haspopup="true">
+                                                <a href="{{ url('/hr/pk-assessment-hr') }}" class="menu-link">
+                                                    <i class="menu-bullet menu-bullet-line"><span></span></i>
+                                                    <span class="menu-text">Monitoring PK</span>
+                                                </a>
+                                            </li>
+                                            <li class="menu-item" aria-haspopup="true">
+                                                <a href="{{ url('/hr/pms-audit-log') }}" class="menu-link">
+                                                    <i class="menu-bullet menu-bullet-line"><span></span></i>
+                                                    <span class="menu-text">Log Aktivitas PMS</span>
+                                                </a>
+                                            </li>
+                                        @endif
+                                    </ul>
+                                </div>
+                            </li>
+                        @endif
                         @if (!in_array('eksternal', $permissions))
                             <li class="menu-item menu-item-submenu menu-item-rel" data-menu-toggle="click"
                                 aria-haspopup="true">

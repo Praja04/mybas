@@ -40,6 +40,7 @@ class UserController extends Controller
             'auth_group_id' => 'required',
             'department_id' => 'required',
             'password'      => 'required',
+            'nik'           => 'nullable|string|max:100',
         ]);
 
         $ifExist = User::where('username', $request->username)->first();
@@ -63,6 +64,7 @@ class UserController extends Controller
                 'username'      => $request->username,
                 'name'          => $request->name,
                 'email'         => $request->email,
+                'nik'           => $request->nik ?: $request->username,
                 'auth_group_id' => $request->auth_group_id,
                 'dept_id'       => $request->department_id,
                 'status'        => 1, // 'status' => $request->status,
@@ -141,6 +143,7 @@ class UserController extends Controller
         $user->username      = $request->username;
         $user->name          = $request->name;
         $user->email         = $request->email;
+        $user->nik           = $request->nik ?: ($user->nik ?: $request->username);
         $user->auth_group_id = $request->auth_group_id;
         $user->dept_id       = $request->department_id;
         $user->status        = 1;

@@ -764,6 +764,7 @@ Route::group(['middleware' => ['auth', 'rules', 'access_log']], function () {
 require base_path('routes/5r-system.php');
 require base_path('routes/edoc.php');
 require base_path('routes/hr.php');
+require base_path('routes/pms.php');
 require base_path('routes/hr-connect.php');
 require base_path('routes/klinik.php');
 require base_path('routes/master.php');

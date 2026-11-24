@@ -512,6 +512,7 @@
                             $('#editUsername').val(user.username);
                             $('#editName').val(user.name);
                             $('#editEmail').val(user.email);
+                            $('#editNik').val(user.nik);
                             $('#editPasword').val(user.password);
                             $('#editAuthGroupId').val(user.auth_group_id).trigger('change');
                             $('#editDepartmentId').val(user.dept_id).trigger('change');

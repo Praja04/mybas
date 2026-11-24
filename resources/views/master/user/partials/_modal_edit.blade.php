@@ -39,6 +39,15 @@
                         <input type="email" class="form-control" id="editEmail" name="email">
                     </div>
 
+                    <!-- Baris 2b: NIK PMS -->
+                    <div class="form-group">
+                        <label class="font-weight-bold" for="editNik">NIK (untuk PMS)</label>
+                        <input type="text" class="form-control" id="editNik" name="nik"
+                            placeholder="Kosongkan untuk memakai username">
+                        <small class="form-text text-muted">Dipakai modul PMS (IPP/PK). Samakan dengan NIK di
+                            hr_master_employee.</small>
+                    </div>
+
                     <!-- Baris 3: Password -->
                     <div class="form-group">
                         <label class="font-weight-bold" for="editPasword">New Password</label>
