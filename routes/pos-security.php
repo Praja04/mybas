@@ -17,7 +17,9 @@ Route::prefix('pos-security')->group(function () {
         Route::get('/absensi/display', [PosSecurityController::class, 'display'])->name('pos-security.absensi.display');
 
         Route::get('/history/supplier', [PosSecurityController::class, 'historySupplier'])->name('pos-security.history.supplier');
+        Route::get('/history/supplier/export', [PosSecurityController::class, 'exportSupplierExcel'])->name('pos-security.history.supplier.export');
         Route::get('/history/tamu', [PosSecurityController::class, 'historyVendor'])->name('pos-security.history.vendor');
+        Route::get('/history/tamu/export', [PosSecurityController::class, 'exportVendorExcel'])->name('pos-security.history.vendor.export');
         Route::get('/history/kendaraan', [PosSecurityController::class, 'historyCekKendaraan'])->name('pos-security.history.cek-kendaraan');
 
         Route::get('/dashboard', [PosSecurityController::class, 'dashboard'])->name('pos-security.dashboard');
