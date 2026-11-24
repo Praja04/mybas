@@ -6,12 +6,18 @@ use App\Models\PosSecurity\GaVisitorTransaction;
 use Carbon\Carbon;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
+use Maatwebsite\Excel\Concerns\WithColumnFormatting;
+use Maatwebsite\Excel\Concerns\WithCustomValueBinder;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithStyles;
+use PhpOffice\PhpSpreadsheet\Cell\Cell;
+use PhpOffice\PhpSpreadsheet\Cell\DataType;
+use PhpOffice\PhpSpreadsheet\Cell\DefaultValueBinder;
+use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class HistorySupplierExport implements FromCollection, WithHeadings, WithMapping, ShouldAutoSize, WithStyles
+class HistorySupplierExport extends DefaultValueBinder implements FromCollection, WithHeadings, WithMapping, ShouldAutoSize, WithStyles, WithColumnFormatting, WithCustomValueBinder
 {
     protected $startDate;
     protected $endDate;
@@ -74,6 +80,26 @@ class HistorySupplierExport implements FromCollection, WithHeadings, WithMapping
             $row->dateout ? Carbon::parse($row->dateout)->format('d-m-Y') : '-',
             $row->timeout ? Carbon::parse($row->timeout)->format('H:i') : '-',
             $row->kartu_dikembalikan ? 'Dikembalikan' : 'Belum Dikembalikan',
+        ];
+    }
+
+    public function bindValue(Cell $cell, $value)
+    {
+        // Cegah pembulatan otomatis Excel dan hilangnya angka 0 di depan nomor HP/kartu
+        if (is_numeric($value) && (strlen((string)$value) >= 8 || preg_match('/^0\d+/', (string)$value))) {
+            $cell->setValueExplicit((string)$value, DataType::TYPE_STRING);
+            return true;
+        }
+
+        return parent::bindValue($cell, $value);
+    }
+
+    public function columnFormats(): array
+    {
+        return [
+            'E' => NumberFormat::FORMAT_TEXT, // No. Polisi
+            'F' => NumberFormat::FORMAT_TEXT, // No. Kartu
+            'G' => NumberFormat::FORMAT_TEXT, // No. HP Driver
         ];
     }
 
