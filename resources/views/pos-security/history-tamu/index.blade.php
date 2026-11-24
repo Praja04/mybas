@@ -30,6 +30,41 @@
         @include('pos-security.history-supplier.components.modal-blacklist')
         @include('pos-security.history-supplier.components.modal-image')
 
+        <!-- Modal Export Excel Tamu / Vendor -->
+        <div class="modal fade" id="modalExportVendor" tabindex="-1" aria-labelledby="modalExportVendorLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <form action="{{ route('pos-security.history.vendor.export') }}" method="GET" target="_blank">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="modalExportVendorLabel">
+                                <i class="mdi mdi-file-excel text-success me-1"></i> Export History Tamu / Vendor ke Excel
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p class="text-muted small mb-3">Pilih rentang tanggal data riwayat tamu / vendor yang ingin diunduh.</p>
+                            <div class="row g-3">
+                                <div class="col-6">
+                                    <label class="form-label fw-semibold">Tanggal Awal <span class="text-danger">*</span></label>
+                                    <input type="date" class="form-control" name="start_date" value="{{ date('Y-m-01') }}" required>
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label fw-semibold">Tanggal Akhir <span class="text-danger">*</span></label>
+                                    <input type="date" class="form-control" name="end_date" value="{{ date('Y-m-d') }}" required>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                            <button type="submit" class="btn btn-success">
+                                <i class="mdi mdi-download me-1"></i> Download Excel
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
         {{-- Visitor History Table --}}
         <div class="row">
             <div class="col-lg-12">
@@ -39,9 +74,14 @@
                             <h5 class="card-title mb-0">History Daftar Vendor / Tamu / Transporter</h5>
                             <span>selama 7 hari terakhir</span>
                         </div>
-                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="hotReload()">
-                            <i class="mdi mdi-refresh"></i> Refresh
-                        </button>
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#modalExportVendor">
+                                <i class="mdi mdi-file-excel me-1"></i> Download Excel
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="hotReload()">
+                                <i class="mdi mdi-refresh"></i> Refresh
+                            </button>
+                        </div>
                     </div>
                     <div class="card-body">
                         <div class="table-responsive">
