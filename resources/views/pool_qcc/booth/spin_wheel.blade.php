@@ -314,6 +314,7 @@
                                 <div
                                     class="text-xs sm:text-base font-black uppercase tracking-widest flex items-center gap-2 drop-shadow-sm">
                                     <span>LUCKY DRAW MACHINE</span>
+                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 hidden sm:inline-flex items-center gap-1 normal-case tracking-normal"><i class="fa-solid fa-database text-[9px]"></i> DB Synced</span>
                                 </div>
                                 <div class="flex items-center space-x-2 text-xs">
                                     <span class="w-3 h-3 rounded-full bg-emerald-500 shadow-xs"></span>
@@ -694,7 +695,60 @@
             '#f97316', '#3b82f6', '#14b8a6', '#e11d48', '#84cc16'
         ];
 
+        let dbWinnersStore = @json($dbWinners ?? []);
+
+        // Sinkronisasi pemenang awal:
+        // 1. Jika database sudah memiliki data pemenang, gunakan dan update localStorage.
+        // 2. Jika database kosong namun localStorage memiliki data lama, migrasi otomatis data lama ke database.
+        function initWinnersStore() {
+            const hasDbData = dbWinnersStore && Object.keys(dbWinnersStore).some(k => Array.isArray(dbWinnersStore[k]) && dbWinnersStore[k].length > 0);
+            if (hasDbData) {
+                try {
+                    localStorage.setItem('qcc_reward_winners', JSON.stringify(dbWinnersStore));
+                } catch (e) {}
+            } else {
+                try {
+                    const localRaw = JSON.parse(localStorage.getItem('qcc_reward_winners') || '{}');
+                    let hadLocal = false;
+                    for (const tierKey in localRaw) {
+                        const list = Array.isArray(localRaw[tierKey]) ? localRaw[tierKey] : [localRaw[tierKey]];
+                        if (list.length > 0) hadLocal = true;
+                        list.forEach((winner, idx) => {
+                            if (winner && winner.name) {
+                                $.ajax({
+                                    url: "{{ route('pool-qcc.spin-wheel.save-winner') }}",
+                                    type: "POST",
+                                    data: {
+                                        _token: "{{ csrf_token() }}",
+                                        tier_key: tierKey,
+                                        participant_id: winner.id,
+                                        name: winner.name,
+                                        nik: winner.nik,
+                                        department: winner.department,
+                                        employee_type: winner.employee_type,
+                                        is_non_staff: winner.is_non_staff ? 1 : 0,
+                                        weight: winner.weight || 1,
+                                        total_score: winner.total_score || 0,
+                                        booths_voted_count: winner.booths_voted_count || 0,
+                                        order: winner.order || (idx + 1),
+                                        won_at: winner.won_at || null
+                                    }
+                                });
+                            }
+                        });
+                    }
+                    if (hadLocal) {
+                        dbWinnersStore = localRaw;
+                    }
+                } catch (e) {}
+            }
+        }
+        initWinnersStore();
+
         function getSavedWinners() {
+            if (dbWinnersStore && Object.keys(dbWinnersStore).length > 0) {
+                return dbWinnersStore;
+            }
             try {
                 const raw = JSON.parse(localStorage.getItem('qcc_reward_winners') || '{}');
                 const normalized = {};
@@ -734,9 +788,41 @@
                     })
                 });
                 list.push(newWinner);
+                all[tierKey] = list;
+                if (!dbWinnersStore) dbWinnersStore = {};
+                dbWinnersStore[tierKey] = list;
+
+                try {
+                    localStorage.setItem('qcc_reward_winners', JSON.stringify(all));
+                } catch (e) {}
+
+                // Simpan permanen ke database via AJAX
+                $.ajax({
+                    url: "{{ route('pool-qcc.spin-wheel.save-winner') }}",
+                    type: "POST",
+                    data: {
+                        _token: "{{ csrf_token() }}",
+                        tier_key: tierKey,
+                        participant_id: winner.id,
+                        name: winner.name,
+                        nik: winner.nik,
+                        department: winner.department,
+                        employee_type: winner.employee_type,
+                        is_non_staff: winner.is_non_staff ? 1 : 0,
+                        weight: winner.weight || 1,
+                        total_score: winner.total_score || 0,
+                        booths_voted_count: winner.booths_voted_count || 0,
+                        order: newWinner.order,
+                        won_at: newWinner.won_at
+                    },
+                    success: function(res) {
+                        console.log('✓ Pemenang berhasil disimpan di database:', res);
+                    },
+                    error: function(err) {
+                        console.warn('! Gagal simpan ke database (tetap tersimpan di local):', err);
+                    }
+                });
             }
-            all[tierKey] = list;
-            localStorage.setItem('qcc_reward_winners', JSON.stringify(all));
         }
 
         function removeSingleWinner(tierKey, winnerId) {
@@ -745,7 +831,30 @@
             list = list.filter(w => w.id != winnerId);
             list.forEach((w, idx) => w.order = idx + 1);
             all[tierKey] = list;
-            localStorage.setItem('qcc_reward_winners', JSON.stringify(all));
+            if (!dbWinnersStore) dbWinnersStore = {};
+            dbWinnersStore[tierKey] = list;
+
+            try {
+                localStorage.setItem('qcc_reward_winners', JSON.stringify(all));
+            } catch (e) {}
+
+            // Hapus dari database via AJAX
+            $.ajax({
+                url: "{{ route('pool-qcc.spin-wheel.remove-winner') }}",
+                type: "POST",
+                data: {
+                    _token: "{{ csrf_token() }}",
+                    tier_key: tierKey,
+                    winner_id: winnerId
+                },
+                success: function(res) {
+                    console.log('✓ Pemenang berhasil dihapus dari database:', res);
+                },
+                error: function(err) {
+                    console.warn('! Gagal hapus dari database:', err);
+                }
+            });
+
             selectSpinTier(currentSpinTier);
         }
 
@@ -755,14 +864,55 @@
             if (confirm(`Yakin ingin mereset pemenang undian untuk ${tierName}?`)) {
                 const all = getSavedWinners();
                 delete all[currentSpinTier];
-                localStorage.setItem('qcc_reward_winners', JSON.stringify(all));
+                if (dbWinnersStore) {
+                    delete dbWinnersStore[currentSpinTier];
+                }
+                try {
+                    localStorage.setItem('qcc_reward_winners', JSON.stringify(all));
+                } catch (e) {}
+
+                // Reset tier di database via AJAX
+                $.ajax({
+                    url: "{{ route('pool-qcc.spin-wheel.reset-tier') }}",
+                    type: "POST",
+                    data: {
+                        _token: "{{ csrf_token() }}",
+                        tier_key: currentSpinTier
+                    },
+                    success: function(res) {
+                        console.log('✓ Tier pemenang berhasil direset dari database:', res);
+                    },
+                    error: function(err) {
+                        console.warn('! Gagal reset tier di database:', err);
+                    }
+                });
+
                 selectSpinTier(currentSpinTier);
             }
         }
 
         function clearAllWinners() {
             if (confirm('Yakin ingin mereset semua pemenang undian yang telah tersimpan?')) {
-                localStorage.removeItem('qcc_reward_winners');
+                dbWinnersStore = {};
+                try {
+                    localStorage.removeItem('qcc_reward_winners');
+                } catch (e) {}
+
+                // Reset seluruh pemenang di database via AJAX
+                $.ajax({
+                    url: "{{ route('pool-qcc.spin-wheel.reset-all') }}",
+                    type: "POST",
+                    data: {
+                        _token: "{{ csrf_token() }}"
+                    },
+                    success: function(res) {
+                        console.log('✓ Seluruh pemenang berhasil direset dari database:', res);
+                    },
+                    error: function(err) {
+                        console.warn('! Gagal reset seluruh pemenang di database:', err);
+                    }
+                });
+
                 selectSpinTier('winners_log');
             }
         }
