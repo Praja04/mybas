@@ -36,6 +36,7 @@ class SpPelanggaran extends Model
         'dept_head_approved_at',
         'dept_head_notes',
         'ir_staff_id',
+        'ir_staff_approved_at',
         'ir_staff_notes',
         'ir_head_approved_at',
         'ir_head_notes',
@@ -53,6 +54,7 @@ class SpPelanggaran extends Model
     protected $appends = [
         'tanggal_pelanggaran',
         'formatted_dates_list',
+        'tanggal_terbit',
     ];
 
     protected static function boot()
@@ -66,7 +68,8 @@ class SpPelanggaran extends Model
 
     public function syncKlasifikasiFields()
     {
-        $date = $this->tanggal_pelanggaran ? Carbon::parse($this->tanggal_pelanggaran) : Carbon::parse($this->created_at ?: now());
+        $refDate = $this->tanggal_terbit ?: ($this->tanggal_pelanggaran ? Carbon::parse($this->tanggal_pelanggaran) : Carbon::parse($this->created_at ?: now()));
+        $date = Carbon::parse($refDate);
         $sampai = $date->copy()->addMonths(6);
 
         $this->masa_berlaku_sampai = $sampai->format('Y-m-d');
@@ -119,7 +122,8 @@ class SpPelanggaran extends Model
         if ($this->current_status !== self::STATUS_APPROVED) {
             return false;
         }
-        $date = $this->tanggal_pelanggaran ? Carbon::parse($this->tanggal_pelanggaran) : Carbon::parse($this->updated_at);
+        $refDate = $this->tanggal_terbit ?: ($this->tanggal_pelanggaran ? Carbon::parse($this->tanggal_pelanggaran) : Carbon::parse($this->updated_at));
+        $date = Carbon::parse($refDate);
         return $date->copy()->addMonths(6)->isFuture() || $date->copy()->addMonths(6)->isToday();
     }
 
@@ -131,8 +135,40 @@ class SpPelanggaran extends Model
         if ($this->current_status !== self::STATUS_APPROVED) {
             return false;
         }
-        $date = $this->tanggal_pelanggaran ? Carbon::parse($this->tanggal_pelanggaran) : Carbon::parse($this->updated_at);
+        $refDate = $this->tanggal_terbit ?: ($this->tanggal_pelanggaran ? Carbon::parse($this->tanggal_pelanggaran) : Carbon::parse($this->updated_at));
+        $date = Carbon::parse($refDate);
         return $date->copy()->addMonths(6)->isPast();
+    }
+
+    /**
+     * Ambil Tanggal Terbit SP (saat IR Staff approve / submit ke IR Head)
+     */
+    public function getTanggalTerbitAttribute()
+    {
+        if (!empty($this->ir_staff_approved_at)) {
+            return Carbon::parse($this->ir_staff_approved_at);
+        }
+
+        // Cari di approval logs jika ada log IR Staff Submit
+        if ($this->relationLoaded('approvalLogs') || $this->approvalLogs()->exists()) {
+            $log = $this->approvalLogs->first(function ($l) {
+                return in_array($l->action, [
+                    SpApprovalLog::ACTION_IR_STAFF_SUBMIT,
+                    'IR_STAFF_SUBMIT',
+                    'FORWARD_IR_HEAD'
+                ]);
+            });
+
+            if ($log && $log->created_at) {
+                return Carbon::parse($log->created_at);
+            }
+        }
+
+        if (!empty($this->ir_head_approved_at)) {
+            return Carbon::parse($this->ir_head_approved_at);
+        }
+
+        return $this->created_at ? Carbon::parse($this->created_at) : null;
     }
 
     /**

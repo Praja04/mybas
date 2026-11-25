@@ -245,8 +245,12 @@
         </p>
     </div>
 
+@php
+    $tglTerbitDoc = $sp->tanggal_terbit ?: ($sp->ir_staff_approved_at ?: ($sp->ir_head_approved_at ?: ($sp->tanggal_pelanggaran ?: now())));
+@endphp
+
     <div style="margin-top: 25px; text-align: left; margin-left: 50%;">
-        Bekasi, {{ \Carbon\Carbon::parse($sp->tanggal_pelanggaran ?: now())->translatedFormat('j F Y') }}
+        Bekasi, {{ \Carbon\Carbon::parse($tglTerbitDoc)->translatedFormat('j F Y') }}
     </div>
 
 @php

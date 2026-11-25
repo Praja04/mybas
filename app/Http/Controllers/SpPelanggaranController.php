@@ -668,11 +668,15 @@ class SpPelanggaranController extends Controller
         }
 
         $updateData = [
-            'current_status' => SpPelanggaran::STATUS_PENDING_IR_HEAD,
-            'ir_staff_notes' => $request->input('notes'),
-            'ir_staff_id'    => Auth::id() ?: session('user_id'),
-            'email_dept_hr'  => Auth::user() ? Auth::user()->email : session('user_email'),
+            'current_status'        => SpPelanggaran::STATUS_PENDING_IR_HEAD,
+            'ir_staff_notes'        => $request->input('notes'),
+            'ir_staff_id'           => Auth::id() ?: session('user_id'),
+            'email_dept_hr'         => Auth::user() ? Auth::user()->email : session('user_email'),
         ];
+
+        if (\Illuminate\Support\Facades\Schema::hasColumn('sp_pelanggarans', 'ir_staff_approved_at')) {
+            $updateData['ir_staff_approved_at'] = now();
+        }
 
         if ($request->filled('kode_ir')) {
             $updateData['kode_ir'] = $request->input('kode_ir');
@@ -1725,9 +1729,10 @@ class SpPelanggaranController extends Controller
                 $statusIrHead = '-';
             }
 
-            // ── Tanggal Terbit = ir_head_approved_at ──────────────────────────
-            $tglTerbit = $sp->ir_head_approved_at
-                ? \Carbon\Carbon::parse($sp->ir_head_approved_at)->format('d/m/Y')
+            // ── Tanggal Terbit = ir_staff_approved_at / tanggal_terbit (fallback ir_head_approved_at) ───────
+            $dtTerbitObj = $sp->tanggal_terbit ?: ($sp->ir_head_approved_at ? \Carbon\Carbon::parse($sp->ir_head_approved_at) : null);
+            $tglTerbit = $dtTerbitObj
+                ? $dtTerbitObj->format('d/m/Y')
                 : '-';
 
             // ── Berlaku Sampai ────────────────────────────────────────────────
@@ -1779,14 +1784,13 @@ class SpPelanggaranController extends Controller
             $sheet->setCellValue('L' . $row, $statusIrStaff);
             $sheet->setCellValue('M' . $row, $statusIrHead);
 
-            // Format N: Tgl Terbit (IR Head)
-            if ($sp->ir_head_approved_at) {
+            // Format N: Tgl Terbit (IR Staff / Terbit)
+            if ($dtTerbitObj) {
                 try {
-                    $dtN = \Carbon\Carbon::parse($sp->ir_head_approved_at);
-                    $sheet->setCellValue('N' . $row, \PhpOffice\PhpSpreadsheet\Shared\Date::PHPToExcel($dtN));
+                    $sheet->setCellValue('N' . $row, \PhpOffice\PhpSpreadsheet\Shared\Date::PHPToExcel($dtTerbitObj));
                     $sheet->getStyle('N' . $row)->getNumberFormat()->setFormatCode('dd/mm/yyyy');
                 } catch (\Exception $e) {
-                    $sheet->setCellValue('N' . $row, $sp->ir_head_approved_at);
+                    $sheet->setCellValue('N' . $row, $dtTerbitObj->format('d/m/Y'));
                 }
             } else {
                 $sheet->setCellValue('N' . $row, '-');

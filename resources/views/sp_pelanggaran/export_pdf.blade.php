@@ -197,8 +197,8 @@
                     $statusIrHead = '-';
                 }
 
-                $tglTerbit = $sp->ir_head_approved_at
-                    ? \Carbon\Carbon::parse($sp->ir_head_approved_at)->format('d/m/Y')
+                $tglTerbit = ($sp->tanggal_terbit ?: $sp->ir_head_approved_at)
+                    ? \Carbon\Carbon::parse($sp->tanggal_terbit ?: $sp->ir_head_approved_at)->format('d/m/Y')
                     : '-';
 
                 $berlakuSampai = $sp->masa_berlaku_sampai

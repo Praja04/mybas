@@ -505,13 +505,19 @@
                             `<a href="/sp-pelanggaran/${sp.id}/export-pdf" target="_blank" class="btn btn-sm btn-danger text-white fw-bold"><i class="ri-file-pdf-line me-1"></i> Buka Surat Peringatan (PDF)</a>` :
                             `<a href="/sp-pelanggaran/${sp.id}/export-pdf" target="_blank" class="btn btn-sm btn-outline-secondary fw-bold"><i class="ri-file-pdf-line me-1"></i> Preview Draf PDF</a>`;
 
+                        let tglTerbitDisplay = '-';
+                        if (sp.tanggal_terbit) {
+                            let tt = sp.tanggal_terbit.substring(0, 10).split('-');
+                            tglTerbitDisplay = tt.length === 3 ? `${tt[2]}/${tt[1]}/${tt[0]}` : sp.tanggal_terbit;
+                        }
+
                         let html = `
                     <div class="row mb-3">
                         <div class="col-md-6">
                             <table class="table table-sm table-borderless">
                                 <tr><th width="35%">Karyawan</th><td>: <strong>${emp.nama || '-'}</strong></td></tr>
                                 <tr><th>NIK</th><td>: ${emp.nik || '-'}</td></tr>
-                                <tr><th>Tanggal</th><td>: ${dateDisplay}</td></tr>
+                                <tr><th>Tgl Kejadian</th><td>: ${dateDisplay}</td></tr>
                                 <tr><th>Jenis SP</th><td>: <span class="badge bg-warning text-dark">${sp.jenis_pelanggaran || '-'}</span></td></tr>
                             </table>
                         </div>
@@ -519,6 +525,7 @@
                             <table class="table table-sm table-borderless">
                                 <tr><th width="35%">Nomor SP</th><td>: <strong class="text-success">${sp.nomor_sp_generated || '-'}</strong></td></tr>
                                 <tr><th>Status</th><td>: <span class="badge bg-primary">${sp.current_status || '-'}</span></td></tr>
+                                <tr><th>Tgl Terbit</th><td>: <strong class="text-primary">${tglTerbitDisplay}</strong></td></tr>
                                 <tr><th>Sumber Data</th><td>: ${sp.sumber_data || '-'}</td></tr>
                             </table>
                         </div>
