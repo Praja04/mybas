@@ -183,9 +183,30 @@
                     <td class="label">Departemen / Bagian</td>
                     <td class="value">{{ $deptBagianStr }}</td>
                 </tr>
+                @php
+                    $formattedDatesNotif = [];
+                    $datesRelationNotif = $sp->relationLoaded('dates') ? $sp->dates : ($sp->dates ? $sp->dates : collect([]));
+                    if ($datesRelationNotif && $datesRelationNotif->count() > 0) {
+                        $formattedDatesNotif = $datesRelationNotif->pluck('tanggal')->unique()->filter()->map(function($tgl) {
+                            return \Carbon\Carbon::parse($tgl)->translatedFormat('d F Y');
+                        })->values()->all();
+                    }
+                    if (empty($formattedDatesNotif) && !empty($sp->tanggal_pelanggaran)) {
+                        $formattedDatesNotif = [\Carbon\Carbon::parse($sp->tanggal_pelanggaran)->translatedFormat('d F Y')];
+                    }
+
+                    if (count($formattedDatesNotif) > 1) {
+                        $lastDateNotif = array_pop($formattedDatesNotif);
+                        $displayTglKejadian = implode(', ', $formattedDatesNotif) . ' dan ' . $lastDateNotif;
+                    } elseif (count($formattedDatesNotif) === 1) {
+                        $displayTglKejadian = $formattedDatesNotif[0];
+                    } else {
+                        $displayTglKejadian = '-';
+                    }
+                @endphp
                 <tr>
                     <td class="label">Tanggal Kejadian</td>
-                    <td class="value">{{ \Carbon\Carbon::parse($sp->tanggal_pelanggaran)->format('d F Y') }}</td>
+                    <td class="value">{{ $displayTglKejadian }}</td>
                 </tr>
                 <tr>
                     <td class="label">{{ $isMangkir ? 'Kode Mangkir' : 'Kode Pelanggaran' }}</td>

@@ -183,6 +183,27 @@
 
         <tr><td colspan="4" style="padding: 3px 0;"></td></tr>
 
+        @php
+            $formattedDates = [];
+            $datesRelation = $sp->relationLoaded('dates') ? $sp->dates : ($sp->dates ? $sp->dates : collect([]));
+            if ($datesRelation && $datesRelation->count() > 0) {
+                $formattedDates = $datesRelation->pluck('tanggal')->unique()->filter()->map(function($tgl) {
+                    return \Carbon\Carbon::parse($tgl)->translatedFormat('j F Y');
+                })->values()->all();
+            }
+            if (empty($formattedDates) && !empty($sp->tanggal_pelanggaran)) {
+                $formattedDates = [\Carbon\Carbon::parse($sp->tanggal_pelanggaran)->translatedFormat('j F Y')];
+            }
+
+            if (count($formattedDates) > 1) {
+                $lastDate = array_pop($formattedDates);
+                $displayTanggalPelanggaran = implode(', ', $formattedDates) . ' dan ' . $lastDate;
+            } elseif (count($formattedDates) === 1) {
+                $displayTanggalPelanggaran = $formattedDates[0];
+            } else {
+                $displayTanggalPelanggaran = '-';
+            }
+        @endphp
         <tr>
             <td>III.</td>
             <td>Bentuk Pelanggaran</td>
@@ -193,7 +214,7 @@
             <td>&nbsp;</td>
             <td>Tanggal Pelanggaran</td>
             <td>:</td>
-            <td>{{ \Carbon\Carbon::parse($sp->tanggal_pelanggaran)->translatedFormat('j F Y') }}</td>
+            <td>{{ $displayTanggalPelanggaran }}</td>
         </tr>
 
         <tr><td colspan="4" style="padding: 3px 0;"></td></tr>

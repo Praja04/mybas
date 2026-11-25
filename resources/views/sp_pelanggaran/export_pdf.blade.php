@@ -228,7 +228,7 @@
                 <td>{{ $deptBagian }}</td>
                 <td style="text-align: center;">{{ $groupVal ?: '-' }}</td>
                 <td>{{ $sp->jenis_pelanggaran ?: '-' }}</td>
-                <td style="text-align: center;">{{ $sp->dates && $sp->dates->count() > 0 ? \Carbon\Carbon::parse($sp->dates->first()->tanggal)->format('d/m/Y') : ($sp->tanggal_pelanggaran ? \Carbon\Carbon::parse($sp->tanggal_pelanggaran)->format('d/m/Y') : '-') }}</td>
+                <td style="text-align: center;">{{ $sp->dates && $sp->dates->count() > 1 ? $sp->dates->pluck('tanggal')->unique()->filter()->map(function($d){ return \Carbon\Carbon::parse($d)->format('d/m/Y'); })->implode(', ') : ($sp->dates && $sp->dates->count() === 1 ? \Carbon\Carbon::parse($sp->dates->first()->tanggal)->format('d/m/Y') : ($sp->tanggal_pelanggaran ? \Carbon\Carbon::parse($sp->tanggal_pelanggaran)->format('d/m/Y') : '-')) }}</td>
                 <td>{{ $sp->alasan ?: '-' }}</td>
                 <td style="text-align: center;">{{ $statusDh }}</td>
                 <td style="text-align: center;">{{ $tglApproveDh }}</td>
