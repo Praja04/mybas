@@ -81,8 +81,9 @@ class LocalAttachmentController extends Controller
             ]);
         }
 
-        // Jika file tidak ditemukan di server lokal, alihkan browser ke server 172.21.5.105
-        return redirect('http://172.21.5.105/attachment/download/' . $id);
+        // Jika file tidak ditemukan di server lokal, alihkan browser ke server remote
+        $backupServer = rtrim(env('BACKUP_SERVER_URL', 'http://10.11.11.10:8093'), '/');
+        return redirect($backupServer . '/attachment/download/' . $id);
         // return response("File tidak ditemukan di server lokal.", 404);
     }
 

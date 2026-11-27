@@ -68,9 +68,10 @@ class PKWKaryawanController extends Controller
                 $image = file_get_contents($localPath);
                 \Log::info("=== [uploadSecureAccess] Foto lokal ditemukan (" . strlen($image) . " bytes) ===");
             } else {
-                \Log::info("=== [uploadSecureAccess] Foto lokal TIDAK ADA, coba fallback 172.21.5.105 ===");
-                // Fallback ke server 172.21.5.105 dengan timeout ketat agar tidak hang
-                $url = 'http://172.21.5.105/images/foto/' . $foto_name;
+                $backupServer = rtrim(env('BACKUP_SERVER_URL', 'http://10.11.11.10:8093'), '/');
+                \Log::info("=== [uploadSecureAccess] Foto lokal TIDAK ADA, coba fallback {$backupServer} ===");
+                // Fallback ke server backup dengan timeout ketat agar tidak hang
+                $url = $backupServer . '/images/foto/' . $foto_name;
                 $ch = curl_init();
                 curl_setopt($ch, CURLOPT_URL, $url);
                 curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
@@ -89,7 +90,7 @@ class PKWKaryawanController extends Controller
             if (!$image) {
                 return response()->json([
                     'success' => 0,
-                    'message' => 'File foto karyawan tidak ditemukan di server lokal maupun server 172.21.5.105.'
+                    'message' => 'File foto karyawan tidak ditemukan di server lokal maupun server backup.'
                 ], 404);
             }
 

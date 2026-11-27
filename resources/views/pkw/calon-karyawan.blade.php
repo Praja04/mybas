@@ -307,7 +307,7 @@ function showFoto(id_user, jenis, foto)
         $("#foto-viewer").show();
         $("#foto-uploader").hide();
         var primaryUrl = "{{ url('images') }}/" + jenis + "/" + foto;
-        var fallbackUrl = "http://172.21.5.105/images/" + jenis + "/" + foto;
+        var fallbackUrl = "{{ rtrim(env('BACKUP_SERVER_URL', 'http://10.11.11.10:8093'), '/') }}/images/" + jenis + "/" + foto;
 
         $("#foto-viewer")
             .off('error')

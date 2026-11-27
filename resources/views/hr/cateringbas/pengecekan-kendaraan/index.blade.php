@@ -165,6 +165,8 @@
                                     onerror="
                                         if (this.src !== '${row.foto_backup}') {
                                             this.src='${row.foto_backup}';
+                                        } else {
+                                            this.onerror = null;
                                         }
                                     "
                                     class="clickable-image"

@@ -540,8 +540,9 @@ class SioController extends Controller
                             $zip->addFile($filePath, $zipFilePath);
                             $hasFiles = true;
                         } else {
-                            // Fallback to 172.21.5.105
-                            $fallbackUrl = 'http://172.21.5.105/attachment/download/' . $attachment->id;
+                            // Fallback to remote server
+                            $backupServer = rtrim(env('BACKUP_SERVER_URL', 'http://10.11.11.10:8093'), '/');
+                            $fallbackUrl = $backupServer . '/attachment/download/' . $attachment->id;
                             try {
                                 $response = \Illuminate\Support\Facades\Http::timeout(10)->get($fallbackUrl);
                                 if ($response->successful()) {

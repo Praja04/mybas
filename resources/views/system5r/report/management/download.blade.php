@@ -213,9 +213,10 @@
                                                 }
                                             }
 
-                                            // Jika tidak ada di lokal, coba ambil dari IP 172
+                                            // Jika tidak ada di lokal, coba ambil dari server backup
                                             if ($imageData === false) {
-                                                $remotePath = 'http://172.21.5.105/images/5r/' . $_foto;
+                                                $backupServer = rtrim(env('BACKUP_SERVER_URL', 'http://10.11.11.10:8093'), '/');
+                                                $remotePath = $backupServer . '/images/5r/' . $_foto;
                                                 $imageData = @file_get_contents($remotePath);
                                             }
 
