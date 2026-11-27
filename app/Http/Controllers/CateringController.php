@@ -352,7 +352,7 @@ class CateringController extends Controller
                 'id_transaksi' => $pengirimcatering->id_transaksi,
                 'catering' => $pengirimcatering->catering,
                 'tanggal' => $pengirimcatering->tanggal,
-                'foto' => asset('cateringbas/pengirim/' . $pengirimcatering->foto),
+                'foto' => $this->getCateringFotoUrl($pengirimcatering->foto),
                 'shift' => $pengirimcatering->shift,
                 'status_cek_kendaraan' => $pengirimcatering->status_cek_kendaraan,
                 'status_cek_kedatangan' => $pengirimcatering->status_cek_kedatangan,
@@ -1083,7 +1083,7 @@ class CateringController extends Controller
                 'id_transaksi' => $pengirimcatering->id_transaksi,
                 'catering' => $pengirimcatering->catering,
                 'tanggal' => $pengirimcatering->tanggal,
-                'foto' => asset('cateringbas/pengirim/' . $pengirimcatering->foto),
+                'foto' => $this->getCateringFotoUrl($pengirimcatering->foto),
                 'shift' => $pengirimcatering->shift,
                 'nama_petugas_security' => $pengirimcatering->nama_petugas_security,
                 'nama_petugas_kantin_pesanan' => $pengirimcatering->nama_petugas_kantin_pesanan,
@@ -1122,9 +1122,8 @@ class CateringController extends Controller
                 'id_transaksi' => $pengirimcatering->id_transaksi,
                 'catering' => $pengirimcatering->catering,
                 'tanggal' => $pengirimcatering->tanggal,
-                'foto' => asset('cateringbas/pengirim/' . $pengirimcatering->foto),
-                // 'foto_primary' => 'http://10.11.10.130:8093/cateringbas/pengirim/' . $pengirimcatering->foto,
-                'foto_backup'  => 'http://172.21.5.105/cateringbas/pengirim/' . $pengirimcatering->foto,
+                'foto' => $this->getCateringFotoUrl($pengirimcatering->foto),
+                'foto_backup'  => $this->getCateringBackupFotoUrl($pengirimcatering->foto),
                 'shift' => $pengirimcatering->shift,
                 'nama_petugas_security' => $pengirimcatering->nama_petugas_security,
                 'nama_petugas_kantin_pesanan' => $pengirimcatering->nama_petugas_kantin_pesanan,
@@ -1159,7 +1158,7 @@ class CateringController extends Controller
                 'id_transaksi' => $pengirimcatering->id_transaksi,
                 'catering' => $pengirimcatering->catering,
                 'tanggal' => $pengirimcatering->tanggal,
-                'foto' => asset('cateringbas/pengirim/' . $pengirimcatering->foto),
+                'foto' => $this->getCateringFotoUrl($pengirimcatering->foto),
                 'shift' => $pengirimcatering->shift,
                 'nama_petugas_security' => $pengirimcatering->nama_petugas_security,
                 'nama_petugas_kantin_pesanan' => $pengirimcatering->nama_petugas_kantin_pesanan,
@@ -1348,5 +1347,51 @@ class CateringController extends Controller
         // Render data ke dalam file PDF
         $pdf = PDF::loadView('hr.cateringbas.cetak-report-catering.report-catering-pdf', ['reportData' => $reportData]);
         return $pdf->download('laporan_mingguan.pdf');
+    }
+
+    private function getCateringFotoUrl($fileName)
+    {
+        if (empty($fileName)) {
+            return '';
+        }
+
+        $serverUrl = env('CATERING_SERVER_URL');
+        if (!$serverUrl) {
+            $appUrl = env('APP_URL');
+            if ($appUrl && !in_array($appUrl, ['http://localhost', 'http://127.0.0.1', 'localhost'])) {
+                $serverUrl = $appUrl;
+            } else {
+                $serverUrl = 'http://10.11.11.10:8093';
+            }
+        }
+        $serverUrl = rtrim($serverUrl, '/');
+
+        // Jika file ada di folder public lokal, gunakan asset lokal
+        if (file_exists(public_path('cateringbas/pengirim/' . $fileName))) {
+            return asset('cateringbas/pengirim/' . $fileName);
+        }
+
+        // Fallback langsung ke URL server remote
+        return $serverUrl . '/cateringbas/pengirim/' . $fileName;
+    }
+
+    private function getCateringBackupFotoUrl($fileName)
+    {
+        if (empty($fileName)) {
+            return '';
+        }
+
+        $serverUrl = env('CATERING_SERVER_URL');
+        if (!$serverUrl) {
+            $appUrl = env('APP_URL');
+            if ($appUrl && !in_array($appUrl, ['http://localhost', 'http://127.0.0.1', 'localhost'])) {
+                $serverUrl = $appUrl;
+            } else {
+                $serverUrl = 'http://10.11.11.10:8093';
+            }
+        }
+        $serverUrl = rtrim($serverUrl, '/');
+
+        return $serverUrl . '/cateringbas/pengirim/' . $fileName;
     }
 }
