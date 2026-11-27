@@ -314,25 +314,52 @@ class CateringController extends Controller
 
     public function tambahpengirimCatering(Request $request)
     {
-        $newId = $this->generateIdtransaksi();
-        $pengirimcatering = new pengirimCateringbas;
-        $pengirimcatering->id_transaksi = $newId;
-        $pengirimcatering->tanggal = Carbon::now()->format('Y-m-d');
-        $pengirimcatering->catering = $request->catering;
-        $pengirimcatering->shift = $request->shift;
-        $pengirimcatering->nama_petugas_security = auth()->user()->name;
+        try {
+            $newId = $this->generateIdtransaksi();
+            $pengirimcatering = new pengirimCateringbas;
+            $pengirimcatering->id_transaksi = $newId;
+            $pengirimcatering->tanggal = Carbon::now()->format('Y-m-d');
+            $pengirimcatering->catering = $request->catering;
+            $pengirimcatering->shift = in_array((string)$request->shift, ['1', '2', '3']) ? $request->shift : '1';
 
-        if ($request->hasFile('files')) {
-            $fileName = time() . '.' . $request->file('files')[0]->getClientOriginalExtension();
-            $fotoPath = $request->file('files')[0]->move('cateringbas/pengirim/', $fileName);
-            $pengirimcatering->foto = $fileName;
-        } else {
-            return response()->json(['error' => 0, 'message' => 'Harap masukkan gambar kedatangan catering'], 400);
+            $user = auth()->user();
+            $pengirimcatering->nama_petugas_security = $user ? ($user->name ?? $user->username ?? 'Security') : 'Security';
+
+            $file = null;
+            if ($request->hasFile('files')) {
+                $f = $request->file('files');
+                $file = is_array($f) ? $f[0] : $f;
+            } elseif ($request->hasFile('foto')) {
+                $f = $request->file('foto');
+                $file = is_array($f) ? $f[0] : $f;
+            } elseif ($request->hasFile('file')) {
+                $f = $request->file('file');
+                $file = is_array($f) ? $f[0] : $f;
+            }
+
+            if ($file && $file->isValid()) {
+                $destinationPath = public_path('cateringbas/pengirim');
+                if (!file_exists($destinationPath)) {
+                    mkdir($destinationPath, 0777, true);
+                }
+                $extension = $file->getClientOriginalExtension() ?: 'jpg';
+                $fileName = time() . '.' . $extension;
+                $file->move($destinationPath, $fileName);
+                $pengirimcatering->foto = $fileName;
+            } else {
+                return response()->json(['error' => 0, 'message' => 'Harap masukkan gambar kedatangan catering'], 400);
+            }
+
+            $pengirimcatering->save();
+
+            return response()->json(['success' => 1, 'id_transaksi' => $pengirimcatering->id_transaksi, 'message' => 'Data Pengirim Catering Berhasil Disimpan']);
+        } catch (\Throwable $e) {
+            \Log::error('Error tambahpengirimCatering: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            return response()->json([
+                'error' => 0,
+                'message' => 'Gagal menyimpan: ' . $e->getMessage()
+            ], 500);
         }
-
-        $pengirimcatering->save();
-
-        return response()->json(['success' => 1, 'id_transaksi' => $pengirimcatering->id_transaksi, 'message' => 'Data Pengirim Catering Berhasil Disimpan']);
     }
 
 
@@ -595,12 +622,16 @@ class CateringController extends Controller
             }
         }
         // Process foto_before1
+        $dirBefore = public_path('cateringbas/sampel/before');
+        if (!file_exists($dirBefore)) {
+            mkdir($dirBefore, 0777, true);
+        }
         $fotobefore1 = time() . '1.' . $request->file('files_before1')[0]->getClientOriginalExtension();
-        $fotoPathbefore1 = $request->file('files_before1')[0]->move('cateringbas/sampel/before', $fotobefore1);
+        $fotoPathbefore1 = $request->file('files_before1')[0]->move($dirBefore, $fotobefore1);
 
         // Process foto_before2
         $fotobefore2 = time() . '2.' . $request->file('files_before2')[0]->getClientOriginalExtension();
-        $fotoPathbefore2 = $request->file('files_before2')[0]->move('cateringbas/sampel/before', $fotobefore2);
+        $fotoPathbefore2 = $request->file('files_before2')[0]->move($dirBefore, $fotobefore2);
 
         $gambar = json_encode(['gambar1' => $fotobefore1, 'gambar2' => $fotobefore2]);
 
@@ -646,10 +677,15 @@ class CateringController extends Controller
         // cari id pengambilan catering
         $jumlahPesanan = pengambilanSampelCateringbas::find($request->id);
 
+        $dirAfter = public_path('cateringbas/sampel/after');
+        if (!file_exists($dirAfter)) {
+            mkdir($dirAfter, 0777, true);
+        }
+
         // proses foto after 1
         if ($request->hasFile('files_after1')) {
             $fotoafter1 = time() . '1.' . $request->file('files_after1')[0]->getClientOriginalExtension();
-            $fotoPathafter1 = $request->file('files_after1')[0]->move('cateringbas/sampel/after', $fotoafter1);
+            $fotoPathafter1 = $request->file('files_after1')[0]->move($dirAfter, $fotoafter1);
         } else {
             $fotoafter1 = null;
         }
@@ -657,7 +693,7 @@ class CateringController extends Controller
         // proses foto after 2
         if ($request->hasFile('files_after2')) {
             $fotoafter2 = time() . '2.' . $request->file('files_after2')[0]->getClientOriginalExtension();
-            $fotoPathafter2 = $request->file('files_after2')[0]->move('cateringbas/sampel/after', $fotoafter2);
+            $fotoPathafter2 = $request->file('files_after2')[0]->move($dirAfter, $fotoafter2);
         } else {
             $fotoafter2 = null;
         }
