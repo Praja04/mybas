@@ -1,8 +1,8 @@
 @extends('layouts.base')
 
 @push('styles')
-    <link href="https://unpkg.com/filepond-plugin-image-preview/dist/filepond-plugin-image-preview.min.css" rel="stylesheet">
-    <link href="https://unpkg.com/filepond/dist/filepond.min.css" rel="stylesheet">
+    <link href="{{ asset('assets/velzon/libs/filepond/filepond.min.css') }}" rel="stylesheet">
+    <link href="{{ asset('assets/velzon/libs/filepond-plugin-image-preview/filepond-plugin-image-preview.min.css') }}" rel="stylesheet">
 @endpush
 
 @section('content')
@@ -65,6 +65,7 @@
                 </div>
                 <div class="modal-body">
                     <form id="uploadPesananCatering">
+                        @csrf
                         <div class="form-group row">
                             <label class="col-3 col-form-label text-right" for="image">
                                 Gambar Catering <span style="color: red;">*</span>
@@ -122,9 +123,9 @@
 @push('scripts')
     <script src="{{ url('/assets/plugins/custom/datatables/datatables.bundle.js') }}"></script>
     <script src="{{ url('/assets/plugins/global/date-eu.js') }}"></script>
-    {{-- filepon --}}
-    <script src="https://unpkg.com/filepond-plugin-image-preview/dist/filepond-plugin-image-preview.min.js"></script>
-    <script src="https://unpkg.com/filepond/dist/filepond.min.js"></script>
+    {{-- filepond --}}
+    <script src="{{ asset('assets/velzon/libs/filepond/filepond.min.js') }}"></script>
+    <script src="{{ asset('assets/velzon/libs/filepond-plugin-image-preview/filepond-plugin-image-preview.min.js') }}"></script>
     <script type="text/javascript">
         // open modal pesanan catering
         function showModalCreateCatering() {
@@ -157,16 +158,17 @@
                     {
                         data: 'foto',
                         render: function(data, type, row) {
-
+                            const blankSvg = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 24 24' fill='%23cccccc'><rect width='24' height='24' fill='%23f3f6f9'/><path d='M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z' fill='%23b5b5c3'/></svg>";
                             return `
                             <a href="javascript:void(0)" onclick="openImage(this)">
                                 <img
                                     src="${row.foto}"
                                     onerror="
-                                        if (this.src !== '${row.foto_backup}') {
+                                        if (this.src !== '${row.foto_backup}' && '${row.foto_backup}') {
                                             this.src='${row.foto_backup}';
                                         } else {
                                             this.onerror = null;
+                                            this.src='${blankSvg}';
                                         }
                                     "
                                     class="clickable-image"
@@ -279,21 +281,55 @@
 
         // tambah pesanan 
         $(document).ready(function() {
+            let pond = null;
             const inputElement = document.querySelector('input[name="foto"]');
-            FilePond.registerPlugin(FilePondPluginImagePreview);
-            const pond = FilePond.create(inputElement);
+
+            if (typeof FilePond !== 'undefined') {
+                if (typeof FilePondPluginImagePreview !== 'undefined') {
+                    FilePond.registerPlugin(FilePondPluginImagePreview);
+                }
+                pond = FilePond.create(inputElement);
+            }
 
             $('#submitButton').click(function(e) {
                 e.preventDefault();
 
-                var data = new FormData($('#uploadPesananCatering')[0]);
-                var files = pond.getFiles();
+                var catering = $('#nama-catering').val();
+                var shift = $('#kategori-shift').val();
 
-                if (files.length > 0) {
-                    files.forEach((file) => {
-                        data.append('files[]', file.file)
+                if (!catering) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Perhatian',
+                        text: 'Silakan isi Nama Catering terlebih dahulu.'
                     });
+                    return;
                 }
+
+                if (!shift) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Perhatian',
+                        text: 'Silakan pilih Shift terlebih dahulu.'
+                    });
+                    return;
+                }
+
+                var $btn = $(this);
+                var originalHtml = $btn.html();
+
+                var data = new FormData($('#uploadPesananCatering')[0]);
+
+                if (pond) {
+                    var files = pond.getFiles();
+                    if (files.length > 0) {
+                        files.forEach((file) => {
+                            data.append('files[]', file.file, file.file.name || 'foto.jpg');
+                        });
+                    }
+                }
+
+                $btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Menyimpan...');
 
                 $.ajax({
                     type: "POST",
@@ -301,6 +337,9 @@
                     data: data,
                     processData: false,
                     contentType: false,
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    },
                     success: function(response) {
                         if (response.success === 1) {
                             var table = $('#pengirimCatering').DataTable();
@@ -317,6 +356,7 @@
                                     id_transaksi;
                             });
                         } else {
+                            $btn.prop('disabled', false).html(originalHtml);
                             Swal.fire({
                                 icon: 'error',
                                 title: 'Gagal',
@@ -325,19 +365,18 @@
                         }
                     },
                     error: function(xhr, status, error) {
-                        if (xhr.responseJSON && xhr.responseJSON.error === 0) {
-                            Swal.fire({
-                                icon: 'error',
-                                title: 'Gagal',
-                                text: 'Harap masukkan foto kedatangan catering',
-                            });
-                        } else {
-                            Swal.fire({
-                                icon: 'error',
-                                title: 'Gagal',
-                                text: 'Terjadi kesalahan saat mengirim permintaan.',
-                            });
+                        $btn.prop('disabled', false).html(originalHtml);
+                        var msg = 'Terjadi kesalahan saat mengirim permintaan.';
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            msg = xhr.responseJSON.message;
+                        } else if (xhr.responseJSON && xhr.responseJSON.error === 0) {
+                            msg = 'Harap masukkan foto kedatangan catering';
                         }
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Gagal',
+                            text: msg,
+                        });
                     }
                 });
 
