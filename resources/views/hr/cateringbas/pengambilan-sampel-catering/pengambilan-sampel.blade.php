@@ -614,8 +614,8 @@
                 $btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Menyimpan...');
 
                 var data = new FormData($('#editPesananCatering')[0]);
-                var filesAfter1 = pondAfter1 ? pondAfter1.getFiles() : [];
-                var filesAfter2 = pondAfter2 ? pondAfter2.getFiles() : [];
+                var filesAfter1 = (pondAfter1 && typeof pondAfter1.getFiles === 'function') ? pondAfter1.getFiles() : [];
+                var filesAfter2 = (pondAfter2 && typeof pondAfter2.getFiles === 'function') ? pondAfter2.getFiles() : [];
 
                 // Append files from FilePond instances to FormData
                 if (filesAfter1.length > 0) {
@@ -935,11 +935,14 @@
                     return; // Hentikan AJAX jika input radio belum lengkap
                 }
 
-                var filesBefore1 = pondBefore1 ? pondBefore1.getFiles() : [];
-                var filesBefore2 = pondBefore2 ? pondBefore2.getFiles() : [];
+                var filesBefore1 = (pondBefore1 && typeof pondBefore1.getFiles === 'function') ? pondBefore1.getFiles() : [];
+                var filesBefore2 = (pondBefore2 && typeof pondBefore2.getFiles === 'function') ? pondBefore2.getFiles() : [];
 
-                var hasFile1 = filesBefore1.length > 0 || (document.getElementById('foto-before1') && document.getElementById('foto-before1').files.length > 0);
-                var hasFile2 = filesBefore2.length > 0 || (document.getElementById('foto-before2') && document.getElementById('foto-before2').files.length > 0);
+                var el1 = document.getElementById('foto-before1');
+                var el2 = document.getElementById('foto-before2');
+
+                var hasFile1 = (filesBefore1 && filesBefore1.length > 0) || (el1 && el1.files && el1.files.length > 0);
+                var hasFile2 = (filesBefore2 && filesBefore2.length > 0) || (el2 && el2.files && el2.files.length > 0);
 
                 if (!hasFile1 && !hasFile2) {
                     Swal.fire({
