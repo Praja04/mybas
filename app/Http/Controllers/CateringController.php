@@ -561,8 +561,8 @@ class CateringController extends Controller
                 $fotoBeforeArray = json_decode($orderpesanan->foto_before, true);
 
                 if (is_array($fotoBeforeArray)) {
-                    $pesanan['foto_before_1'] = isset($fotoBeforeArray['gambar1']) ? asset("cateringbas/sampel/before/{$fotoBeforeArray['gambar1']}") : '';
-                    $pesanan['foto_before_2'] = isset($fotoBeforeArray['gambar2']) ? asset("cateringbas/sampel/before/{$fotoBeforeArray['gambar2']}") : '';
+                    $pesanan['foto_before_1'] = !empty($fotoBeforeArray['gambar1']) ? asset("cateringbas/sampel/before/{$fotoBeforeArray['gambar1']}") : '';
+                    $pesanan['foto_before_2'] = !empty($fotoBeforeArray['gambar2']) ? asset("cateringbas/sampel/before/{$fotoBeforeArray['gambar2']}") : '';
                 }
             }
 
@@ -570,8 +570,8 @@ class CateringController extends Controller
                 $fotoAfterArray = json_decode($orderpesanan->foto_after, true);
 
                 if (is_array($fotoAfterArray)) {
-                    $pesanan['foto_after_1'] = isset($fotoAfterArray['gambar1']) ? asset("cateringbas/sampel/after/{$fotoAfterArray['gambar1']}") : '';
-                    $pesanan['foto_after_2'] = isset($fotoAfterArray['gambar2']) ? asset("cateringbas/sampel/after/{$fotoAfterArray['gambar2']}") : '';
+                    $pesanan['foto_after_1'] = !empty($fotoAfterArray['gambar1']) ? asset("cateringbas/sampel/after/{$fotoAfterArray['gambar1']}") : '';
+                    $pesanan['foto_after_2'] = !empty($fotoAfterArray['gambar2']) ? asset("cateringbas/sampel/after/{$fotoAfterArray['gambar2']}") : '';
                 }
             }
 
@@ -602,129 +602,203 @@ class CateringController extends Controller
 
     public function storeSampelCatering(Request $request)
     {
-        $data = $request->all();
-        foreach ($data as $key => $value) {
-            if (strpos($key, 'pengambilan-utama') === 0) {
-                $id_pengambilan_utama = substr($key, strlen('pengambilan-utama-'));
+        try {
+            $data = $request->all();
+            foreach ($data as $key => $value) {
+                if (strpos($key, 'pengambilan-utama') === 0) {
+                    $id_pengambilan_utama = substr($key, strlen('pengambilan-utama-'));
 
-                $menuUtama = CateringbasMasterMakananUtama::where('id', $id_pengambilan_utama)->first();
+                    $menuUtama = CateringbasMasterMakananUtama::where('id', $id_pengambilan_utama)->first();
 
-                $menuUtama->update(['pengambilan' => $value]);
+                    if ($menuUtama) {
+                        $menuUtama->update(['pengambilan' => $value]);
+                    }
+                }
             }
-        }
-        foreach ($data as $key => $value) {
-            if (strpos($key, 'pengambilan-pendamping') === 0) {
-                $id_pengambilan_pendamping = substr($key, strlen('pengambilan-pendamping-'));
+            foreach ($data as $key => $value) {
+                if (strpos($key, 'pengambilan-pendamping') === 0) {
+                    $id_pengambilan_pendamping = substr($key, strlen('pengambilan-pendamping-'));
 
-                $menuPendamping = CateringbasMasterMakananPendamping::where('id', $id_pengambilan_pendamping)->first();
+                    $menuPendamping = CateringbasMasterMakananPendamping::where('id', $id_pengambilan_pendamping)->first();
 
-                $menuPendamping->update(['pengambilan' => $value]);
+                    if ($menuPendamping) {
+                        $menuPendamping->update(['pengambilan' => $value]);
+                    }
+                }
             }
+
+            $dirBefore = public_path('cateringbas/sampel/before');
+            if (!file_exists($dirBefore)) {
+                mkdir($dirBefore, 0777, true);
+            }
+
+            // Extract foto_before1
+            $fileBefore1 = null;
+            if ($request->hasFile('files_before1')) {
+                $f = $request->file('files_before1');
+                $fileBefore1 = is_array($f) ? ($f[0] ?? null) : $f;
+            } elseif ($request->hasFile('foto_before1')) {
+                $f = $request->file('foto_before1');
+                $fileBefore1 = is_array($f) ? ($f[0] ?? null) : $f;
+            }
+
+            // Extract foto_before2
+            $fileBefore2 = null;
+            if ($request->hasFile('files_before2')) {
+                $f = $request->file('files_before2');
+                $fileBefore2 = is_array($f) ? ($f[0] ?? null) : $f;
+            } elseif ($request->hasFile('foto_before2')) {
+                $f = $request->file('foto_before2');
+                $fileBefore2 = is_array($f) ? ($f[0] ?? null) : $f;
+            }
+
+            $fotobefore1 = null;
+            if ($fileBefore1 && $fileBefore1->isValid()) {
+                $fotobefore1 = time() . '1.' . ($fileBefore1->getClientOriginalExtension() ?: 'jpg');
+                $fileBefore1->move($dirBefore, $fotobefore1);
+            }
+
+            $fotobefore2 = null;
+            if ($fileBefore2 && $fileBefore2->isValid()) {
+                $fotobefore2 = time() . '2.' . ($fileBefore2->getClientOriginalExtension() ?: 'jpg');
+                $fileBefore2->move($dirBefore, $fotobefore2);
+            }
+
+            if (!$fotobefore1 && !$fotobefore2) {
+                return response()->json([
+                    'error' => 0,
+                    'message' => 'Harap masukkan minimal satu foto sebelum pengambilan sampel'
+                ], 400);
+            }
+
+            $gambar = json_encode(['gambar1' => $fotobefore1, 'gambar2' => $fotobefore2]);
+
+            // Create or update the pengambilanSampelCateringbas record
+            $jumlahPesanan = new pengambilanSampelCateringbas;
+            $jumlahPesanan->id_transaksi = $request->id_transaksi;
+            $jumlahPesanan->tanggal_jam_masuk = $this->getTanggalJamMasuk();
+
+            $user = auth()->user();
+            $jumlahPesanan->nama_petugas_kantin = $user ? ($user->name ?? $user->username ?? 'Petugas Kantin') : 'Petugas Kantin';
+            $jumlahPesanan->foto_before = $gambar;
+            $jumlahPesanan->save();
+
+            return response()->json(['success' => 1, 'message' => 'Berhasil Melakukan Pengambilan Sampel']);
+        } catch (\Throwable $e) {
+            \Log::error('Error storeSampelCatering: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            return response()->json([
+                'error' => 0,
+                'message' => 'Gagal menyimpan: ' . $e->getMessage()
+            ], 500);
         }
-        // Process foto_before1
-        $dirBefore = public_path('cateringbas/sampel/before');
-        if (!file_exists($dirBefore)) {
-            mkdir($dirBefore, 0777, true);
-        }
-        $fotobefore1 = time() . '1.' . $request->file('files_before1')[0]->getClientOriginalExtension();
-        $fotoPathbefore1 = $request->file('files_before1')[0]->move($dirBefore, $fotobefore1);
-
-        // Process foto_before2
-        $fotobefore2 = time() . '2.' . $request->file('files_before2')[0]->getClientOriginalExtension();
-        $fotoPathbefore2 = $request->file('files_before2')[0]->move($dirBefore, $fotobefore2);
-
-        $gambar = json_encode(['gambar1' => $fotobefore1, 'gambar2' => $fotobefore2]);
-
-
-        // Create or update the pengambilanSampelCateringbas record
-        $jumlahPesanan = new pengambilanSampelCateringbas;
-        $jumlahPesanan->id_transaksi = $request->id_transaksi;
-        $jumlahPesanan->tanggal_jam_masuk = $this->getTanggalJamMasuk();
-        $jumlahPesanan->nama_petugas_kantin =  auth()->user()->name;
-        // $jumlahPesanan->keterangan_menu = $request->keterangan_menu;
-        // $jumlahPesanan->baik = $request->baik;
-
-        // $jumlahPesanan->kategori_staff = $request->kategori_staff;
-        $jumlahPesanan->foto_before = $gambar;
-        $jumlahPesanan->save();
-
-        return response()->json(['success' => 1, 'message' => 'Berhasil Melakukan Pengambilan Sampel']);
     }
 
 
     public function editSampelCatering(Request $request)
     {
-        $data = $request->all();
-        foreach ($data as $key => $value) {
-            if (strpos($key, 'penilaian-utama') === 0) {
-                $id_penilaian_utama = substr($key, strlen('penilaian-utama-'));
+        try {
+            $data = $request->all();
+            foreach ($data as $key => $value) {
+                if (strpos($key, 'penilaian-utama') === 0) {
+                    $id_penilaian_utama = substr($key, strlen('penilaian-utama-'));
 
-                $menuUtama = CateringbasMasterMakananUtama::where('id', $id_penilaian_utama)->first();
+                    $menuUtama = CateringbasMasterMakananUtama::where('id', $id_penilaian_utama)->first();
 
-                $menuUtama->update(['baik' => $value]);
+                    if ($menuUtama) {
+                        $menuUtama->update(['baik' => $value]);
+                    }
+                }
             }
-        }
-        foreach ($data as $key => $value) {
-            if (strpos($key, 'penilaian-pendamping') === 0) {
-                $id_penilaian_pendamping = substr($key, strlen('penilaian-pendamping-'));
+            foreach ($data as $key => $value) {
+                if (strpos($key, 'penilaian-pendamping') === 0) {
+                    $id_penilaian_pendamping = substr($key, strlen('penilaian-pendamping-'));
 
-                $menuPendamping = CateringbasMasterMakananPendamping::where('id', $id_penilaian_pendamping)->first();
+                    $menuPendamping = CateringbasMasterMakananPendamping::where('id', $id_penilaian_pendamping)->first();
 
-                $menuPendamping->update(['baik' => $value]);
+                    if ($menuPendamping) {
+                        $menuPendamping->update(['baik' => $value]);
+                    }
+                }
             }
+
+            // cari id pengambilan catering
+            $jumlahPesanan = pengambilanSampelCateringbas::find($request->id);
+            if (!$jumlahPesanan) {
+                return response()->json(['error' => 0, 'message' => 'Data pengambilan sampel tidak ditemukan'], 404);
+            }
+
+            $dirAfter = public_path('cateringbas/sampel/after');
+            if (!file_exists($dirAfter)) {
+                mkdir($dirAfter, 0777, true);
+            }
+
+            $existingGambar = [];
+            if (is_string($jumlahPesanan->foto_after)) {
+                $decoded = json_decode($jumlahPesanan->foto_after, true);
+                if (is_array($decoded)) {
+                    $existingGambar = $decoded;
+                }
+            }
+
+            // Extract foto_after1
+            $fileAfter1 = null;
+            if ($request->hasFile('files_after1')) {
+                $f = $request->file('files_after1');
+                $fileAfter1 = is_array($f) ? ($f[0] ?? null) : $f;
+            } elseif ($request->hasFile('foto_after1')) {
+                $f = $request->file('foto_after1');
+                $fileAfter1 = is_array($f) ? ($f[0] ?? null) : $f;
+            }
+
+            // Extract foto_after2
+            $fileAfter2 = null;
+            if ($request->hasFile('files_after2')) {
+                $f = $request->file('files_after2');
+                $fileAfter2 = is_array($f) ? ($f[0] ?? null) : $f;
+            } elseif ($request->hasFile('foto_after2')) {
+                $f = $request->file('foto_after2');
+                $fileAfter2 = is_array($f) ? ($f[0] ?? null) : $f;
+            }
+
+            $fotoafter1 = $existingGambar['gambar1'] ?? null;
+            if ($fileAfter1 && $fileAfter1->isValid()) {
+                $fotoafter1 = time() . '1.' . ($fileAfter1->getClientOriginalExtension() ?: 'jpg');
+                $fileAfter1->move($dirAfter, $fotoafter1);
+            }
+
+            $fotoafter2 = $existingGambar['gambar2'] ?? null;
+            if ($fileAfter2 && $fileAfter2->isValid()) {
+                $fotoafter2 = time() . '2.' . ($fileAfter2->getClientOriginalExtension() ?: 'jpg');
+                $fileAfter2->move($dirAfter, $fotoafter2);
+            }
+
+            $gambar = json_encode(['gambar1' => $fotoafter1, 'gambar2' => $fotoafter2]);
+
+            $tanggalJamMasuk = Carbon::parse($jumlahPesanan->tanggal_jam_masuk);
+            $tanggalJamKeluar = Carbon::now();
+            $diff = $tanggalJamKeluar->diff($tanggalJamMasuk);
+
+            $masaSimpan = ($diff->days * 24 + $diff->h) . ' jam ' .
+                $diff->i . ' menit ' .
+                $diff->s . ' detik';
+
+            // Update record
+            $jumlahPesanan->id_transaksi = $request->id_transaksi;
+            $jumlahPesanan->tanggal_jam_keluar = $tanggalJamKeluar;
+            $jumlahPesanan->keterangan_menu_keluar = $request->keterangan_menu_keluar;
+            $jumlahPesanan->foto_after = $gambar;
+            $jumlahPesanan->masa_simpan = $masaSimpan;
+            $jumlahPesanan->save();
+
+            // Mengembalikan response
+            return response()->json(['success' => 1, 'message' => 'Berhasil Memberi Penilaian Sampel']);
+        } catch (\Throwable $e) {
+            \Log::error('Error editSampelCatering: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            return response()->json([
+                'error' => 0,
+                'message' => 'Gagal menyimpan: ' . $e->getMessage()
+            ], 500);
         }
-
-        // cari id pengambilan catering
-        $jumlahPesanan = pengambilanSampelCateringbas::find($request->id);
-
-        $dirAfter = public_path('cateringbas/sampel/after');
-        if (!file_exists($dirAfter)) {
-            mkdir($dirAfter, 0777, true);
-        }
-
-        // proses foto after 1
-        if ($request->hasFile('files_after1')) {
-            $fotoafter1 = time() . '1.' . $request->file('files_after1')[0]->getClientOriginalExtension();
-            $fotoPathafter1 = $request->file('files_after1')[0]->move($dirAfter, $fotoafter1);
-        } else {
-            $fotoafter1 = null;
-        }
-
-        // proses foto after 2
-        if ($request->hasFile('files_after2')) {
-            $fotoafter2 = time() . '2.' . $request->file('files_after2')[0]->getClientOriginalExtension();
-            $fotoPathafter2 = $request->file('files_after2')[0]->move($dirAfter, $fotoafter2);
-        } else {
-            $fotoafter2 = null;
-        }
-
-        $gambar = json_encode(['gambar1' => $fotoafter1, 'gambar2' => $fotoafter2]);
-
-        $tanggalJamMasuk = Carbon::parse($jumlahPesanan->tanggal_jam_masuk);
-        $tanggalJamKeluar = Carbon::now();
-        // Menghitung perbedaan waktu
-        $diff = $tanggalJamKeluar->diff($tanggalJamMasuk);
-
-        // Menentukan masa simpan dalam format "x jam y menit z detik"
-        $masaSimpan = ($diff->days * 24 + $diff->h) . ' jam ' .
-            $diff->i . ' menit ' .
-            $diff->s . ' detik';
-
-        if ($diff->invert == 0) {
-            // Format output (opsional)
-            // echo "{$diff->d} hari, {$diff->h} jam, {$diff->i} menit, dan {$diff->s} detik";
-        }
-
-        // Update record
-        $jumlahPesanan->id_transaksi = $request->id_transaksi;
-        $jumlahPesanan->tanggal_jam_keluar = $tanggalJamKeluar;
-        $jumlahPesanan->keterangan_menu_keluar = $request->keterangan_menu_keluar;
-        $jumlahPesanan->foto_after = $gambar;
-        $jumlahPesanan->masa_simpan = $masaSimpan;
-        $jumlahPesanan->save();
-
-        // Mengembalikan response
-        return response()->json(['success' => 1, 'message' => 'Berhasil Memberi Penilaian Sampel']);
     }
 
 

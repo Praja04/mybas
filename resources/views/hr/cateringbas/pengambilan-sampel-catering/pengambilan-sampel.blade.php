@@ -35,13 +35,13 @@
             background-color: #ff5151;
         }
     </style>
+    <link href="{{ asset('assets/velzon/libs/filepond/filepond.min.css') }}" rel="stylesheet">
+    <link href="{{ asset('assets/velzon/libs/filepond-plugin-image-preview/filepond-plugin-image-preview.min.css') }}" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/intro.js/6.0.0/introjs.min.css" rel="stylesheet">
 @endpush
 
 
 @section('content')
-    <link href="https://unpkg.com/filepond-plugin-image-preview/dist/filepond-plugin-image-preview.min.css" rel="stylesheet">
-    <link href="https://unpkg.com/filepond/dist/filepond.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/intro.js/6.0.0/introjs.min.css" rel="stylesheet">
     <div class="container-fluid">
 
         <!--begin::Row-->
@@ -198,6 +198,7 @@
                 </div>
                 <div class="modal-body">
                     <form id="uploadPesananCatering">
+                        @csrf
                         <input type="hidden" name="id_transaksi" value="{{ $data->id_transaksi }}">
 
                         <div class="form-group row">
@@ -337,6 +338,7 @@
                 </div>
                 <div class="modal-body">
                     <form id="editPesananCatering">
+                        @csrf
                         <input type="hidden" name="id_transaksi" value="{{ $data->id_transaksi }}">
                         <input type="hidden" name="id" id="edit-id">
                         {{-- <div class="form-group row">
@@ -500,16 +502,21 @@
 @push('scripts')
     <script src="{{ url('/assets/plugins/custom/datatables/datatables.bundle.js') }}"></script>
     <script src="{{ url('/assets/plugins/global/date-eu.js') }}"></script>
-    {{-- filepon --}}
-    <script src="https://unpkg.com/filepond-plugin-image-preview/dist/filepond-plugin-image-preview.min.js"></script>
-    <script src="https://unpkg.com/filepond/dist/filepond.min.js"></script>
-    <script src="https://unpkg.com/filepond-plugin-file-validate-size/dist/filepond-plugin-file-validate-size.min.js"></script>
-    <script src="https://unpkg.com/filepond-plugin-file-validate-type/dist/filepond-plugin-file-validate-type.min.js"></script>
-    <script src="https://unpkg.com/filepond-plugin-image-resize/dist/filepond-plugin-image-resize.min.js"></script>
-    <script src="https://unpkg.com/filepond-plugin-image-transform/dist/filepond-plugin-image-transform.min.js"></script>
-    <script src="https://unpkg.com/filepond-plugin-image-preview/dist/filepond-plugin-image-preview.min.js"></script>
+    {{-- filepond --}}
+    <script src="{{ asset('assets/velzon/libs/filepond/filepond.min.js') }}"></script>
+    <script src="{{ asset('assets/velzon/libs/filepond-plugin-image-preview/filepond-plugin-image-preview.min.js') }}"></script>
+    <script src="{{ asset('assets/velzon/libs/filepond-plugin-file-validate-size/filepond-plugin-file-validate-size.min.js') }}"></script>
+    <script src="{{ asset('assets/mazer/dist/assets/extensions/filepond-plugin-file-validate-type/filepond-plugin-file-validate-type.min.js') }}"></script>
+    <script src="{{ asset('assets/mazer/dist/assets/extensions/filepond-plugin-image-resize/filepond-plugin-image-resize.min.js') }}"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/intro.js/6.0.0/intro.min.js"></script>
     <script type="text/javascript">
+        if (typeof FilePond !== 'undefined') {
+            if (typeof FilePondPluginImagePreview !== 'undefined') FilePond.registerPlugin(FilePondPluginImagePreview);
+            if (typeof FilePondPluginImageResize !== 'undefined') FilePond.registerPlugin(FilePondPluginImageResize);
+            if (typeof FilePondPluginFileValidateType !== 'undefined') FilePond.registerPlugin(FilePondPluginFileValidateType);
+            if (typeof FilePondPluginFileValidateSize !== 'undefined') FilePond.registerPlugin(FilePondPluginFileValidateSize);
+        }
+
         function showModalCreateNew() {
             $('#modal-title-pesanan').text('Upload Jumlah Pesanan Catering');
             $('#modalPesananCatering').modal('show');
@@ -529,15 +536,12 @@
 
         // edit pesanan
         $(document).ready(function() {
-            FilePond.registerPlugin(
-                FilePondPluginImagePreview,
-                FilePondPluginImageResize,
-                FilePondPluginImageTransform,
-                FilePondPluginFileValidateType
-            );
+            let pondAfter1 = null;
+            let pondAfter2 = null;
 
             const inputElementAfter1 = document.querySelector('input[name="foto_after1"]');
-                const pondAfter1 = FilePond.create(inputElementAfter1, {
+            if (inputElementAfter1 && typeof FilePond !== 'undefined') {
+                pondAfter1 = FilePond.create(inputElementAfter1, {
                     imageResizeTargetWidth: 1920,
                     imageResizeTargetHeight: 1080, 
                     imageResizeMode: 'contain', 
@@ -553,10 +557,12 @@
                     }),
                     maxFileSize: '8MB' 
                 });
+            }
 
             // Initialize FilePond for foto_after2 with the same options
             const inputElementAfter2 = document.querySelector('input[name="foto_after2"]');
-                const pondAfter2 = FilePond.create(inputElementAfter2, {
+            if (inputElementAfter2 && typeof FilePond !== 'undefined') {
+                pondAfter2 = FilePond.create(inputElementAfter2, {
                     imageResizeTargetWidth: 1024,
                     imageResizeTargetHeight: 768,
                     imageResizeMode: 'contain',
@@ -572,6 +578,7 @@
                     }),
                     maxFileSize: '8MB'
                 });
+            }
 
             // Click event for submit button
             $('#editSubmitbutton').click(function(e) {
@@ -602,19 +609,23 @@
                     return;
                 }
 
+                var $btn = $(this);
+                var originalHtml = $btn.html();
+                $btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Menyimpan...');
+
                 var data = new FormData($('#editPesananCatering')[0]);
-                var filesAfter1 = pondAfter1.getFiles();
-                var filesAfter2 = pondAfter2.getFiles();
+                var filesAfter1 = pondAfter1 ? pondAfter1.getFiles() : [];
+                var filesAfter2 = pondAfter2 ? pondAfter2.getFiles() : [];
 
                 // Append files from FilePond instances to FormData
                 if (filesAfter1.length > 0) {
                     filesAfter1.forEach((file) => {
-                        data.append('files_after1[]', file.file);
+                        data.append('files_after1[]', file.file, file.file.name || 'foto_after1.jpg');
                     });
                 }
                 if (filesAfter2.length > 0) {
                     filesAfter2.forEach((file) => {
-                        data.append('files_after2[]', file.file);
+                        data.append('files_after2[]', file.file, file.file.name || 'foto_after2.jpg');
                     });
                 }
 
@@ -627,6 +638,9 @@
                     data: data,
                     processData: false,
                     contentType: false,
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    },
                     success: function(response) {
                         if (response.success === 1) {
                             var table = $('#jumlahPesanan').DataTable();
@@ -638,6 +652,7 @@
                                 text: response.message,
                             });
                         } else {
+                            $btn.prop('disabled', false).html(originalHtml);
                             Swal.fire({
                                 icon: 'error',
                                 title: 'Gagal',
@@ -646,10 +661,15 @@
                         }
                     },
                     error: function(xhr, status, error) {
+                        $btn.prop('disabled', false).html(originalHtml);
+                        var msg = 'Terjadi kesalahan saat mengirim permintaan.';
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            msg = xhr.responseJSON.message;
+                        }
                         Swal.fire({
                             icon: 'error',
                             title: 'Gagal',
-                            text: 'Terjadi kesalahan saat mengirim permintaan.',
+                            text: msg,
                         });
                     }
                 });
@@ -845,15 +865,12 @@
 
         // tambah pesanan 
         $(document).ready(function() {
+            let pondBefore1 = null;
+            let pondBefore2 = null;
             const inputElementBefore1 = document.querySelector('input[name="foto_before1"]');
-            FilePond.registerPlugin(
-                FilePondPluginImagePreview,
-                FilePondPluginImageResize,
-                FilePondPluginImageTransform,
-                FilePondPluginFileValidateType
-            );
 
-            const pondBefore1 = FilePond.create(inputElementBefore1, {
+            if (inputElementBefore1 && typeof FilePond !== 'undefined') {
+                pondBefore1 = FilePond.create(inputElementBefore1, {
                 imageResizeTargetWidth: 1920, 
                 imageResizeTargetHeight: 1080, 
                 imageResizeMode: 'contain', 
@@ -869,9 +886,11 @@
                 }),
                 maxFileSize: '8MB'
             });
+            }
 
             const inputElementBefore2 = document.querySelector('input[name="foto_before2"]');
-            const pondBefore2 = FilePond.create(inputElementBefore2, {
+            if (inputElementBefore2 && typeof FilePond !== 'undefined') {
+                pondBefore2 = FilePond.create(inputElementBefore2, {
                 imageResizeTargetWidth: 1920,
                 imageResizeTargetHeight: 1080, 
                 imageResizeMode: 'contain', 
@@ -885,8 +904,9 @@
                         resolve('image/jpeg');
                     }
                 }),
-                maxFileSize: '8MB' 
-            });
+                maxFileSize: '8MB'
+                });
+            }
 
             $('#submitButton').click(function(e) {
                 e.preventDefault();
@@ -915,19 +935,36 @@
                     return; // Hentikan AJAX jika input radio belum lengkap
                 }
 
+                var filesBefore1 = pondBefore1 ? pondBefore1.getFiles() : [];
+                var filesBefore2 = pondBefore2 ? pondBefore2.getFiles() : [];
+
+                var hasFile1 = filesBefore1.length > 0 || (document.getElementById('foto-before1') && document.getElementById('foto-before1').files.length > 0);
+                var hasFile2 = filesBefore2.length > 0 || (document.getElementById('foto-before2') && document.getElementById('foto-before2').files.length > 0);
+
+                if (!hasFile1 && !hasFile2) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Peringatan',
+                        text: 'Harap masukkan minimal satu foto sebelum pengambilan sampel.',
+                    });
+                    return;
+                }
+
+                var $btn = $(this);
+                var originalHtml = $btn.html();
+                $btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Menyimpan...');
+
                 var data = new FormData($('#uploadPesananCatering')[0]);
 
-                var filesBefore1 = pondBefore1.getFiles();
                 if (filesBefore1.length > 0) {
                     filesBefore1.forEach((file) => {
-                        data.append('files_before1[]', file.file);
+                        data.append('files_before1[]', file.file, file.file.name || 'foto_before1.jpg');
                     });
                 }
 
-                var filesBefore2 = pondBefore2.getFiles();
                 if (filesBefore2.length > 0) {
                     filesBefore2.forEach((file) => {
-                        data.append('files_before2[]', file.file);
+                        data.append('files_before2[]', file.file, file.file.name || 'foto_before2.jpg');
                     });
                 }
 
@@ -937,6 +974,9 @@
                     data: data,
                     processData: false,
                     contentType: false,
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    },
                     success: function(response) {
                         if (response.success === 1) {
                             var table = $('#jumlahPesanan').DataTable();
@@ -956,6 +996,7 @@
                             }, 1000);
 
                         } else {
+                            $btn.prop('disabled', false).html(originalHtml);
                             Swal.fire({
                                 icon: 'error',
                                 title: 'Gagal',
@@ -964,10 +1005,15 @@
                         }
                     },
                     error: function(xhr, status, error) {
+                        $btn.prop('disabled', false).html(originalHtml);
+                        var msg = 'Terjadi kesalahan saat mengirim permintaan.';
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            msg = xhr.responseJSON.message;
+                        }
                         Swal.fire({
                             icon: 'error',
                             title: 'Gagal',
-                            text: 'Terjadi kesalahan saat mengirim permintaan.',
+                            text: msg,
                         });
                     }
                 });
