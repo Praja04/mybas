@@ -15,11 +15,11 @@ class LegalitasExport implements FromArray
         $SigraLegalitas = [];
         $SigraLegalitas[] = ['No', 'Nama Dokumen', 'Nomor Dokumen', 'Instansi', 'Terbit', 'Expired', 'Berlaku', 'Remarks'];
 
-        $operasionalLegalitas = Legalitas::where('status', '!=', 'deleted')->get();
+        $operasionalLegalitas = Legalitas::with(['perusahaan', 'sertifikasi'])->where('status', '!=', 'deleted')->get();
 
         foreach ($operasionalLegalitas as $key => $data) {
             // dd($data->perusahaan->nama_perusahaan);
-            $sertifikasiLegalitas = SertifikasiLegalitas::where('id_legalitas', $data->id)->where('status', '!=', 'deleted')->orderBy('tanggal_terbit', 'desc')->first();
+            $sertifikasiLegalitas = $data->sertifikasi->sortByDesc('tanggal_terbit')->first();
 
             if ($sertifikasiLegalitas) {
                 $array = [

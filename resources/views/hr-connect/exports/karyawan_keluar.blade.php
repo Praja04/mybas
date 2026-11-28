@@ -1,27 +1,27 @@
-<!-- resources/views/exports/karyawan_baru.blade.php -->
-
-<table>
+<table style="border: 1px solid #000000;">
     <thead>
         <tr>
-            <th>Nama</th>
-            <th>NIK</th>
-            <th>Kode Divisi</th>
-            <th>Kode Bagian</th>
-            <th>Kode Admin</th>
-            <th>Alasan Keluar</th>
-            <th>Tanggal Keluar</th>
+            <th style="font-weight: bold; background-color: #d9d9d9; border: 1px solid #000000; width: 25px;">Nama Lengkap</th>
+            <th style="font-weight: bold; background-color: #d9d9d9; border: 1px solid #000000; width: 15px;">NIK</th>
+            <th style="font-weight: bold; background-color: #d9d9d9; border: 1px solid #000000; width: 15px;">Kode Divisi</th>
+            <th style="font-weight: bold; background-color: #d9d9d9; border: 1px solid #000000; width: 15px;">Kode Bagian</th>
+            <th style="font-weight: bold; background-color: #d9d9d9; border: 1px solid #000000; width: 15px;">Kode Admin</th>
+            <th style="font-weight: bold; background-color: #d9d9d9; border: 1px solid #000000; width: 30px;">Alasan Keluar (GA)</th>
+            <th style="font-weight: bold; background-color: #d9d9d9; border: 1px solid #000000; width: 15px;">Tanggal Keluar</th>
         </tr>
     </thead>
     <tbody>
         @foreach($karyawanCollection as $karyawan)
             <tr>
-                <td>{{ $karyawan['nama'] }}</td>
-                <td>{{ $karyawan['nik'] }}</td>
-                <td>{{ $karyawan['kode_divisi'] }}</td>
-                <td>{{ $karyawan['kode_bagian'] }}</td>
-                <td>{{ $karyawan['kode_admin'] }}</td>
-                <td>{{ $karyawan['alasan_keluar'] }}</td>
-                <td>{{ $karyawan['tanggal_keluar'] }}</td>
+                <td style="border: 1px solid #000000;">{{ $karyawan['nama'] ?? '-' }}</td>
+                <td style="border: 1px solid #000000;">'{{ $karyawan['nik'] ?? '-' }}</td>
+                <td style="border: 1px solid #000000;">{{ $karyawan['kode_divisi'] ?? '-' }}</td>
+                <td style="border: 1px solid #000000;">{{ $karyawan['kode_bagian'] ?? '-' }}</td>
+                <td style="border: 1px solid #000000;">{{ $karyawan['kode_admin'] ?? '-' }}</td>
+                <td style="border: 1px solid #000000;">{{ $karyawan['alasan_keluar'] }}</td>
+                <td style="border: 1px solid #000000;">
+                    {{ !empty($karyawan['tanggal_keluar']) ? \Carbon\Carbon::parse($karyawan['tanggal_keluar'])->format('d/m/Y') : '-' }}
+                </td>
             </tr>
         @endforeach
     </tbody>

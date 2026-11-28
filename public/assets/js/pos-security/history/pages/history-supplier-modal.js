@@ -64,6 +64,10 @@ const VisitorDetailModal = {
 
 // Tombol aksi lanjutan dari modal detail
 function triggerReportLostCard(visitorId) {
+    if (!visitorId) {
+        LostCardReporter.open();
+        return;
+    }
     $.get(
         API_GET_VISITOR_DETAIL_SUPPLIER + "?id=" + visitorId,
         function (response) {
@@ -79,6 +83,10 @@ function triggerReportLostCard(visitorId) {
 }
 
 function triggerBlacklistVisitor(visitorId) {
+    if (!visitorId) {
+        BlacklistManager.open();
+        return;
+    }
     $.get(
         API_GET_VISITOR_DETAIL_SUPPLIER + "?id=" + visitorId,
         function (response) {

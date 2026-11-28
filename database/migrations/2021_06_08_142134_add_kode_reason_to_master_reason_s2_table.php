@@ -26,7 +26,7 @@ class AddKodeReasonToMasterReasonS2Table extends Migration
     public function down()
     {
         Schema::table('master_reason_s2', function (Blueprint $table) {
-            //
+            $table->dropColumn('kode_reason');
         });
     }
 }

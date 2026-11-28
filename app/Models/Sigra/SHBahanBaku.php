@@ -13,4 +13,9 @@ class SHBahanBaku extends Model
     {
         return $this->belongsTo(Perusahaan::class, 'id_perusahaan');
     }
+
+    public function sertifikat()
+    {
+        return $this->hasMany(SertifikatSHBahanBaku::class, 'id_bahan')->where('status', '!=', 'deleted');
+    }
 }

@@ -61,6 +61,8 @@ Route::group(
         Route::prefix('kartu')->group(function () {
             Route::get('/kartu-aktif', [KartuAktifDatatable::class, 'index'])
                 ->name("datatable.pos-security.kartu-aktif.index");
+            Route::get('/active-list', [\App\Http\Controllers\PosSecurity\Datatable\KartuAktif\ActiveCardListDatatable::class, 'index'])
+                ->name("datatable.pos-security.kartu.active-list");
             Route::get('/kartu-aktif/detail', [KartuAktifDetailDatatable::class, 'index'])
                 ->name("datatable.pos-security.kartu-aktif.detail.index");
         });

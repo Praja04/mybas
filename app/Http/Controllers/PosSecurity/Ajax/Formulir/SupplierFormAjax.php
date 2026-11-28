@@ -10,6 +10,9 @@ use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use App\Models\PosSecurity\GaVisitorTransaction;
 use App\Models\PosSecurity\GaVisitorVendorTransaction;
+use App\Models\PosSecurity\KantongParkir\ParkingSlot;
+use App\Models\PosSecurity\KantongParkir\ParkingAssignment;
+use App\Models\PosSecurity\KantongParkir\ParkingSlotStatusHistory;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
@@ -280,9 +283,9 @@ class SupplierFormAjax extends Controller
             // validasi apakah kendaraan sudah dilakukan cek kendaraan
             $cekKendaraan = DB::table('ga_cek_kendaraan')
                 ->whereRaw("
-                    REPLACE(REPLACE(UPPER(nomor_polisi), ' ', ''), '-', '')
+                    CONVERT(REPLACE(REPLACE(UPPER(nomor_polisi), ' ', ''), '-', '') USING latin1)
                     =
-                    REPLACE(REPLACE(UPPER(?), ' ', ''), '-', '')
+                    CONVERT(REPLACE(REPLACE(UPPER(?), ' ', ''), '-', '') USING latin1)
                 ", [$visitor->nopol])
                 ->where('checked_in_at', '>=', $visitor->createdon)
                 // ->where('checked_in_at', '>=', now()->subHours(24))
@@ -306,7 +309,7 @@ class SupplierFormAjax extends Controller
             }
 
             $cekKendaraan = DB::table('ga_cek_kendaraan')
-                ->where('trnvisitorid', $visitor->trnvisitorid)
+                ->whereRaw("CONVERT(trnvisitorid USING latin1) = CONVERT(? USING latin1)", [$visitor->trnvisitorid])
                 ->orderBy('checked_in_at', 'desc')
                 ->first();
 
@@ -347,12 +350,14 @@ class SupplierFormAjax extends Controller
             'nomorktp'    => 'required|string|max:100',
             'namacomp'    => 'required|string|max:100',
             'nopol'       => 'required|string|max:20',
+            'nohpdriver'  => 'required|string|max:20',
         ], [
             'namavisitor.required' => 'Nama visitor harus diisi',
             'keterangan.required'  => 'Keterangan harus diisi',
             'nomorktp.required'    => 'Nomor KTP/SIM harus diisi',
             'namacomp.required'    => 'Nama perusahaan harus diisi',
             'nopol.required'       => 'Nomor polisi harus diisi',
+            'nohpdriver.required'  => 'Nomor HP harus diisi',
         ]);
 
         if ($validator->fails()) {
@@ -372,30 +377,72 @@ class SupplierFormAjax extends Controller
 
         $input_no_identitas = $request->input('nomorktp');
 
-        // Cek blacklist
-        $blacklist = DB::table('ga_lgtk_blacklist_identitas')
-        ->where(function ($q) use ($input_no_identitas, $normalized_nama, $input_tanggal_lahir) {
-            $q->where('no_identitas', $input_no_identitas)
-            ->orWhere(function ($q2) use ($normalized_nama, $input_tanggal_lahir) {
-                $q2->whereRaw('LOWER(TRIM(nama)) = ?', [$normalized_nama])
-                ->where('tanggal_lahir', $input_tanggal_lahir);
-            });
-        })
-        ->where('aktif',
-            true
-        )
-        ->first();
+        // 1. HARD BLACKLIST CHECK
+        // Kriteria: No identitas sama persis, ATAU Kombinasi Nama + Tanggal Lahir sama persis (jika tanggal lahir diisi)
+        $hardBlacklist = DB::table('ga_lgtk_blacklist_identitas')
+            ->where('aktif', true)
+            ->where(function ($q) use ($input_no_identitas, $normalized_nama, $input_tanggal_lahir) {
+                $q->where('no_identitas', $input_no_identitas);
+                if ($input_tanggal_lahir) {
+                    $q->orWhere(function ($q2) use ($normalized_nama, $input_tanggal_lahir) {
+                        $q2->whereRaw('LOWER(TRIM(nama)) = ?', [$normalized_nama])
+                           ->where('tanggal_lahir', $input_tanggal_lahir);
+                    });
+                }
+            })
+            ->first();
 
-        if ($blacklist) {
+        if ($hardBlacklist) {
             return response()->json([
                 'success' => false,
-                'message' => sprintf(
-                    'Identitas a.n. %s, Tanggal Lahir: %s, diblacklist karena: %s.',
-                    $blacklist->nama ?? '-',
-                    $blacklist->tanggal_lahir,
-                    $blacklist->alasan_blacklist ?? '-'
-                )
+                'blacklist_type' => 'hard',
+                'message' => 'Data telah di-blacklist! Pengunjung dengan identitas ini dilarang masuk area perusahaan.',
+                'blacklist_data' => [
+                    'nama' => strtoupper($hardBlacklist->nama),
+                    'no_identitas' => strtoupper($hardBlacklist->no_identitas),
+                    'alasan_blacklist' => $hardBlacklist->alasan_blacklist,
+                    'tanggal_blacklist' => $hardBlacklist->tanggal_blacklist ? Carbon::parse($hardBlacklist->tanggal_blacklist)->format('d-m-Y') : '-',
+                ]
             ], 403);
+        }
+
+        // 2. SOFT BLACKLIST CHECK (Hanya jika bypass_warning tidak dikirim atau false)
+        $bypassWarning = filter_var($request->input('bypass_warning'), FILTER_VALIDATE_BOOLEAN);
+        if (!$bypassWarning) {
+            // Kasus A: Nama sama persis dengan daftar blacklist (aktif), tetapi Tanggal Lahir berbeda / tidak diisi
+            $softNameMatch = DB::table('ga_lgtk_blacklist_identitas')
+                ->where('aktif', true)
+                ->whereRaw('LOWER(TRIM(nama)) = ?', [$normalized_nama])
+                ->first();
+
+            // Kasus B: Nama mirip (LIKE) DAN Tanggal Lahir sama (jika tanggal lahir diisi)
+            $softSimilarMatch = null;
+            if ($input_tanggal_lahir) {
+                $softSimilarMatch = DB::table('ga_lgtk_blacklist_identitas')
+                    ->where('aktif', true)
+                    ->where('tanggal_lahir', $input_tanggal_lahir)
+                    ->where(function ($q) use ($normalized_nama) {
+                        $q->whereRaw('LOWER(TRIM(nama)) LIKE ?', ['%' . $normalized_nama . '%'])
+                          ->orWhereRaw('? LIKE CONCAT("%", LOWER(TRIM(nama)), "%")', [$normalized_nama]);
+                    })
+                    ->first();
+            }
+
+            $softBlacklist = $softNameMatch ?: $softSimilarMatch;
+
+            if ($softBlacklist) {
+                return response()->json([
+                    'success' => false,
+                    'status' => 'warning_blacklist',
+                    'message' => 'Peringatan: Terdapat kemiripan data dengan daftar blacklist!',
+                    'blacklist_data' => [
+                        'nama' => strtoupper($softBlacklist->nama),
+                        'no_identitas' => strtoupper($softBlacklist->no_identitas),
+                        'alasan_blacklist' => $softBlacklist->alasan_blacklist,
+                        'tanggal_blacklist' => $softBlacklist->tanggal_blacklist ? Carbon::parse($softBlacklist->tanggal_blacklist)->format('d-m-Y') : '-',
+                    ]
+                ], 200);
+            }
         }
 
         try {
@@ -451,20 +498,18 @@ class SupplierFormAjax extends Controller
             DB::transaction(function () use ($supplier_data, &$isNewRecord, &$isUpdated, &$isCardInUse) {
                 // Jika no_kartu null/kosong, skip pengecekan kartu
                 if (!empty($supplier_data['no_kartu'])) {
+                    // Kartu dianggap "dipakai" jika visitor belum checkout DAN kartu belum dikembalikan
+                    $checkInUse = function ($q) {
+                        $q->whereNull('dateout')
+                          ->where('kartu_dikembalikan', false);
+                    };
+
                     $dipakaiSupplier = GaVisitorTransaction::where('no_kartu', $supplier_data['no_kartu'])
-                    ->where(function ($q) {
-                        $q->whereNull('kartu_dikembalikan')
-                            ->orWhere('kartu_dikembalikan', false)
-                            ->orWhereNull('dateout');
-                    })
+                        ->where($checkInUse)
                         ->exists();
 
                     $dipakaiVendor = GaVisitorVendorTransaction::where('no_kartu', $supplier_data['no_kartu'])
-                    ->where(function ($q) {
-                        $q->whereNull('kartu_dikembalikan')
-                            ->orWhere('kartu_dikembalikan', false)
-                            ->orWhereNull('dateout');
-                    })
+                        ->where($checkInUse)
                         ->exists();
 
                     if ($dipakaiVendor || $dipakaiSupplier) {
@@ -498,6 +543,42 @@ class SupplierFormAjax extends Controller
                 ], 400);
             }
 
+            // Proses Plotting Area Parkir jika dipilih (hanya untuk Supir)
+            if ($request->filled('parking_slot_id') && strtolower($request->keterangan ?? '') === 'supir') {
+                try {
+                    $slot = ParkingSlot::find($request->parking_slot_id);
+                    if ($slot && $slot->status_slot === 'kosong') {
+                        $assignment = ParkingAssignment::create([
+                            'parking_zone_id'        => $slot->parking_zone_id,
+                            'parking_slot_id'        => $slot->id,
+                            'no_polisi'              => strtoupper(trim($request->nopol)),
+                            'jenis_kendaraan'        => strtoupper($request->keterangan ?? 'SUPIR'),
+                            'nama_driver'            => strtoupper($request->namavisitor),
+                            'no_hp_driver'           => $request->nohpdriver ?? null,
+                            'visitor_transaction_id' => null,
+                            'waktu_masuk'            => now(),
+                            'status_assignment'      => 'assigned',
+                            'catatan'                => 'Penugasan otomatis dari Form Transporter: ' . $trnVisitorId,
+                            'created_by'             => auth()->id() ?? null,
+                        ]);
+
+                        $oldStatus = $slot->status_slot;
+                        $slot->update(['status_slot' => 'terisi', 'updated_by' => auth()->id() ?? null]);
+
+                        ParkingSlotStatusHistory::create([
+                            'parking_slot_id'       => $slot->id,
+                            'parking_assignment_id' => $assignment->id,
+                            'status_sebelumnya'     => $oldStatus,
+                            'status_baru'           => 'terisi',
+                            'keterangan'            => 'Penugasan kendaraan ' . $assignment->no_polisi . ' (Transporter ID: ' . $trnVisitorId . ')',
+                            'created_by'            => auth()->id() ?? null,
+                        ]);
+                    }
+                } catch (\Exception $pe) {
+                    Log::warning('Error assigning parking slot: ' . $pe->getMessage());
+                }
+            }
+
             $message = 'Data Transporter tidak diubah.';
             if ($isNewRecord) {
                 $message = 'Data Transporter berhasil disimpan! ID: ' . $supplier_data['trnvisitorid'];
@@ -525,8 +606,8 @@ class SupplierFormAjax extends Controller
         ]);
 
         try {
-            $visitor = GaVisitorTransaction::where('trnvisitorid', $request->trnvisitorid)->first();
-            //     ->whereNull('dateout')->where('kartu_dikembalikan', false)
+            // Gunakan whereRaw + CONVERT untuk menghindari collation conflict
+            $visitor = GaVisitorTransaction::whereRaw("CONVERT(trnvisitorid USING latin1) = CONVERT(? USING latin1)", [$request->trnvisitorid])->first();
 
             if (!$visitor) {
                 return response()->json([
@@ -535,11 +616,15 @@ class SupplierFormAjax extends Controller
                 ]);
             }
 
-            $fotoOutUrl = $this->saveImageFromBase64(
-                $request->foto_out,
-                $visitor->trnvisitorid . '_foto_out',
-                'uploads/pos-security/suppliers/selfie_out'
-            );
+            // Proses foto hanya jika ada
+            $fotoOutUrl = null;
+            if ($request->filled('foto_out')) {
+                $fotoOutUrl = $this->saveImageFromBase64(
+                    $request->foto_out,
+                    $visitor->trnvisitorid . '_foto_out',
+                    'uploads/pos-security/suppliers/selfie_out'
+                );
+            }
 
             $now = now();
 
@@ -549,10 +634,53 @@ class SupplierFormAjax extends Controller
             $visitor->dateout = $now->toDateString(); // YYYY-MM-DD
             $visitor->timeout = $now->format('H:i:s'); // HH:MM:SS
             $visitor->changedon = $now;
-            $visitor->changedby = auth()->user()->username ?? 'system'; // atau session user
-            $visitor->foto_out = $fotoOutUrl;
-            // $visitor->kondisi_kacamata_out = $request->kondisi_kacamata_out ?? null;
+            $visitor->changedby = auth()->user()->username ?? 'system'; 
+            
+            // Simpan foto ke kolom 'foto' (array JSON) karena kolom 'foto_out' tidak ada di tabel ini
+            if ($fotoOutUrl) {
+                $currentFotos = json_decode($visitor->foto, true) ?: [];
+                if (!in_array($fotoOutUrl, $currentFotos)) {
+                    $currentFotos[] = $fotoOutUrl;
+                }
+                $visitor->foto = json_encode($currentFotos);
+            }
+
             $visitor->save();
+
+            // Release parking assignment jika ada
+            try {
+                $nopol = $visitor->nopol;
+                if (!empty($nopol)) {
+                    $activeAssignments = ParkingAssignment::where('no_polisi', strtoupper(trim($nopol)))
+                        ->where('status_assignment', 'assigned')
+                        ->get();
+
+                    foreach ($activeAssignments as $assignment) {
+                        $assignment->update([
+                            'waktu_keluar'      => now(),
+                            'status_assignment' => 'completed',
+                            'updated_by'        => auth()->id() ?? null,
+                        ]);
+
+                        $slot = ParkingSlot::find($assignment->parking_slot_id);
+                        if ($slot) {
+                            $oldStatus = $slot->status_slot;
+                            $slot->update(['status_slot' => 'kosong', 'updated_by' => auth()->id() ?? null]);
+
+                            ParkingSlotStatusHistory::create([
+                                'parking_slot_id'       => $slot->id,
+                                'parking_assignment_id' => $assignment->id,
+                                'status_sebelumnya'     => $oldStatus,
+                                'status_baru'           => 'kosong',
+                                'keterangan'            => 'Kendaraan ' . $assignment->no_polisi . ' keluar / kartu dikembalikan (ID: ' . $visitor->trnvisitorid . ')',
+                                'created_by'            => auth()->id() ?? null,
+                            ]);
+                        }
+                    }
+                }
+            } catch (\Exception $pe) {
+                Log::warning('Error releasing parking assignment on return: ' . $pe->getMessage());
+            }
 
             return response()->json([
                 'success' => true,
@@ -562,7 +690,7 @@ class SupplierFormAjax extends Controller
             Log::error('Error saat mengembalikan kartu: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Terjadi kesalahan saat mengembalikan kartu.'
+                'message' => 'Gagal: ' . $e->getMessage() // Tampilkan error aslinya agar bisa didiagnosa
             ]);
         }
     }

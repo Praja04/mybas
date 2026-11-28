@@ -2,13 +2,14 @@
 
 namespace App\Jobs\HRConnect;
 
-use Illuminate\Bus\Queueable;
 use App\Mail\HRConnect\FyiAdminMail;
-use Illuminate\Support\Facades\Mail;
-use Illuminate\Queue\SerializesModels;
-use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 
 class KaryawanMasukToAdmin implements ShouldQueue
 {
@@ -43,7 +44,7 @@ class KaryawanMasukToAdmin implements ShouldQueue
         $eksternalMails = [];
 
         foreach ($this->to as $email) {
-            if (strpos($email, '@myemail.pas') == true || strpos($email, '@prakarsaalamsegar.com') == true) {
+            if (Str::endsWith($email, ["@myemail.pas", "@prakarsaalamsegar.com"])) {
                 $internalMails[] = $email;
             } else {
                 $eksternalMails[] = $email;

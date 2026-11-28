@@ -243,26 +243,9 @@ document.addEventListener("DOMContentLoaded", function () {
         return isValid;
     }
 
-    // ✅ Submit handler
-    $form.on("submit", function (e) {
-        e.preventDefault();
-        if (!checkFormValidity()) return;
-
-        const formData = new FormData(this);
-
-        // ✅ AMAN: Ambil token dari meta tag dan tambahkan ke formData
+    // Helper to send AJAX request
+    function sendAjax(formData) {
         const csrfToken = document.querySelector('meta[name="csrf-token"]');
-        if (csrfToken && csrfToken.content) {
-            formData.append("_token", csrfToken.content);
-        } else {
-            Swal.fire({
-                icon: "error",
-                title: "Gagal!",
-                text: "CSRF token tidak ditemukan. Silakan refresh halaman.",
-            });
-            return;
-        }
-
         $submitBtn
             .attr("disabled", true)
             .html('<i class="fas fa-spinner fa-spin me-2"></i>Memproses...');
@@ -274,9 +257,44 @@ document.addEventListener("DOMContentLoaded", function () {
             processData: false,
             contentType: false,
             headers: {
-                "X-CSRF-TOKEN": csrfToken.content, // ✅ Kirim juga sebagai header (opsional tapi aman)
+                "X-CSRF-TOKEN": csrfToken ? csrfToken.content : "",
             },
             success: function (response) {
+                if (response.status === 'warning_blacklist') {
+                    // Soft Blacklist Warning!
+                    let blacklistData = response.blacklist_data;
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Peringatan Kemiripan Blacklist',
+                        html: `
+                            <div style="text-align: left; background: #fffaf0; border: 1px solid #fbd38d; padding: 15px; border-radius: 8px; color: #dd6b20; font-family: sans-serif; font-size: 14px; margin-bottom: 10px;">
+                                <p style="margin-bottom: 8px; border-bottom: 1px solid #fbd38d; padding-bottom: 6px;"><strong>Terdeteksi kemiripan data dengan daftar blacklist:</strong></p>
+                                <div style="margin-bottom: 6px;"><strong>Nama Terdaftar:</strong> ${blacklistData.nama || '-'}</div>
+                                <div style="margin-bottom: 6px;"><strong>No. Identitas:</strong> ${blacklistData.no_identitas || '-'}</div>
+                                <div style="margin-bottom: 6px;"><strong>Alasan:</strong> ${blacklistData.alasan_blacklist || '-'}</div>
+                                <div><strong>Tanggal Blacklist:</strong> ${blacklistData.tanggal_blacklist || '-'}</div>
+                            </div>
+                            <p style="font-size: 13px; color: #4a5568;">Apakah petugas sudah memverifikasi visual secara manual bahwa orang tersebut berbeda?</p>
+                        `,
+                        showCancelButton: true,
+                        confirmButtonText: 'Ya, Lanjutkan Pendaftaran',
+                        cancelButtonText: 'Batalkan',
+                        confirmButtonColor: '#dd6b20',
+                        cancelButtonColor: '#718096',
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            formData.delete('bypass_warning');
+                            formData.append('bypass_warning', 'true');
+                            sendAjax(formData);
+                        } else {
+                            $submitBtn
+                                .prop("disabled", false)
+                                .html('<i class="fas fa-save me-2"></i>Simpan Data');
+                        }
+                    });
+                    return;
+                }
+
                 Swal.fire({
                     icon: "success",
                     title: "Berhasil!",
@@ -324,6 +342,47 @@ document.addEventListener("DOMContentLoaded", function () {
             error: function (xhr) {
                 console.error("AJAX Error:", xhr);
 
+                if (xhr.status === 403 && xhr.responseJSON && xhr.responseJSON.blacklist_type === 'hard') {
+                    let blacklistData = xhr.responseJSON.blacklist_data;
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Data Telah Di-Blacklist!',
+                        html: `
+                            <div style="text-align: left; background: #fff5f5; border: 1px solid #feb2b2; padding: 15px; border-radius: 8px; color: #9b2c2c; font-family: sans-serif; font-size: 14px;">
+                                <p style="margin-bottom: 8px; border-bottom: 1px solid #feb2b2; padding-bottom: 6px;"><strong>PENGUNJUNG DILARANG MASUK AREA PERUSAHAAN!</strong></p>
+                                <div style="margin-bottom: 6px;"><strong>Nama:</strong> ${blacklistData.nama || '-'}</div>
+                                <div style="margin-bottom: 6px;"><strong>No. Identitas:</strong> ${blacklistData.no_identitas || '-'}</div>
+                                <div style="margin-bottom: 6px;"><strong>Alasan:</strong> ${blacklistData.alasan_blacklist || '-'}</div>
+                                <div><strong>Tanggal Blacklist:</strong> ${blacklistData.tanggal_blacklist || '-'}</div>
+                            </div>
+                        `,
+                        confirmButtonText: 'Tutup',
+                        confirmButtonColor: '#e53e3e',
+                        showConfirmButton: true
+                    });
+                    
+                    $("#formAlert")
+                        .stop(true)
+                        .hide()
+                        .removeClass("alert-success alert-danger")
+                        .addClass("alert-danger")
+                        .html(xhr.responseJSON.message || "Data telah di-blacklist!")
+                        .fadeIn();
+
+                    setTimeout(() => {
+                        $("#formAlert")
+                            .fadeOut()
+                            .removeClass("alert-success alert-danger")
+                            .html("");
+                    }, 3000);
+
+                    $rfidInput.val("").trigger("change");
+                    $submitBtn
+                        .prop("disabled", false)
+                        .html('<i class="fas fa-save me-2"></i>Simpan Data');
+                    return;
+                }
+
                 let message = "Terjadi kesalahan. Silakan coba lagi.";
                 if (xhr.responseJSON && xhr.responseJSON.message) {
                     message = xhr.responseJSON.message;
@@ -360,6 +419,29 @@ document.addEventListener("DOMContentLoaded", function () {
                     .html('<i class="fas fa-save me-2"></i>Simpan Data');
             },
         });
+    }
+
+    // ✅ Submit handler
+    $form.on("submit", function (e) {
+        e.preventDefault();
+        if (!checkFormValidity()) return;
+
+        const formData = new FormData(this);
+
+        // ✅ AMAN: Ambil token dari meta tag dan tambahkan ke formData
+        const csrfToken = document.querySelector('meta[name="csrf-token"]');
+        if (csrfToken && csrfToken.content) {
+            formData.append("_token", csrfToken.content);
+        } else {
+            Swal.fire({
+                icon: "error",
+                title: "Gagal!",
+                text: "CSRF token tidak ditemukan. Silakan refresh halaman.",
+            });
+            return;
+        }
+
+        sendAjax(formData);
     });
 
     // MODAL KAMERA: Webcam handlers
@@ -491,4 +573,9 @@ document.addEventListener("DOMContentLoaded", function () {
             .removeClass("alert-success alert-danger")
             .html("");
     };
+
+    // Auto-capslock for text inputs and textareas in guest/vendor form
+    $('#vendorform').on('input', 'input[type="text"], textarea', function() {
+        this.value = this.value.toUpperCase();
+    });
 });

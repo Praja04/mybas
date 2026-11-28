@@ -13,7 +13,7 @@ class KontrakVendorExport implements FromArray
         $kontrakVendorData = [];
         $kontrakVendorData[] = ['no', 'perusahaan', 'jenis_pekerjaan', 'tanggal_mulai', 'tanggal_selesai', 'value', 'keterangan'];
 
-        $kontrakVendors = KontrakVendor::with('perusahaan')->where('status', '!=', 'deleted')->get();
+        $kontrakVendors = KontrakVendor::with(['perusahaan', 'vendor'])->where('status', '!=', 'deleted')->get();
 
         foreach ($kontrakVendors as $key => $data) {
             // dd($data->perusahaan->nama_perusahaan);

@@ -1,79 +1,79 @@
 <!DOCTYPE html>
 <html lang="en">
-<!--begin::Head-->
+    <!--begin::Head-->
 
-<head>
-    <base href="{{ url('/') }}">
-    <meta charset="utf-8" />
-    <title>My BAS Online</title>
-    <meta name="description" content="PT. Bumi Alam Segar Applications Base" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <!--begin::Fonts-->
-    <link rel="stylesheet" href="{{ asset('assets/css/fonts.css') }}" />
-    <!--end::Fonts-->
-    <!--begin::Page Vendors Styles(used by this page)-->
-    {{-- <link href="{{ url('/') }}/assets/plugins/custom/fullcalendar/fullcalendar.bundle.css?v=7.0.5" rel="stylesheet" type="text/css" /> --}}
-    <!--end::Page Vendors Styles-->
-    <!--begin::Global Theme Styles(used by all pages)-->
-    <link href="{{ url('/') }}/assets/plugins/global/plugins.bundle.css?v=7.0.5" rel="stylesheet"
-        type="text/css" />
-    {{-- <link href="{{ url('/') }}/assets/plugins/custom/prismjs/prismjs.bundle.css?v=7.0.5" rel="stylesheet" type="text/css" /> --}}
-    <link href="{{ url('/') }}/assets/css/style.bundle.css?v=7.0.5" rel="stylesheet" type="text/css" />
-    <!--end::Global Theme Styles-->
-    <!--begin::Layout Themes(used by all pages)-->
-    <link href="{{ url('/') }}/assets/css/themes/layout/header/base/light.css?v=7.0.5" rel="stylesheet"
-        type="text/css" />
-    <link href="{{ url('/') }}/assets/css/themes/layout/header/menu/light.css?v=7.0.5" rel="stylesheet"
-        type="text/css" />
-    {{-- <link href="{{ url('/') }}/assets/css/themes/layout/brand/light.css?v=7.0.5" rel="stylesheet" type="text/css" /> --}}
-    {{-- <link href="{{ url('/') }}/assets/css/themes/layout/aside/dark.css?v=7.0.5" rel="stylesheet" type="text/css" /> --}}
-    <!--end::Layout Themes-->
-    <link rel="shortcut icon" href="{{ url('/') }}/assets/media/logos/bas_logo.jpg" />
-    <style type="text/css">
-        .hide {
-            display: none;
-        }
-
-        .print-area {
-            display: none;
-        }
-
-        @media print {
-            .hide-print {
-                display: none !important;
+    <head>
+        <base href="{{ url('/') }}">
+        <meta charset="utf-8" />
+        <title>My BAS Online</title>
+        <meta name="description" content="PT. Bumi Alam Segar Applications Base" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+        <meta name="csrf-token" content="{{ csrf_token() }}">
+        <!--begin::Fonts-->
+        <link rel="stylesheet" href="{{ asset('assets/css/fonts.css') }}" />
+        <!--end::Fonts-->
+        <!--begin::Page Vendors Styles(used by this page)-->
+        {{-- <link href="{{ url('/') }}/assets/plugins/custom/fullcalendar/fullcalendar.bundle.css?v=7.0.5" rel="stylesheet" type="text/css" /> --}}
+        <!--end::Page Vendors Styles-->
+        <!--begin::Global Theme Styles(used by all pages)-->
+        <link href="{{ url('/') }}/assets/plugins/global/plugins.bundle.css?v=7.0.5" rel="stylesheet"
+            type="text/css" />
+        {{-- <link href="{{ url('/') }}/assets/plugins/custom/prismjs/prismjs.bundle.css?v=7.0.5" rel="stylesheet" type="text/css" /> --}}
+        <link href="{{ url('/') }}/assets/css/style.bundle.css?v=7.0.5" rel="stylesheet" type="text/css" />
+        <!--end::Global Theme Styles-->
+        <!--begin::Layout Themes(used by all pages)-->
+        <link href="{{ url('/') }}/assets/css/themes/layout/header/base/light.css?v=7.0.5" rel="stylesheet"
+            type="text/css" />
+        <link href="{{ url('/') }}/assets/css/themes/layout/header/menu/light.css?v=7.0.5" rel="stylesheet"
+            type="text/css" />
+        {{-- <link href="{{ url('/') }}/assets/css/themes/layout/brand/light.css?v=7.0.5" rel="stylesheet" type="text/css" /> --}}
+        {{-- <link href="{{ url('/') }}/assets/css/themes/layout/aside/dark.css?v=7.0.5" rel="stylesheet" type="text/css" /> --}}
+        <!--end::Layout Themes-->
+        <link rel="shortcut icon" href="{{ url('/') }}/assets/media/logos/bas_logo.jpg" />
+        <style type="text/css">
+            .hide {
+                display: none;
             }
 
             .print-area {
-                display: block;
-                max-width: 100% !important;
-                width: 100% !important;
+                display: none;
             }
-        }
-    </style>
-    @stack('styles')
-</head>
-<!--end::Head-->
-<!--begin::Body-->
 
-<body id="kt_body" class="header-fixed header-mobile-fixed page-loading">
-    <!--begin::Main-->
-    <!--begin::Header Mobile-->
-    <div id="kt_header_mobile" class="header-mobile align-items-center header-mobile-fixed" style="right: 50px">
-        <!--begin::Logo-->
-        <a href="{{ url('/') }}">
-            <img alt="Logo" src="{{ url('/') }}/assets/media/logos/bas_logo.jpg" />
-        </a>
-        <!--end::Logo-->
-        <!--begin::Toolbar-->
-        <div class="d-flex align-items-center">
-            <!--begin::Header Menu Mobile Toggle-->
-            <button class="btn p-0 burger-icon ml-4" id="kt_header_mobile_toggle">
-                <span></span>
-            </button>
-            <!--end::Header Menu Mobile Toggle-->
-            <!--begin::Topbar Mobile Toggle-->
-            {{-- <button class="btn btn-hover-text-primary p-0 ml-2" id="">
+            @media print {
+                .hide-print {
+                    display: none !important;
+                }
+
+                .print-area {
+                    display: block;
+                    max-width: 100% !important;
+                    width: 100% !important;
+                }
+            }
+        </style>
+        @stack('styles')
+    </head>
+    <!--end::Head-->
+    <!--begin::Body-->
+
+    <body id="kt_body" class="header-fixed header-mobile-fixed page-loading">
+        <!--begin::Main-->
+        <!--begin::Header Mobile-->
+        <div id="kt_header_mobile" class="header-mobile align-items-center header-mobile-fixed" style="right: 50px">
+            <!--begin::Logo-->
+            <a href="{{ url('/') }}">
+                <img alt="Logo" src="{{ url('/') }}/assets/media/logos/bas_logo.jpg" />
+            </a>
+            <!--end::Logo-->
+            <!--begin::Toolbar-->
+            <div class="d-flex align-items-center">
+                <!--begin::Header Menu Mobile Toggle-->
+                <button class="btn p-0 burger-icon ml-4" id="kt_header_mobile_toggle">
+                    <span></span>
+                </button>
+                <!--end::Header Menu Mobile Toggle-->
+                <!--begin::Topbar Mobile Toggle-->
+                {{-- <button class="btn btn-hover-text-primary p-0 ml-2" id="">
 					<span class="svg-icon svg-icon-xl">
 						<!--begin::Svg Icon | path:assets/media/svg/icons/General/User.svg-->
 						<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="24px" height="24px" viewBox="0 0 24 24" version="1.1">
@@ -86,91 +86,92 @@
 						<!--end::Svg Icon-->
 					</span>
 				</button> --}}
-            <!--end::Topbar Mobile Toggle-->
+                <!--end::Topbar Mobile Toggle-->
+            </div>
+            <!--end::Toolbar-->
         </div>
-        <!--end::Toolbar-->
-    </div>
-    <!--end::Header Mobile-->
-    <div class="d-flex flex-column flex-root">
-        <!--begin::Page-->
-        <div class="d-flex flex-row flex-column-fluid page">
-            <!--begin::Wrapper-->
-            <div class="d-flex flex-column flex-row-fluid wrapper" id="kt_wrapper">
+        <!--end::Header Mobile-->
+        <div class="d-flex flex-column flex-root">
+            <!--begin::Page-->
+            <div class="d-flex flex-row flex-column-fluid page">
+                <!--begin::Wrapper-->
+                <div class="d-flex flex-column flex-row-fluid wrapper" id="kt_wrapper">
+                    <!--begin::Header-->
+                    @include('layouts.header')
+                    <!--end::Header-->
+                    <!--begin::Content-->
+                    {{-- Di sini konten --}}
+                    <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
+                        <!--end::Subheader-->
+                        <!--begin::Entry-->
+                        <div class="d-flex flex-column-fluid">
+                            <!--begin::Container-->
+                            @yield('content')
+                            <!--end::Container-->
+                        </div>
+                        <!--end::Entry-->
+                    </div>
+                    <!--end::Content-->
+                    <!--begin::Footer-->
+                    @include('layouts.footer')
+                    <!--end::Footer-->
+                </div>
+                <!--end::Wrapper-->
+            </div>
+            <!--end::Page-->
+        </div>
+        <!--end::Main-->
+        <!-- begin::User Panel-->
+        @if (Auth::check())
+            <div id="kt_quick_user" class="offcanvas offcanvas-right p-10">
                 <!--begin::Header-->
-                @include('layouts.header')
+                <div class="offcanvas-header d-flex align-items-center justify-content-between pb-5">
+                    <h3 class="font-weight-bold m-0">User Profile</h3>
+                    <a href="javascript:" class="btn btn-xs btn-icon btn-light btn-hover-primary"
+                        id="kt_quick_user_close">
+                        <i class="ki ki-close icon-xs text-muted"></i>
+                    </a>
+                </div>
                 <!--end::Header-->
                 <!--begin::Content-->
-                {{-- Di sini konten --}}
-                <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
-                    <!--end::Subheader-->
-                    <!--begin::Entry-->
-                    <div class="d-flex flex-column-fluid">
-                        <!--begin::Container-->
-                        @yield('content')
-                        <!--end::Container-->
-                    </div>
-                    <!--end::Entry-->
-                </div>
-                <!--end::Content-->
-                <!--begin::Footer-->
-                @include('layouts.footer')
-                <!--end::Footer-->
-            </div>
-            <!--end::Wrapper-->
-        </div>
-        <!--end::Page-->
-    </div>
-    <!--end::Main-->
-    <!-- begin::User Panel-->
-    @if (Auth::check())
-        <div id="kt_quick_user" class="offcanvas offcanvas-right p-10">
-            <!--begin::Header-->
-            <div class="offcanvas-header d-flex align-items-center justify-content-between pb-5">
-                <h3 class="font-weight-bold m-0">User Profile</h3>
-                <a href="javascript:" class="btn btn-xs btn-icon btn-light btn-hover-primary" id="kt_quick_user_close">
-                    <i class="ki ki-close icon-xs text-muted"></i>
-                </a>
-            </div>
-            <!--end::Header-->
-            <!--begin::Content-->
-            <div class="offcanvas-content pr-5 mr-n5">
-                <!--begin::Header-->
-                @if (Auth::check())
-                    <div class="d-flex align-items-center mt-5">
-                        <div class="symbol symbol-100 mr-5">
-                            <span class="symbol symbol-35 symbol-light-success">
-                                <span
-                                    class="symbol-label font-size-h5 font-weight-bold">{{ strtoupper(substr(Auth::user()->name, 0, 1)) }}</span>
-                            </span>
-                            <i class="symbol-badge bg-success"></i>
-                        </div>
-                        <div class="d-flex flex-column">
-                            <a href="javascript:"
-                                class="font-weight-bold font-size-h5 text-dark-75 text-hover-primary">{{ explode(' ', Auth::user()->name)[0] }}</a>
-                            <div class="text-muted mt-1">
-                                @if (Auth::user()->department)
-                                    {{ Auth::user()->department->name }}
-                                @endif
+                <div class="offcanvas-content pr-5 mr-n5">
+                    <!--begin::Header-->
+                    @if (Auth::check())
+                        <div class="d-flex align-items-center mt-5">
+                            <div class="symbol symbol-100 mr-5">
+                                <span class="symbol symbol-35 symbol-light-success">
+                                    <span
+                                        class="symbol-label font-size-h5 font-weight-bold">{{ strtoupper(substr(Auth::user()->name, 0, 1)) }}</span>
+                                </span>
+                                <i class="symbol-badge bg-success"></i>
                             </div>
-                            {{-- <div class="navi mt-2">
+                            <div class="d-flex flex-column">
+                                <a href="javascript:"
+                                    class="font-weight-bold font-size-h5 text-dark-75 text-hover-primary">{{ explode(' ', Auth::user()->name)[0] }}</a>
+                                <div class="text-muted mt-1">
+                                    @if (Auth::user()->department)
+                                        {{ Auth::user()->department->name }}
+                                    @endif
+                                </div>
+                                {{-- <div class="navi mt-2">
                                 <a href="javascript:"
                                     class="btn btn-sm btn-light-danger font-weight-bolder py-2 px-5 logout">Sign Out</a>
                             </div> --}}
+                            </div>
                         </div>
-                    </div>
-                    <div>
-                        <a href="{{ url('/profile') }}"
-                            class="btn btn-sm btn-light-success font-weight-bolder py-2 px-5 w-100 mt-4 mb-2">Edit
-                            Profile</a>
-                        <a href="javascript:"
-                            class="btn btn-sm btn-light-danger font-weight-bolder py-2 px-5 w-100 logout my-2">Sign
-                            Out</a>
+                        <div>
+                            <a href="{{ url('/profile') }}"
+                                class="btn btn-sm btn-light-success font-weight-bolder py-2 px-5 w-100 mt-4 mb-2">Edit
+                                Profile</a>
+                            <a href="javascript:"
+                                class="btn btn-sm btn-light-danger font-weight-bolder py-2 px-5 w-100 logout my-2">Sign
+                                Out</a>
 
-                    </div>
-                @endif
-                <!--end::Header-->
-                <!--begin::Separator-->
-                {{-- <div class="separator separator-dashed mt-8 mb-5"></div>
+                        </div>
+                    @endif
+                    <!--end::Header-->
+                    <!--begin::Separator-->
+                    {{-- <div class="separator separator-dashed mt-8 mb-5"></div>
 				<!--end::Separator-->
 				<!--begin::Nav-->
 				<div class="navi navi-spacer-x-0 p-0">
@@ -378,108 +379,133 @@
 					</div>
 					<!--end::Item-->
 				</div> --}}
-                <!--end::Notifications-->
+                    <!--end::Notifications-->
+                </div>
+                <!--end::Content-->
             </div>
-            <!--end::Content-->
-        </div>
-    @endif
-    <!--end::Global Config-->
-    <script>
-        var HOST_URL = "{{ url('/') }}";
-    </script>
-    <!--begin::Global Theme Bundle(used by all pages)-->
-    <script src="{{ url('/') }}/assets/plugins/global/plugins.bundle.js?v=7.0.5"></script>
-    <script src="{{ url('/') }}/assets/plugins/custom/prismjs/prismjs.bundle.js?v=7.0.5"></script>
-    <script src="{{ url('/') }}/assets/js/scripts.bundle.js?v=7.0.5"></script>
-    {{-- <script src="{{ url('/') }}/assets/js/sweetalert.min.js"></script> --}}
-    <!--end::Global Theme Bundle-->
-    <!--begin::Page Vendors(used by this page)-->
-    {{-- <script src="{{ url('/') }}/assets/plugins/custom/fullcalendar/fullcalendar.bundle.js?v=7.0.5"></script> --}}
-    <!--end::Page Vendors-->
-    <!--begin::Page Scripts(used by this page)-->
-    {{-- <script src="{{ url('/') }}/assets/js/pages/widgets.js?v=7.0.5"></script> --}}
-    <!--end::Page Scripts-->
-
-    <script>
-        $.ajaxSetup({
-            headers: {
-                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-            }
-        });
-
-        function kasihNol(data) {
-            if (data < 10) {
-                return '0' + data;
-            } else {
-                return data;
-            }
-        }
-
-        function numberFormat(number) {
-            return (Math.round(number) || "")
-                .toString()
-                .replace(/^0|\./g, "")
-                .replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1.");
-        }
-
-        function formatTanggalIndonesia(tanggal) {
-            const today = new Date(tanggal);
-            return kasihNol(today.getDate()) + '/' + kasihNol((today.getMonth() + 1)) + '/' + kasihNol(today.getFullYear());
-        }
-
-        function formatTanggalIndonesia2(tanggal) {
-            var formated;
-            const today = new Date(tanggal);
-            const bulan = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September',
-                'Oktober', 'November', 'Desember'
-            ];
-            formated = kasihNol(today.getDate()) + ' ' + bulan[today.getMonth()] + ' ' + kasihNol(today.getFullYear());
-
-            if (tanggal == null || tanggal == '') {
-                formated = '';
-            }
-
-            return formated;
-        }
-
-        @if (Session::has('info'))
-            toastr.info("{{ Session::get('info') }}");
         @endif
-        @if (Session::has('error'))
-            toastr.error("{{ Session::get('error') }}");
-        @endif
-        @if (Session::has('success'))
-            toastr.success("{{ Session::get('success') }}");
-        @endif
+        <!--end::Global Config-->
+        <script>
+            var HOST_URL = "{{ url('/') }}";
+        </script>
+        <!--begin::Global Theme Bundle(used by all pages)-->
+        <script src="{{ url('/') }}/assets/plugins/global/plugins.bundle.js?v=7.0.5"></script>
+        <script src="{{ url('/') }}/assets/plugins/custom/prismjs/prismjs.bundle.js?v=7.0.5"></script>
+        <script src="{{ url('/') }}/assets/js/scripts.bundle.js?v=7.0.5"></script>
+        {{-- <script src="{{ url('/') }}/assets/js/sweetalert.min.js"></script> --}}
+        <!--end::Global Theme Bundle-->
+        <!--begin::Page Vendors(used by this page)-->
+        {{-- <script src="{{ url('/') }}/assets/plugins/custom/fullcalendar/fullcalendar.bundle.js?v=7.0.5"></script> --}}
+        <!--end::Page Vendors-->
+        <!--begin::Page Scripts(used by this page)-->
+        {{-- <script src="{{ url('/') }}/assets/js/pages/widgets.js?v=7.0.5"></script> --}}
+        <!--end::Page Scripts-->
 
-        $(".datepicker-year").datepicker({
-            format: "yyyy",
-            viewMode: "years",
-            minViewMode: "years",
-            autoclose: true
-        });
-    </script>
-    <script>
-        $(".logout").click(function() {
-            $.ajax({
-                url: "{{ URL::to('/') }}/logout",
-                type: "POST",
-                dataType: "JSON",
-                success: function(response) {
-                    if (response.success == 1) {
-                        location.reload();
-                        return false;
-                    }
-                },
-                error: function(error) {
-                    location.reload();
-                    console.log(error);
+        <script>
+            $.ajaxSetup({
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                 }
             });
-        });
-    </script>
-    @stack('scripts')
-</body>
-<!--end::Body-->
+
+            $(document).ajaxError(function(event, xhr) {
+                if (xhr.status === 401 || xhr.status === 419) {
+                    window.location.href = "{{ route('login') }}";
+                }
+            });
+
+            // Auto-redirect to login when session lifetime expires
+            (function() {
+                var sessionLifetime = {{ config('session.lifetime', 30) }} * 60 * 1000;
+                var timeoutTimer;
+
+                function startTimer() {
+                    clearTimeout(timeoutTimer);
+                    timeoutTimer = setTimeout(function() {
+                        window.location.href = "{{ route('login') }}";
+                    }, sessionLifetime);
+                }
+
+                startTimer();
+
+                $(document).ajaxSuccess(function() {
+                    startTimer();
+                });
+            })();
+
+            function kasihNol(data) {
+                if (data < 10) {
+                    return '0' + data;
+                } else {
+                    return data;
+                }
+            }
+
+            function numberFormat(number) {
+                return (Math.round(number) || "")
+                    .toString()
+                    .replace(/^0|\./g, "")
+                    .replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1.");
+            }
+
+            function formatTanggalIndonesia(tanggal) {
+                const today = new Date(tanggal);
+                return kasihNol(today.getDate()) + '/' + kasihNol((today.getMonth() + 1)) + '/' + kasihNol(today.getFullYear());
+            }
+
+            function formatTanggalIndonesia2(tanggal) {
+                var formated;
+                const today = new Date(tanggal);
+                const bulan = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September',
+                    'Oktober', 'November', 'Desember'
+                ];
+                formated = kasihNol(today.getDate()) + ' ' + bulan[today.getMonth()] + ' ' + kasihNol(today.getFullYear());
+
+                if (tanggal == null || tanggal == '') {
+                    formated = '';
+                }
+
+                return formated;
+            }
+
+            @if (Session::has('info'))
+                toastr.info("{{ Session::get('info') }}");
+            @endif
+            @if (Session::has('error'))
+                toastr.error("{{ Session::get('error') }}");
+            @endif
+            @if (Session::has('success'))
+                toastr.success("{{ Session::get('success') }}");
+            @endif
+
+            $(".datepicker-year").datepicker({
+                format: "yyyy",
+                viewMode: "years",
+                minViewMode: "years",
+                autoclose: true
+            });
+        </script>
+        <script>
+            $(".logout").click(function() {
+                $.ajax({
+                    url: "{{ URL::to('/') }}/logout",
+                    type: "POST",
+                    dataType: "JSON",
+                    success: function(response) {
+                        if (response.success == 1) {
+                            location.reload();
+                            return false;
+                        }
+                    },
+                    error: function(error) {
+                        location.reload();
+                        console.log(error);
+                    }
+                });
+            });
+        </script>
+        @stack('scripts')
+    </body>
+    <!--end::Body-->
 
 </html>

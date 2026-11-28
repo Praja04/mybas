@@ -4,12 +4,6 @@ $menus = [
     [
         'label' => 'Formulir',
         'menu' => [
-            // [
-            //     'path' => '/',
-            //     'label' => 'Kembali ke MyBAS',
-            //     'icon' => 'mdi-arrow-left',
-            //     'submenu' => [],
-            // ],
             [
                 'path' => 'pos-security/formulir',
                 'label' => 'Formulir Security',
@@ -94,24 +88,30 @@ $menus = [
                 'permission' => 'pos-security_data_security',
                 'submenu' => [],
             ],
+            [
+                'path' => 'pos-security/master/kantong-parkir',
+                'label' => 'Manajemen Parkir',
+                'icon' => 'mdi-parking',
+                'submenu' => [],
+            ],
 
-            //         [
-            //             'path' => 'sidebarKartu',
-            //             'label' => 'Kartu',
-            //             'icon' => 'mdi-card-account-details-outline',
-            //             'submenu' => [
-            //                 [
-            //                     'path' => 'pos-security/kartu/kartu-aktif',
-            //                     'label' => 'List Kartu Aktif',
-            //                 ],
-            //             ],
-            //         ],
-            //         [
-            //             'path' => 'pos-security/blacklist',
-            //             'label' => 'Blacklist Tamu',
-            //             'icon' => 'mdi-account-cancel-outline',
-            //             'submenu' => [],
-            //         ],
+            [
+                'path' => 'sidebarKartu',
+                'label' => 'Kartu',
+                'icon' => 'mdi-card-account-details-outline',
+                'submenu' => [
+                    [
+                        'path' => 'pos-security/kartu/kartu-aktif',
+                        'label' => 'List Kartu Aktif',
+                    ],
+                ],
+            ],
+            [
+                'path' => 'pos-security/blacklist',
+                'label' => 'Blacklist Tamu/Supplier',
+                'icon' => 'mdi-account-cancel-outline',
+                'submenu' => [],
+            ],
         ],
     ],
     // [
@@ -149,5 +149,15 @@ $menus = [
         @include('pos-security.routes.datatable')
 
         @stack('scripts')
+
+        <script>
+            // Session Keeper - Menjaga session tetap aktif dengan ping ke server setiap 5 menit
+            setInterval(function() {
+                fetch("{{ route('pos-security.session-keeper') }}")
+                    .then(response => response.json())
+                    .then(data => console.log('Session Keeper: ' + data.status))
+                    .catch(error => console.log('Session Keeper Error'));
+            }, 5 * 60 * 1000);
+        </script>
     </x-slot>
 </x-templates.velzon-hs.base>

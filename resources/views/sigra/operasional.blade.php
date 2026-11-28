@@ -166,7 +166,7 @@
                                                     <a
                                                         class="dropzone-select btn btn-light-secondary font-weight-bold text-dark btn-sm">Attach
                                                         files</a>
-                                                    <small>Max. 2MB (.pdf)</small>
+                                                    <small>Max. 10MB (.pdf)</small>
                                                 </div>
                                                 <div class="dropzone-items">
                                                     <div class="dropzone-item" style="display:none">
@@ -488,7 +488,7 @@
         var myDropzone5 = new Dropzone(id, {
             url: "{{ url('/attachment/upload') }}",
             parallelUploads: 20,
-            maxFilesize: 2, // 2mb
+            maxFilesize: 10, // 10mb
             timeout: 180000,
             previewTemplate: previewTemplate,
             previewsContainer: id + " .dropzone-items",
@@ -518,6 +518,24 @@
         myDropzone5.on("sending", function(file) {
             // Show the total progress bar when upload starts
             $(id + " .progress-bar").css('opacity', "1");
+        });
+
+        // Handle upload error - fix [object Object] display
+        myDropzone5.on("error", function(file, message) {
+            var errorMessage = '';
+            if (typeof message === 'string') {
+                errorMessage = message;
+            } else if (message && message.message) {
+                errorMessage = message.message;
+            } else {
+                errorMessage = 'Upload gagal. Silakan coba lagi.';
+            }
+            $(file.previewElement).find('[data-dz-errormessage]').text(errorMessage);
+        });
+
+        // Handle upload success
+        myDropzone5.on("success", function(file, response) {
+            $(file.previewElement).find('[data-dz-errormessage]').text('');
         });
 
         // Hide the total progress bar when nothing's uploading anymore
@@ -943,44 +961,7 @@
 
         function downloadAttachment(id) {
             const url = "{{ url('/attachment/download') }}/" + id;
-
-            $.ajax({
-                url: url,
-                method: 'GET',
-                xhrFields: {
-                    responseType: 'blob'
-                },
-                success: function(data, status, xhr) {
-                    // Ambil nama file dari header response
-                    let disposition = xhr.getResponseHeader('Content-Disposition');
-                    let filename = 'legalitas_attachment';
-                    if (disposition && disposition.indexOf('filename=') !== -1) {
-                        filename = disposition.split('filename=')[1].replace(/"/g, '');
-                    }
-
-                    // Buat link blob dan auto-download
-                    let blob = new Blob([data]);
-                    let link = document.createElement('a');
-                    link.href = window.URL.createObjectURL(blob);
-                    link.download = filename;
-                    link.click();
-                },
-                error: function(xhr) {
-                    if (xhr.status === 404) {
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'File tidak ditemukan',
-                            text: 'File mungkin sudah dihapus atau rusak.',
-                        });
-                    } else {
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Gagal mengunduh file',
-                            text: 'Terjadi kesalahan tak terduga. Coba lagi nanti.',
-                        });
-                    }
-                }
-            });
+            window.open(url, '_blank');
         }
 
         function deleteAttachment(id) {

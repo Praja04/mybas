@@ -65,7 +65,7 @@ class BDKTMiInstanController extends Controller
                 '<span class="label label-inline label-'.$label_status.'">'.$d->status.'</span>',
                 $sertifikat == null ? '-' : $sertifikat->nomor_sertifikat,
                 $sertifikat == null ? '-' : $this->formatTanggal($sertifikat->tanggal_terbit),
-                $sertifikat == null ? '-' : $sertifikat->tanggal_expired == null ? '-' : '<span class="label label-inline label-outline-'.$expired.'">'.$this->formatTanggal($sertifikat->tanggal_expired).'</span>',
+                ($sertifikat == null || $sertifikat->tanggal_expired == null) ? '-' : '<span class="label label-inline label-outline-'.$expired.'">'.$this->formatTanggal($sertifikat->tanggal_expired).'</span>',
                 $sertifikat == null ? '-' : $sertifikat->masa_berlaku,
                 $sertifikat == null ? '-' : $sertifikat->keterangan,
                 '

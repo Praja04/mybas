@@ -13,4 +13,9 @@ class SNIMiInstan extends Model
     {
         return $this->belongsTo(Perusahaan::class, 'id_perusahaan');
     }
+
+    public function sertifikat()
+    {
+        return $this->hasMany(SertifikatSNIMiInstan::class, 'id_varian')->where('status', '!=', 'deleted');
+    }
 }

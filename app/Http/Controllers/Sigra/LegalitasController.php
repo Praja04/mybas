@@ -39,7 +39,7 @@ class LegalitasController extends Controller
     public function getAll()
     {
         $sertifikasi_legalitas = [];
-        $legalitas = Legalitas::where('status', '!=', 'deleted')->get();
+        $legalitas = Legalitas::with(['perusahaan', 'sertifikasi'])->where('status', '!=', 'deleted')->get();
 
         foreach ($legalitas as $key => $data) {
             if ($data->status == 'inactive') {
@@ -48,7 +48,7 @@ class LegalitasController extends Controller
                 $label_status = 'success';
             }
 
-            $sertifikasi = SertifikasiLegalitas::where('id_legalitas', $data->id)->where('status', '!=', 'deleted')->orderBy('tanggal_habis', 'desc')->first();
+            $sertifikasi = $data->sertifikasi->sortByDesc('tanggal_habis')->first();
 
             if ($sertifikasi != null) {
                 $overdue = $this->expired($sertifikasi->tanggal_expired);

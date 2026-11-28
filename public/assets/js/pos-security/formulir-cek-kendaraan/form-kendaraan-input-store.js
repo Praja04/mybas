@@ -15,7 +15,6 @@ $(document).ready(function () {
 
         // ── Validasi foto identitas (KTP & Selfie) ──────────────────
         const identitasSlots = [
-            { key: "foto_ktp",  label: "Foto KTP" },
             { key: "foto_diri", label: "Foto Diri / Selfie" },
         ];
 
@@ -103,7 +102,7 @@ $(document).ready(function () {
                         await window.IDBDraft.deleteDraft(photoSessionId);
                         delete window.draftCache[photoSessionId];
 
-                        window.cekKendaraanInTable.ajax.reload(null, false);
+                        window.cekKendaraanInTable.reload(null, false);
                     }
                     
                     photoStore = {};
@@ -147,7 +146,7 @@ $(document).ready(function () {
                         });
 
                     // reset preview identitas ke placeholder
-                    ["foto_ktp", "foto_diri"].forEach((key) => {
+                    ["foto_diri"].forEach((key) => {
                         const container = document.getElementById(`preview-${key}`);
                         if (container) {
                             container.innerHTML = `
@@ -190,7 +189,7 @@ $(document).ready(function () {
                     setStep("table");
 
                     if (window.cekKendaraanInTable) {
-                        window.cekKendaraanInTable.ajax.reload(null, false);
+                        window.cekKendaraanInTable.reload(null, false);
                     }
 
                     return;

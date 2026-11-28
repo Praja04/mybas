@@ -1,8 +1,18 @@
 <?php
 
+use App\Http\Controllers\HR\Ecafesedaap\DataScanmakanController;
 use Illuminate\Support\Facades\Route;
 
+Route::get('/data-scan', [DataScanmakanController::class, 'index'])->name('scanmakan.index');
+
 Route::group(['middleware' => ['auth', 'rules', 'access_log']], function () {
+    Route::get('/izin-keluar', 'IzinKeluar\PermitController@index')->name('izin-keluar.index');
+    Route::get('/izin-keluar/report', 'IzinKeluar\PermitController@reportPage')->name('izin-keluar.report');
+    Route::get('/izin-keluar/report/get-filter-bulan', 'IzinKeluar\PermitController@getFilterBulanTahun')->name('izin-keluar.report.getFilterBulan');
+    Route::get('/izin-keluar/report/get-data', 'IzinKeluar\PermitController@getData')->name('izin-keluar.report.getData');
+    Route::get('/izin-keluar/report/export', 'IzinKeluar\PermitController@exportExcel')->name('izin-keluar.report.exportExcel');
+    Route::post('/izin-keluar/report/send-email', 'IzinKeluar\PermitController@sendEmail')->name('izin-keluar.report.sendEmail');
+    Route::post('/izin-keluar/check-karyawan', 'IzinKeluar\PermitController@checkKaryawan')->name('izin-keluar.check-karyawan');
 
     Route::get('/', 'HomeController@index')->name('home');
     Route::get('/home', 'HomeController@index')->name('home');
@@ -204,6 +214,7 @@ Route::group(['middleware' => ['auth', 'rules', 'access_log']], function () {
     // export bentar dulu
     Route::post('/sigra/sio/set-status', 'Sigra\SioController@setStatus');
     Route::get('/sigra/sio/export-sio', 'Sigra\SioController@exportSio')->name('sigra.export.sio');
+    Route::get('/sigra/sio/download-all', 'Sigra\SioController@downloadAllAttachments')->name('sigra.sio.download-all');
 
     Route::get('/sigra/email', 'Sigra\EmailPenerimaController@index');
     Route::get('/sigra/email/get-all', 'Sigra\EmailPenerimaController@getAll')->name('sigra.email.penerima.getAll');
@@ -254,11 +265,16 @@ Route::group(['middleware' => ['auth', 'rules', 'access_log']], function () {
     Route::post('/display/pengambilan-id-card/submit', 'PKWKaryawanController@pengambilanIdCardSubmit');
 
     Route::get('/permission/auth-permission/', 'AuthPermissionController@index');
-    Route::post('/permission/auth-permission/store', 'AuthPermissionController@store');
+    Route::post('/permission/auth-permission/store', 'AuthPermissionController@store')->name('auth-permission.store');
+    Route::get('/permission/auth-permission/get/{id}', 'AuthPermissionController@edit');
+    Route::delete('/permission/auth-permission/delete/{id}', 'AuthPermissionController@destroy');
+
     Route::get('/permission/auth-group/', 'AuthGroupController@index');
     Route::post('/permission/auth-group/store', 'AuthGroupController@store');
     Route::post('/permission/auth-group/get-permissions', 'AuthGroupController@get_permissions');
     Route::post('/permission/auth-group/change-permissions', 'AuthGroupController@change_permissions');
+    Route::post('/permission/auth-group/update', 'AuthGroupController@update');
+    Route::delete('/permission/auth-group/delete', 'AuthGroupController@delete');
     // tambah get permissions di master user
     // Route::post('/permission/auth-group/get-permissions', 'AuthGroupController@get_permissions');
 
@@ -612,6 +628,8 @@ Route::group(['middleware' => ['auth', 'rules', 'access_log']], function () {
     Route::post('/PencarianReport', 'EcafeSeedapController@PencarianReport');
 });
 Route::group(['middleware' => ['auth', 'rules', 'access_log']], function () {
+    Route::get('/ecafesedaap/monitoring-scan', 'EcafeSeedapController@monitoringScan');
+    Route::get('/ecafesedaap/monitoring-scan/export', 'EcafeSeedapController@exportExcelMonitoringScan')->name('ecafesedaap.monitoring-scan.export');
     Route::get('/ecafesedaap-scan', 'EcafeSeedapController@scanPage');
     Route::get('/ecafesedaap-scan/{kategori}', 'EcafeSeedapController@showDisplay');
     Route::post('/ecafesedaap-scan/do-scan', 'EcafeSeedapController@doScan');
@@ -676,6 +694,7 @@ Route::group(['middleware' => ['auth', 'rules', 'access_log']], function () {
         // --- INTERAKSI AJAX ---
         Route::get('/search-karyawan/{nik}', 'LokerV2Controller@searchKaryawan')->name('loker.search-karyawan');
         Route::get('/search-global', 'LokerV2Controller@searchGlobal')->name('loker.search-global');
+        Route::get('/divisi-list/{kategori}', 'LokerV2Controller@getDivisiList')->name('loker.divisi-list');
         Route::get('/api-suggest-loker', 'LokerV2Controller@apiSuggestLoker')->name('loker.api-suggest-loker');
         Route::get('/detail/{gender}/{no_loker}', 'LokerV2Controller@getDetailLoker')->name('loker.detail');
         Route::get('/available/{gender}/{kategori}', 'LokerV2Controller@getAvailableLockers')->name('loker.available');
@@ -758,8 +777,74 @@ require base_path('routes/pos-security.php');
 require base_path('routes/pos-security/ajax.php');
 require base_path('routes/pos-security/datatable.php');
 
-// local only
-require base_path('routes/mail-testing.php');
+// Pool QCC
+require base_path('routes/pool_qcc/pool_qcc.php');
+
+// SP Pelanggaran Routes
+Route::group(['middleware' => ['auth', 'rules']], function () {
+    Route::get('/sp-pelanggaran', [App\Http\Controllers\SpPelanggaranController::class, 'index'])->name('sp_pelanggaran.index');
+    Route::post('/sp-pelanggaran', [App\Http\Controllers\SpPelanggaranController::class, 'store'])->name('sp_pelanggaran.store');
+    Route::post('/sp-pelanggaran/{id}/update', [App\Http\Controllers\SpPelanggaranController::class, 'update'])->name('sp_pelanggaran.update');
+    Route::delete('/sp-pelanggaran/{id}', [App\Http\Controllers\SpPelanggaranController::class, 'destroy'])->name('sp_pelanggaran.destroy');
+    Route::delete('/sp-pelanggaran/{id}/destroy', [App\Http\Controllers\SpPelanggaranController::class, 'destroy']);
+    Route::get('/sp-pelanggaran/check-active/{employee_id}', [App\Http\Controllers\SpPelanggaranController::class, 'checkActiveSp']);
+    Route::post('/sp-pelanggaran/{id}/report', [App\Http\Controllers\SpPelanggaranController::class, 'reportToAdmin']);
+
+    // Approval Flow & Analytics
+    Route::get('/sp-pelanggaran/dashboard', [App\Http\Controllers\SpPelanggaranController::class, 'dashboard'])->name('sp_pelanggaran.dashboard');
+    Route::get('/sp-pelanggaran/trace', [App\Http\Controllers\SpPelanggaranController::class, 'trace'])->name('sp_pelanggaran.trace');
+    Route::get('/sp-pelanggaran/approval', [App\Http\Controllers\SpPelanggaranController::class, 'approvalList'])->name('sp_pelanggaran.approval');
+    Route::get('/sp-pelanggaran/{id}/detail', [App\Http\Controllers\SpPelanggaranController::class, 'getSpDetail']);
+    Route::post('/sp-pelanggaran/{id}/submit-to-depthead', [App\Http\Controllers\SpPelanggaranController::class, 'submitToDeptHead'])->name('sp_pelanggaran.submit_depthead');
+    Route::post('/sp-pelanggaran/{id}/depthead-approve', [App\Http\Controllers\SpPelanggaranController::class, 'deptHeadApprove'])->name('sp_pelanggaran.depthead_approve');
+    Route::post('/sp-pelanggaran/depthead-mass-approve', [App\Http\Controllers\SpPelanggaranController::class, 'deptHeadMassApprove'])->name('sp_pelanggaran.depthead_mass_approve');
+    Route::post('/sp-pelanggaran/{id}/depthead-reject', [App\Http\Controllers\SpPelanggaranController::class, 'deptHeadReject'])->name('sp_pelanggaran.depthead_reject');
+    Route::post('/sp-pelanggaran/{id}/irstaff-submit', [App\Http\Controllers\SpPelanggaranController::class, 'irStaffSubmit'])->name('sp_pelanggaran.irstaff_submit');
+    Route::post('/sp-pelanggaran/{id}/irstaff-reject', [App\Http\Controllers\SpPelanggaranController::class, 'irStaffReject'])->name('sp_pelanggaran.irstaff_reject');
+    Route::post('/sp-pelanggaran/{id}/irhead-approve', [App\Http\Controllers\SpPelanggaranController::class, 'irHeadApprove'])->name('sp_pelanggaran.irhead_approve');
+    Route::post('/sp-pelanggaran/irhead-mass-approve', [App\Http\Controllers\SpPelanggaranController::class, 'irHeadMassApprove'])->name('sp_pelanggaran.irhead_mass_approve');
+    Route::post('/sp-pelanggaran/{id}/irhead-reject', [App\Http\Controllers\SpPelanggaranController::class, 'irHeadReject'])->name('sp_pelanggaran.irhead_reject');
+    Route::post('/sp-pelanggaran/{id}/cancel', [App\Http\Controllers\SpPelanggaranController::class, 'cancelSp'])->name('sp_pelanggaran.cancel');
+    Route::post('/sp-pelanggaran/{id}/dh-approve-cancel', [App\Http\Controllers\SpPelanggaranController::class, 'dhApproveCancel'])->name('sp_pelanggaran.dh_approve_cancel');
+    Route::post('/sp-pelanggaran/dh-mass-approve-cancel', [App\Http\Controllers\SpPelanggaranController::class, 'dhMassApproveCancel'])->name('sp_pelanggaran.dh_mass_approve_cancel');
+    Route::post('/sp-pelanggaran/{id}/irstaff-approve-cancel', [App\Http\Controllers\SpPelanggaranController::class, 'irStaffApproveCancel'])->name('sp_pelanggaran.irstaff_approve_cancel');
+    Route::post('/sp-pelanggaran/{id}/irhead-approve-cancel', [App\Http\Controllers\SpPelanggaranController::class, 'irHeadApproveCancel'])->name('sp_pelanggaran.irhead_approve_cancel');
+    Route::get('/sp-pelanggaran/export', [App\Http\Controllers\SpPelanggaranController::class, 'exportData'])->name('sp_pelanggaran.export');
+    Route::get('/sp-pelanggaran/{id}/export-pdf', [App\Http\Controllers\SpPelanggaranController::class, 'exportSpPdf'])->name('sp_pelanggaran.export_sp_pdf');
+    Route::get('/sp-pelanggaran/export-sp-pdf/{id}', [App\Http\Controllers\SpPelanggaranController::class, 'exportSpPdf']); // alias URL lama (dipakai di view trace)
+    Route::post('/sp-pelanggaran/import-sp-aktif', [App\Http\Controllers\SpPelanggaranController::class, 'importActiveSpExcel'])->name('sp_pelanggaran.import_sp_aktif');
+
+    Route::get('/sp-pelanggaran/template-sp-aktif', [App\Http\Controllers\SpPelanggaranController::class, 'downloadTemplateActiveSp'])->name('sp_pelanggaran.template_sp_aktif');
+
+    // Upload & View PDF Konseling Hasil SP (Pelanggaran & Mangkir)
+    Route::get('/sp-pelanggaran/upload-konseling', [App\Http\Controllers\SpPelanggaranController::class, 'uploadKonselingIndex'])->name('sp_pelanggaran.upload_konseling');
+    Route::post('/sp-pelanggaran/{id}/upload-konseling', [App\Http\Controllers\SpPelanggaranController::class, 'storeKonseling'])->name('sp_pelanggaran.store_konseling');
+    Route::delete('/sp-pelanggaran/{id}/delete-konseling', [App\Http\Controllers\SpPelanggaranController::class, 'deleteKonseling'])->name('sp_pelanggaran.delete_konseling');
+
+    // Master Kode Pelanggaran (IR Staff)
+    Route::get('/sp-pelanggaran/master-kode', [App\Http\Controllers\SpPelanggaranController::class, 'masterKodeIndex'])->name('sp_pelanggaran.master_kode');
+    Route::post('/sp-pelanggaran/master-kode', [App\Http\Controllers\SpPelanggaranController::class, 'masterKodeStore'])->name('sp_pelanggaran.master_kode_store');
+    Route::post('/sp-pelanggaran/master-kode/{id}/update', [App\Http\Controllers\SpPelanggaranController::class, 'masterKodeUpdate'])->name('sp_pelanggaran.master_kode_update');
+    Route::delete('/sp-pelanggaran/master-kode/{id}', [App\Http\Controllers\SpPelanggaranController::class, 'masterKodeDestroy'])->name('sp_pelanggaran.master_kode_destroy');
+    Route::get('/sp-pelanggaran/master-kode/{id}/detail', [App\Http\Controllers\SpPelanggaranController::class, 'getKodeDetail'])->name('sp_pelanggaran.master_kode_detail');
+    Route::post('/sp-pelanggaran/master-kode/import', [App\Http\Controllers\SpPelanggaranController::class, 'importMasterKode'])->name('sp_pelanggaran.master_kode_import');
+
+    // SP Mangkir Routes
+    Route::get('/sp-mangkir', [App\Http\Controllers\SpMangkirController::class, 'index'])->name('sp_mangkir.index');
+    Route::get('/sp-mangkir/trace', [App\Http\Controllers\SpMangkirController::class, 'trace'])->name('sp_mangkir.trace');
+    Route::get('/sp-mangkir/audit', [App\Http\Controllers\SpMangkirController::class, 'audit'])->name('sp_mangkir.audit');
+    Route::post('/sp-mangkir/audit/process', [App\Http\Controllers\SpMangkirController::class, 'processAudit'])->name('sp_mangkir.audit_process');
+    Route::post('/sp-mangkir/audit/store-batch', [App\Http\Controllers\SpMangkirController::class, 'batchStoreFromAudit'])->name('sp_mangkir.audit_store_batch');
+    Route::post('/sp-mangkir', [App\Http\Controllers\SpMangkirController::class, 'store'])->name('sp_mangkir.store');
+    Route::get('/sp-mangkir/check-accumulation', [App\Http\Controllers\SpMangkirController::class, 'checkAccumulation'])->name('sp_mangkir.check_accumulation');
+    Route::delete('/sp-mangkir/{id}', [App\Http\Controllers\SpMangkirController::class, 'destroy'])->name('sp_mangkir.destroy');
+
+    // ── TTD Digital ─────────────────────────────────────────────────────────────
+    Route::get('/ttd-digital', [App\Http\Controllers\DigitalSignatureController::class, 'index'])->name('ttd_digital.index');
+    Route::post('/ttd-digital', [App\Http\Controllers\DigitalSignatureController::class, 'store'])->name('ttd_digital.store');
+    Route::delete('/ttd-digital/{id}', [App\Http\Controllers\DigitalSignatureController::class, 'destroy'])->name('ttd_digital.destroy');
+    Route::get('/ttd-digital/preview', [App\Http\Controllers\DigitalSignatureController::class, 'preview'])->name('ttd_digital.preview');
+});
 
 Route::fallback(function () {
     abort(404);

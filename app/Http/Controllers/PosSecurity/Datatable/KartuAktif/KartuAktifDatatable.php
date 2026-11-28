@@ -11,13 +11,7 @@ class KartuAktifDatatable extends Controller
 {
     public function index(Request $request)
     {
-        // Tidak perlu memanggil rawData seperti di KartuAktif
-        // Kita akan membangun query builder untuk DataTables
-        // Query akan dibangun langsung di DrawTable atau bisa juga di sini
-        // Untuk fleksibilitas, kita bisa saja membangun query dasar di sini
-        // Tapi karena DataTables membutuhkan Query Builder untuk serverSide,
-        // kita akan bangun logikanya di DrawTable.
-
+      
         // Kita bisa saja mengirimkan filter ke DrawTable
         return $this->DrawTable($request);
     }

@@ -1,4 +1,4 @@
-<div id="kt_header" class="header header-fixed">
+﻿<div id="kt_header" class="header header-fixed">
     <!--begin::Container-->
     <div class="container-fluid d-flex align-items-stretch justify-content-between">
         <!--begin::Header Menu Wrapper-->
@@ -16,6 +16,14 @@
                 @if (Auth::check())
                     <!--begin::Header Nav-->
                     <ul class="menu-nav">
+                        {{-- Pool QCC --}}
+                        @if (in_array('qcc_pool', $permissions))
+                            <li class="menu-item {{ request()->is('pool-qcc*') ? 'menu-item-active' : '' }}">
+                                <a href="{{ url('/pool-qcc') }}" class="menu-link">
+                                    <span class="menu-text"> Pool QCC</span>
+                                </a>
+                            </li>
+                        @endif
                         @if (in_array('hrd_pengambilan_id_card', $permissions))
                             <li class="menu-item menu-item-submenu menu-item-rel">
                                 <a href="{{ url('/display/pengambilan-id-card') }}" class="menu-link">
@@ -812,7 +820,7 @@
                                                         <span></span>
                                                     </i>
                                                     <span class="menu-text">Pembagian</span>
-                                                </a>``
+                                                </a>
                                             </li>
                                         @endif
                                         @if (in_array('hr_karyawan', $permissions))
@@ -821,6 +829,16 @@
                                                     <i class="flaticon flaticon-users mr-3"
                                                         style="margin-left: -5px"></i>
                                                     <span class="menu-text"> Karyawan</span>
+                                                </a>
+                                            </li>
+                                        @endif
+                                        @if (in_array('sp_pelanggaran', $permissions ?? []) || in_array('hr', $permissions ?? []))
+                                            <li class="menu-item" aria-haspopup="true">
+                                                <a href="{{ url('/sp-pelanggaran/trace') }}" class="menu-link">
+                                                    <i class="menu-bullet menu-bullet-line">
+                                                        <span></span>
+                                                    </i>
+                                                    <span class="menu-text">SP Pelanggaran</span>
                                                 </a>
                                             </li>
                                         @endif
@@ -967,6 +985,22 @@
                                                         <span></span>
                                                     </i>
                                                     <span class="menu-text">POS Security</span>
+                                                </a>
+                                            </li>
+                                            <li class="menu-item" aria-haspopup="true">
+                                                <a href="{{ url('/izin-keluar') }}" class="menu-link">
+                                                    <i class="menu-bullet menu-bullet-line">
+                                                        <span></span>
+                                                    </i>
+                                                    <span class="menu-text">Absen Izin Keluar</span>
+                                                </a>
+                                            </li>
+                                            <li class="menu-item" aria-haspopup="true">
+                                                <a href="{{ url('/izin-keluar/report') }}" class="menu-link">
+                                                    <i class="menu-bullet menu-bullet-line">
+                                                        <span></span>
+                                                    </i>
+                                                    <span class="menu-text">Report Izin Keluar</span>
                                                 </a>
                                             </li>
                                         @endif
@@ -1359,13 +1393,135 @@
                                             </a>
                                         </li>
 
-                                        <li class="menu-item" aria-haspopup="true">
-                                            <a href="{{ url('/loker/management') }}" class="menu-link">
-                                                <i class="menu-bullet menu-bullet-line"><span></span></i>
-                                                <span class="menu-text">Manajemen Unit</span>
-                                            </a>
-                                        </li>
+                                        @if (in_array('loker_master', $permissions))
+                                            <li class="menu-item" aria-haspopup="true">
+                                                <a href="{{ url('/loker/management') }}" class="menu-link">
+                                                    <i class="menu-bullet menu-bullet-line"><span></span></i>
+                                                    <span class="menu-text">Manajemen Unit</span>
+                                                </a>
+                                            </li>
+                                        @endif
 
+                                    </ul>
+                                </div>
+                            </li>
+                        @endif
+                        {{-- HR Dashboard --}}
+                        @if (in_array('hr_dashboard_navbar', $permissions) ||
+                                in_array('hr_upload_file_mp', $permissions) ||
+                                in_array('hr_upload_working_time_and_overtime', $permissions) ||
+                                in_array('hr_upload_file_izin_hrdash', $permissions) ||
+                                in_array('hr_upload_file_mangkir_hrdash', $permissions))
+                            <li class="menu-item menu-item-submenu menu-item-rel" data-menu-toggle="click"
+                                aria-haspopup="true">
+                                <a href="javascript:" class="menu-link menu-toggle">
+                                    <span class="menu-text">HR Dashboard <i
+                                            class="ml-1 ki ki-bold-triangle-bottom icon-xs text-dark-50"></i></span>
+                                </a>
+                                <div class="menu-submenu menu-submenu-classic menu-submenu-left">
+                                    <ul class="menu-subnav">
+                                        @if (in_array('hr_dashboard_navbar', $permissions))
+                                            <li class="menu-item" aria-haspopup="true">
+                                                <a href="{{ url('/hr/hrdashboard?type_karyawan=BAS') }}"
+                                                    class="menu-link">
+                                                    <i class="menu-bullet menu-bullet-line">
+                                                        <span></span>
+                                                    </i>
+                                                    <span class="menu-text">HR Dashboard BAS</span>
+                                                </a>
+                                            </li>
+                                            <li class="menu-item" aria-haspopup="true">
+                                                <a href="{{ url('/hr/hrdashboard?type_karyawan=mitra_kerja') }}"
+                                                    class="menu-link">
+                                                    <i class="menu-bullet menu-bullet-line">
+                                                        <span></span>
+                                                    </i>
+                                                    <span class="menu-text">HR Dashboard Mitra Kerja</span>
+                                                </a>
+                                            </li>
+                                        @endif
+                                        @if (in_array('hr_upload_file_mp', $permissions))
+                                            <li class="menu-item" aria-haspopup="true">
+                                                <a href="{{ url('/hr/upload-file-mp') }}" class="menu-link">
+                                                    <i class="menu-bullet menu-bullet-line">
+                                                        <span></span>
+                                                    </i>
+                                                    <span class="menu-text">Upload File MP BAS</span>
+                                                </a>
+                                            </li>
+                                            <li class="menu-item" aria-haspopup="true">
+                                                <a href="{{ url('/hr/upload-file-mp?type_karyawan=mitra_kerja') }}"
+                                                    class="menu-link">
+                                                    <i class="menu-bullet menu-bullet-line">
+                                                        <span></span>
+                                                    </i>
+                                                    <span class="menu-text">Upload File MP Mitra Kerja</span>
+                                                </a>
+                                            </li>
+                                        @endif
+                                        @if (in_array('hr_upload_working_time_and_overtime', $permissions))
+                                            <li class="menu-item" aria-haspopup="true">
+                                                <a href="{{ url('/hr/upload-working-time-and-overtime') }}"
+                                                    class="menu-link">
+                                                    <i class="menu-bullet menu-bullet-line">
+                                                        <span></span>
+                                                    </i>
+                                                    <span class="menu-text">Upload Working Time &amp; Overtime
+                                                        BAS</span>
+                                                </a>
+                                            </li>
+                                            <li class="menu-item" aria-haspopup="true">
+                                                <a href="{{ url('/hr/upload-working-time-and-overtime?type_karyawan=mitra_kerja') }}"
+                                                    class="menu-link">
+                                                    <i class="menu-bullet menu-bullet-line">
+                                                        <span></span>
+                                                    </i>
+                                                    <span class="menu-text">Upload Working Time &amp; Overtime Mitra
+                                                        Kerja</span>
+                                                </a>
+                                            </li>
+                                        @endif
+                                        @if (in_array('hr_upload_file_izin_hrdash', $permissions))
+                                            <li class="menu-item" aria-haspopup="true">
+                                                <a href="{{ url('/hr/upload-file-izin-hrdash') }}"
+                                                    class="menu-link">
+                                                    <i class="menu-bullet menu-bullet-line">
+                                                        <span></span>
+                                                    </i>
+                                                    <span class="menu-text">Upload File Izin HRDASH</span>
+                                                </a>
+                                            </li>
+                                            <li class="menu-item" aria-haspopup="true">
+                                                <a href="{{ url('/hr/upload-file-izin-hrdash?type_karyawan=mitra_kerja') }}"
+                                                    class="menu-link">
+                                                    <i class="menu-bullet menu-bullet-line">
+                                                        <span></span>
+                                                    </i>
+                                                    <span class="menu-text">Upload File Izin HRDASH Mitra Kerja</span>
+                                                </a>
+                                            </li>
+                                        @endif
+                                        @if (in_array('hr_upload_file_mangkir_hrdash', $permissions))
+                                            <li class="menu-item" aria-haspopup="true">
+                                                <a href="{{ url('/hr/upload-file-mangkir-hrdash') }}"
+                                                    class="menu-link">
+                                                    <i class="menu-bullet menu-bullet-line">
+                                                        <span></span>
+                                                    </i>
+                                                    <span class="menu-text">Upload File Mangkir HRDASH</span>
+                                                </a>
+                                            </li>
+                                            <li class="menu-item" aria-haspopup="true">
+                                                <a href="{{ url('/hr/upload-file-mangkir-hrdash?type_karyawan=mitra_kerja') }}"
+                                                    class="menu-link">
+                                                    <i class="menu-bullet menu-bullet-line">
+                                                        <span></span>
+                                                    </i>
+                                                    <span class="menu-text">Upload File Mangkir HRDASH Mitra
+                                                        Kerja</span>
+                                                </a>
+                                            </li>
+                                        @endif
                                     </ul>
                                 </div>
                             </li>
@@ -1444,7 +1600,8 @@
                                         @endif
                                         @if (in_array('hr_mhl_reporting', $permissions))
                                             <li class="menu-item" aria-haspopup="true">
-                                                <a href="{{ url('/masukharilibur/reporting') }}" class="menu-link">
+                                                <a href="{{ url('/masukharilibur/reporting') }}"
+                                                    class="menu-link">
                                                     <i class="menu-bullet menu-bullet-line">
                                                         <span></span>
                                                     </i>
@@ -1454,7 +1611,8 @@
                                         @endif
                                         @if (in_array('hr_mhl_reporting_hrd', $permissions))
                                             <li class="menu-item" aria-haspopup="true">
-                                                <a href="{{ url('/masukharilibur/reporting') }}" class="menu-link">
+                                                <a href="{{ url('/masukharilibur/reporting') }}"
+                                                    class="menu-link">
                                                     <i class="menu-bullet menu-bullet-line">
                                                         <span></span>
                                                     </i>
@@ -1597,6 +1755,16 @@
                                             class="ml-1 ki ki-bold-triangle-bottom icon-xs text-dark-50"></i></span>
                                 </a>
                                 <div class="menu-submenu menu-submenu-classic menu-submenu-left">
+                                    <ul class="menu-subnav">
+                                        <li class="menu-item" aria-haspopup="true">
+                                            <a href="{{ url('/ecafesedaap/monitoring-scan') }}" class="menu-link">
+                                                <i class="menu-bullet menu-bullet-line">
+                                                    <span></span>
+                                                </i>
+                                                <span class="menu-text">Monitoring Scan Makan</span>
+                                            </a>
+                                        </li>
+                                    </ul>
                                     <ul class="menu-subnav">
                                         <li class="menu-item" aria-haspopup="true">
                                             <a href="{{ url('/ecafesedaap-scan/staff') }}" class="menu-link">

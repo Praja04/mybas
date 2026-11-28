@@ -74,7 +74,7 @@
                 <a href="{{ route('pos-security.formulir.tamu') }}" class="text-decoration-none text-dark">
                     <div class="card border-0 rounded-4 shadow-lg h-100 position-relative">
                         <div class="card-body py-5 d-flex flex-column align-items-center text-center">
-                            <i class="mdi mdi-car fs-1 mb-3" style="font-size: 4rem;"></i>
+                            <i class="mdi mdi-motorbike fs-1 mb-3" style="font-size: 4rem;"></i>
                             <h4 class="fw-bold mb-2">Tamu Umum / Vendor / Transporter Kecil</h4>
                             <span class="badge bg-light text-success mb-3 fw-semibold">Sepeda Motor</span>
                             <p class="mb-0 small">

@@ -243,7 +243,7 @@
                                     <td>${i === 0 ? (item.juri.length ? item.juri.join(', ') : '-') : ''}</td>
                                     <td>${g.nama_group}</td>
                                     <td>${g.persentase + '%'}</td>   
-                                    <td>${formatNumber(g.totalNilai)}</td>
+                                    <td>${item.group.length === 1 ? formatNumber(item.nilaiAkhirPeriode) : formatNumber(g.totalNilai)}</td>
                                     <td class="text-center">
                                         <div class="d-flex gap-1 justify-content-center">
                                             <button class="btn btn-sm btn-outline-info"
@@ -402,8 +402,9 @@
                                             }
                                         } else {
                                             // Foto lama dari server utama (folder /5r/)
+                                            var backupServer = "{{ rtrim(env('BACKUP_SERVER_URL', 'http://10.11.11.10:8093'), '/') }}";
                                             fotoPath =
-                                                `http://172.21.5.105/images/5r/${fotoName}`;
+                                                `${backupServer}/images/5r/${fotoName}`;
                                             fallbackPath = fotoPath;
 
                                             areaLabel = `

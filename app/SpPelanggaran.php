@@ -1,0 +1,352 @@
+<?php
+
+namespace App;
+
+use Illuminate\Database\Eloquent\Model;
+use Carbon\Carbon;
+
+class SpPelanggaran extends Model
+{
+    protected $table = 'sp_pelanggarans';
+
+    protected $fillable = [
+        'employee_id',
+        'kode_admin',
+        'kode_ir',
+        'jenis_pelanggaran',
+        'status',
+        'alasan',
+        'lampiran',
+        'lampiran_cancel',
+        'sesuai_ketentuan',
+        'reported_to_admin',
+        'created_by_user_id',
+        'email_dept_head',
+        'email_dept_hr',
+        'email_dept_user',
+        // Approval fields
+        'sumber_data',
+        'pasal_dilanggar',
+        'uraian_pelanggaran',
+        'current_status',
+        'kategori_sp',
+        'masa_berlaku_sampai',
+        'is_active',
+        'assigned_dept_head_id',
+        'dept_head_approved_at',
+        'dept_head_notes',
+        'ir_staff_id',
+        'ir_staff_approved_at',
+        'ir_staff_notes',
+        'ir_head_approved_at',
+        'ir_head_notes',
+        'nomor_sp_generated',
+        'mangkir_ke',
+        'bulan_mangkir',
+        'email_sent',
+        'email_sent_at',
+        // Counseling PDF fields
+        'file_konseling',
+        'uploaded_konseling_at',
+        'uploaded_konseling_by',
+    ];
+
+    protected $appends = [
+        'tanggal_pelanggaran',
+        'formatted_dates_list',
+        'tanggal_terbit',
+    ];
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::saving(function ($model) {
+            $model->syncKlasifikasiFields();
+        });
+    }
+
+    public function syncKlasifikasiFields()
+    {
+        $refDate = $this->tanggal_terbit ?: ($this->tanggal_pelanggaran ? Carbon::parse($this->tanggal_pelanggaran) : Carbon::parse($this->created_at ?: now()));
+        $date = Carbon::parse($refDate);
+        $sampai = $date->copy()->addMonths(6);
+
+        $this->masa_berlaku_sampai = $sampai->format('Y-m-d');
+
+        if ($this->current_status === self::STATUS_CANCELLED) {
+            $this->kategori_sp = 'CANCEL';
+            $this->is_active = 0;
+        } elseif (in_array($this->current_status, [self::STATUS_CANCEL_PENDING_DH, self::STATUS_CANCEL_PENDING_IR, self::STATUS_CANCEL_PENDING_IR_HEAD])) {
+            $this->kategori_sp = 'PROSES_CANCEL';
+            $this->is_active = 1; // Masih aktif sampai IR Head approve cancel
+        } elseif ($this->current_status === self::STATUS_REJECTED) {
+            $this->kategori_sp = 'DITOLAK';
+            $this->is_active = 0;
+        } elseif ($this->current_status === self::STATUS_APPROVED) {
+            if ($sampai->isPast()) {
+                $this->kategori_sp = 'EXPIRED';
+                $this->is_active = 0;
+            } elseif (in_array($this->jenis_pelanggaran, ['SP 3', 'Surat Peringatan 3 (SP 3)'])) {
+                $this->kategori_sp = 'SP3';
+                $this->is_active = 1;
+            } else {
+                $this->kategori_sp = 'AKTIF';
+                $this->is_active = 1;
+            }
+        } else {
+            $this->kategori_sp = 'PROSES';
+            $this->is_active = 0;
+        }
+    }
+
+    // Status constants
+    const STATUS_DRAFT = 'DRAFT';
+    const STATUS_PENDING_DH = 'PENDING_DH';
+    const STATUS_PENDING_IR = 'PENDING_IR';
+    const STATUS_PENDING_IR_HEAD = 'PENDING_IR_HEAD';
+    const STATUS_APPROVED = 'APPROVED';
+    const STATUS_REJECTED = 'REJECTED';
+    const STATUS_CANCELLED = 'CANCELLED';
+
+    // Cancel workflow statuses (for already issued SPs)
+    const STATUS_CANCEL_PENDING_DH = 'CANCEL_PENDING_DH';
+    const STATUS_CANCEL_PENDING_IR = 'CANCEL_PENDING_IR';
+    const STATUS_CANCEL_PENDING_IR_HEAD = 'CANCEL_PENDING_IR_HEAD';
+
+    /**
+     * Check if SP is active (APPROVED and within 6 months of validity)
+     */
+    public function isActiveSp()
+    {
+        if ($this->current_status !== self::STATUS_APPROVED) {
+            return false;
+        }
+        $refDate = $this->tanggal_terbit ?: ($this->tanggal_pelanggaran ? Carbon::parse($this->tanggal_pelanggaran) : Carbon::parse($this->updated_at));
+        $date = Carbon::parse($refDate);
+        return $date->copy()->addMonths(6)->isFuture() || $date->copy()->addMonths(6)->isToday();
+    }
+
+    /**
+     * Check if SP is expired (> 6 months after issue)
+     */
+    public function isExpiredSp()
+    {
+        if ($this->current_status !== self::STATUS_APPROVED) {
+            return false;
+        }
+        $refDate = $this->tanggal_terbit ?: ($this->tanggal_pelanggaran ? Carbon::parse($this->tanggal_pelanggaran) : Carbon::parse($this->updated_at));
+        $date = Carbon::parse($refDate);
+        return $date->copy()->addMonths(6)->isPast();
+    }
+
+    /**
+     * Ambil Tanggal Terbit SP (saat IR Staff approve / submit ke IR Head)
+     */
+    public function getTanggalTerbitAttribute()
+    {
+        if (!empty($this->ir_staff_approved_at)) {
+            return Carbon::parse($this->ir_staff_approved_at);
+        }
+
+        // Cari di approval logs jika ada log IR Staff Submit
+        if ($this->relationLoaded('approvalLogs') || $this->approvalLogs()->exists()) {
+            $log = $this->approvalLogs->first(function ($l) {
+                return in_array($l->action, [
+                    SpApprovalLog::ACTION_IR_STAFF_SUBMIT,
+                    'IR_STAFF_SUBMIT',
+                    'FORWARD_IR_HEAD'
+                ]);
+            });
+
+            if ($log && $log->created_at) {
+                return Carbon::parse($log->created_at);
+            }
+        }
+
+        if (!empty($this->ir_head_approved_at)) {
+            return Carbon::parse($this->ir_head_approved_at);
+        }
+
+        return $this->created_at ? Carbon::parse($this->created_at) : null;
+    }
+
+    /**
+     * Get 5-classification status text
+     */
+    public function getKlasifikasiStatusAttribute()
+    {
+        if ($this->current_status === self::STATUS_CANCELLED) {
+            return 'CANCEL';
+        }
+        if ($this->current_status === self::STATUS_REJECTED) {
+            return 'DITOLAK';
+        }
+        if ($this->current_status === self::STATUS_APPROVED) {
+            if ($this->isExpiredSp()) {
+                return 'TIDAK AKTIF (EXPIRED)';
+            }
+            if (in_array($this->jenis_pelanggaran, ['SP 3', 'Surat Peringatan 3 (SP 3)'])) {
+                return 'SP+3';
+            }
+            return 'AKTIF';
+        }
+        return 'PROSES (' . $this->current_status . ')';
+    }
+
+    public function employee()
+    {
+        return $this->belongsTo(HrKaryawan::class, 'employee_id');
+    }
+
+    public function creator()
+    {
+        return $this->belongsTo(User::class, 'created_by_user_id');
+    }
+
+    public function deptHead()
+    {
+        return $this->belongsTo(User::class, 'assigned_dept_head_id');
+    }
+
+    public function irStaff()
+    {
+        return $this->belongsTo(User::class, 'ir_staff_id');
+    }
+
+    public function irHead()
+    {
+        return $this->belongsTo(User::class, 'ir_head_approved_id', 'id');
+    }
+
+    public function uploaderKonseling()
+    {
+        return $this->belongsTo(User::class, 'uploaded_konseling_by');
+    }
+
+    public function approvalLogs()
+    {
+        return $this->hasMany(SpApprovalLog::class, 'sp_pelanggaran_id')->orderBy('created_at', 'desc');
+    }
+
+    public function dates()
+    {
+        return $this->hasMany(SpPelanggaranDate::class, 'sp_pelanggaran_id')->orderBy('tanggal', 'asc');
+    }
+
+    /**
+     * Convert month number to Roman numeral
+     */
+    public static function numberToRoman($number)
+    {
+        $map = [
+            12 => 'XII', 11 => 'XI', 10 => 'X', 9 => 'IX',
+            8  => 'VIII', 7  => 'VII', 6 => 'VI', 5 => 'V',
+            4  => 'IV', 3  => 'III', 2 => 'II', 1 => 'I'
+        ];
+        return $map[(int)$number] ?? 'I';
+    }
+
+    /**
+     * Generate nomor SP dengan format: No. {URUT}/SP/{KODE_DEPT}/{BULAN_ROMAWI}/{TAHUN}
+     * Contoh: No. 64/SP/IER/VII/2026
+     */
+    public static function generateNomorSp($employeeId = null)
+    {
+        $currentYear = Carbon::now()->format('Y');
+        $bulanRomawi = self::numberToRoman(Carbon::now()->format('n'));
+
+        // Query all generated SPs in the current year
+        $approvedSpsThisYear = self::whereNotNull('nomor_sp_generated')
+            ->where(function($q) use ($currentYear) {
+                $q->whereYear('ir_head_approved_at', $currentYear)
+                  ->orWhereYear('created_at', $currentYear)
+                  ->orWhere('nomor_sp_generated', 'like', "%/{$currentYear}");
+            })
+            ->get();
+
+        $maxSeq = 0;
+        foreach ($approvedSpsThisYear as $sp) {
+            if (preg_match('/(?:No\.\s*|^)(\d+)\/SP\//i', $sp->nomor_sp_generated, $matches)) {
+                $seq = intval($matches[1]);
+                if ($seq > $maxSeq) {
+                    $maxSeq = $seq;
+                }
+            }
+        }
+
+        $nextSeq = $maxSeq + 1;
+
+        return "{$nextSeq}/SP/IR/{$bulanRomawi}/{$currentYear}";
+    }
+
+    public function getTanggalPelanggaranAttribute()
+    {
+        if ($this->relationLoaded('dates') && $this->dates && $this->dates->count() > 0) {
+            $first = $this->dates->first();
+            return $first ? $first->tanggal : null;
+        }
+
+        $firstDate = $this->dates()->first();
+        if ($firstDate) {
+            return $firstDate->tanggal;
+        }
+
+        if (isset($this->attributes['tanggal_pelanggaran']) && !empty($this->attributes['tanggal_pelanggaran'])) {
+            return $this->attributes['tanggal_pelanggaran'];
+        }
+
+        return $this->created_at ? $this->created_at->format('Y-m-d') : date('Y-m-d');
+    }
+
+    public function getFormattedDatesListAttribute()
+    {
+        if ($this->relationLoaded('dates') && $this->dates && $this->dates->count() > 0) {
+            return $this->dates->pluck('tanggal')->toArray();
+        }
+
+        $dates = $this->dates()->pluck('tanggal')->toArray();
+        if (count($dates) > 0) {
+            return $dates;
+        }
+
+        $main = $this->tanggal_pelanggaran;
+        return $main ? [$main] : [];
+    }
+
+    public function canSubmitToDeptHead()
+    {
+        return $this->current_status === self::STATUS_DRAFT 
+            && !empty($this->employee_id);
+    }
+
+    public function canDeptHeadReview()
+    {
+        return $this->current_status === self::STATUS_PENDING_DH;
+    }
+
+    public function canIrStaffReview()
+    {
+        return $this->current_status === self::STATUS_PENDING_IR;
+    }
+
+    public function canIrHeadReview()
+    {
+        return $this->current_status === self::STATUS_PENDING_IR_HEAD;
+    }
+
+    public static function getIrTeamEmails()
+    {
+        $irEmails = config('sp_mail.ir_staff', []);
+        if (is_string($irEmails)) {
+            $irEmails = explode(',', $irEmails);
+        }
+        return array_values(array_unique(array_filter(array_map('trim', (array)$irEmails))));
+    }
+
+    public static function getDeptHeadEmails()
+    {
+        $emails = config('sp_mail.dept_heads', []);
+        return array_values(array_unique(array_filter($emails)));
+    }
+}

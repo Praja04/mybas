@@ -306,7 +306,15 @@ function showFoto(id_user, jenis, foto)
     }else{
         $("#foto-viewer").show();
         $("#foto-uploader").hide();
-        $("#foto-viewer").attr("src", "{{ url('images') }}/"+jenis+"/"+foto);
+        var primaryUrl = "{{ url('images') }}/" + jenis + "/" + foto;
+        var fallbackUrl = "{{ rtrim(env('BACKUP_SERVER_URL', 'http://10.11.11.10:8093'), '/') }}/images/" + jenis + "/" + foto;
+
+        $("#foto-viewer")
+            .off('error')
+            .one('error', function() {
+                $(this).attr("src", fallbackUrl);
+            })
+            .attr("src", primaryUrl);
     }
 
     $("#modal-foto-viewer").modal('show');

@@ -12,6 +12,7 @@ use App\Http\Controllers\Controller;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Session;
+use App\Exports\MonitoringScanExport;
 
 class EcafeSeedapController extends Controller
 {
@@ -20,9 +21,197 @@ class EcafeSeedapController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index(Request $request)
     {
         return view('hr.ecafesedaap.upload-jumlah-pesanan.index');
+    }
+
+    public function monitoringScan(Request $request)
+    {
+        // ========================================================
+        // FILTER: Ambil parameter tanggal range dan kategori dari request
+        // ========================================================
+        $startDate = $request->input('tanggal_mulai', date('Y-m-d'));
+        $endDate = $request->input('tanggal_selesai', date('Y-m-d'));
+        $selectedKategori = $request->input('kategori_filter', 'semua');
+        $selectedShift = $request->input('shift_filter', 'semua');
+        $selectedDept = $request->input('departemen_filter', 'semua');
+
+        // Ambil daftar departemen unik untuk filter dari database SMU
+        $listDepartemen = DB::connection('192.168.178.44-admin')
+            ->table('MSDEPT')
+            ->orderBy('DEPTID')
+            ->pluck('DEPTID');
+
+        // ========================================================
+        // QUERY 1: Ambil data scan mentah untuk tabel log (dengan Pagination)
+        // ========================================================
+        $scanQuery = DB::table('ecafesedaap_scan')
+            ->whereBetween('tanggal', [$startDate, $endDate]);
+
+        if ($selectedKategori !== 'semua') {
+            $scanQuery->where('kategori', $selectedKategori);
+        }
+
+        if ($selectedShift !== 'semua') {
+            $scanQuery->where('shift', $selectedShift);
+        }
+
+        if ($selectedDept !== 'semua') {
+            $scanQuery->where('departemen', $selectedDept);
+        }
+
+        // Simpan query builder untuk summary sebelum di-paginate
+        $summaryQuery = clone $scanQuery;
+
+        // Ambil data dengan pagination (25 data per halaman)
+        $dataScan = $scanQuery->orderBy('waktu', 'desc')->paginate(25)->withQueryString();
+
+        // --- Ambil data departemen jika ada yang kosong (Legacy data) ---
+        $niksMissingDept = [];
+        foreach ($dataScan as $item) {
+            if (empty($item->departemen)) {
+                $niksMissingDept[] = $item->nik;
+            }
+        }
+
+        if (!empty($niksMissingDept)) {
+            try {
+                $deptMap = DB::connection('192.168.178.44-admin')
+                    ->table('MSIDCARD')
+                    ->whereIn('NIK', array_unique($niksMissingDept))
+                    ->pluck('DEPTID', 'NIK');
+
+                foreach ($dataScan as $item) {
+                    if (empty($item->departemen)) {
+                        $item->departemen = $deptMap[$item->nik] ?? '-';
+                    }
+                }
+            } catch (\Exception $e) {
+                Log::error('Gagal mengambil data departemen SMU: ' . $e->getMessage());
+            }
+        }
+
+        // ========================================================
+        // QUERY 2: Agregasi QUOTA per Shift & Kategori
+        // ========================================================
+        $quotaPerShift = DB::table('ecafesedaapbas')
+            ->whereBetween('tanggal', [$startDate, $endDate])
+            ->when($selectedKategori !== 'semua', function ($q) use ($selectedKategori) {
+                return $q->where('kategori', $selectedKategori);
+            })
+            ->when($selectedShift !== 'semua', function ($q) use ($selectedShift) {
+                return $q->where('shift', $selectedShift);
+            })
+            ->select(
+                'shift',
+                'kategori',
+                DB::raw('SUM(jumlah) as quota_order')
+            )
+            ->groupBy('shift', 'kategori')
+            ->orderBy('shift')
+            ->orderBy('kategori')
+            ->get();
+
+        // ========================================================
+        // QUERY 3: Agregasi SCAN (realisasi) per Shift & Kategori
+        // ========================================================
+        // Note: Filter Departemen TIDAK diterapkan di sini karena hanya untuk memfilter tabel history
+        $scanPerShift = DB::table('ecafesedaap_scan')
+            ->whereBetween('tanggal', [$startDate, $endDate])
+            ->when($selectedKategori !== 'semua', function ($q) use ($selectedKategori) {
+                return $q->where('kategori', $selectedKategori);
+            })
+            ->when($selectedShift !== 'semua', function ($q) use ($selectedShift) {
+                return $q->where('shift', $selectedShift);
+            })
+            ->select(
+                'shift',
+                'kategori',
+                DB::raw('COUNT(id) as total_scan')
+            )
+            ->groupBy('shift', 'kategori')
+            ->get();
+
+        // ========================================================
+        // PENGGABUNGAN DATA & PERHITUNGAN SISA (Grup by Kategori)
+        // ========================================================
+        $scanMap = [];
+        foreach ($scanPerShift as $s) {
+            $key = $s->shift . '-' . $s->kategori;
+            $scanMap[$key] = $s->total_scan;
+        }
+
+        $monitoringPerCategory = [];
+        $totalSisa = 0;
+        $totalQuota = 0;
+
+        foreach ($quotaPerShift as $row) {
+            $key = $row->shift . '-' . $row->kategori;
+            $totalScanRow = $scanMap[$key] ?? 0;
+            $selisih = $row->quota_order - $totalScanRow;
+            $status = $selisih < 0 ? 'OVER_QUOTA' : 'AMAN';
+
+            $totalQuota += $row->quota_order;
+            if ($selisih > 0) {
+                $totalSisa += $selisih;
+            }
+
+            $monitoringPerCategory[$row->kategori][$row->shift] = [
+                'kuota_order' => $row->quota_order,
+                'total_scan'  => $totalScanRow,
+                'selisih'     => $selisih,
+                'status'      => $status,
+            ];
+        }
+
+        // ========================================================
+        // KPI SUMMARY (Menggunakan total data range ini)
+        // ========================================================
+        $fullScanDataCount = $summaryQuery->count();
+        $summary = [
+            'total_scan'   => $fullScanDataCount,
+            'total_quota'  => $totalQuota,
+            'lebihan'      => $totalSisa,
+            'per_kategori' => [
+                'staff'           => (clone $summaryQuery)->where('kategori', 'staff')->count(),
+                'non-staff'       => (clone $summaryQuery)->where('kategori', 'non-staff')->count(),
+                'non-staff-snack' => (clone $summaryQuery)->where('kategori', 'non-staff-snack')->count(),
+            ]
+        ];
+
+        // ========================================================
+        // KIRIM KE VIEW
+        // ========================================================
+        return view('hr.ecafesedaap.monitoring-scan.index', compact(
+            'dataScan',
+            'summary',
+            'monitoringPerCategory',
+            'startDate',
+            'endDate',
+            'selectedKategori',
+            'selectedShift',
+            'selectedDept',
+            'listDepartemen'
+        ));
+    }
+
+    //monitoring scan excel
+    public function exportExcelMonitoringScan(Request $request)
+    {
+        $startDate = $request->input('tanggal_mulai', date('Y-m-d'));
+        $endDate = $request->input('tanggal_selesai', date('Y-m-d'));
+        $selectedKategori = $request->input('kategori_filter', 'semua');
+        $selectedShift = $request->input('shift_filter', 'semua');
+        $selectedDept = $request->input('departemen_filter', 'semua');
+
+        $fileName = 'Monitoring_Scan_Makan_' . $startDate;
+        if ($startDate != $endDate) {
+            $fileName .= '_to_' . $endDate;
+        }
+        $fileName .= '.xlsx';
+
+        return Excel::download(new MonitoringScanExport($startDate, $endDate, $selectedKategori, $selectedShift, $selectedDept), $fileName);
     }
 
     public function scanPage()
@@ -225,6 +414,7 @@ class EcafeSeedapController extends Controller
             'rf_id' => $rfid,
             'nik' => $user->NIK,
             'nama' => $user->EMPNM,
+            'departemen' => $user->DEPTID ?? '-',
             'waktu' => date('Y-m-d H:i:s'),
             'tanggal' => $tanggal,
             'shift' => $shift_number,
@@ -264,7 +454,16 @@ class EcafeSeedapController extends Controller
 
     public function store(Request $request)
     {
-        // dd($request->all());
+        // Cek apakah data untuk tanggal ini sudah pernah diupload
+        $existingData = DB::table('ecafesedaapbas')
+            ->where('tanggal', $request->tanggal)
+            ->exists();
+
+        if ($existingData) {
+            Session::flash('error', 'Data pesanan untuk tanggal ' . date('d-m-Y', strtotime($request->tanggal)) . ' sudah pernah diupload. Gunakan menu Update Pesanan jika ingin mengubah.');
+            return back();
+        }
+
         // Generate ID Pesanan base
 
         // Loop through each category

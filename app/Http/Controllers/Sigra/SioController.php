@@ -60,21 +60,31 @@ class SioController extends Controller
         return response()->json(['success' => 1, 'message' => 'Berhasil membuat perizinan operasional']);
     }
 
-    public function getAll()
+    public function getAll(Request $request)
     {
         $flags = $this->sioAccessFlags();
 
+        $query = SIO::with(['department', 'perusahaan', 'sertifikasi'])->where('status', '!=', 'deleted');
+
+        if ($request->filled('dept_id')) {
+            $query->where('dept_id', $request->dept_id);
+        }
+
+        if ($request->filled('status')) {
+            $st = $request->status;
+            if ($st === 'active' || $st === 'inactive') {
+                $query->where('status', $st);
+            }
+        }
+
+        $sioList = $query->get();
         $sertifikasi_sio = [];
-        $sioList = SIO::with('department')->where('status', '!=', 'deleted')->get();
+        $no = 1;
 
-
-        foreach ($sioList as $key => $sio) {
+        foreach ($sioList as $sio) {
             $label_status = $sio->status == 'inactive' ? 'secondary' : 'success';
 
-            $sertifikasi = SIOSertifikasi::where('id_sio', $sio->id)
-                ->where('status', '!=', 'deleted')
-                ->orderBy('tanggal_habis', 'desc')
-                ->first();
+            $sertifikasi = $sio->sertifikasi->sortByDesc('tanggal_habis')->first();
 
             $expired = '-';
             if ($sertifikasi) {
@@ -91,6 +101,50 @@ class SioController extends Controller
                 }
             }
 
+            // Filter status expired / masa berlaku
+            if ($request->filled('status')) {
+                $st = $request->status;
+                if ($st === 'aman' && $expired !== 'success') {
+                    continue;
+                }
+                if ($st === 'warning' && $expired !== 'warning') {
+                    continue;
+                }
+                if ($st === 'expired' && $expired !== 'danger') {
+                    continue;
+                }
+            }
+
+            // Filter range tanggal terbit
+            if ($sertifikasi && $sertifikasi->tanggal_terbit) {
+                $tglTerbit = date('Y-m-d', strtotime($sertifikasi->tanggal_terbit));
+                if ($request->filled('tgl_terbit_awal') && $tglTerbit < $request->tgl_terbit_awal) {
+                    continue;
+                }
+                if ($request->filled('tgl_terbit_akhir') && $tglTerbit > $request->tgl_terbit_akhir) {
+                    continue;
+                }
+            } else {
+                if ($request->filled('tgl_terbit_awal') || $request->filled('tgl_terbit_akhir')) {
+                    continue;
+                }
+            }
+
+            // Filter range tanggal expired / habis
+            if ($sertifikasi && $sertifikasi->tanggal_habis) {
+                $tglExpired = date('Y-m-d', strtotime($sertifikasi->tanggal_habis));
+                if ($request->filled('tgl_expired_awal') && $tglExpired < $request->tgl_expired_awal) {
+                    continue;
+                }
+                if ($request->filled('tgl_expired_akhir') && $tglExpired > $request->tgl_expired_akhir) {
+                    continue;
+                }
+            } else {
+                if ($request->filled('tgl_expired_awal') || $request->filled('tgl_expired_akhir')) {
+                    continue;
+                }
+            }
+
             $mulai = $sio->tanggal_mulai_ikatan_dinas ? date('Y', strtotime($sio->tanggal_mulai_ikatan_dinas)) : null;
             $selesai = $sio->tanggal_selesai_ikatan_dinas ? date('Y', strtotime($sio->tanggal_selesai_ikatan_dinas)) : null;
             $ikatan_dinas = $mulai && $selesai ? "$mulai - $selesai" : '-';
@@ -101,8 +155,8 @@ class SioController extends Controller
             }
 
             $array = [
-                $key + 1,
-                $sio->perusahaan->nama_perusahaan,
+                $no++,
+                $sio->perusahaan->nama_perusahaan ?? '-',
                 '<a class="text-hover-dark" href="javascript:" onClick="showSertifikasi(\'' . $sio->id . '\',\'' . $sio->nama_perizinan . '\', \'' . $sio->status . '\')">
                     <i class="fa fa-archive text-danger font-size-sm"></i>
                     ' . $sio->nama_perizinan . '
@@ -374,9 +428,9 @@ class SioController extends Controller
         return response()->json(['success' => 1, 'message' => 'Change status succeed']);
     }
 
-    public function exportSio()
+    public function exportSio(Request $request)
     {
-        return Excel::download(new SIOExport, 'SIO.xls');
+        return Excel::download(new SIOExport($request->all()), 'SIO.xls');
     }
 
     // Helper check permission
@@ -422,6 +476,100 @@ class SioController extends Controller
     {
         if ($this->sioAccessFlags()['readonly']) {
             abort(403, 'Readonly access');
+        }
+    }
+
+    public function downloadAllAttachments()
+    {
+        $sioList = SIO::with(['sertifikasi'])->where('status', '!=', 'deleted')->get();
+
+        $zip = new \ZipArchive;
+        $fileName = 'sio_attachments_' . time() . '.zip';
+        $tempDir = storage_path('app/public/temp');
+        if (!file_exists($tempDir)) {
+            mkdir($tempDir, 0755, true);
+        }
+        $zipPath = $tempDir . '/' . $fileName;
+
+        if ($zip->open($zipPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) === TRUE) {
+            $hasFiles = false;
+            $addedPaths = [];
+
+            foreach ($sioList as $sio) {
+                // Folder name: [Nama Karyawan] - [NIK]
+                $karyawanName = trim($sio->nama_karyawan ?? 'Karyawan_Tanpa_Nama');
+                $nik = trim($sio->nik_karyawan ?? '');
+
+                $folderName = $karyawanName;
+                if ($nik !== '') {
+                    $folderName .= ' - ' . $nik;
+                }
+
+                // Clean folder name from invalid characters
+                $folderName = preg_replace('/[\/\\\\\:\*\?\"\<\>\|]/', '_', $folderName);
+
+                // Get all sertifikasi for this SIO
+                foreach ($sio->sertifikasi as $sertifikasi) {
+                    // Get attachments
+                    $attachments = LocalAttachment::where('transaction_id', $sertifikasi->transaction_id)->get();
+
+                    foreach ($attachments as $attachment) {
+                        $filePath = storage_path('app/public/' . $attachment->transaction_type . '/' . $attachment->encode_file_name);
+
+                        $originalName = $attachment->original_file_name ?: $attachment->encode_file_name;
+                        // Clean filename
+                        $originalName = preg_replace('/[\/\\\\\:\*\?\"\<\>\|]/', '_', $originalName);
+
+                        $zipFilePath = $folderName . '/' . $originalName;
+
+                        // Handle duplicates within the same employee's folder
+                        $counter = 1;
+                        $pathInfo = pathinfo($originalName);
+                        $baseName = $pathInfo['filename'] ?? 'file';
+                        $extension = isset($pathInfo['extension']) ? '.' . $pathInfo['extension'] : '';
+
+                        while (in_array($zipFilePath, $addedPaths)) {
+                            $zipFilePath = $folderName . '/' . $baseName . '_' . $counter . $extension;
+                            $counter++;
+                        }
+
+                        $addedPaths[] = $zipFilePath;
+
+                        if (file_exists($filePath)) {
+                            // File exists locally
+                            $zip->addFile($filePath, $zipFilePath);
+                            $hasFiles = true;
+                        } else {
+                            // Fallback to remote server
+                            $backupServer = rtrim(env('BACKUP_SERVER_URL', 'http://10.11.11.10:8093'), '/');
+                            $fallbackUrl = $backupServer . '/attachment/download/' . $attachment->id;
+                            try {
+                                $response = \Illuminate\Support\Facades\Http::timeout(10)->get($fallbackUrl);
+                                if ($response->successful()) {
+                                    $fileContents = $response->body();
+                                    $zip->addFromString($zipFilePath, $fileContents);
+                                    $hasFiles = true;
+                                }
+                            } catch (\Throwable $e) {
+                                \Illuminate\Support\Facades\Log::error("Failed to download fallback file for SIO attachment ID {$attachment->id}: " . $e->getMessage());
+                            }
+                        }
+                    }
+                }
+            }
+
+            $zip->close();
+
+            if (!$hasFiles) {
+                if (file_exists($zipPath)) {
+                    unlink($zipPath);
+                }
+                return back()->with('error', 'Tidak ada file attachment untuk diunduh.');
+            }
+
+            return response()->download($zipPath, 'sio_attachments_all.zip')->deleteFileAfterSend(true);
+        } else {
+            return back()->with('error', 'Gagal membuat file ZIP.');
         }
     }
 }

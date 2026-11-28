@@ -1,23 +1,34 @@
 <?php
-
 namespace App\Http\Controllers\HRConnect;
 
-use App\User;
-use App\PKWAdmin;
 use App\AdminDepartment;
-use Illuminate\Http\Request;
-use Yajra\Datatables\Datatables;
-use Illuminate\Http\JsonResponse;
 use App\Http\Controllers\Controller;
+use App\PKWAdmin;
 use App\PKWBagian;
+use App\User;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Yajra\Datatables\Datatables;
 
 class MastersAdminController extends Controller
 {
-    public function getData()
+    public function getData(Request $req)
     {
-       $adm = AdminDepartment::all();
-       return Datatables::of($adm)->make(true);
+        $adm = AdminDepartment::query();
+        return Datatables::of($adm)
+            ->filter(function ($query) use ($req) {
+                if ($req->has('search') && ! empty($req->input('search')['value'])) {
+                    $searchValue = $req->input('search')['value'];
+                    $query->where(function ($q) use ($searchValue) {
+                        $q->where('kode_bagian', 'like', "%{$searchValue}%")
+                            ->orWhere('kode_admin', 'like', "%{$searchValue}%")
+                            ->orWhere('nik_admin', 'like', "%{$searchValue}%")
+                            ->orWhere('nama_admin', 'like', "%{$searchValue}%");
+                    });
+                }
+            })
+            ->make(true);
     }
 
     public function show($id)
@@ -28,10 +39,10 @@ class MastersAdminController extends Controller
 
     public function index()
     {
-        $data['title'] = 'Masters Admin';
+        $data['title']       = 'Masters Admin';
         $data['kode_bagian'] = PKWBagian::all();
-        $data['kode_admin'] = PKWAdmin::all();
-        $data['users'] = User::all();
+        $data['kode_admin']  = PKWAdmin::all();
+        $data['users']       = User::all();
 
         return view('hr-connect.masters.list_adm', $data);
     }
@@ -40,28 +51,28 @@ class MastersAdminController extends Controller
     {
         $validator = Validator::make($req->all(), [
             'kode_bagian' => 'required',
-            'kode_admin' => 'required',
-            'nama_admin' => 'required'
+            'kode_admin'  => 'required',
+            'nama_admin'  => 'required',
         ]);
 
-        if($validator->fails()){
+        if ($validator->fails()) {
             return response()->json([
                 'status' => 'error',
                 'errors' => $validator->errors(),
             ], 422);
-        }else{
+        } else {
             $nik_admin = User::where('name', $req->nama_admin)->first();
 
             AdminDepartment::create([
                 "kode_bagian" => $req->kode_bagian,
-                "kode_admin" => $req->kode_admin,
-                "nik_admin" => $nik_admin->username,
-                "nama_admin" => $req->nama_admin,
+                "kode_admin"  => $req->kode_admin,
+                "nik_admin"   => $nik_admin->username,
+                "nama_admin"  => $req->nama_admin,
             ]);
 
             return response()->json([
-                'status' => 'success',
-                'message' => 'Berhasil tambah data masters admin!'
+                'status'  => 'success',
+                'message' => 'Berhasil tambah data masters admin!',
             ]);
         }
     }
@@ -70,17 +81,17 @@ class MastersAdminController extends Controller
     {
         $this->validate($req, [
             'kode_bagian' => 'required',
-            'kode_admin' => 'required',
-            'nama_admin' => 'required'
+            'kode_admin'  => 'required',
+            'nama_admin'  => 'required',
         ]);
 
         $nik_admin = User::where('name', $req->nama_admin)->first();
 
         AdminDepartment::where('id', $id)->update([
             "kode_bagian" => $req->kode_bagian,
-            "kode_admin" => $req->kode_admin,
-            "nik_admin" => $nik_admin->username,
-            "nama_admin" => $req->nama_admin,
+            "kode_admin"  => $req->kode_admin,
+            "nik_admin"   => $nik_admin->username,
+            "nama_admin"  => $req->nama_admin,
         ]);
 
         return response()->json(['msg' => 'Berhasil memperbarui data masters admin!']);
@@ -90,7 +101,7 @@ class MastersAdminController extends Controller
     {
         $admin = AdminDepartment::find($id);
 
-        if (!$admin) {
+        if (! $admin) {
             return response()->json(['msg' => 'Data tidak ditemukan'], 404);
         }
 

@@ -1,6 +1,8 @@
 <?php
 namespace App\Models\Loker;
 
+use App\HrKaryawan;
+use App\Models\Loker\Rak;
 use Illuminate\Database\Eloquent\Model;
 
 class Penghuni extends Model
@@ -23,5 +25,10 @@ class Penghuni extends Model
     {
         return $this->belongsTo(Rak::class, 'no_loker', 'no_loker')
             ->whereColumn('kode_rak', 'loker_penghuni.kode_rak');
+    }
+
+    public function hrKaryawan()
+    {
+        return $this->belongsTo(HrKaryawan::class, 'nik', 'nik');
     }
 }

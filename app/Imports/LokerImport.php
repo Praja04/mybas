@@ -3,32 +3,59 @@ namespace App\Imports;
 
 use App\Models\Loker\Penghuni;
 use Exception;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Concerns\ToModel;
+use Maatwebsite\Excel\Concerns\WithBatchInserts;
 use Maatwebsite\Excel\Concerns\WithCalculatedFormulas;
+use Maatwebsite\Excel\Concerns\WithChunkReading;
 use Maatwebsite\Excel\Concerns\WithStartRow;
 
-class LokerImport implements ToModel, WithStartRow, WithCalculatedFormulas
+class LokerImport implements ToModel, WithStartRow, WithCalculatedFormulas, WithBatchInserts, WithChunkReading
 {
     protected $gender;
     protected $prefix;
     private $lastLoker   = null;
+    private $lastStatus  = 'Sepatu: Aktif | Baju: Aktif';
     private $isValidated = false;
 
     public function __construct($gender)
     {
         $this->gender = $gender;
+        // Prefix untuk database loker_rak
         $this->prefix = ($gender == 'L') ? 'LP' : 'LW';
     }
 
     public function startRow(): int
     {
+        // Data dimulai dari baris ke-4
         return 4;
     }
 
     public function model(array $row)
     {
-        // 1. SECURITY CHECK (Kolom C / Index 2)
-        $kodeLokerExcel = isset($row[2]) ? trim((string) $row[2]) : '';
+        // --- 1. IDENTIFIKASI DATA DASAR ---
+        $noLokerRaw = isset($row[0]) ? trim((string) $row[0]) : '';
+        $nikExcel   = isset($row[5]) ? trim((string) $row[5]) : '';
+        $namaExcel  = isset($row[7]) ? trim((string) $row[7]) : '';
+        $namaExcel  = strtoupper(preg_replace('/\s+/', ' ', trim($namaExcel)));
+
+        // --- 2. PAGAR FOOTER & DATA SAMPAH ---
+        $cekFooter = strtolower($namaExcel . $nikExcel . $noLokerRaw . ($row[2] ?? '') . ($row[4] ?? ''));
+
+        if (
+            str_contains($cekFooter, 'rumah') ||
+            str_contains($cekFooter, 'total') ||
+            str_contains($cekFooter, 'pcs') ||
+            str_contains($cekFooter, 'terbuka') ||
+            str_contains($cekFooter, 'rp.') ||
+            (empty($noLokerRaw) && empty($namaExcel))
+        ) {
+            return null;
+        }
+
+        // --- 3. SECURITY CHECK (GENDER MISMATCH) ---
+        $kodeLokerExcel = isset($row[1]) ? trim((string) $row[1]) : '';
         if (! $this->isValidated && ! empty($kodeLokerExcel)) {
             if ($this->gender == 'L' && strpos($kodeLokerExcel, 'WS') !== false) {
                 throw new Exception("File WANITA diupload di form PRIA.");
@@ -39,53 +66,117 @@ class LokerImport implements ToModel, WithStartRow, WithCalculatedFormulas
             $this->isValidated = true;
         }
 
-        // 2. HANDLE NO LOKER (Kolom B / Index 1)
-        $noLokerRaw = isset($row[1]) ? trim((string) $row[1]) : '';
+        // --- 4. HANDLE NOMOR LOKER (LOGIC MEMORY) ---
+        // if ($noLokerRaw !== '' && ! is_numeric($noLokerRaw)) {
+        //     return null;
+        // }
+
+        // Jika angka, simpan ke memori lastLoker
         if ($noLokerRaw !== '' && is_numeric($noLokerRaw)) {
-            $this->lastLoker = $noLokerRaw;
+            $this->lastLoker  = $noLokerRaw;
+            $this->lastStatus = 'Sepatu: Aktif | Baju: Aktif'; // Reset status ke default
         }
 
+        // Jika sampai sini lastLoker masih kosong, skip
         if (empty($this->lastLoker)) {
             return null;
         }
 
-        // 3. AMBIL DATA PERSONIL
-        $nik  = isset($row[6]) ? trim((string) $row[6]) : '';
-        $nama = isset($row[8]) ? trim((string) $row[8]) : '';
-        $nama = preg_replace('/\s+/', ' ', trim($nama));
+        $noLokerFix = trim((string) $this->lastLoker);
 
-        if (empty($nama) || $nama === '-' || $nama === 'Nama Karyawan') {
+        // --- 5. HANDLE STATUS KONDISI FISIK ---
+        $statusSepatu = isset($row[2]) ? trim((string) $row[2]) : '';
+        $statusBaju   = isset($row[4]) ? trim((string) $row[4]) : '';
+
+        $cekSepatu = strtolower($statusSepatu);
+        $cekBaju   = strtolower($statusBaju);
+        $ignored   = ['', '-', 'null', '0', 'aktif'];
+
+        if (! in_array($cekSepatu, $ignored) || ! in_array($cekBaju, $ignored)) {
+            if (strlen($statusSepatu) < 15 && strlen($statusBaju) < 15) {
+                $newSepatu        = (! in_array($cekSepatu, $ignored)) ? $statusSepatu : 'Aktif';
+                $newBaju          = (! in_array($cekBaju, $ignored)) ? $statusBaju : 'Aktif';
+                $this->lastStatus = "Sepatu: {$newSepatu} | Baju: {$newBaju}";
+            }
+        }
+
+        // --- 6. UPDATE DATABASE (LOKER RAK) ---
+        DB::table('loker_rak')->updateOrInsert(
+            ['kode_rak' => $this->prefix, 'no_loker' => $noLokerFix],
+            [
+                'kondisi_fisik' => $this->lastStatus,
+                'gender'        => $this->gender,
+                'is_active'     => 'Y',
+                'updated_at'    => now(),
+            ]
+        );
+
+        if (empty($namaExcel) || $namaExcel === '-' || $namaExcel === 'Nama Karyawan') {
             return null;
         }
 
-        if (empty($nik) || $nik === '-') {
-            $nik = 'TMP-' . strtoupper(substr(md5($nama), 0, 6));
+        // --- 7. SINKRONISASI DATA PUSAT & PENGHUNI ---
+        // $nikFinal    = $nikExcel;
+        $nikFinal    = (empty($nikExcel) || $nikExcel === '-') ? null : $nikExcel;
+        $divisiFinal = isset($row[9]) ? strtoupper(substr(trim((string) $row[9]), 0, 50)) : '-';
+
+        try {
+            $dataPusat = DB::connection('192.168.178.44-admin')
+                ->table('MSIDCARD')
+            // ->select('NIK', 'DEPTID', 'EMPNM')
+                ->where(function ($q) use ($nikFinal, $namaExcel) {
+                    if ($nikFinal !== null) {
+                        $q->whereRaw("CAST(NIK AS UNSIGNED) = CAST(? AS UNSIGNED)", [$nikFinal])
+                            ->orWhere('EMPNM', $namaExcel);
+                    } else {
+                        $q->where('EMPNM', $namaExcel);
+                    }
+                })
+                ->exists();
+
+            if (! $dataPusat) {
+                $nikLog = $nikFinal ?? 'KOSONG';
+                Log::warning("Import LokerBAS: Karyawan tidak ditemukan di DB Pusat (PAS). Nama: {$namaExcel}, NIK: {$nikLog}");
+            }
+        } catch (Exception $e) {
+            Log::error("Import Error - DB Pusat Offline: " . $e->getMessage());
         }
 
-        // 4. KATEGORI
-        $rawKategori   = isset($row[9]) ? strtolower(trim((string) $row[9])) : '';
+        // 8. KATEGORI KARYAWAN
+        $rawKategori   = isset($row[8]) ? strtolower(trim((string) $row[8])) : '';
         $kategoriFinal = 'non_staff';
+
         if (strpos($rawKategori, 'staff') !== false && strpos($rawKategori, 'non') === false) {
             $kategoriFinal = 'staff';
         } elseif (strpos($rawKategori, 'mitra') !== false) {
             $kategoriFinal = 'mitra_kerja';
         }
 
+        // 9. RETURN UNTUK INSERT KE TABEL LOKER_PENGHUNI
         return new Penghuni([
-            'nik'               => $nik,
-            'nama'              => $nama,
-            'divisi'            => isset($row[10]) ? substr(trim((string) $row[10]), 0, 50) : '-',
+            'nik'               => $nikFinal,
+            'nama'              => $namaExcel,
+            'divisi'            => $divisiFinal,
             'kode_rak'          => $this->prefix,
-            'no_loker'          => (string) $this->lastLoker,
+            'no_loker'          => $noLokerFix,
             'kategori_karyawan' => $kategoriFinal,
             'tgl_masuk'         => now(),
             'is_active'         => 'Y',
         ]);
     }
 
-    // Tambahkan helper untuk mengambil nomor loker terakhir yang terbaca
     public function getLastLoker()
     {
         return $this->lastLoker;
+    }
+
+    public function batchSize(): int
+    {
+        return 100;
+    }
+
+    public function chunkSize(): int
+    {
+        return 100;
     }
 }

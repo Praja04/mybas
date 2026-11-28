@@ -1,9 +1,6 @@
-
 // form ajax
 $(document).ready(function () {
-    $("#visitorForm").on("submit", function (e) {
-        e.preventDefault(); // Jangan submit default
-
+    function sendAjax(formData) {
         // Disable button biar user gak double klik
         $("#submitBtn")
             .prop("disabled", true)
@@ -15,16 +12,48 @@ $(document).ready(function () {
             .removeClass("alert-success alert-danger")
             .html("");
 
-        // Prepare form data
-        var formData = new FormData(this);
-
         $.ajax({
-            url: $(this).attr("action"),
+            url: $("#visitorForm").attr("action"),
             method: "POST",
             data: formData,
             processData: false,
             contentType: false,
             success: function (response) {
+                if (response.status === 'warning_blacklist') {
+                    // Soft Blacklist Warning!
+                    let blacklistData = response.blacklist_data;
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Peringatan Kemiripan Blacklist',
+                        html: `
+                            <div style="text-align: left; background: #fffaf0; border: 1px solid #fbd38d; padding: 15px; border-radius: 8px; color: #dd6b20; font-family: sans-serif; font-size: 14px; margin-bottom: 10px;">
+                                <p style="margin-bottom: 8px; border-bottom: 1px solid #fbd38d; padding-bottom: 6px;"><strong>Terdeteksi kemiripan data dengan daftar blacklist:</strong></p>
+                                <div style="margin-bottom: 6px;"><strong>Nama Terdaftar:</strong> ${blacklistData.nama || '-'}</div>
+                                <div style="margin-bottom: 6px;"><strong>No. Identitas:</strong> ${blacklistData.no_identitas || '-'}</div>
+                                <div style="margin-bottom: 6px;"><strong>Alasan:</strong> ${blacklistData.alasan_blacklist || '-'}</div>
+                                <div><strong>Tanggal Blacklist:</strong> ${blacklistData.tanggal_blacklist || '-'}</div>
+                            </div>
+                            <p style="font-size: 13px; color: #4a5568;">Apakah petugas sudah memverifikasi visual secara manual bahwa orang tersebut berbeda?</p>
+                        `,
+                        showCancelButton: true,
+                        confirmButtonText: 'Ya, Lanjutkan Pendaftaran',
+                        cancelButtonText: 'Batalkan',
+                        confirmButtonColor: '#dd6b20',
+                        cancelButtonColor: '#718096',
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            formData.delete('bypass_warning');
+                            formData.append('bypass_warning', 'true');
+                            sendAjax(formData);
+                        } else {
+                            $("#submitBtn")
+                                .prop("disabled", false)
+                                .html('<i class="fas fa-save me-2"></i>Simpan Data');
+                        }
+                    });
+                    return;
+                }
+
                 Swal.fire({
                     icon: "success",
                     title: "Berhasil!",
@@ -58,8 +87,12 @@ $(document).ready(function () {
                 resetPreviewImage(); // Reset semua tampilan preview
                 resetModalKamera(); // Stop kamera & clear canvas
                 selfiePhotos = []; // Reset array selfie
-                updateSelfieHiddenInput(); // Sync ke input hidden
-                renderSelfiePreviews();
+                if (typeof updateSelfieHiddenInput === "function") {
+                    updateSelfieHiddenInput(); // Sync ke input hidden
+                }
+                if (typeof renderSelfiePreviews === "function") {
+                    renderSelfiePreviews();
+                }
 
                 if (typeof resetKacamata === "function") {
                     resetKacamata();
@@ -78,6 +111,10 @@ $(document).ready(function () {
                     checkAllRequiredElements();
                 }
 
+                if (typeof toggleParkingSlot === "function") {
+                    toggleParkingSlot();
+                }
+
                 // Reset tombol dan status
                 $("#submitBtn")
                     .prop("disabled", false)
@@ -86,10 +123,54 @@ $(document).ready(function () {
                 console.log("Selfie photos:", selfiePhotos);
                 console.log(
                     "Hidden input value:",
-                    document.getElementById("selfiePhotos").value
+                    document.getElementById("selfiePhotos")?.value,
                 );
+
+                location.reload();
             },
             error: function (xhr) {
+                // Check if Hard Blacklisted
+                if (xhr.status === 403 && xhr.responseJSON && xhr.responseJSON.blacklist_type === 'hard') {
+                    let blacklistData = xhr.responseJSON.blacklist_data;
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Data Telah Di-Blacklist!',
+                        html: `
+                            <div style="text-align: left; background: #fff5f5; border: 1px solid #feb2b2; padding: 15px; border-radius: 8px; color: #9b2c2c; font-family: sans-serif; font-size: 14px;">
+                                <p style="margin-bottom: 8px; border-bottom: 1px solid #feb2b2; padding-bottom: 6px;"><strong>PENGUNJUNG DILARANG MASUK AREA PERUSAHAAN!</strong></p>
+                                <div style="margin-bottom: 6px;"><strong>Nama:</strong> ${blacklistData.nama || '-'}</div>
+                                <div style="margin-bottom: 6px;"><strong>No. Identitas:</strong> ${blacklistData.no_identitas || '-'}</div>
+                                <div style="margin-bottom: 6px;"><strong>Alasan:</strong> ${blacklistData.alasan_blacklist || '-'}</div>
+                                <div><strong>Tanggal Blacklist:</strong> ${blacklistData.tanggal_blacklist || '-'}</div>
+                            </div>
+                        `,
+                        confirmButtonText: 'Tutup',
+                        confirmButtonColor: '#e53e3e',
+                        showConfirmButton: true
+                    });
+                    
+                    $("#formAlert")
+                        .stop(true)
+                        .hide()
+                        .removeClass("alert-success alert-danger")
+                        .addClass("alert-danger")
+                        .html(xhr.responseJSON.message || "Data telah di-blacklist!")
+                        .fadeIn();
+
+                    setTimeout(() => {
+                        $("#formAlert")
+                            .fadeOut()
+                            .removeClass("alert-success alert-danger")
+                            .html("");
+                    }, 3000);
+
+                    // Aktifkan kembali tombol submit
+                    $("#submitBtn")
+                        .prop("disabled", false)
+                        .html('<i class="fas fa-save me-2"></i>Simpan Data');
+                    return;
+                }
+
                 // Ambil pesan dari response jika tersedia
                 let message = "Terjadi kesalahan. Silakan coba lagi.";
                 if (xhr.responseJSON && xhr.responseJSON.message) {
@@ -128,6 +209,17 @@ $(document).ready(function () {
                     .html('<i class="fas fa-save me-2"></i>Simpan Data');
             },
         });
+    }
+
+    $("#visitorForm").on("submit", function (e) {
+        e.preventDefault(); // Jangan submit default
+        var formData = new FormData(this);
+        sendAjax(formData);
+    });
+
+    // Auto-capslock for text inputs and textareas in supplier form
+    $('#visitorForm').on('input', 'input[type="text"], textarea', function() {
+        this.value = this.value.toUpperCase();
     });
 });
 
@@ -137,14 +229,14 @@ function resetPreviewImage() {
     $("#ktpPreview")
         .empty()
         .append(
-            '<div class="text-muted fst-italic mt-2">Tidak ada foto yang diunggah.</div>'
+            '<div class="text-muted fst-italic mt-2">Tidak ada foto yang diunggah.</div>',
         );
 
     // Reset Selfie Preview
     $("#selfiePreview")
         .empty()
         .append(
-            '<div class="text-muted fst-italic mt-2">Tidak ada foto yang diunggah.</div>'
+            '<div class="text-muted fst-italic mt-2">Tidak ada foto yang diunggah.</div>',
         );
 
     // Reset variabel selfiePhotos jika ada
@@ -174,11 +266,11 @@ function resetPreviewImage() {
 
     console.log(
         "Reset completed - imgvisitorpathin value:",
-        $("#imgvisitorpathin").val()
+        $("#imgvisitorpathin").val(),
     );
     console.log(
         "Reset completed - selfiePhotos value:",
-        $("#selfiePhotos").val()
+        $("#selfiePhotos").val(),
     );
 }
 
@@ -188,7 +280,7 @@ function resetModalKamera() {
     const canvas = document.getElementById("canvas");
     const capturedImage = document.getElementById("capturedImage");
     const capturedImageContainer = document.getElementById(
-        "capturedImageContainer"
+        "capturedImageContainer",
     );
 
     if (video && video.srcObject) {
@@ -208,7 +300,7 @@ function resetModalKamera() {
     const selfieCanvas = document.getElementById("selfieCanvas");
     const capturedSelfieImage = document.getElementById("capturedSelfieImage");
     const capturedSelfieContainer = document.getElementById(
-        "capturedSelfieContainer"
+        "capturedSelfieContainer",
     );
 
     if (selfieVideo && selfieVideo.srcObject) {
@@ -294,7 +386,7 @@ function resetKtpData() {
     $("#ktpPreview")
         .empty()
         .append(
-            '<div class="text-muted fst-italic mt-2">Tidak ada foto yang diunggah.</div>'
+            '<div class="text-muted fst-italic mt-2">Tidak ada foto yang diunggah.</div>',
         );
 
     // Reset captured image (modal)
@@ -303,4 +395,3 @@ function resetKtpData() {
 
     console.log("🧹 KTP data direset");
 }
-

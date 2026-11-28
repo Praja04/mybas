@@ -8,8 +8,10 @@
     var API_FORM_SEARCH_KENDARAAN_IN = '{{ route('ajax.pos-security.cek-kendaraan.search-in') }}';
     var API_FORM_SEARCH_KENDARAAN_OUT = '{{ route('ajax.pos-security.cek-kendaraan.search-out') }}';
     var API_CEK_KENDARAAN_SHOW = '{{ route('ajax.pos-security.cek-kendaraan.show') }}';
+    var API_CEK_KENDARAAN_WAREHOUSE_STATUS = '{{ route('ajax.pos-security.cek-kendaraan.warehouse-status', ':nopol') }}';
 
     var API_BLACKLIST_SHOW = '{{ route('ajax.pos-security.blacklist.show') }}';
+    var API_BLACKLIST_CANCEL = '{{ route('ajax.pos-security.blacklist.cancel') }}';
 
     var API_DASHBOARD_FILTER = '{{ route('ajax.pos-security.dashboard.filter') }}';
     var API_DASHBOARD_FILTER_STATISTIK = '{{ route('ajax.pos-security.dashboard.statistik') }}';
@@ -18,6 +20,16 @@
     var API_FORM_TOGGLE_SECURITY = '{{ route('ajax.pos-security.master.security.toggle', ':id') }}';
     var API_FORM_EDIT_SECURITY = '{{ route('ajax.pos-security.master.security.edit', ':id') }}';
     var API_FORM_UPDATE_SECURITY = '{{ route('ajax.pos-security.master.security.update', ':id') }}';
+
+    var API_RESET_KARTU = '{{ route('pos-security.kartu.reset') }}';
+
+    var API_BLOCK_SUPPLIER = '{{ route('ajax.pos-security.visitor-transaksi.block') }}';
+    var API_REPORT_LOST_CARD_SUPPLIER = '{{ route('ajax.pos-security.visitor-transaksi.reportLost') }}';
+    var API_GET_VISITOR_DETAIL_VENDOR = '{{ route('ajax.pos-security.vendor-transaksi.detail') }}';
+    var API_BLOCK_VENDOR = '{{ route('ajax.pos-security.vendor-transaksi.block') }}';
+
+    var API_ASSIGN_PARKING = '{{ route('pos-security.kantong-parkir.assignment.assign') }}';
+    var API_RELEASE_PARKING = '{{ route('pos-security.kantong-parkir.assignment.release', ':id') }}';
 </script>
 
 {{-- <script>

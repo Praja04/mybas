@@ -68,11 +68,11 @@ class SigraCheckOperasional extends Command
     {
         $certificates = [];
 
-        $operasional = Operasional::where('status', '!=', 'deleted')
+        $operasional = Operasional::with(['perusahaan', 'sertifikasi'])->where('status', '!=', 'deleted')
             ->where('status', '!=', 'inactive')->get();
 
         foreach ($operasional as $key => $data) {
-            $sertifikasi = SertifikasiOperasional::where('id_operasional', $data->id)->where('status', '!=', 'deleted')->orderBy('tahun', 'desc')->first();
+            $sertifikasi = $data->sertifikasi->sortByDesc('tahun')->first();
 
             // if ($sertifikasi != null) {
             //     if ($this->expired($sertifikasi->tanggal_expired) <= 30) {

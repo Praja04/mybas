@@ -12,6 +12,8 @@
     const capturedImageContainer = document.getElementById(
         "capturedImageContainer"
     );
+    const uploadGalleryBtn = document.getElementById("uploadGalleryBtn");
+    const fileInput = document.getElementById("fileInput");
 
     let activePhotoKey = null;
     window.photoStore = {};
@@ -48,6 +50,7 @@
                 { el: startCamera, show: false },
                 { el: captureBtn, show: true },
                 { el: retakeBtn, show: false },
+                { el: uploadGalleryBtn, show: true },
                 { el: saveBtn, show: false },
             ]);
         } catch (err) {
@@ -76,6 +79,7 @@
             { el: video, show: false },
             { el: captureBtn, show: false },
             { el: retakeBtn, show: true },
+            { el: uploadGalleryBtn, show: false },
             { el: saveBtn, show: true },
         ]);
 
@@ -90,6 +94,7 @@
             { el: video, show: true },
             { el: captureBtn, show: true },
             { el: retakeBtn, show: false },
+            { el: uploadGalleryBtn, show: true },
             { el: saveBtn, show: false },
         ]);
 
@@ -144,10 +149,13 @@
         if (capturedImageContainer)
             capturedImageContainer.style.display = "none";
 
+        if (fileInput) fileInput.value = "";
+
         toggleElements([
             { el: startCamera, show: true },
             { el: captureBtn, show: false },
             { el: retakeBtn, show: false },
+            { el: uploadGalleryBtn, show: true },
             { el: saveBtn, show: false },
         ]);
 
@@ -158,6 +166,39 @@
             ctx.clearRect(0, 0, canvas.width, canvas.height);
         }
     };
+
+    function handleGalleryUpload(e) {
+        const files = e.target.files;
+        if (!files || files.length === 0) return;
+
+        stopStream();
+        if (video) video.style.display = "none";
+
+        let loadedCount = 0;
+        for (let i = 0; i < files.length; i++) {
+            const reader = new FileReader();
+            reader.onload = function (event) {
+                const dataURL = event.target.result;
+                tempPhotos.push(dataURL);
+
+                if (capturedImage) capturedImage.src = dataURL;
+                if (capturedImageContainer)
+                    capturedImageContainer.style.display = "block";
+
+                loadedCount++;
+                if (loadedCount === files.length) {
+                    toggleElements([
+                        { el: video, show: false },
+                        { el: captureBtn, show: false },
+                        { el: retakeBtn, show: true },
+                        { el: uploadGalleryBtn, show: false },
+                        { el: saveBtn, show: true },
+                    ]);
+                }
+            };
+            reader.readAsDataURL(files[i]);
+        }
+    }
 
     document.addEventListener("DOMContentLoaded", function () {
         const modalElement = document.getElementById("myModal");
@@ -178,6 +219,10 @@
         if (captureBtn) captureBtn.addEventListener("click", captureImage);
         if (retakeBtn) retakeBtn.addEventListener("click", retakePhoto);
         if (saveBtn) saveBtn.addEventListener("click", saveCapture);
+        if (uploadGalleryBtn && fileInput) {
+            uploadGalleryBtn.addEventListener("click", () => fileInput.click());
+            fileInput.addEventListener("change", handleGalleryUpload);
+        }
     });
 
     // ============================================================
@@ -191,8 +236,10 @@
     const startCameraSupplier = document.getElementById("startCameraSupplier");
     const capturedImageSupplier = document.getElementById("capturedImageSupplier");
     const capturedImageContainerSupplier = document.getElementById("capturedImageContainerSupplier");
+    const uploadGalleryBtnSupplier = document.getElementById("uploadGalleryBtnSupplier");
+    const fileInputSupplier = document.getElementById("fileInputSupplier");
 
-    let activeSupplierKey = null;   // 'foto_ktp' | 'foto_diri'
+    let activeSupplierKey = null;   // 'foto_diri'
     let tempSupplierPhoto = null;   // single capture
 
     function toggleSupplier(elements = []) {
@@ -203,7 +250,7 @@
 
     async function startWebcamSupplier() {
         // Untuk foto diri gunakan kamera depan (user), untuk KTP kamera belakang (environment)
-        const facingMode = activeSupplierKey === "foto_diri" ? "user" : "environment";
+        const facingMode = "user";
 
         try {
             const stream = await navigator.mediaDevices.getUserMedia({
@@ -223,6 +270,7 @@
                 { el: startCameraSupplier, show: false },
                 { el: captureBtnSupplier, show: true },
                 { el: retakeBtnSupplier, show: false },
+                { el: uploadGalleryBtnSupplier, show: true },
                 { el: saveBtnSupplier, show: false },
             ]);
         } catch (err) {
@@ -249,6 +297,7 @@
             { el: videoSupplier, show: false },
             { el: captureBtnSupplier, show: false },
             { el: retakeBtnSupplier, show: true },
+            { el: uploadGalleryBtnSupplier, show: false },
             { el: saveBtnSupplier, show: true },
         ]);
 
@@ -265,6 +314,7 @@
             { el: videoSupplier, show: true },
             { el: captureBtnSupplier, show: true },
             { el: retakeBtnSupplier, show: false },
+            { el: uploadGalleryBtnSupplier, show: true },
             { el: saveBtnSupplier, show: false },
         ]);
 
@@ -323,10 +373,13 @@
         if (capturedImageContainerSupplier)
             capturedImageContainerSupplier.style.display = "none";
 
+        if (fileInputSupplier) fileInputSupplier.value = "";
+
         toggleSupplier([
             { el: startCameraSupplier, show: true },
             { el: captureBtnSupplier, show: false },
             { el: retakeBtnSupplier, show: false },
+            { el: uploadGalleryBtnSupplier, show: true },
             { el: saveBtnSupplier, show: false },
         ]);
 
@@ -336,6 +389,33 @@
             const ctx = canvasSupplier.getContext("2d");
             ctx.clearRect(0, 0, canvasSupplier.width, canvasSupplier.height);
         }
+    }
+
+    function handleGalleryUploadSupplier(e) {
+        const files = e.target.files;
+        if (!files || files.length === 0) return;
+
+        stopStreamSupplier();
+        if (videoSupplier) videoSupplier.style.display = "none";
+
+        const reader = new FileReader();
+        reader.onload = function (event) {
+            const dataURL = event.target.result;
+            tempSupplierPhoto = dataURL;
+
+            if (capturedImageSupplier) capturedImageSupplier.src = dataURL;
+            if (capturedImageContainerSupplier)
+                capturedImageContainerSupplier.style.display = "block";
+
+            toggleSupplier([
+                { el: videoSupplier, show: false },
+                { el: captureBtnSupplier, show: false },
+                { el: retakeBtnSupplier, show: true },
+                { el: uploadGalleryBtnSupplier, show: false },
+                { el: saveBtnSupplier, show: true },
+            ]);
+        };
+        reader.readAsDataURL(files[0]);
     }
 
     document.addEventListener("DOMContentLoaded", function () {
@@ -360,6 +440,10 @@
             retakeBtnSupplier.addEventListener("click", retakePhotoSupplier);
         if (saveBtnSupplier)
             saveBtnSupplier.addEventListener("click", saveCaptureSupplier);
+        if (uploadGalleryBtnSupplier && fileInputSupplier) {
+            uploadGalleryBtnSupplier.addEventListener("click", () => fileInputSupplier.click());
+            fileInputSupplier.addEventListener("change", handleGalleryUploadSupplier);
+        }
     });
 
     // Set key & label saat tombol foto identitas diklik
@@ -671,7 +755,17 @@
         nomor_polisi,
         nama_supir,
         company,
-        created_at
+        created_at,
+        lokasi_parkir,
+        area_tujuan = null,
+        no_antrian = null,
+        unloading_status = null,
+        warehouse_status = null,
+        finish_loading_time = null,
+        parking_slot_id = null,
+        parking_assignment_id = null,
+        target_area_code = null,
+        queue_taken_time = null
     ) {
         photoStore = {};
         tempPhotos = [];
@@ -686,9 +780,7 @@
         $("#headerForm").fadeIn();
 
         // Reset identitas preview
-        renderPhotoPreviewIdentitas("foto_ktp");
         renderPhotoPreviewIdentitas("foto_diri");
-        $("#input-foto_ktp").val("");
         $("#input-foto_diri").val("");
 
         $("#cekKendaraanForm")[0].reset();
@@ -711,6 +803,23 @@
             created_at ? timeAgo(created_at) : ""
         );
 
+        // Update display card lokasi parkir & tombol aksi parkir
+        updateParkingCardDisplay(lokasi_parkir, parking_slot_id, parking_assignment_id);
+
+        // Render data warehouse awal dari data attribute
+        renderWarehouseInfoCards(
+            area_tujuan,
+            no_antrian,
+            unloading_status,
+            target_area_code,
+            queue_taken_time,
+            warehouse_status,
+            finish_loading_time
+        );
+
+        // Fetch status live terbaru dari API warehouse
+        fetchLiveWarehouseStatus(nomor_polisi);
+
         setStep("form");
         resetAlertFoto();
 
@@ -730,7 +839,7 @@
                 setTimeout(() => {
                     Object.keys(photoStore).forEach((key) => {
                         // Foto identitas pakai render single
-                        if (key === "foto_ktp" || key === "foto_diri") {
+                        if (key === "foto_diri") {
                             renderPhotoPreviewIdentitas(key);
                         } else {
                             renderPhotoPreview(key);
@@ -902,6 +1011,334 @@
         });
     }
 
+    function renderWarehouseInfoCards(areaTujuan, noAntrian, unloadingStatus, areaCode = null, queueTime = null, warehouseStatus = null, finishTime = null) {
+        // Area Tujuan
+        const areaText = areaTujuan && areaTujuan !== '-' ? areaTujuan : 'Belum Ditentukan';
+        $("#card-area-warehouse").text(areaText);
+        if (areaCode && areaCode !== '-') {
+            $("#badge-target-area-code").text(areaCode).show();
+        } else {
+            $("#badge-target-area-code").hide();
+        }
+
+        const isCompleted = (unloadingStatus === 'completed' || warehouseStatus === 'timbangan_out');
+        const isProcess = (unloadingStatus === 'process' || warehouseStatus === 'loading' || warehouseStatus === 'unloading');
+
+        // Antrian
+        let antrianHtml = '';
+        if (isCompleted) {
+            antrianHtml = `
+                <span class="badge bg-success fs-13 px-2 py-1 me-1">
+                    <i class="mdi mdi-check-circle-outline me-1"></i>Selesai Bongkar / Muat
+                </span>
+                <span class="badge bg-info text-white fs-11">
+                    <i class="mdi mdi-scale-balance me-1"></i>Ke Timbangan Out
+                </span>
+                ${finishTime ? `<small class="text-muted ms-1 fs-11" title="Waktu selesai bongkar/muat">${finishTime}</small>` : ''}
+            `;
+            $("#badge-unloading-status").text("SELESAI").removeClass().addClass("badge bg-soft-success text-success fs-11").show();
+        } else if (isProcess) {
+            antrianHtml = `
+                <span class="badge bg-primary fs-13 px-2 py-1 me-1">
+                    <i class="mdi mdi-progress-clock me-1"></i>Sedang Bongkar / Muat
+                </span>
+                ${noAntrian ? `<span class="badge bg-soft-primary text-primary fs-11">No. ${noAntrian}</span>` : ''}
+                ${queueTime ? `<small class="text-muted ms-1 fs-11" title="Waktu antri">${queueTime}</small>` : ''}
+            `;
+            $("#badge-unloading-status").text("PROSES").removeClass().addClass("badge bg-soft-primary text-primary fs-11").show();
+        } else if (noAntrian) {
+            let statusText = unloadingStatus ? unloadingStatus.toUpperCase() : 'ANTRI';
+            antrianHtml = `
+                <span class="badge bg-primary fs-13 px-2 py-1 me-1">
+                    <i class="mdi mdi-ticket me-1"></i>No. ${noAntrian}
+                </span>
+                <span class="badge bg-soft-info text-info fs-11">${statusText}</span>
+                ${queueTime ? `<small class="text-muted ms-1 fs-11" title="Waktu ambil antrian">${queueTime}</small>` : ''}
+            `;
+            $("#badge-unloading-status").text(statusText).removeClass().addClass("badge bg-soft-secondary text-dark fs-11").show();
+        } else {
+            antrianHtml = `
+                <span class="badge bg-soft-warning text-warning border border-warning-subtle fs-12 px-2 py-1">
+                    <i class="mdi mdi-clock-outline me-1"></i>Belum Antri
+                </span>
+            `;
+            $("#badge-unloading-status").hide();
+        }
+        $("#card-antrian-warehouse").html(antrianHtml);
+    }
+
+    function fetchLiveWarehouseStatus(nopol) {
+        if (!nopol) return;
+
+        const url = window.API_CEK_KENDARAAN_WAREHOUSE_STATUS
+            ? window.API_CEK_KENDARAAN_WAREHOUSE_STATUS.replace(':nopol', encodeURIComponent(nopol))
+            : `/kendaraan/warehouse-status/${encodeURIComponent(nopol)}`;
+
+        console.log(`[Warehouse API In] Memanggil status warehouse untuk nopol: ${nopol} via ${url}`);
+
+        $.ajax({
+            url: url,
+            method: 'GET',
+            success: function(res) {
+                console.log(`[Warehouse API In] Respon diterima untuk nopol ${nopol}:`, res);
+                if (res.status === 'success' && res.data) {
+                    const d = res.data;
+                    const areaTujuan = (d.target_location && d.target_location.name)
+                        ? d.target_location.name
+                        : (d.target_area || '-');
+                    const areaCode = (d.target_location && d.target_location.s_loc)
+                        ? d.target_location.s_loc
+                        : (d.target_area_code || '-');
+
+                    renderWarehouseInfoCards(
+                        areaTujuan,
+                        d.no_antrian,
+                        d.unloading_status,
+                        areaCode,
+                        d.queue_taken_human,
+                        d.status,
+                        d.finish_loading_time
+                    );
+                } else if (res.status === 'success' && !res.found) {
+                    console.log(`[Warehouse API In] Nopol ${nopol} belum terdaftar di warehouse.`);
+                    $("#card-area-warehouse").text("Belum Terdaftar di Warehouse");
+                    $("#badge-target-area-code").hide();
+                    $("#card-antrian-warehouse").html(`
+                        <span class="badge bg-soft-secondary text-muted fs-12">
+                            <i class="mdi mdi-minus-circle-outline me-1"></i>Tidak Ada Antrian
+                        </span>
+                    `);
+                    $("#badge-unloading-status").hide();
+                }
+            },
+            error: function(err) {
+                console.warn(`[Warehouse API In] Gagal mengambil live status warehouse untuk nopol ${nopol}:`, err);
+            }
+        });
+    }
+
+    // =====================================================
+    // MANAJEMEN SLOT PARKIR DI CEK KENDARAAN MASUK
+    // =====================================================
+    function updateParkingCardDisplay(lokasi_parkir, slot_id, assignment_id) {
+        $("#parking_slot_id").val(slot_id || "");
+        $("#parking_assignment_id").val(assignment_id || "");
+
+        const isParked = lokasi_parkir && lokasi_parkir.trim() !== "" && lokasi_parkir.trim() !== "-";
+
+        if (isParked) {
+            $("#card-lokasi-parkir").text(lokasi_parkir);
+            $("#badge-parking-status")
+                .removeClass("bg-soft-secondary text-muted")
+                .addClass("bg-success text-white")
+                .html('<i class="mdi mdi-check-circle me-1"></i>Sudah Parkir');
+
+            $("#btnParkirkanText").text("Ganti Slot");
+            $("#btnParkirkanKendaraan")
+                .removeClass("btn-primary")
+                .addClass("btn-outline-primary");
+            $("#btnReleaseParkir").show();
+        } else {
+            $("#card-lokasi-parkir").text("Belum Parkir / -");
+            $("#badge-parking-status")
+                .removeClass("bg-success text-white")
+                .addClass("bg-soft-secondary text-muted")
+                .html('<i class="mdi mdi-close-circle-outline me-1"></i>Belum Parkir');
+
+            $("#btnParkirkanText").text("Pilih Slot Parkir");
+            $("#btnParkirkanKendaraan")
+                .removeClass("btn-outline-primary")
+                .addClass("btn-primary");
+            $("#btnReleaseParkir").hide();
+        }
+    }
+
+    window.openParkingSlotModalForCekKendaraan = function () {
+        const nopol = $("#nomor-polisi").val();
+        if (!nopol) {
+            if (typeof Swal !== "undefined") {
+                Swal.fire({
+                    icon: "warning",
+                    title: "Perhatian",
+                    text: "Silakan pilih kendaraan terlebih dahulu.",
+                });
+            } else {
+                alert("Silakan pilih kendaraan terlebih dahulu.");
+            }
+            return;
+        }
+
+        // Set hook callback saat tombol "Gunakan Slot Ini" ditekan di modal
+        window.onParkingSlotConfirmed = function (selectedSlot) {
+            assignParkingSlotToVehicle(selectedSlot);
+        };
+
+        if (typeof openParkingSlotModal === "function") {
+            openParkingSlotModal();
+            if (typeof refreshParkingSlotsData === "function") {
+                refreshParkingSlotsData();
+            }
+        }
+    };
+
+    function assignParkingSlotToVehicle(selectedSlot) {
+        const nopol = $("#nomor-polisi").val();
+        const trnvisitorid = $("#trnvisitorid").val();
+        const nama_driver = $("#nama-supir").val();
+        const jenis_kendaraan = "SUPIR";
+
+        if (!selectedSlot || !selectedSlot.id) return;
+
+        if (typeof Swal !== "undefined") {
+            Swal.fire({
+                title: "Menempatkan Kendaraan...",
+                text: `Menugaskan ${nopol} ke Slot ${selectedSlot.code}`,
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                },
+            });
+        }
+
+        const targetAssignUrl = window.API_ASSIGN_PARKING || "/pos-security/master/kantong-parkir/assignment/assign";
+
+        $.ajax({
+            url: targetAssignUrl,
+            method: "POST",
+            data: {
+                _token: $('meta[name="csrf-token"]').attr("content") || $('input[name="_token"]').val(),
+                parking_slot_id: selectedSlot.id,
+                no_polisi: nopol,
+                trnvisitorid: trnvisitorid,
+                nama_driver: nama_driver,
+                jenis_kendaraan: jenis_kendaraan,
+                catatan: `Penugasan dari Form Cek Kendaraan Masuk: ${trnvisitorid}`
+            },
+            success: function (res) {
+                const modalEl = document.getElementById("modalParkingSlotPicker");
+                if (modalEl) {
+                    const modalInstance = bootstrap.Modal.getInstance(modalEl);
+                    if (modalInstance) modalInstance.hide();
+                }
+
+                const displayLokasi = `${selectedSlot.zoneName || "Zona"} - ${selectedSlot.code}`;
+                updateParkingCardDisplay(displayLokasi, selectedSlot.id, res.data ? res.data.id : null);
+
+                // Reload datatable di background jika ada
+                if (window.cekKendaraanInTable && typeof window.cekKendaraanInTable.reload === "function") {
+                    window.cekKendaraanInTable.reload(null, false);
+                }
+
+                if (typeof Swal !== "undefined") {
+                    Swal.fire({
+                        icon: "success",
+                        title: "Berhasil Diparkirkan!",
+                        text: `Kendaraan ${nopol} berhasil ditempatkan di Slot ${selectedSlot.code}.`,
+                        timer: 2000,
+                        showConfirmButton: false,
+                    });
+                }
+            },
+            error: function (xhr) {
+                const msg = xhr.responseJSON?.message || "Gagal menempatkan kendaraan ke slot parkir.";
+                if (typeof Swal !== "undefined") {
+                    Swal.fire({
+                        icon: "error",
+                        title: "Gagal Menempatkan Kendaraan",
+                        text: msg,
+                    });
+                } else {
+                    alert(msg);
+                }
+            }
+        });
+    }
+
+    window.releaseParkingForCekKendaraan = function () {
+        const nopol = $("#nomor-polisi").val();
+        const trnvisitorid = $("#trnvisitorid").val();
+        const assignmentId = $("#parking_assignment_id").val();
+
+        if (!nopol) return;
+
+        const executeRelease = () => {
+            if (typeof Swal !== "undefined") {
+                Swal.fire({
+                    title: "Memproses...",
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    },
+                });
+            }
+
+            const targetId = (assignmentId && assignmentId !== "") ? assignmentId : "by-vehicle";
+            const targetUrl = window.API_RELEASE_PARKING
+                ? window.API_RELEASE_PARKING.replace(':id', targetId)
+                : `/pos-security/master/kantong-parkir/assignment/release/${targetId}`;
+
+            $.ajax({
+                url: targetUrl,
+                method: "POST",
+                data: {
+                    _token: $('meta[name="csrf-token"]').attr("content") || $('input[name="_token"]').val(),
+                    no_polisi: nopol,
+                    trnvisitorid: trnvisitorid,
+                },
+                success: function (res) {
+                    updateParkingCardDisplay("-", null, null);
+
+                    if (window.cekKendaraanInTable && typeof window.cekKendaraanInTable.reload === "function") {
+                        window.cekKendaraanInTable.reload(null, false);
+                    }
+
+                    if (typeof Swal !== "undefined") {
+                        Swal.fire({
+                            icon: "success",
+                            title: "Slot Parkir Dilepas!",
+                            text: `Kendaraan ${nopol} telah dilepas dan slot parkir kembali kosong.`,
+                            timer: 2000,
+                            showConfirmButton: false,
+                        });
+                    }
+                },
+                error: function (xhr) {
+                    const msg = xhr.responseJSON?.message || "Gagal melepaskan slot parkir.";
+                    if (typeof Swal !== "undefined") {
+                        Swal.fire({
+                            icon: "error",
+                            title: "Gagal",
+                            text: msg,
+                        });
+                    } else {
+                        alert(msg);
+                    }
+                }
+            });
+        };
+
+        if (typeof Swal !== "undefined") {
+            Swal.fire({
+                title: "Lepas Penugasan Parkir?",
+                text: `Slot parkir kendaraan ${nopol} akan dikosongkan kembali.`,
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonColor: "#d33",
+                cancelButtonColor: "#6c757d",
+                confirmButtonText: "Ya, Lepas Parkir",
+                cancelButtonText: "Batal",
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    executeRelease();
+                }
+            });
+        } else {
+            if (confirm(`Lepas penugasan parkir kendaraan ${nopol}?`)) {
+                executeRelease();
+            }
+        }
+    };
+
     $(document).on("click", ".open-main-form", function () {
         const $btn = $(this);
 
@@ -910,7 +1347,17 @@
             $btn.data("nomorPolisi"),
             $btn.data("namaSupir"),
             $btn.data("company"),
-            $btn.data("createdAt")
+            $btn.data("createdAt"),
+            $btn.data("lokasiParkir"),
+            $btn.data("areaTujuan"),
+            $btn.data("noAntrian"),
+            $btn.data("unloadingStatus"),
+            $btn.data("warehouseStatus"),
+            $btn.data("finishLoadingTime"),
+            $btn.data("parkingSlotId"),
+            $btn.data("parkingAssignmentId"),
+            $btn.data("targetAreaCode"),
+            $btn.data("queueTakenHuman") || $btn.data("queueTakenTime")
         );
     });
     

@@ -9,7 +9,7 @@
 
 <!DOCTYPE html>
 <html lang="id" data-layout="vertical" data-topbar="light" data-sidebar="dark" data-sidebar-size="lg"
-    data-sidebar-image="none" data-preloader="enable">
+    data-sidebar-image="none" data-preloader="disable">
 
 <head>
     <meta charset="UTF-8">
@@ -68,13 +68,13 @@
     </div>
 
     <!--preloader-->
-    <div id="preloader">
+    <!-- <div id="preloader">
         <div id="status">
             <div class="spinner-border text-primary avatar-sm" role="status">
                 <span class="visually-hidden">Loading...</span>
             </div>
         </div>
-    </div>
+    </div> -->
 
     <script src="{{ asset('assets/plugins/global/jquery-3.6.0.min.js') }}"></script>
     <script src="{{ asset('assets/velzon/libs/bootstrap/js/bootstrap.bundle.min.js') }}"></script>

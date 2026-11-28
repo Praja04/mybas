@@ -362,8 +362,9 @@
                                             }
                                         } else {
                                             // Foto lama dari server utama (folder /5r/)
+                                            var backupServer = "{{ rtrim(env('BACKUP_SERVER_URL', 'http://10.11.11.10:8093'), '/') }}";
                                             fotoPath =
-                                                `http://172.21.5.105/images/5r/${fotoName}`;
+                                                `${backupServer}/images/5r/${fotoName}`;
                                             fallbackPath = fotoPath;
 
                                             areaLabel = `

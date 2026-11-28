@@ -1,5 +1,14 @@
 @extends('pos-security.layouts.base')
 
+@push('styles')
+    <style>
+        .ga-blacklist-datatables tbody td:not(:first-child):not(:last-child),
+        #blacklistDetailModal .modal-body td {
+            text-transform: uppercase;
+        }
+    </style>
+@endpush
+
 @push('scripts')
     <script type="module" src="{{ asset('assets/js/pos-security/blacklist/pages/blacklist-datatable.js') }}"></script>
 
@@ -31,20 +40,13 @@
                             '<span class="badge bg-success">Aktif</span>' :
                             '<span class="badge bg-danger">Nonaktif</span>';
 
-                        const html = `
+                         const html = `
                             <div class="row mb-4">
-                                <div class="col-md-6 text-center">
+                                <div class="col-md-12 text-center">
                                     <div class="fw-semibold mb-2">Foto Diri</div>
                                     ${data.foto_diri_url
                                         ? `<img src="${data.foto_diri_url}" class="img-fluid rounded shadow-sm" style="max-height:200px;" />`
                                         : '<p class="text-muted">Tidak ada foto diri</p>'
-                                    }
-                                </div>
-                                <div class="col-md-6 text-center">
-                                    <div class="fw-semibold mb-2">Foto KTP</div>
-                                    ${data.foto_ktp_url
-                                        ? `<img src="${data.foto_ktp_url}" class="img-fluid rounded shadow-sm" style="max-height:200px;" />`
-                                        : '<p class="text-muted">Tidak ada foto KTP</p>'
                                     }
                                 </div>
                             </div>
@@ -70,6 +72,57 @@
                 error: function() {
                     $('#blacklistDetailModal .modal-body').html(
                         '<p class="text-danger">Terjadi kesalahan saat mengambil data</p>');
+                }
+            });
+        }
+
+        function cancelBlacklist(id) {
+            Swal.fire({
+                title: 'Batalkan Blacklist?',
+                text: 'Apakah Anda yakin ingin membatalkan status blacklist pengunjung ini?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Ya, Batalkan!',
+                cancelButtonText: 'Kembali',
+                showLoaderOnConfirm: true,
+                preConfirm: () => {
+                    return $.ajax({
+                        url: API_BLACKLIST_CANCEL,
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                        },
+                        data: {
+                            id: id
+                        }
+                    }).then(response => {
+                        if (!response.success) {
+                            throw new Error(response.message || 'Gagal membatalkan status blacklist');
+                        }
+                        return response;
+                    }).catch(error => {
+                        Swal.showValidationMessage(
+                            `Request failed: ${error.statusText || (error.responseJSON && error.responseJSON.message) || error.message || error}`
+                        );
+                    });
+                },
+                allowOutsideClick: () => !Swal.isLoading()
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    Swal.fire({
+                        title: 'Berhasil!',
+                        text: result.value.message || 'Status blacklist berhasil dibatalkan.',
+                        icon: 'success'
+                    });
+                    
+                    // Reload Datatable asinkron tanpa refresh halaman penuh
+                    if ($.fn.DataTable.isDataTable('.ga-blacklist-datatables')) {
+                        $('.ga-blacklist-datatables').DataTable().ajax.reload(null, false);
+                    } else {
+                        location.reload();
+                    }
                 }
             });
         }

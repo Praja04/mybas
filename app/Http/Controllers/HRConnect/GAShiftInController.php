@@ -1,481 +1,308 @@
 <?php
-
 namespace App\Http\Controllers\HRConnect;
 
-use Carbon\Carbon;
+use App\AdminDepartment;
+use App\Exports\HRConnect\KaryawanAktifExport;
 use App\HrKaryawan;
-use App\HrGoodieApd;
-use Illuminate\Http\Request;
-use Yajra\Datatables\Datatables;
 use App\Http\Controllers\Controller;
-use App\Imports\HRConnect\GaShiftIn;
+use App\Jobs\HRConnect\KaryawanMasukToAdmin;
+use App\Models\Loker\Penghuni;
+use App\Models\Loker\Rak;
+use App\User;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Facades\Excel;
-use Illuminate\Support\Facades\Validator;
+use Yajra\Datatables\Datatables;
 
 class GAShiftInController extends Controller
 {
-    private function pairRak($kodeRak)
+    public function index()
     {
-        $map = [
-            'PB' => 'PS',
-            'WB' => 'WS',
-        ];
+        $title = 'GA - Karyawan Masuk';
 
-        return $map[$kodeRak] ?? null;
+        // Hanya tarik tanggal dari karyawan yang BELUM selesai urusan lokernya
+        // $tanggalTersedia = HrKaryawan::where([
+        //     'is_excuse_out' => 'N',
+        //     'in_kode_group' => 'Y',
+        //     'in_complete'   => 'N',
+        //     'p_no'          => 'N',
+        //     'active'        => 'Y',
+        //     'shutdown'      => 'N',
+        // ])
+        //     ->whereNotNull('tanggal_masuk')
+        //     ->where('tanggal_masuk', '!=', '0000-00-00')
+        //     ->distinct()
+        //     ->orderBy('tanggal_masuk', 'desc')
+        //     ->pluck('tanggal_masuk');
+
+        // ->whereDate('tanggal_masuk', '>', '2024-09-30')
+        // ->whereNotNull('tanggal_masuk')
+        // ->select('tanggal_masuk')
+        // ->distinct()
+        // ->orderBy('tanggal_masuk', 'desc')
+        // ->pluck('tanggal_masuk');
+
+        // OPTIMASI: Tarik Rak dan hitung total penghuni langsung via DB Raw (Gak bikin RAM Bengkak)
+        $allLokersPria   = Rak::where('kode_rak', 'LP')->where('is_active', 'Y')->get();
+        $allLokersWanita = Rak::where('kode_rak', 'LW')->where('is_active', 'Y')->get();
+
+        $penghuniPria   = Penghuni::where('kode_rak', 'LP')->where('is_active', 'Y')->get()->groupBy('no_loker');
+        $penghuniWanita = Penghuni::where('kode_rak', 'LW')->where('is_active', 'Y')->get()->groupBy('no_loker');
+
+        $lokerPria   = $this->filterLoker($allLokersPria, $penghuniPria);
+        $lokerWanita = $this->filterLoker($allLokersWanita, $penghuniWanita);
+
+        return view('hr-connect.ga.shift-in', compact('title', 'lokerPria', 'lokerWanita'));
+    }
+
+    // Helper Function untuk Filter Loker biar Controller Gak Berantakan
+    private function filterLoker($allLokers, $penghuniGrouped)
+    {
+        return $allLokers->map(function ($rak) use ($penghuniGrouped) {
+            $penghuni            = $penghuniGrouped->get($rak->no_loker) ?? collect();
+            $rak->total_penghuni = $penghuni->count();
+
+            $kategoriPenghuni = $penghuni->first() ? strtolower(trim($penghuni->first()->kategori_karyawan)) : null;
+
+            if ($kategoriPenghuni && ! in_array($kategoriPenghuni, ['staff', 'non_staff', 'mitra_kerja', 'mitra'])) {
+                $kategoriPenghuni = 'non_staff';
+            }
+
+            $rak->kategori_tersedia = $kategoriPenghuni;
+            $rak->divisi_tersedia   = $penghuni->first() ? strtoupper(trim($penghuni->first()->divisi)) : null;
+
+            return $rak;
+        })->filter(function ($rak) {
+            if ($rak->kategori_tersedia == 'staff' && $rak->total_penghuni >= 1) {
+                return false;
+            }
+
+            if (in_array($rak->kategori_tersedia, ['mitra_kerja', 'mitra'])) {
+                return false;
+            }
+
+            if ($rak->total_penghuni >= $rak->kapasitas) {
+                return false;
+            }
+
+            return true;
+        })->values();
     }
 
     public function getData(Request $req)
     {
-        $query = HrKaryawan::where('in_complete', 'N')->where('tanggal_masuk', '>', '2025-01-01');
+        $query = HrKaryawan::with('penghuni')->whereNotExists(function ($q) {
+            $q->select(DB::raw(1))
+                ->from('loker_penghuni')
+                ->whereRaw('loker_penghuni.nik = CONVERT(hr_karyawan.nik USING utf8mb4)')
+                ->where('is_active', 'Y');
+        })
+            ->select('id', 'nik', 'nama', 'kode_divisi', 'kode_bagian', 'kode_admin', 'jenis_kelamin', 'staff', 'tanggal_masuk', 'in_complete', 'cardnodevice')
+            ->where([
+                'is_excuse_out' => 'N',
+                'in_kode_group' => 'N',
+                'in_complete'   => 'N',
+                'p_no'          => 'N',
+                'active'        => 'Y',
+                'shutdown'      => 'N',
+            ])
+            ->orderBy('tanggal_masuk', 'desc');
+        // ->whereDate('tanggal_masuk', '>', '2024-09-30');
 
-        if ($req->tampilkan_semua == 0) {
-            $query->where([
-                'tanggal_masuk' => $req->tanggal,
-            ]);
-        }
+        // if ($req->tampilkan_semua == 0 && ! empty($req->tanggal)) {
+        //     $query->where('tanggal_masuk', $req->tanggal);
+        // }
 
-        $data = $query->get();
+        $query->orderBy('tanggal_masuk', 'desc');
 
-        return Datatables::of($data)->make(true);
-    }
+        return Datatables::of($query)
+            ->filter(function ($query) use ($req) {
+                if ($req->has('search') && ! empty($req->input('search')['value'])) {
+                    $keyword = $req->input('search')['value'];
 
-    public function index()
-    {
-        $data['title'] = 'GA - Karyawan Masuk';
-
-        // $data['lokers_pria'] = DB::table('loker_rak')
-        //     ->whereIn('kode_rak', ['PB'])
-        //     ->get();
-
-        // $data['lokers_wanita'] = DB::table('loker_rak')
-        //     ->whereIn('kode_rak', ['WB'])
-        //     ->get();
-
-       $data['lokers_pria'] = DB::table('loker_rak as lr')
-            ->leftJoin('loker_penghuni as lp', function ($join) {
-                $join->on('lr.kode_rak', '=', 'lp.kode_rak')
-                    ->on('lr.no_loker', '=', 'lp.no_loker')
-                    ->where('lp.is_active', 'Y');
+                    $query->where(function ($q) use ($keyword) {
+                        $q->where('nama', 'like', '%' . $keyword . '%')
+                            ->orWhere('nik', 'like', '%' . $keyword . '%')
+                            ->orWhere('kode_divisi', 'like', '%' . $keyword . '%');
+                    });
+                }
             })
-            ->where('lr.kode_rak', 'PB')
-            ->where('lr.is_active', 'Y')
-            ->select(
-                'lr.id',
-                'lr.kode_rak',
-                'lr.no_loker',
-                DB::raw('COUNT(DISTINCT lp.nik) as total_penghuni'),
-                DB::raw('MAX(lp.staff) as staff_type')
-            )
-            ->groupBy('lr.id', 'lr.kode_rak', 'lr.no_loker')
-            ->havingRaw('
-                COUNT(DISTINCT lp.nik) <
-                CASE
-                    WHEN MAX(lp.staff) = "staff" THEN 1
-                    WHEN MAX(lp.staff) IN ("non_staff", "mitra_kerja") THEN 2
-                    ELSE 2
-                END
-            ')
-            ->orderBy('lr.no_loker')
-            ->get();
-
-
-       $data['lokers_wanita'] = DB::table('loker_rak as lr')
-            ->leftJoin('loker_penghuni as lp', function ($join) {
-                $join->on('lr.kode_rak', '=', 'lp.kode_rak')
-                    ->on('lr.no_loker', '=', 'lp.no_loker')
-                    ->where('lp.is_active', 'Y');
+            ->addColumn('checkStaff', function ($row) {
+                if ($row->penghuni) {
+                    return strtolower($row->penghuni->kategori_karyawan) == 'staff' ? 'Y' : 'N';
+                }
+                return $row->staff;
             })
-            ->where('lr.kode_rak', 'WB')
-            ->where('lr.is_active', 'Y')
-            ->select(
-                'lr.id',
-                'lr.kode_rak',
-                'lr.no_loker',
-                DB::raw('COUNT(DISTINCT lp.nik) as total_penghuni'),
-                DB::raw('MAX(lp.staff) as staff_type')
-            )
-            ->groupBy('lr.id', 'lr.kode_rak', 'lr.no_loker')
-            ->havingRaw('
-                COUNT(DISTINCT lp.nik) <
-                CASE
-                    WHEN MAX(lp.staff) = "staff" THEN 1
-                    WHEN MAX(lp.staff) IN ("non_staff", "mitra_kerja") THEN 2
-                    ELSE 2
-                END
-            ')
-            ->orderBy('lr.no_loker')
-            ->get();
-
-        return view('hr-connect.ga.shift-in', $data);
+            ->make(true);
     }
-
-    // public function updateStatus(Request $request)
-    // {
-    //     $data = $request->input('data');
-    //      dd($data);
-    //     if (!empty($data)) {
-    //         $totalChecked = count($data);
-
-    //         HrGoodieApd::create([
-    //             'tgl_masuk' => Carbon::parse(now())->format('Y-m-d'),
-    //             'jumlah_orang' => $totalChecked,
-    //         ]);
-
-    //         // [x] Uncommenct jangan lupa kalo udah selesai Goodie APD nya!
-    //         foreach ($data as $item) {
-    //             $lokerId = $item['lokerId'];
-    //             $idCard = $item['idCard'];
-    //             $kodeArea = $item['kodeArea'];
-    //             $namaLoker = $item['namaLoker'];
-    //             $nomorLoker = $item['nomorLoker'];
-    //             $nik = $item['nik'];
-    //             $nama = $item['nama'];
-    //             $jk = $item['jk'];
-    //             $divisi = $item['divisi'];
-    //             $bagian = $item['bagian'];
-    //             $group = $item['group'];
-    //             $kodekontrak = $item['kodekontrak'];
-
-    //             // Buat histori transaksi dulu
-    //             $sebelumnya = DB::table('loker_master_user')
-    //                             ->where([
-    //                                 'kode_area' => $kodeArea,
-    //                                 'kode_blok' => $namaLoker,
-    //                                 'no_loker' => $nomorLoker
-    //                             ])->first();
-
-    //             $data = [
-    //                 'nik' => $sebelumnya->nik,
-    //                 'no_loker' => $nomorLoker,
-    //                 'status' => 'IN',
-    //                 'keterangan' => 'Karyawan Baru Join',
-    //                 'nama_pengisi' => auth()->user()->name ?? '',
-    //                 'tgl_pengisi' => date('Y-m-d'),
-    //                 'nik_pengisi' => auth()->user()->username ?? '',
-    //                 'jam_pengisi' => date('H:i:s'),
-    //                 'penghuni_sebelumnya' => $sebelumnya->nama,
-    //                 'alasan' => 'Karyawan Baru Join',
-    //                 'kode_area' => $kodeArea,
-    //                 'kode_blok' => $namaLoker
-    //             ];
-
-    //             DB::table('loker_user_transaksi')->insert($data);
-
-    //             // Update loker menjadi status 1
-    //             DB::table('loker_master_nomer')
-    //                 ->where('id', $lokerId)
-    //                 ->update(['status' => 1]);
-
-    //             // $data = [
-    //             //     'nik' => $nik,
-    //             //     'nama' => $nama,
-    //             //     'jk' => $jk,
-    //             //     'divisi' => $divisi,
-    //             //     'bagian' => $bagian,
-    //             //     'group' => $group,
-    //             //     'kode_kontrak' => $kodekontrak,
-    //             //     'kode_area' => $kodeArea,
-    //             //     'kode_blok' => $namaLoker,
-    //             //     'no_loker' => $nomorLoker,
-    //             // ];
-    //             // DB::table('loker_master_user')->insert($data);
-
-    //             DB::table('loker_master_user')
-    //                 ->where([
-    //                     'kode_area' => $kodeArea,
-    //                     'kode_blok' => $namaLoker,
-    //                     'no_loker' => $nomorLoker
-    //                 ])->update([
-    //                     'nik' => $nik,
-    //                     'nama' => $nama,
-    //                     'jk' => $jk,
-    //                     'divisi' => $divisi,
-    //                     'bagian' => $bagian,
-    //                     'group' => $group,
-    //                     'kode_kontrak' => $kodekontrak,
-    //                 ]);
-
-    //             DB::table('hr_karyawan')
-    //                 ->where('id', $idCard)
-    //                 ->update(['in_complete' => 'Y']);
-    //         }
-
-    //         return response()->json(['success' => true, 'message' => 'Status berhasil diperbarui.']);
-    //     } else {
-    //         return response()->json(['success' => false, 'message' => 'Tidak ada data yang dikirim.']);
-    //     }
-    // }
 
     public function updateStatus(Request $request)
     {
+        $data = $request->input('data');
+
+        if (empty($data)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tidak ada data yang dikirim',
+            ], 400);
+        }
+
         DB::beginTransaction();
 
         try {
-            $data = $request->input('data');
-
-            if (empty($data)) {
-                return response()->json(
-                    [
-                        'success' => false,
-                        'message' => 'Tidak ada data yang dikirim.',
-                    ],
-                    400,
-                );
-            }
-
-            HrGoodieApd::create([
-                'tgl_masuk' => now()->format('Y-m-d'),
-                'jumlah_orang' => count($data),
-            ]);
-
             foreach ($data as $item) {
-                $nik = $item['nik'];
-                $nama = $item['nama'];
-                $jk = $item['jk'];
-                $divisi = $item['divisi'];
-                $kodeRak = $item['kodeRak']; // PB / WB
-                $noLoker = (int) $item['noLoker'];
-                $staff = $item['staff']; // staff | non_staff | mitra_kerja
-                $idCard = $item['idCard'];
+                $nik     = $item['nik'];
+                $kodeRak = $item['kodeRak'] ?? null;
+                $noLoker = $item['noLoker'] ?? null;
+                $staff   = $item['staff'];
 
-                /* =====================================================
-                 * 1️⃣ Cegah user punya lebih dari 1 loker aktif
-                 * ===================================================== */
-                $hasActive = DB::table('loker_penghuni')->where('nik', $nik)->where('is_active', 'Y')->lockForUpdate()->exists();
+                if (! empty($kodeRak) && ! empty($noLoker)) {
+                    $hasActive = DB::table('loker_penghuni')
+                        ->where('nik', $nik)
+                        ->where('is_active', 'Y')
+                        ->lockForUpdate()
+                        ->exists();
 
-                if ($hasActive) {
-                    DB::rollBack();
-                    return response()->json(
-                        [
+                    if ($hasActive) {
+                        DB::rollback();
+                        return response()->json([
                             'success' => false,
-                            'message' => "NIK {$nik} sudah memiliki loker aktif.",
-                        ],
-                        422,
-                    );
-                }
+                            'message' => "Karyawan NIK {$nik} sudah memiliki loker aktif",
+                        ], 422);
+                    }
 
-                /* =====================================================
-                 * 2️⃣ Tentukan rak utama + pasangan
-                 * ===================================================== */
-                $pairRak = $this->pairRak($kodeRak); // PB→PS, WB→WS
-                $rakDicek = array_filter([$kodeRak, $pairRak]);
+                    $penghuniAktif = DB::table('loker_penghuni')
+                        ->where('kode_rak', $kodeRak)
+                        ->where('no_loker', $noLoker)
+                        ->where('is_active', 'Y')
+                        ->lockForUpdate()
+                        ->get();
 
-                /* =====================================================
-                 * 3️⃣ Cek isi loker (gabungan rak utama + pasangan)
-                 * ===================================================== */
-                $rows = DB::table('loker_penghuni')->select('staff', DB::raw('COUNT(DISTINCT nik) as cnt'))->whereIn('kode_rak', $rakDicek)->where('no_loker', $noLoker)->groupBy('staff')->lockForUpdate()->get();
+                    $existingCount = $penghuniAktif->count();
 
-                // Tidak boleh campur kategori
-                if ($rows->count() > 1) {
-                    DB::rollBack();
-                    return response()->json(
-                        [
-                            'success' => false,
-                            'message' => "Loker {$kodeRak}-{$noLoker} tidak valid karena terdapat campuran kategori.",
-                        ],
-                        409,
-                    );
-                }
+                    $divisiFix = strtoupper(trim($item['divisi']));
+                    if ($staff === 'non_staff') {
+                        if (strpos($divisiFix, 'PRD') !== false || strpos($divisiFix, 'PRODUKSI') !== false || strpos($divisiFix, 'PRO') !== false) {
+                            $divisiFix = 'PRD BAS';
+                        } elseif (strpos($divisiFix, 'QC') !== false || strpos($divisiFix, 'QUALITY') !== false || strpos($divisiFix, 'QCB') !== false) {
+                            $divisiFix = 'QCB BAS';
+                        }
+                    }
 
-                $existingType = $rows->first()->staff ?? null;
-                $existingCount = (int) ($rows->first()->cnt ?? 0);
+                    if ($existingCount > 0) {
+                        foreach ($penghuniAktif as $penghuni) {
+                            $tipePenghuni = $penghuni->kategori_karyawan ? strtolower(trim($penghuni->kategori_karyawan)) : null;
 
-                $staffLabel = ucwords(str_replace('_', ' ', $existingType));
+                            if ($tipePenghuni && ! in_array($tipePenghuni, ['staff', 'non_staff', 'mitra_kerja', 'mitra'])) {
+                                $tipePenghuni = 'non_staff';
+                            }
 
-                if ($existingType !== null && $existingType !== $staff) {
-                    DB::rollBack();
-                    return response()->json(
-                        [
-                            'success' => false,
-                            'message' => "Loker {$kodeRak}-{$noLoker} sudah dipakai oleh {$staffLabel}.",
-                        ],
-                        422,
-                    );
-                }
+                            if ($tipePenghuni !== $staff) {
+                                DB::rollBack();
+                                return response()->json([
+                                    'success' => false,
+                                    'message' => "Loker {$kodeRak}-{$noLoker} khusus untuk " . strtoupper($tipePenghuni) . ".",
+                                ], 422);
+                            }
 
-                /* =====================================================
-                 * 4️⃣ Validasi kapasitas
-                 * ===================================================== */
-                $type = $existingType ?? $staff;
+                            if ($staff === 'non_staff') {
+                                $divisiPenghuni = $penghuni->divisi ? strtoupper(trim($penghuni->divisi)) : '';
 
-                switch ($type) {
-                    case 'staff':
-                        $maxCapacity = 1;
-                        break;
+                                if (strpos($divisiPenghuni, 'PRD') !== false || strpos($divisiPenghuni, 'PRODUKSI') !== false || strpos($divisiPenghuni, 'PRO') !== false) {
+                                    $divisiPenghuni = 'PRD BAS';
+                                } elseif (strpos($divisiPenghuni, 'QC') !== false || strpos($divisiPenghuni, 'QUALITY') !== false || strpos($divisiPenghuni, 'QCB') !== false) {
+                                    $divisiPenghuni = 'QCB BAS';
+                                }
 
-                    case 'non_staff':
-                    case 'mitra_kerja':
-                        $maxCapacity = 2;
-                        break;
+                                if ($divisiPenghuni !== $divisiFix) {
+                                    DB::rollBack();
+                                    return response()->json([
+                                        'success' => false,
+                                        'message' => "Gagal! Loker {$kodeRak}-{$noLoker} sudah diisi oleh divisi lain ({$divisiPenghuni}). Harap pilih divisi yang sama.",
+                                    ], 422);
+                                }
+                            }
+                        }
+                    }
 
-                    default:
+                    $maxCapacity = ($staff === 'staff') ? 1 : 2;
+                    if ($existingCount >= $maxCapacity) {
                         DB::rollBack();
-                        return response()->json(
-                            [
-                                'success' => false,
-                                'message' => 'Kategori karyawan tidak valid.',
-                            ],
-                            422,
-                        );
-                }
-
-                if ($existingCount >= $maxCapacity) {
-                    DB::rollBack();
-                    return response()->json(
-                        [
+                        return response()->json([
                             'success' => false,
-                            'message' => "Loker {$kodeRak}-{$noLoker} sudah penuh oleh {$staffLabel}.",
-                        ],
-                        422,
-                    );
-                }
+                            'message' => "Kapasitas Loker {$kodeRak}-{$noLoker} sudah penuh.",
+                        ], 422);
+                    }
 
-                $penghuniSebelumnya = DB::table('loker_user_transaksi')
-                    ->where('no_loker', $noLoker)
-                    ->where('kode_rak', $kodeRak)
-                    ->where('status', 'OUT')
-                    ->orderByDesc('id')
-                    ->lockForUpdate()
-                    ->value('penghuni_sebelumnya');
-
-                /* =====================================================
-                 * 5️⃣ Insert transaksi utama
-                 * ===================================================== */
-                DB::table('loker_user_transaksi')->insert([
-                    'nik' => $nik,
-                    'no_loker' => $noLoker,
-                    'status' => 'IN',
-                    'keterangan' => 'Karyawan Baru Join',
-                    'nama_pengisi' => auth()->user()->name ?? '',
-                    'tgl_pengisi' => now()->format('Y-m-d'),
-                    'nik_pengisi' => auth()->user()->username ?? '',
-                    'jam_pengisi' => now()->format('H:i:s'),
-                    'pindah_to' => null,
-                    'penghuni_sebelumnya' => $penghuniSebelumnya ?? null, 
-                    'alasan' => 'Karyawan Baru Join',
-                    'kode_area' => $request->kode_area ?? '',
-                    'kode_blok' => $request->kode_blok ?? '',
-                    'kode_rak' => $kodeRak ?? '',
-                ]);
-
-
-                /* =====================================================
-                 * 6️⃣ Insert rak utama
-                 * ===================================================== */
-                DB::table('loker_penghuni')->insert([
-                    'kode_rak' => $kodeRak,
-                    'no_loker' => $noLoker,
-                    'nik' => $nik,
-                    'nama' => $nama,
-                    'jk' => $jk,
-                    'divisi' => $divisi,
-                    'staff' => $staff,
-                    'is_active' => 'Y',
-                    'tgl_masuk' => now(),
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-
-                /* =====================================================
-                 * 7️⃣ Insert rak pasangan
-                 * ===================================================== */
-                if ($pairRak) {
                     DB::table('loker_penghuni')->insert([
-                        'kode_rak' => $pairRak,
-                        'no_loker' => $noLoker,
-                        'nik' => $nik,
-                        'nama' => $nama,
-                        'jk' => $jk,
-                        'divisi' => $divisi,
-                        'staff' => $staff,
-                        'is_active' => 'Y',
-                        'tgl_masuk' => now(),
-                        'created_at' => now(),
-                        'updated_at' => now(),
+                        'nik'               => $nik,
+                        'nama'              => $item['nama'],
+                        'divisi'            => $divisiFix,
+                        'kode_rak'          => $kodeRak,
+                        'no_loker'          => $noLoker,
+                        'kategori_karyawan' => $staff,
+                        'is_active'         => 'Y',
+                        'tgl_masuk'         => now()->format('Y-m-d'),
+                        'created_at'        => now(),
+                        'updated_at'        => now(),
                     ]);
 
-                    DB::table('loker_user_transaksi')->insert([
-                        'nik' => $nik,
-                        'no_loker' => $noLoker,
-                        'status' => 'IN',
-                        'keterangan' => 'Karyawan Baru Join',
-                        'nama_pengisi' => auth()->user()->name ?? '',
-                        'tgl_pengisi' => now()->format('Y-m-d'),
-                        'nik_pengisi' => auth()->user()->username ?? '',
-                        'jam_pengisi' => now()->format('H:i:s'),
-                        'pindah_to' => null,
-                        'penghuni_sebelumnya' => $penghuniSebelumnya ?? null,
-                        'alasan' => 'Karyawan Baru Join',
-                        'kode_area' => $request->kode_area ?? '',
-                        'kode_blok' => $request->kode_blok ?? '',
-                        'kode_rak' => $pairRak ?? '',
-                    ]);
+                    $this->catatHistoryLoker($nik, $item['nama'], $kodeRak, $noLoker, 'MASUK', 'Karyawan Baru via HR Connect');
                 }
 
-                DB::table('hr_karyawan')
-                    ->where('id', $idCard)
-                    ->update(['in_complete' => 'Y']);
+                HrKaryawan::where('id', $item['idCard'])->update([
+                    'in_complete' => 'Y',
+                ]);
             }
+
+            Cache::forget('list_bulan_karyawan_masuk_ga');
 
             DB::commit();
 
+            $idCards = collect($data)->pluck('idCard')->toArray();
+
+            $kodeBagian = HrKaryawan::whereIn('id', $idCards)->pluck('kode_bagian')->unique()->toArray();
+
+            $nikAdmin = AdminDepartment::whereIn('kode_bagian', $kodeBagian)->pluck('nik_admin')->unique()->toArray();
+
+            $adminEmails = User::whereIn('username', $nikAdmin)->whereNotNull('email')->pluck('email')->unique()->toArray();
+
+            if (! empty($adminEmails)) {
+                $hitungKaryawan = count($idCards);
+                $link           = url('hr-connect/dept-adm/data-karyawan');
+
+                KaryawanMasukToAdmin::dispatch($adminEmails, $hitungKaryawan, $link);
+            }
+
             return response()->json([
                 'success' => true,
-                'message' => 'Status berhasil diperbarui.',
+                'message' => 'Validasi loker & Goodie Bag berhasil disimpan.',
             ]);
-        } catch (\Throwable $e) {
+        } catch (\Throwable $th) {
             DB::rollBack();
-
-            Log::error('Update Status Error', [
-                'message' => $e->getMessage(),
-                'file' => $e->getFile(),
-                'line' => $e->getLine(),
-            ]);
-
-            return response()->json(
-                [
-                    'success' => false,
-                    'message' => 'Terjadi kesalahan saat memproses data.',
-                ],
-                500,
-            );
+            return response()->json([
+                'success' => false,
+                'message' => $th->getMessage(),
+            ], 500);
         }
     }
 
-    public function uploadExcel(Request $req)
+    public function catatHistoryLoker($nik, $nama, $kodeRak, $noLoker, $tipe, $keterangan)
     {
-        $validator = Validator::make($req->all(), [
-            'excel_file' => 'required|file|mimes:xlsx,xls',
+        DB::table('loker_transaksi')->insert([
+            'nik'            => $nik, 'nama'              => $nama, 'kode_rak' => $kodeRak, 'no_loker' => $noLoker,
+            'tipe_transaksi' => $tipe, 'operator'         => auth()->user()->name ?? 'Sistem GA',
+            'keterangan'     => $keterangan, 'created_at' => now(),
         ]);
+    }
 
-        if ($validator->fails()) {
-            return response()->json(['message' => $validator->errors()->first()], 422);
-        }
+    public function exportExcel(Request $request)
+    {
+        $byDate  = $request->input('tanggal');
+        $showAll = $request->input('tampilkan_semua');
 
-        if ($req->hasFile('excel_file')) {
-            $file = $req->file('excel_file');
-
-            if (!$file->isValid()) {
-                return response()->json(['message' => 'File tidak valid atau rusak.'], 400);
-            }
-
-            try {
-                if ($file->getClientOriginalExtension() !== 'xlsx') {
-                    return response()->json(['message' => 'Format file tidak valid. Hanya menerima file .xlsx.'], 400);
-                }
-
-                Excel::import(new GaShiftIn(), $file);
-
-                return response()->json(['message' => 'Data berhasil diunggah dan diproses.'], 200);
-            } catch (\Exception $e) {
-                Log::error('Error during file upload: ' . $e->getMessage());
-
-                return response()->json(['message' => 'Terjadi kesalahan saat mengimpor data. ' . $e->getMessage()], 500);
-            }
-        }
-
-        return response()->json(['message' => 'File tidak ditemukan atau tidak valid.'], 400);
+        $fileName = 'Data Karyawan Baru - ' . (! empty($byDate) ? 'Per Tanggal ' . $byDate : 'Data Keseluruhan') . '.xlsx';
+        return Excel::download(new KaryawanAktifExport($byDate, $showAll), $fileName);
     }
 }

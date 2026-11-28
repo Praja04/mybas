@@ -39,7 +39,7 @@ class OperasionalController extends Controller
     public function getAll()
     {
         $sertifikasi_operasional = [];
-        $operasional = Operasional::where('status', '!=', 'deleted')->get();
+        $operasional = Operasional::with(['perusahaan', 'sertifikasi'])->where('status', '!=', 'deleted')->get();
 
         foreach ($operasional as $key => $data) {
             if ($data->status == 'inactive') {
@@ -48,7 +48,7 @@ class OperasionalController extends Controller
                 $label_status = 'success';
             }
 
-            $sertifikasi = SertifikasiOperasional::where('id_operasional', $data->id)->where('status', '!=', 'deleted')->orderBy('tahun', 'desc')->first();
+            $sertifikasi = $data->sertifikasi->sortByDesc('tahun')->first();
 
             if ($sertifikasi != null) {
                 $overdue = $this->expired($sertifikasi->tanggal_expired);

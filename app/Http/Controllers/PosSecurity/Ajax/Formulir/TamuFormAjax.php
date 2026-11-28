@@ -22,6 +22,27 @@ class TamuFormAjax extends Controller
         return strtolower(preg_replace('/\s+/', ' ', trim($name)));
     }
 
+    public function getVisitorDetail(Request $request)
+    {
+        $id = $request->query('id');
+
+        $visitor = DB::table('ga_visitor_vendor')
+            ->where('trnvisitorid', $id)
+            ->first();
+
+        if ($visitor) {
+            return response()->json([
+                'success' => true,
+                'data' => $visitor
+            ]);
+        }
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Data visitor tidak ditemukan.'
+        ]);
+    }
+
     public function blacklist(Request $request)
     {
         $validated = $request->validate([
@@ -31,13 +52,12 @@ class TamuFormAjax extends Controller
             'nama'              => 'nullable|string|max:255',
             'jenis_identitas'   => 'required|string|max:50',
             'alasan_blacklist'  => 'required|string',
-            'diblacklist_oleh'  => 'required|string|max:100',
+            'diblacklist_oleh'  => 'nullable|string|max:100',
         ]);
 
-        $visitor = DB::table('ga_visitor_transaction')
-            ->where('trnvisitorid', $request->input('trnvisitorid'))
+        $visitor = DB::table('ga_visitor_vendor')
+            ->where('trnvisitorid', $validated['trnvisitorid'])
             ->first();
-
 
         if (!$visitor) {
             return response()->json(['success' => false, 'message' => 'Data visitor tidak ditemukan']);
@@ -45,7 +65,7 @@ class TamuFormAjax extends Controller
 
         $normalized_nama = strtolower(trim(preg_replace('/\s+/', ' ', $visitor->namavisitor)));
 
-        $alreadyBlacklisted = DB::table('ga_lgtk_blacklist_identitas')
+        $existing = DB::table('ga_lgtk_blacklist_identitas')
             ->where(function ($q) use ($visitor, $normalized_nama) {
                 $q->where('no_identitas', $visitor->no_ktp_sim)
                     ->orWhere(function ($q2) use ($visitor, $normalized_nama) {
@@ -54,50 +74,79 @@ class TamuFormAjax extends Controller
                     });
             })
             ->where('aktif', true)
-            ->exists();
+            ->orderByDesc('tanggal_blacklist')
+            ->first();
 
-        if ($alreadyBlacklisted) {
+        if ($existing) {
             return response()->json([
                 'success' => false,
-                'message' => 'Identitas ini sudah diblacklist sebelumnya.'
+                'message' =>
+                "Identitas ini sudah diblacklist sebelumnya.<br>" .
+                    "<strong>Nama:</strong> {$existing->nama}<br>" .
+                    "<strong>No Identitas:</strong> {$existing->no_identitas}<br>" .
+                    "<strong>Tanggal Blacklist:</strong> " . ($existing->tanggal_blacklist ? \Carbon\Carbon::parse($existing->tanggal_blacklist)->format('d-m-Y H:i') : '-') . "<br>" .
+                    "<strong>Alasan:</strong> {$existing->alasan_blacklist}<br>" .
+                    "<strong>Diblacklist Oleh:</strong> {$existing->diblacklist_oleh}",
+                'data' => [
+                    'nama'               => $existing->nama,
+                    'no_identitas'       => $existing->no_identitas,
+                    'tanggal_lahir'      => $existing->tanggal_lahir ? \Carbon\Carbon::parse($existing->tanggal_lahir)->format('d-m-Y') : null,
+                    'tanggal_blacklist'  => $existing->tanggal_blacklist ? \Carbon\Carbon::parse($existing->tanggal_blacklist)->format('d-m-Y H:i') : null,
+                    'alasan_blacklist'   => $existing->alasan_blacklist,
+                    'diblacklist_oleh'   => $existing->diblacklist_oleh,
+                    'aktif'              => $existing->aktif,
+                ]
             ]);
         }
 
         $normalized_nama = Str::lower($this->normalize_name($validated['nama'] ?? ''));
-
+        $diblacklist_oleh = $validated['diblacklist_oleh'] ?? (auth()->user()->username ?? 'system');
 
         // Simpan ke tabel blacklist dengan trnvisitorid
-        DB::table('ga_lgtk_blacklist_identitas')->insert([
+        $blacklistId = DB::table('ga_lgtk_blacklist_identitas')->insertGetId([
             'trnvisitorid'       => $validated['trnvisitorid'],
             'no_identitas'       => $validated['no_identitas'],
             'tanggal_lahir'      => $validated['tanggal_lahir'],
             'nama'               => $normalized_nama ?? null,
             'jenis_identitas'    => $validated['jenis_identitas'],
             'alasan_blacklist'   => $validated['alasan_blacklist'],
-            'diblacklist_oleh'   => $validated['diblacklist_oleh'],
+            'diblacklist_oleh'   => $diblacklist_oleh,
             'tanggal_blacklist'  => now(),
             'created_at'         => now(),
             'updated_at'         => now(),
             'aktif'              => true,
         ]);
 
+        $blacklist = DB::table('ga_lgtk_blacklist_identitas')->find($blacklistId);
+
         return response()->json([
             'success' => true,
-            'message' => 'Visitor berhasil diblacklist.'
+            'message' => 'Visitor berhasil diblacklist.',
+            'data'    => [
+                'id'                 => $blacklist->id,
+                'nama'               => $blacklist->nama,
+                'no_identitas'       => $blacklist->no_identitas,
+                'jenis_identitas'    => $blacklist->jenis_identitas,
+                'tanggal_lahir'      => $blacklist->tanggal_lahir,
+                'alasan_blacklist'   => $blacklist->alasan_blacklist,
+                'tanggal_blacklist'  => $blacklist->tanggal_blacklist,
+                'diblacklist_oleh'   => $blacklist->diblacklist_oleh,
+                'aktif'              => $blacklist->aktif,
+            ]
         ]);
     }
 
     // 
     public function kembali_kartu(Request $request)
     {
-        // dd($request->all());
         $request->validate([
             'trnvisitorid' => 'required|string|max:50',
-            'foto_out'     => 'required|string',
+            'foto_out'     => 'nullable|string',
         ]);
 
         try {
-            $visitor = GaVisitorVendorTransaction::where('trnvisitorid', $request->trnvisitorid)->first();
+            // Gunakan whereRaw + CONVERT untuk menghindari collation conflict
+            $visitor = GaVisitorVendorTransaction::whereRaw("CONVERT(trnvisitorid USING latin1) = CONVERT(? USING latin1)", [$request->trnvisitorid])->first();
 
             if (!$visitor) {
                 return response()->json([
@@ -106,13 +155,15 @@ class TamuFormAjax extends Controller
                 ]);
             }
 
-            $fotoOutUrl = $this->saveImageFromBase64(
-                $request->foto_out,
-                // 'foto_out_' . $visitor->trnvisitorid . '_' . now()->format('His'),
-                // 'visitors/out'
-                $visitor->trnvisitorid . '_foto_out',
-                'uploads/pos-security/tamu/selfie_out'
-            );
+            // Proses foto hanya jika ada
+            $fotoOutUrl = null;
+            if ($request->filled('foto_out')) {
+                $fotoOutUrl = $this->saveImageFromBase64(
+                    $request->foto_out,
+                    $visitor->trnvisitorid . '_foto_out',
+                    'uploads/pos-security/visitors/selfie_out'
+                );
+            }
 
             $now = now();
 
@@ -122,9 +173,8 @@ class TamuFormAjax extends Controller
             $visitor->dateout = $now->toDateString(); // YYYY-MM-DD
             $visitor->timeout = $now->format('H:i:s'); // HH:MM:SS
             $visitor->changedon = $now;
-            $visitor->changedby = auth()->user()->username ?? 'system'; // atau session user
-            $visitor->foto_out = $fotoOutUrl;
-            $visitor->kondisi_kacamata_out = $request->kondisi_kacamata_out ?? null;
+            $visitor->changedby = auth()->user()->username ?? 'system';
+            $visitor->foto_out = $fotoOutUrl ?: $visitor->foto_out;
             $visitor->save();
 
             return response()->json([
@@ -135,7 +185,7 @@ class TamuFormAjax extends Controller
             Log::error('Error saat mengembalikan kartu: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Terjadi kesalahan saat mengembalikan kartu.'
+                'message' => 'Gagal: ' . $e->getMessage()
             ]);
         }
     }
@@ -189,9 +239,9 @@ class TamuFormAjax extends Controller
             if ($visitor->type === 'TRANSPORTER') {
                 $cekKendaraan = DB::table('ga_cek_kendaraan')
                     ->whereRaw("
-                            REPLACE(REPLACE(UPPER(nomor_polisi), ' ', ''), '-', '')
+                            CONVERT(REPLACE(REPLACE(UPPER(nomor_polisi), ' ', ''), '-', '') USING latin1)
                             =
-                            REPLACE(REPLACE(UPPER(?), ' ', ''), '-', '')
+                            CONVERT(REPLACE(REPLACE(UPPER(?), ' ', ''), '-', '') USING latin1)
                         ", [$visitor->nopol])
                     ->where('checked_in_at', '>=', $visitor->createdon)
                     // ->where('checked_in_at', '>=', now()->subHours(24))
@@ -215,7 +265,7 @@ class TamuFormAjax extends Controller
                 }
                 
                 $cekKendaraan = DB::table('ga_cek_kendaraan')
-                    ->where('trnvisitorid', $visitor->trnvisitorid)
+                    ->whereRaw("CONVERT(trnvisitorid USING latin1) = CONVERT(? USING latin1)", [$visitor->trnvisitorid])
                     ->orderBy('checked_in_at', 'desc')
                     ->first();
 
@@ -303,34 +353,75 @@ class TamuFormAjax extends Controller
 
         // Ambil nama, tanggal lahir, dan nomor identitas
         $normalized_nama = Str::lower($this->normalize_name($request->input('namavisitor')));
-        $input_tanggal_lahir = Carbon::parse($request->input('tgllahir'))->format('Y-m-d');
+        $input_tanggal_lahir = $request->input('tgllahir') ? Carbon::parse($request->input('tgllahir'))->format('Y-m-d') : null;
         $input_no_identitas = $request->input('nomorktp');
 
-        // Cek blacklist berdasarkan:
-        // Nomor identitas atau nama + tanggal lahir
-        $blacklist = DB::table('ga_lgtk_blacklist_identitas')
-            ->where(function ($q) use ($input_no_identitas, $normalized_nama, $input_tanggal_lahir) {
-                $q->where('no_identitas', $input_no_identitas)
-
-                    ->orWhere(function ($q2) use ($normalized_nama, $input_tanggal_lahir) {
-                        $q2->whereRaw('LOWER(TRIM(nama)) = ?', [$normalized_nama])
-                            ->where('tanggal_lahir', $input_tanggal_lahir);
-                    });
-            })
+        // 1. HARD BLACKLIST CHECK
+        // Kriteria: No identitas sama persis, ATAU Kombinasi Nama + Tanggal Lahir sama persis (jika tanggal lahir diisi)
+        $hardBlacklist = DB::table('ga_lgtk_blacklist_identitas')
             ->where('aktif', true)
+            ->where(function ($q) use ($input_no_identitas, $normalized_nama, $input_tanggal_lahir) {
+                $q->where('no_identitas', $input_no_identitas);
+                if ($input_tanggal_lahir) {
+                    $q->orWhere(function ($q2) use ($normalized_nama, $input_tanggal_lahir) {
+                        $q2->whereRaw('LOWER(TRIM(nama)) = ?', [$normalized_nama])
+                           ->where('tanggal_lahir', $input_tanggal_lahir);
+                    });
+                }
+            })
             ->first();
 
-        // Jika visitor ditemukan dalam blacklist
-        if ($blacklist) {
+        if ($hardBlacklist) {
             return response()->json([
                 'success' => false,
-                'message' => sprintf(
-                    'Identitas atas nama. %s, Tanggal Lahir: %s, diblacklist karena: %s.',
-                    $blacklist->nama ?? '-',
-                    $blacklist->tanggal_lahir,
-                    $blacklist->alasan_blacklist ?? '-'
-                )
+                'blacklist_type' => 'hard',
+                'message' => 'Data telah di-blacklist! Pengunjung dengan identitas ini dilarang masuk area perusahaan.',
+                'blacklist_data' => [
+                    'nama' => strtoupper($hardBlacklist->nama),
+                    'no_identitas' => strtoupper($hardBlacklist->no_identitas),
+                    'alasan_blacklist' => $hardBlacklist->alasan_blacklist,
+                    'tanggal_blacklist' => $hardBlacklist->tanggal_blacklist ? Carbon::parse($hardBlacklist->tanggal_blacklist)->format('d-m-Y') : '-',
+                ]
             ], 403);
+        }
+
+        // 2. SOFT BLACKLIST CHECK (Hanya jika bypass_warning tidak dikirim atau false)
+        $bypassWarning = filter_var($request->input('bypass_warning'), FILTER_VALIDATE_BOOLEAN);
+        if (!$bypassWarning) {
+            // Kasus A: Nama sama persis dengan daftar blacklist (aktif), tetapi Tanggal Lahir berbeda / tidak diisi
+            $softNameMatch = DB::table('ga_lgtk_blacklist_identitas')
+                ->where('aktif', true)
+                ->whereRaw('LOWER(TRIM(nama)) = ?', [$normalized_nama])
+                ->first();
+
+            // Kasus B: Nama mirip (LIKE) DAN Tanggal Lahir sama (jika tanggal lahir diisi)
+            $softSimilarMatch = null;
+            if ($input_tanggal_lahir) {
+                $softSimilarMatch = DB::table('ga_lgtk_blacklist_identitas')
+                    ->where('aktif', true)
+                    ->where('tanggal_lahir', $input_tanggal_lahir)
+                    ->where(function ($q) use ($normalized_nama) {
+                        $q->whereRaw('LOWER(TRIM(nama)) LIKE ?', ['%' . $normalized_nama . '%'])
+                          ->orWhereRaw('? LIKE CONCAT("%", LOWER(TRIM(nama)), "%")', [$normalized_nama]);
+                    })
+                    ->first();
+            }
+
+            $softBlacklist = $softNameMatch ?: $softSimilarMatch;
+
+            if ($softBlacklist) {
+                return response()->json([
+                    'success' => false,
+                    'status' => 'warning_blacklist',
+                    'message' => 'Peringatan: Terdapat kemiripan data dengan daftar blacklist!',
+                    'blacklist_data' => [
+                        'nama' => strtoupper($softBlacklist->nama),
+                        'no_identitas' => strtoupper($softBlacklist->no_identitas),
+                        'alasan_blacklist' => $softBlacklist->alasan_blacklist,
+                        'tanggal_blacklist' => $softBlacklist->tanggal_blacklist ? Carbon::parse($softBlacklist->tanggal_blacklist)->format('d-m-Y') : '-',
+                    ]
+                ], 200);
+            }
         }
 
         // Jika validasi gagal, kembalikan response error 422 (Unprocessable Entity)
@@ -416,22 +507,20 @@ class TamuFormAjax extends Controller
 
             DB::transaction(function () use ($visitorData, &$isNewRecord, &$isUpdated, &$isCardInUse) {
 
+                // Kartu dianggap "dipakai" jika visitor belum checkout DAN kartu belum dikembalikan
+                $checkInUse = function ($q) {
+                    $q->whereNull('dateout')
+                      ->where('kartu_dikembalikan', false);
+                };
+
                 // Cek apakah kartu masih dipakai oleh vendor/tamu lain
                 $dipakaiVendor = GaVisitorVendorTransaction::where('no_kartu', $visitorData['no_kartu'])
-                    ->where(function ($q) {
-                        $q->whereNull('kartu_dikembalikan')
-                            ->orWhere('kartu_dikembalikan', false)
-                            ->orWhereNull('dateout');
-                    })
+                    ->where($checkInUse)
                     ->exists();
 
                 // Cek apakah kartu masih dipakai oleh supplier/transporter lain
                 $dipakaiSupplier = GaVisitorTransaction::where('no_kartu', $visitorData['no_kartu'])
-                    ->where(function ($q) {
-                        $q->whereNull('kartu_dikembalikan')
-                            ->orWhere('kartu_dikembalikan', false)
-                            ->orWhereNull('dateout');
-                    })
+                    ->where($checkInUse)
                     ->exists();
 
                 // Jika dipakai di salah satu tabel → kartu sedang digunakan

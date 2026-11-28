@@ -15,6 +15,7 @@ use App\Models\PosSecurity\GaVisitorVendorTransaction;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Http;
 
 class AbsensiRestLogAjax extends Controller
 {
@@ -275,20 +276,22 @@ class AbsensiRestLogAjax extends Controller
                 ->orWhere('no_ktp_sim', $keyword)
                 ->orWhere('no_kartu', $keyword);
         })->where(function ($q) {
-            $q->whereNull('dateout')->orWhere('kartu_dikembalikan', true);
+            $q->whereNull('dateout')
+              ->where('kartu_dikembalikan', false);
         })->orderBy('createdon', 'desc')->first();
 
-        if ($visitor) return [$visitor, 'ga_visitor_transactions'];
+        if ($visitor) return [$visitor, 'ga_visitor_transaction'];
 
         $visitor = GaVisitorVendorTransaction::where(function ($q) use ($keyword) {
             $q->where('trnvisitorid', $keyword)
                 ->orWhere('no_ktp_sim', $keyword)
                 ->orWhere('no_kartu', $keyword);
         })->where(function ($q) {
-            $q->whereNull('dateout')->orWhere('kartu_dikembalikan', true);
+            $q->whereNull('dateout')
+              ->where('kartu_dikembalikan', false);
         })->orderBy('createdon', 'desc')->first();
 
-        return $visitor ? [$visitor, 'ga_visitor_vendor_transactions'] : null;
+        return $visitor ? [$visitor, 'ga_visitor_vendor'] : null;
     }
 
     protected function isGloballyBlacklisted($visitor)
@@ -333,10 +336,10 @@ class AbsensiRestLogAjax extends Controller
         $visitor = GaVisitorTransaction::where('trnvisitorid', $trnvisitorid)->first();
 
         // 3. Jika tidak ketemu, coba cari di vendor
-        $sourceOrigin = 'ga_visitor_transactions';
+        $sourceOrigin = 'ga_visitor_transaction';
         if (!$visitor) {
             $visitor = GaVisitorVendorTransaction::where('trnvisitorid', $trnvisitorid)->first();
-            $sourceOrigin = 'ga_visitor_vendor_transactions';
+            $sourceOrigin = 'ga_visitor_vendor';
         }
 
         // 4. Siapkan data untuk log
@@ -420,6 +423,22 @@ class AbsensiRestLogAjax extends Controller
 
     protected function handleAbsensi($visitor, $sourceOrigin, $now)
     {
+        // ── VERIFIKASI CEK KENDARAAN (RELASI) ───────────────────────
+        // Jika visitor membawa kendaraan (ada nopol), wajib cek dulu
+        if (!empty($visitor->nopol)) {
+            $cek = $visitor->cekKendaraan; // relasi hasOne
+            
+            // Jika belum ada record cek kendaraan ATAU belum checked_in_at
+            if (!$cek || !$cek->checked_in_at) {
+                Cache::forget('pending_visitors');
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Akses Ditolak: Kendaraan belum melakukan pengecekan masuk di POS Security.',
+                ], 403);
+            }
+        }
+        // ────────────────────────────────────────────────────────────
+
         $gracePeriod = 7;
         $lastLog = AbsensiRestLog::where('trnvisitorid', $visitor->trnvisitorid)
             ->where('source_origin', $sourceOrigin)
@@ -1010,7 +1029,7 @@ class AbsensiRestLogAjax extends Controller
             'trnvisitorid' => $visitor->trnvisitorid,
             'nama' => $visitor->namavisitor,
             'perusahaan' => $visitor->namacomp ?? $visitor->perusahaan ?? '-',
-            'jenis_kunjungan' => $sourceOrigin === 'ga_visitor_vendor_transactions' ? 'VENDOR' : 'TAMU',
+            'jenis_kunjungan' => $sourceOrigin === 'ga_visitor_vendor' ? 'VENDOR' : 'TAMU',
             'no_polisi' => $visitor->nopol ?? '-',
             'keperluan' => $visitor->keperluan ?? $visitor->purpose ?? '-',
             'status_istirahat' => $nextAction === 'in' ? 'keluar' : 'masuk',
@@ -1019,7 +1038,7 @@ class AbsensiRestLogAjax extends Controller
             'foto_url' => $fotoUrl,
             'source' => $sourceOrigin,
             'source_detail' => [
-                'type' =>  $sourceOrigin === 'ga_visitor_vendor_transactions' ? 'vendor' : 'tamu',
+                'type' =>  $sourceOrigin === 'ga_visitor_vendor' ? 'vendor' : 'tamu',
                 'asal_perusahaan' => $visitor->namacomp ?? '-',
                 'penanggung_jawab' => $visitor->host ?? '-',
                 'no_ktp_sim' => $visitor->no_ktp_sim ?? '-',
@@ -1037,6 +1056,72 @@ class AbsensiRestLogAjax extends Controller
             ],
             'status_kartu' => $visitor->kartu_dikembalikan ? 'dikembalikan' : 'aktif',
             'status_display' => $visitor->kartu_dikembalikan ? 'Kartu Sudah Dikembalikan' : 'Kartu Aktif',
+            'cek_kendaraan_status' => !empty($visitor->nopol) ? ($visitor->cekKendaraan ? 'SUDAH' : 'BELUM') : 'TIDAK ADA',
+            'warehouse' => $this->getWarehouseData($visitor),
         ];
+    }
+
+    protected function getWarehouseData($visitor)
+    {
+        $cleanNopol = !empty($visitor->nopol) ? strtoupper(str_replace([' ', '-'], '', $visitor->nopol)) : null;
+
+        if (empty($cleanNopol)) {
+            return null;
+        }
+
+        try {
+            $rawUrl = rtrim(config('services.warehouse.api_url', 'http://10.11.10.130:8087/api'), '/');
+            $baseUrl = str_ends_with($rawUrl, '/api') ? $rawUrl : "{$rawUrl}/api";
+            $timeout = (float) config('services.warehouse.timeout', 2.5);
+
+            $response = Http::timeout($timeout)->get("{$baseUrl}/vehicle/transaction/" . urlencode($cleanNopol));
+            if ($response->successful()) {
+                $resJson = $response->json();
+                $resData = $resJson['data'] ?? null;
+                $item = null;
+                if (is_array($resData)) {
+                    if (isset($resData['data']) && is_array($resData['data'])) {
+                        $item = $resData['data'][0] ?? null;
+                    } elseif (isset($resData[0]) && is_array($resData[0])) {
+                        $item = $resData[0];
+                    } else {
+                        $item = $resData;
+                    }
+                }
+
+                if ($item && is_array($item)) {
+                    $targetArea = $item['target_location']['name'] ?? $item['target_area'] ?? $item['target_area_name'] ?? null;
+                    $targetAreaCode = $item['target_location']['s_loc'] ?? $item['target_area_code'] ?? null;
+                    $queueTakenHuman = $item['queue_taken_human'] ?? (isset($item['queue_taken_time']) ? Carbon::parse($item['queue_taken_time'])->format('H:i') : null);
+
+                    Log::info("Warehouse API berhasil diambil pada Display Absensi untuk nopol [{$cleanNopol}].", [
+                        'nopol'            => $cleanNopol,
+                        'target_area'      => $targetArea,
+                        'target_area_code' => $targetAreaCode,
+                        'no_antrian'       => $item['no_antrian'] ?? null,
+                        'unloading_status' => $item['unloading_status'] ?? null,
+                        'warehouse_status' => $item['status'] ?? null,
+                    ]);
+
+                    return [
+                        'found'                 => true,
+                        'no_pol'                => $item['no_pol'] ?? $cleanNopol,
+                        'target_area'           => $targetArea,
+                        'target_area_code'      => $targetAreaCode,
+                        'no_antrian'            => $item['no_antrian'] ?? null,
+                        'queue_taken_human'     => $queueTakenHuman,
+                        'queue_taken_time'      => $item['queue_taken_time'] ?? null,
+                        'unloading_status'      => $item['unloading_status'] ?? null,
+                        'warehouse_status'      => $item['status'] ?? null,
+                        'current_location'      => $item['current_location']['name'] ?? null,
+                        'current_location_code' => $item['current_location']['s_loc'] ?? null,
+                    ];
+                }
+            }
+        } catch (\Throwable $e) {
+            Log::warning("Gagal fetch data warehouse di AbsensiRestLog: " . $e->getMessage());
+        }
+
+        return null;
     }
 }

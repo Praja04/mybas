@@ -3,22 +3,20 @@
 namespace App\Http\Controllers;
 
 use App\AuthGroup;
-use Illuminate\Http\Request;
-use Session;
-use Illuminate\Support\Facades\DB;
-use App\UploadMasukHariLiburModel;
-use App\Imports\UploadMasukHariLiburImport;
-use Excel;
-use Validator;
-use App\Models\HrMasukHariLiburApproval;
-use Carbon\Carbon;
-use Illuminate\Support\Facades\Auth;
-use RealRashid\SweetAlert\Facades\Alert;
 use App\Department;
-use App\User;
+use App\Imports\UploadMasukHariLiburImport;
 use App\Mail\MasukHariLiburApprovalMail;
-use Dotenv\Result\Success;
+use App\UploadMasukHariLiburModel;
+use App\User;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\Validator;
+use Maatwebsite\Excel\Facades\Excel;
 
 class MasukHariLiburController extends Controller
 {
@@ -78,14 +76,18 @@ class MasukHariLiburController extends Controller
             ->first();
         if ($data == null) {
             return response([
-                'success' => 0, 'message' => 'Data Belum Ada di List Kerja. Silahkan Menghubungi HRD', 'data' => $data_user,
+                'success' => 0,
+                'message' => 'Data Belum Ada di List Kerja. Silahkan Menghubungi HRD',
+                'data' => $data_user,
                 'status' => 0
             ]);
         }
         if ($data != null) {
             if ($data->status == 1) {
                 return response([
-                    'success' => 0, 'message' => 'Data Belum Diapprove. Silahkan Menghubungi HRD', 'data' => $data_user,
+                    'success' => 0,
+                    'message' => 'Data Belum Diapprove. Silahkan Menghubungi HRD',
+                    'data' => $data_user,
                     'status' => 1
                 ]);
             }
@@ -93,7 +95,9 @@ class MasukHariLiburController extends Controller
         if ($data != null) {
             if ($data->status == 2) {
                 return response([
-                    'success' => 0, 'message' => 'Data Direject. Silahkan Menghubungi HRD', 'data' => $data_user,
+                    'success' => 0,
+                    'message' => 'Data Direject. Silahkan Menghubungi HRD',
+                    'data' => $data_user,
                     'status' => 0
                 ]);
             }
@@ -106,17 +110,6 @@ class MasukHariLiburController extends Controller
             ]);
 
         return response(['success' => 1, 'message' => 'Silahkan Masuk. Selamat Bekerja', 'data' => $data_user]);
-    }
-
-    public function store(Request $request)
-    {
-        DB::table('hr_masuk_hari_libur')
-            ->insert([
-                'id_mhl' => $id_mhl,
-                'tanggal' => $request->tanggal,
-            ]);
-        Session::flash('info', 'Data Upload Anda Berhasil Disimpan');
-        return back();
     }
 
     // perbaiki logic disini
@@ -137,7 +130,7 @@ class MasukHariLiburController extends Controller
             Session::flash('error', 'Data sudah diupload untuk tanggal ini silahkan ke menu reporting dan upload batch ulang.');
             return back();
         }
-        
+
         $id_mhl = $this->generateUniqName();
         $inserted = DB::table('hr_masuk_hari_libur')->insert([
             'tanggal' => $request->tanggal,
@@ -152,7 +145,7 @@ class MasukHariLiburController extends Controller
         try {
             Excel::import(new UploadMasukHariLiburImport($request->tanggal, $id_mhl), $excel);
             $count = UploadMasukHariLiburModel::where('id_mhl', $id_mhl)->count();
-            
+
             if ($count == 0) {
                 DB::table('hr_masuk_hari_libur')->where('id_mhl', $id_mhl)->delete();
             }
@@ -233,7 +226,6 @@ class MasukHariLiburController extends Controller
 
         return view('hr.masukharilibur.reporting.index', compact('summary', 'master'));
     }
-
 
 
     public function Approver()

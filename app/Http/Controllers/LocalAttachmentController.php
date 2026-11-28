@@ -14,7 +14,7 @@ class LocalAttachmentController extends Controller
     {
         // dd($request->all());
         $file = $request->file('file');
-        $extension = $file->extension();
+        $extension = $file->getClientOriginalExtension();
         $encode_file_name = $this->generateUniqName() . '.' . $extension;
         $original_file_name = $file->getClientOriginalName();
         $transaction_type = $request->transaction_type;
@@ -64,19 +64,27 @@ class LocalAttachmentController extends Controller
             return response("File tidak ditemukan di database.", 404);
         }
 
-        $filePath = storage_path('app/public/' . $attachment->transaction_type . '/' . $attachment->encode_file_name);
+        // Cek secara lokal di storage/app/public karena public/storage symlink mungkin tidak ada
+        $filePath = storage_path(
+            'app/public/' .
+                $attachment->transaction_type . '/' .
+                $attachment->encode_file_name
+        );
 
         if (file_exists($filePath)) {
             $typefile = mime_content_type($filePath);
-            $originalFileName = $attachment->original_file_name;
+            $fileName = $attachment->original_file_name ?: $attachment->encode_file_name;
 
             return response()->file($filePath, [
                 'Content-Type' => $typefile,
-                'Content-Disposition' => 'attachment; filename="' . $originalFileName . '"'
+                'Content-Disposition' => 'attachment; filename="' . $fileName . '"'
             ]);
-        } else {
-            return response("File tidak ditemukan di server.", 404);
         }
+
+        // Jika file tidak ditemukan di server lokal, alihkan browser ke server remote
+        $backupServer = rtrim(env('BACKUP_SERVER_URL', 'http://10.11.11.10:8093'), '/');
+        return redirect($backupServer . '/attachment/download/' . $id);
+        // return response("File tidak ditemukan di server lokal.", 404);
     }
 
 

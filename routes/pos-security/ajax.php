@@ -17,6 +17,8 @@ Route::group(
         Route::post('/store-vendor-tamu', [TamuFormAjax::class, 'store'])->name("ajax.pos-security.vendor-transaksi.store_vendor");
         Route::post('/search-vendor-tamu', [TamuFormAjax::class, 'search'])->name("ajax.pos-security.vendor-transaksi.search_vendor");
         Route::post('/kembalikan-vendor-tamu', [TamuFormAjax::class, 'kembali_kartu'])->name("ajax.pos-security.vendor-transaksi.kembali_kartu");
+        Route::post('/tamu/block', [TamuFormAjax::class, 'blacklist'])->name('ajax.pos-security.vendor-transaksi.block');
+        Route::get('/tamu/detail', [TamuFormAjax::class, 'getVisitorDetail'])->name('ajax.pos-security.vendor-transaksi.detail');
 
         // transaksi supplier
         Route::post('/store-supplier', [SupplierFormAjax::class, 'store'])->name("ajax.pos-security.visitor-transaksi.store");
@@ -32,9 +34,11 @@ Route::group(
         Route::get('/search-kendaraan-in', [CekKendaraanFormAjax::class, 'searchIn'])->name("ajax.pos-security.cek-kendaraan.search-in");
         Route::get('/search-kendaraan-out', [CekKendaraanFormAjax::class, 'searchOut'])->name("ajax.pos-security.cek-kendaraan.search-out");
         Route::get('/kendaraan/show', [CekKendaraanFormAjax::class, 'show'])->name("ajax.pos-security.cek-kendaraan.show");
+        Route::get('/kendaraan/warehouse-status/{nopol}', [CekKendaraanFormAjax::class, 'warehouseStatus'])->name("ajax.pos-security.cek-kendaraan.warehouse-status");
 
         Route::post('/absensi-rest-log', [AbsensiRestLogAjax::class, 'search'])->name("ajax.pos-security.absensirestlog.search");
         Route::get('/blacklist/show', [BlacklistAjax::class, 'show'])->name('ajax.pos-security.blacklist.show');
+        Route::post('/blacklist/cancel', [BlacklistAjax::class, 'cancel'])->name('ajax.pos-security.blacklist.cancel');
 
         Route::post('/dashboard/filter', [DashboardAjax::class, 'filter'])->name('ajax.pos-security.dashboard.filter');
         Route::post('/dashboard/statistik', [DashboardAjax::class, 'statistikPerusahaanDepartemen'])->name('ajax.pos-security.dashboard.statistik');

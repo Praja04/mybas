@@ -1,159 +1,175 @@
 <?php
-
 namespace App\Http\Controllers\HRConnect;
 
-use App\User;
+use App\Exports\HRConnect\KaryawanAktifExport;
 use App\HrKaryawan;
-use Illuminate\Http\Request;
-use Yajra\Datatables\Datatables;
 use App\Http\Controllers\Controller;
-use App\Imports\HRConnect\GaShiftOut;
-use Maatwebsite\Excel\Facades\Excel;
-use Illuminate\Support\Facades\Validator;
 use App\Jobs\HRConnect\KaryawanKeluarSelesaiToHR;
+use App\User;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Maatwebsite\Excel\Facades\Excel;
+use Yajra\Datatables\Datatables;
 
 class GAShiftOutController extends Controller
 {
-    public function getData(Request $req)
-    {
-        $query = HrKaryawan::where([
-                // 'in_complete' => 'Y', 
-                // 'in_kode_group' => 'Y',
-                'is_excuse_out' => 'Y',
-                'out_complete' => 'N',
-            ])
-            ->Where('tanggal_keluar', '>', '2025-01-18');
-
-        if($req->tampilkan_semua == 0){
-            $query->where([
-                'tgl_shift_out' => $req->tanggal
-            ]);
-        }
-        
-        $data = $query->get();
-
-        return Datatables::of($data)->make(true);
-    }
-
     public function index()
     {
-        $data['title'] = 'GA - Karyawan Keluar';
+        // $tanggalTersedia = HrKaryawan::where('out_complete', 'N')
+        //     ->where('is_excuse_out', 'Y')
+        //     ->whereNotNull('tgl_shift_out')
+        //     ->select('tgl_shift_out')
+        //     ->distinct()
+        //     ->orderBy('tgl_shift_out', 'desc')
+        //     ->pluck('tgl_shift_out');
 
-        return view('hr-connect.ga.shift-out', $data);
+        return view('hr-connect.ga.shift-out');
+        // compact('tanggalTersedia')
+    }
+
+    public function getData(Request $req)
+    {
+        $query = HrKaryawan::with(['penghuni' => function ($q) {
+            $q->where('is_active', 'Y');
+        }])
+            ->select('id', 'nik', 'nama', 'kode_divisi', 'kode_bagian', 'staff', 'tgl_shift_out', 'is_excuse_out', 'out_complete')
+            ->where('out_complete', 'N')
+            ->where('is_excuse_out', 'Y')
+            ->orderBy('tgl_shift_out', 'desc');
+
+        if ($req->tampilkan_semua == 0 && ! empty($req->tanggal)) {
+            $query->where('tgl_shift_out', $req->tanggal);
+        }
+
+        return Datatables::of($query)
+            ->filter(function ($query) use ($req) {
+                if ($req->has('search') && ! empty($req->input('search')['value'])) {
+                    $keyword = $req->input('search')['value'];
+
+                    $query->where(function ($q) use ($keyword) {
+                        $q->where('nama', 'like', '%' . $keyword . '%')
+                            ->orWhere('nik', 'like', '%' . $keyword . '%')
+                            ->orWhere('kode_divisi', 'like', '%' . $keyword . '%')
+                            ->orWhere('kode_bagian', 'like', '%' . $keyword . '%');
+                    });
+                }
+            })
+            ->addColumn('checkStaff', function ($row) {
+                if ($row->penghuni) {
+                    return strtolower($row->penghuni->kategori_karyawan) == 'staff' ? 'Y' : 'N';
+                }
+                return $row->staff;
+            })
+            ->make(true);
     }
 
     public function update(Request $req)
     {
         $data = $req->input('data');
-        if(!empty($data)){
-            // [x] Uncomment ketika selesai testing email 
+
+        if (empty($data)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tidak ada data karyawan yang dipilih. Silakan centang minimal satu karyawan.',
+            ], 400);
+        }
+
+        DB::beginTransaction();
+
+        try {
             foreach ($data as $item) {
-                if($item['checklistId'] !== 'on'){
-                    $nik = $item['nik'];
-                    $alasan_keluar = $item['alasankeluar'];
+                $nik          = $item['nik'];
+                $idKaryawan   = $item['id_karyawan'];
+                $alasanKeluar = $item['alasan'] ?? 'Pencabutan Loker Massal';
 
-                    // $sebelumnya = DB::table('loker_master_user')
-                    //     ->where('nik', $nik)->first();
-
-                    $sebelumnya = DB::table('loker_penghuni')
-                        ->where('nik', $nik)->first();
-
-                    if ($sebelumnya != null){
-                        $data = [
-                            'nik' => $sebelumnya->nik,
-                            'no_loker' => $sebelumnya->no_loker,
-                            'status' => 'OUT',
-                            'keterangan' => 'Sudah Keluar',
-                            'nama_pengisi' => auth()->user()->name ?? '',
-                            'tgl_pengisi' => date('Y-m-d'),
-                            'nik_pengisi' => auth()->user()->username ?? '',
-                            'jam_pengisi' => date('H:i:s'),
-                            'penghuni_sebelumnya' => $sebelumnya->nama,
-                            'alasan' => $alasan_keluar,
-                            'kode_area' => $sebelumnya->kode_area ?? '',
-                            'kode_blok' => $sebelumnya->kode_blok ?? '',
-                            'kode_rak' => $sebelumnya->kode_rak ?? '',
-                        ];
-    
-                        DB::table('loker_user_transaksi')->insert($data);
-                        
-                        // DB::table('loker_master_nomer')
-                        //     ->where([
-                        //         'kode_blok' => $sebelumnya->kode_blok,
-                        //         'no_loker' => $sebelumnya->no_loker,
-                        //         'kode_area' => $sebelumnya->kode_area
-                        //     ])->update(['status' => 0]);
-    
-                        // DB::table('loker_master_user')->where('nik', $nik)
-                        //     ->update([
-                        //         'nik' => '',
-                        //         'nama' => ''
-                        //     ]); 
-
-                        // TODO: Harusnya set is_active N dan tanggal keluar
-                        DB::transaction(function () use ($nik) {
-                            DB::table('loker_penghuni')->where('nik', $nik)->delete();
-                        });
-                    }
-
-                    HrKaryawan::where('id', $item['checklistId'])
-                        ->update([
-                            'out_complete' => $item['status'] =='check' ? 'Y' : 'N'
-                        ]);
+                $karyawan = HrKaryawan::lockForUpdate()->find($idKaryawan);
+                if (! $karyawan) {
+                    continue;
                 }
+
+                $nama = ucwords(strtolower($karyawan->nama ?? '-'));
+
+                $penghuni = DB::table('loker_penghuni')
+                    ->where('nik', $nik)
+                    ->where('is_active', 'Y')
+                    ->lockForUpdate()
+                    ->first();
+
+                DB::table('loker_transaksi')->insert([
+                    'nik'            => $nik,
+                    'nama'           => $nama,
+                    'kode_rak'       => $penghuni ? $penghuni->kode_rak : '-',
+                    'no_loker'       => $penghuni ? $penghuni->no_loker : '-',
+                    'tipe_transaksi' => 'KELUAR',
+                    'operator'       => auth()->user()->name ?? 'Sistem GA',
+                    'keterangan'     => $penghuni
+                        ? 'Clearance Loker: ' . $alasanKeluar
+                        : 'Clearance Non-Loker: ' . $alasanKeluar,
+                    'created_at'     => now(),
+                ]);
+
+                if ($penghuni) {
+                    // DB::table('loker_transaksi')->insert([
+                    //     'nik'            => $nik,
+                    //     'nama'           => $nama,
+                    //     'kode_rak'       => $penghuni->kode_rak,
+                    //     'no_loker'       => $penghuni->no_loker,
+                    //     'tipe_transaksi' => 'KELUAR',
+                    //     'operator'       => auth()->user()->name ?? 'Sistem GA',
+                    //     'keterangan'     => 'Clearance Loker: ' . $alasanKeluar,
+                    //     'created_at'     => now(),
+                    // ]);
+
+                    DB::table('loker_penghuni')->where('id', $penghuni->id)->delete();
+                }
+
+                $karyawan->update([
+                    'out_complete' => 'Y',
+                ]);
             }
 
             $email_hr = User::whereHas('group.permissions', function ($query) {
-                $query->where('codename', 'hr_connect_notified_out');
-            })->select('email')
-            ->whereNotNull('email')
-            ->groupBy('email')
-            ->get();
+                $query->where('codename', 'hr_connect_ir');
+            })
+                ->whereNotNull('email')
+                ->pluck('email')
+                ->unique()
+                ->toArray();
 
-            $to = $email_hr->pluck('email')->toArray();  
-            $link = url('/hr-connect/dept-ga/karyawan-keluar');
-            KaryawanKeluarSelesaiToHR::dispatch($to, $data, $link);
+            Cache::forget('list_bulan_karyawan_keluar_ga');
 
-            return response()->json(['success' => true, 'message' => 'Data berhasil dikirim.']);
-        }else {
-            return response()->json(['success' => false, 'message' => 'Tidak ada data yang dikirim.']);
+            DB::commit();
+
+            if (! empty($email_hr)) {
+                $link = url('/hr-connect/dept-hrd/karyawan-keluar');
+                KaryawanKeluarSelesaiToHR::dispatch($email_hr, $data, $link);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Proses clearance loker berhasil dan email diteruskan ke HRD IR.',
+            ]);
+
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            Log::error('GA Shift Out Error: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memproses data clearance: Terjadi kesalahan server.',
+            ], 500);
         }
     }
 
-    public function uploadExcel(Request $req)
+    public function exportExcel(Request $request)
     {
-        $validator = Validator::make($req->all(), [
-            'excel_file' => 'required|file|mimes:xlsx,xls',
-        ]);
+        $byDate  = $request->input('tanggal');
+        $showAll = $request->input('tampilkan_semua');
 
-        if ($validator->fails()) {
-            return response()->json(['message' => $validator->errors()->first()], 422);
-        }
+        $fileName = 'Data Karyawan Keluar GA - ' . (! empty($byDate) ? 'Per Tanggal ' . $byDate : 'Data Keseluruhan') . '.xlsx';
 
-        if ($req->hasFile('excel_file')) {
-            $file = $req->file('excel_file');
-
-            if (!$file->isValid()) {
-                return response()->json(['message' => 'File tidak valid atau rusak.'], 400);
-            }
-
-            try {
-                if ($file->getClientOriginalExtension() !== 'xlsx') {
-                    return response()->json(['message' => 'Format file tidak valid. Hanya menerima file .xlsx.'], 400);
-                }
-
-                Excel::import(new GaShiftOut, $file);
-
-                return response()->json(['message' => 'Data berhasil diunggah dan diproses.'], 200);
-            } catch (\Exception $e) {
-                Log::error('Error during file upload: ' . $e->getMessage());
-
-                return response()->json(['message' => 'Terjadi kesalahan saat mengimpor data.'], 500);
-            }
-        }
-
-        return response()->json(['message' => 'File tidak ditemukan atau tidak valid.'], 400);
+        return Excel::download(new KaryawanAktifExport($byDate, $showAll), $fileName);
     }
 }
